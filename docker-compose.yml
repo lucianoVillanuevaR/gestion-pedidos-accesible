@@ -4,10 +4,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: riquisimo-frontend
+    restart: always
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: http://localhost:3000/api
+      VITE_API_URL: ${VITE_API_URL}
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -19,13 +20,16 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: riquisimo-backend
+    restart: always
+    env_file:
+      - ./.env
     ports:
       - "3000:3000"
     environment:
-      PORT: 3000
-      CLIENT_URL: http://localhost:5173
-      DATABASE_URL: postgresql://admin:admin123@postgres:5432/sistema_pedidos
-      JWT_SECRET: clave_super_secreta_riquisimo
+      PORT: ${PORT}
+      CLIENT_URL: ${CLIENT_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -35,16 +39,17 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: riquisimo-postgres
+    restart: always
+    env_file:
+      - ./.env
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: sistema_pedidos
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
 volumes:
   postgres_data:
-
-

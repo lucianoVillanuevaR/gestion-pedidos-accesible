@@ -7,5 +7,5 @@ export const env = {
   clientUrl: process.env.CLIENT_URL ?? "http://localhost:5173",
   databaseUrl:
     process.env.DATABASE_URL ??
-    "postgresql://admin:admin123@postgres:5432/pedidos_db"
+    "postgresql://admin:admin123@postgres:5432/sistema_pedidos"
 };
