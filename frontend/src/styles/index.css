@@ -3,17 +3,73 @@
 @tailwind utilities;
 
 :root {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Trebuchet MS", "Segoe UI Variable", "Segoe UI", sans-serif;
   color: #1c1917;
   background-color: #fffbeb;
+}
+
+html {
+  color-scheme: light;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  background-color: #fffbeb;
 }
 
 * {
   box-sizing: border-box;
 }
 
+#root {
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+html[data-contrast="true"] body,
+body[data-contrast="true"] {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+html[data-contrast="true"] button,
+html[data-contrast="true"] input,
+html[data-contrast="true"] select,
+html[data-contrast="true"] textarea {
+  border-color: #111827 !important;
+  color: #111827 !important;
+}
+
+html[data-contrast="true"] button:not([aria-pressed="true"]):not(.bg-blue-600):not(.bg-blue-700):not(.bg-red-600):not(.bg-green-600),
+html[data-contrast="true"] input,
+html[data-contrast="true"] select,
+html[data-contrast="true"] textarea {
+  background-color: #ffffff !important;
+}
+
+html[data-contrast="true"] ::selection {
+  background: #111827;
+  color: #ffffff;
+}
+
+html[data-contrast="true"] .shadow-sm,
+html[data-contrast="true"] .shadow-lg,
+html[data-contrast="true"] .shadow-xl,
+html[data-contrast="true"] .shadow-2xl {
+  box-shadow: none !important;
+}
+
+html[data-contrast="true"] a,
+html[data-contrast="true"] button {
+  border-width: 2px;
+}
+
+::selection {
+  background: #facc15;
+  color: #111827;
+}
