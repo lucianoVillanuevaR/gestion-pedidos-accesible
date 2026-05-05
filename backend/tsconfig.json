@@ -3,7 +3,7 @@
     "target": "ES2020",
     "module": "Node16",
     "moduleResolution": "node16",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
     "types": ["node"],
     "esModuleInterop": true,
