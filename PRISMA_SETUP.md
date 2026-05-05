@@ -1,6 +1,6 @@
-# 🚀 Integración de Prisma - Sistema Riquísimo
+# Integración de Prisma - Sistema Riquísimo
 
-## ✅ Estructura completada
+## Estructura completada
 
 ```
 backend/
@@ -29,7 +29,7 @@ backend/
 └── tsconfig.json              # (sin cambios necesarios)
 ```
 
-## 🎯 Modelos Prisma
+## Modelos Prisma
 
 ### Producto
 - `id` (Int) - PK
@@ -58,7 +58,7 @@ backend/
 - `precioUnitario` (Decimal)
 - `subtotal` (Decimal)
 
-## 📦 Scripts disponibles
+## Scripts disponibles
 
 ```bash
 # Desarrollo
@@ -76,7 +76,7 @@ npm run build             # Compilar TypeScript
 npm run start             # Iniciar servidor compilado
 ```
 
-## 🔌 Endpoints API
+## Endpoints API
 
 ### Productos
 ```
@@ -261,17 +261,17 @@ curl -X PATCH http://localhost:3000/api/pedidos/1/estado \
   -d '{"estado": "listo"}'
 ```
 
-## 🛡️ Validaciones implementadas
+## Validaciones implementadas
 
-✅ **Cantidad de productos**: Debe ser > 0  
-✅ **Producto existente**: Valida que el producto exista en BD  
-✅ **Producto disponible**: Solo permite productos con `disponible: true`  
-✅ **Estado válido**: `pendiente`, `en_preparacion`, `listo`, `entregado`, `cancelado`  
-✅ **Método de pago válido**: `efectivo`, `tarjeta`, `transferencia`  
-✅ **Cálculo de total**: Suma automática de subtotales  
-✅ **Detalles no vacíos**: Al menos un producto en el pedido  
+ **Cantidad de productos**: Debe ser > 0  
+ **Producto existente**: Valida que el producto exista en BD  
+ **Producto disponible**: Solo permite productos con `disponible: true`  
+ **Estado válido**: `pendiente`, `en_preparacion`, `listo`, `entregado`, `cancelado`  
+**Método de pago válido**: `efectivo`, `tarjeta`, `transferencia`  
+ **Cálculo de total**: Suma automática de subtotales  
+ **Detalles no vacíos**: Al menos un producto en el pedido  
 
-## 📝 Variables de entorno (.env)
+## Variables de entorno (.env)
 
 ```env
 POSTGRES_DB=sistema_pedidos
@@ -287,7 +287,7 @@ CLIENT_URL=http://localhost:5173
 VITE_API_URL=http://localhost:3000/api
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Error: "Can't reach database server"
 - Asegúrese que PostgreSQL está corriendo
@@ -317,7 +317,7 @@ VITE_API_URL=http://localhost:3000/api
 7. Arma tu Sandwich - $7.00
 8. Sandwich Luco Patrón - $10.00
 
-## 📚 Recursos útiles
+##  Recursos útiles
 
 - [Prisma Docs](https://www.prisma.io/docs/)
 - [PostgreSQL en Docker](https://hub.docker.com/_/postgres)
