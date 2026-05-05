@@ -6,3 +6,40 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+model Producto {
+  id            Int             @id @default(autoincrement())
+  nombre        String          @unique
+  descripcion   String
+  precio        Decimal         @db.Decimal(10, 2)
+  disponible    Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  detallesPedido DetallePedido[]
+}
+
+model Pedido {
+  id            Int             @id @default(autoincrement())
+  total         Decimal         @db.Decimal(10, 2)
+  estado        String          @default("pendiente")
+  metodoPago    String
+  observacion   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  detalles      DetallePedido[]
+}
+
+model DetallePedido {
+  id             Int      @id @default(autoincrement())
+  pedidoId       Int
+  productoId     Int
+  cantidad       Int
+  precioUnitario Decimal  @db.Decimal(10, 2)
+  subtotal       Decimal  @db.Decimal(10, 2)
+  
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto       Producto @relation(fields: [productoId], references: [id])
+  
+  @@index([pedidoId])
+  @@index([productoId])
+}
