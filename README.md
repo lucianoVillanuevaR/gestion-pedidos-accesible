@@ -11,3 +11,6 @@ Crear archivo de variables de entorno
 cp .env.example .env
 Levantar contenedores
 docker compose up --build -d
+
+
+http://localhost:5173
