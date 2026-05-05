@@ -10,7 +10,7 @@ cd gestion-pedidos-accesible
 Crear archivo de variables de entorno
 cp .env.example .env
 Levantar contenedores
-docker compose up --build -d
+docker compose up --build 
 
 
 http://localhost:5173
