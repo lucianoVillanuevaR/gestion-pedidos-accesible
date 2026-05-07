@@ -235,6 +235,8 @@ function PdvPage() {
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<FiltroCategoria>("Todos");
 
+    const [searchTerm, setSearchTerm] = useState("");
+
   const [items, setItems] = useState<Record<number, number>>({});
   const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
   const [observacion, setObservacion] = useState("");
@@ -313,18 +315,30 @@ function PdvPage() {
   }, [productos]);
 
   const productosFiltrados = useMemo(() => {
-    if (selectedCategory === "Todos") {
-      return productosConCategoria;
-    }
+      let filtrados = productosConCategoria;
 
-    if (selectedCategory === "Destacados") {
-      const destacados = productosConCategoria.filter((producto) => (items[producto.id] || 0) > 0);
-      return destacados.length > 0 ? destacados : productosConCategoria.slice(0, 4);
-    }
+      // Filtrar por categoría
+      if (selectedCategory !== "Todos") {
+        if (selectedCategory === "Destacados") {
+          const destacados = filtrados.filter((producto) => (items[producto.id] || 0) > 0);
+          filtrados = destacados.length > 0 ? destacados : productosConCategoria.slice(0, 4);
+        } else {
+          filtrados = filtrados.filter((producto) => producto.categoria === selectedCategory);
+        }
+      }
 
-    return productosConCategoria.filter((producto) => producto.categoria === selectedCategory);
-  }, [items, productosConCategoria, selectedCategory]);
+      // Filtrar por búsqueda
+      if (searchTerm.trim()) {
+        const search = searchTerm.toLowerCase();
+        filtrados = filtrados.filter((producto) => 
+          producto.nombre.toLowerCase().includes(search) ||
+          (producto.descripcion && producto.descripcion.toLowerCase().includes(search))
+        );
+      }
 
+      return filtrados;
+
+    }, [items, productosConCategoria, selectedCategory, searchTerm]);
   const { detalles: pedidoDetalles, total, cantidad: totalItems } = useMemo(() => {
     return buildPedidoSummary(items, productos);
   }, [items, productos]);
@@ -369,6 +383,19 @@ function PdvPage() {
     const currentQuantity = items[producto.id] || 0;
     setItemQuantity(producto, currentQuantity - 1);
   };
+
+    const removeProduct = (productoId: number) => {
+      setItems((prevItems) => {
+        const newItems = { ...prevItems };
+        delete newItems[productoId];
+        return newItems;
+      });
+      const producto = productos.find(p => p.id === productoId);
+      if (producto) {
+        setFeedback({ type: "success", message: `${producto.nombre} removido` });
+        playTone(740, 90);
+      }
+    };
 
   const resetPedido = () => {
     setItems({});
@@ -515,6 +542,20 @@ function PdvPage() {
               </div>
             </div>
 
+              <div className="mb-6">
+                <label htmlFor="searchProducto" className={`block font-bold mb-2 ${isAccessible ? "text-lg" : "text-sm"}`}>
+                  🔍 Buscar producto
+                </label>
+                <input
+                  id="searchProducto"
+                  type="text"
+                  placeholder={isAccessible ? "Escribe nombre o descripción..." : "Buscar..."}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className={`w-full rounded-lg border px-4 py-2 outline-none transition focus:ring-2 ${isAccessible ? "border-2 border-slate-900 text-lg py-3 focus:ring-slate-900" : "border border-slate-300 focus:ring-blue-400"}`}
+                />
+              </div>
+
             <div className="space-y-6">
               {!loadingProductos && productosFiltrados.length === 0 && !loadingError ? (
                 <div className={`rounded-2xl border-2 border-dashed p-8 text-center ${isAccessible ? "border-slate-300 bg-slate-50" : "border-slate-300 bg-slate-50"}`}>
@@ -573,7 +614,7 @@ function PdvPage() {
                           : "bg-white border border-slate-200"
                       }`}
                     >
-                      <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                         <p className={`font-bold text-slate-950 ${isAccessible ? "text-base" : "text-sm"}`}>
                           {item.producto.nombre}
                         </p>
@@ -581,9 +622,20 @@ function PdvPage() {
                           {item.cantidad} x {formatCurrency(item.producto.precio)}
                         </p>
                       </div>
-                      <p className={`shrink-0 font-bold ${isAccessible ? "text-base" : "text-sm"}`}>
-                        {formatCurrency(item.subtotal)}
-                      </p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <p className={`font-bold ${isAccessible ? "text-base" : "text-sm"}`}>
+                            {formatCurrency(item.subtotal)}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => removeProduct(item.productoId)}
+                            className={`text-lg p-1 rounded transition hover:opacity-70 ${isAccessible ? "hover:bg-red-50" : "hover:bg-red-50"}`}
+                            title={`Eliminar ${item.producto.nombre}`}
+                            aria-label={`Eliminar ${item.producto.nombre} del pedido`}
+                          >
+                            ✕
+                          </button>
+                        </div>
                     </div>
                   ))}
                 </div>
