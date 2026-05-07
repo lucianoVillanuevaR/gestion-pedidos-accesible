@@ -7,9 +7,7 @@
 ```bash
 git clone https://github.com/lucianoVillanuevaR/gestion-pedidos-accesible.git
 cd gestion-pedidos-accesible
-Crear archivo de variables de entorno
 cp .env.example .env
-Levantar contenedores
 docker compose up --build 
 
 
