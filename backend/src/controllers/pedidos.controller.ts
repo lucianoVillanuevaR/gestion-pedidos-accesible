@@ -103,7 +103,7 @@ export const crearPedido = async (req: Request, res: Response) => {
   }
 };
 
-export const getPedidos = async (req: Request, res: Response) => {
+export const getPedidos = async (_req: Request, res: Response) => {
   try {
     const pedidos = await prisma.pedido.findMany({
       include: {

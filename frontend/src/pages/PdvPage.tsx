@@ -11,8 +11,7 @@ import {
   formatCurrency,
   getCategoriaLabel,
   getPaymentLabel,
-  type FiltroCategoria,
-  type ProductoCategoria
+  type FiltroCategoria
 } from "../utils/pdv";
 
 type FeedbackState = {
@@ -20,20 +19,22 @@ type FeedbackState = {
   message: string;
 };
 
-function getProductIcon(categoria: ProductoCategoria) {
-  switch (categoria) {
-    case "Sandwich":
-      return "";
-    case "Bebidas":
-      return "";
-    case "Extras":
-      return "";
-    default:
-      return "";
-  }
-}
+const ACCESSIBLE_STEP_COUNT = 6;
+const PAYMENT_OPTIONS = [
+  { value: "efectivo", label: "Efectivo", icon: "💵" },
+  { value: "tarjeta", label: "Tarjeta", icon: "💳" },
+  { value: "transferencia", label: "Transferencia", icon: "↔️" }
+] as const;
 
-function Toast({ feedback, isAccessible, isHighContrast }: { feedback: FeedbackState | null; isAccessible: boolean; isHighContrast: boolean }) {
+function Toast({
+  feedback,
+  isAccessible,
+  className = ""
+}: {
+  feedback: FeedbackState | null;
+  isAccessible: boolean;
+  className?: string;
+}) {
   if (!feedback) return null;
 
   const isSuccess = feedback.type === "success";
@@ -44,7 +45,7 @@ function Toast({ feedback, isAccessible, isHighContrast }: { feedback: FeedbackS
       : "bg-red-50 border border-red-300 text-red-950";
 
   return (
-    <div className={`fixed bottom-6 right-6 max-w-sm rounded-2xl px-6 py-4 ${bgClass} animate-in fade-in slide-in-from-bottom-4 duration-300 z-50`}>
+    <div className={`rounded-2xl px-4 py-3 ${bgClass} animate-in fade-in slide-in-from-right-4 duration-300 ${className}`}>
       <div className="flex items-start gap-3">
         <span className={`text-2xl font-bold shrink-0 ${isAccessible ? "" : isSuccess ? "text-emerald-600" : "text-red-600"}`}>
           {isSuccess ? "✅" : "❌"}
@@ -111,7 +112,6 @@ function ProductCard({
   producto,
   cantidad,
   isAccessible,
-  isHighContrast,
   onIncrease,
   onDecrease,
   onAdd
@@ -119,13 +119,11 @@ function ProductCard({
   producto: Producto;
   cantidad: number;
   isAccessible: boolean;
-  isHighContrast: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
   onAdd: () => void;
 }) {
   const categoria = detectCategoria(producto);
-  const icon = getProductIcon(categoria);
 
   return (
     <article
@@ -141,9 +139,8 @@ function ProductCard({
             ? "bg-slate-100 border-b-2 border-slate-900"
             : "bg-gradient-to-br from-[#FFF8DC] via-[#FFFBF0] to-[#F7F7F7]"
         }`}
-      >
-        {icon}
-      </div>
+        aria-hidden="true"
+      />
 
       <div className={`flex-1 p-4 ${isAccessible ? "space-y-2" : "space-y-3"}`}>
         <span
@@ -173,61 +170,86 @@ function ProductCard({
       </div>
 
       <div className={`px-4 ${isAccessible ? "pb-3" : "pb-4"} space-y-2`}>
-        {cantidad > 0 && (
-          <div
-            className={`grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl p-2 ${
-              isAccessible ? "bg-slate-100 border-2 border-slate-900" : "bg-[#FFFBF0] border border-[#FFF4BF]"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={onDecrease}
-              className={`py-2 rounded-lg font-bold transition ${
-                isAccessible
-                  ? "bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-100"
-                  : "bg-white border border-slate-300 text-slate-900 hover:bg-slate-100"
-              }`}
-              aria-label={`Disminuir ${producto.nombre}`}
-            >
-              −
-            </button>
+        {isAccessible ? (
+          <div className="rounded-xl border-2 border-slate-900 bg-slate-50 p-3">
+            <p className="mb-3 text-center text-lg font-bold text-slate-900">¿Cuánto?</p>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <button
+                type="button"
+                onClick={onDecrease}
+                disabled={cantidad === 0}
+                className={`min-h-[56px] rounded-lg border-2 border-slate-900 bg-white text-3xl font-bold text-slate-900 transition ${
+                  cantidad === 0 ? "cursor-not-allowed opacity-40" : "hover:bg-slate-100"
+                }`}
+                aria-label={`Disminuir ${producto.nombre}`}
+              >
+                −
+              </button>
 
-            <div className={`text-center font-black ${isAccessible ? "text-2xl" : "text-xl"}`}>{cantidad}</div>
+              <div className="min-w-[84px] text-center">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Cantidad</p>
+                <p className="text-3xl font-black text-slate-900">{cantidad}</p>
+              </div>
 
-            <button
-              type="button"
-              onClick={onIncrease}
-              className={`py-2 rounded-lg font-bold text-white transition ${
-                isAccessible
-                  ? "bg-slate-900 border-2 border-slate-900 hover:bg-black"
-                  : "bg-slate-600 border border-slate-500 hover:bg-slate-700"
-              }`}
-              aria-label={`Aumentar ${producto.nombre}`}
-            >
-              +
-            </button>
+              <button
+                type="button"
+                onClick={cantidad > 0 ? onIncrease : onAdd}
+                className="min-h-[56px] rounded-lg border-2 border-slate-900 bg-slate-900 text-3xl font-bold text-white transition hover:bg-black"
+                aria-label={`Aumentar ${producto.nombre}`}
+              >
+                +
+              </button>
+            </div>
+
+            <p className="mt-3 text-center text-sm font-medium text-slate-600">
+              {cantidad === 0 ? "Usa + para agregar este producto" : `Seleccionaste ${cantidad}`}
+            </p>
           </div>
-        )}
+        ) : (
+          <>
+            {cantidad > 0 && (
+              <div
+                className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-[#FFF4BF] bg-[#FFFBF0] p-2"
+              >
+                <button
+                  type="button"
+                  onClick={onDecrease}
+                  className="rounded-lg border border-slate-300 bg-white py-2 font-bold text-slate-900 transition hover:bg-slate-100"
+                  aria-label={`Disminuir ${producto.nombre}`}
+                >
+                  −
+                </button>
 
-        <button
-          type="button"
-          onClick={onAdd}
-          className={`w-full rounded-xl font-bold transition py-3 ${
-            isAccessible
-              ? "bg-slate-900 text-white border-2 border-slate-900 hover:bg-black min-h-[56px] text-lg"
-              : "bg-slate-600 text-white border border-slate-500 hover:bg-slate-700 min-h-[48px]"
-          }`}
-          aria-label={`Agregar ${producto.nombre}`}
-        >
-          {cantidad > 0 ? "Agregar más" : "Agregar"}
-        </button>
+                <div className="text-center text-xl font-black">{cantidad}</div>
+
+                <button
+                  type="button"
+                  onClick={onIncrease}
+                  className="rounded-lg border border-slate-500 bg-slate-600 py-2 font-bold text-white transition hover:bg-slate-700"
+                  aria-label={`Aumentar ${producto.nombre}`}
+                >
+                  +
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={onAdd}
+              className="min-h-[48px] w-full rounded-xl border border-slate-500 bg-slate-600 py-3 font-bold text-white transition hover:bg-slate-700"
+              aria-label={`Agregar ${producto.nombre}`}
+            >
+              {cantidad > 0 ? "Agregar más" : "Agregar"}
+            </button>
+          </>
+        )}
       </div>
     </article>
   );
 }
 
 function PdvPage() {
-  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isAccessible, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
 
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -240,9 +262,10 @@ function PdvPage() {
   const [items, setItems] = useState<Record<number, number>>({});
   const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
   const [observacion, setObservacion] = useState("");
+  const [accessibleObservationType, setAccessibleObservationType] = useState<"cocina" | "cliente">("cocina");
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
-  const [lastPedidoNumero, setLastPedidoNumero] = useState<number | null>(null);
+  const [accessibleStep, setAccessibleStep] = useState<number>(1);
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
 
@@ -278,6 +301,26 @@ function PdvPage() {
       feedbackRef.current.focus();
     }
   }, [feedback]);
+
+  useEffect(() => {
+    if (!feedback) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFeedback((currentFeedback) => (currentFeedback === feedback ? null : currentFeedback));
+    }, 5000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [feedback]);
+
+  useEffect(() => {
+    if (!isAccessible) {
+      return;
+    }
+
+    setAccessibleStep(1);
+  }, [isAccessible]);
 
   const playTone = (frequency = 880, duration = 120) => {
     if (!isSoundEnabled || typeof window === "undefined") {
@@ -343,6 +386,19 @@ function PdvPage() {
     return buildPedidoSummary(items, productos);
   }, [items, productos]);
 
+  const accessibleProductos = useMemo(() => {
+    if (selectedCategory === "Todos") {
+      return productosConCategoria;
+    }
+
+    if (selectedCategory === "Destacados") {
+      const destacados = productosConCategoria.filter((producto) => (items[producto.id] || 0) > 0);
+      return destacados.length > 0 ? destacados : productosConCategoria.slice(0, 4);
+    }
+
+    return productosConCategoria.filter((producto) => producto.categoria === selectedCategory);
+  }, [items, productosConCategoria, selectedCategory]);
+
   const puedeRegistrar = pedidoDetalles.length > 0 && metodoPago !== "" && !sending;
 
   const announce = (message: string) => {
@@ -366,12 +422,20 @@ function PdvPage() {
     });
   };
 
+  const clearPedidoForm = () => {
+    setItems({});
+    setMetodoPago("");
+    setObservacion("");
+    setAccessibleObservationType("cocina");
+  };
+
   const addProduct = (producto: Producto) => {
     const nextQuantity = (items[producto.id] || 0) + 1;
     setItemQuantity(producto, nextQuantity);
-    setFeedback({ type: "success", message: `${producto.nombre} agregado` });
+    const msg = `${producto.nombre} agregado al pedido`;
+    setFeedback({ type: "success", message: msg });
     playTone(880, 90);
-    announce("Producto agregado");
+    announce(msg);
   };
 
   const increaseProduct = (producto: Producto) => {
@@ -392,16 +456,15 @@ function PdvPage() {
       });
       const producto = productos.find(p => p.id === productoId);
       if (producto) {
-        setFeedback({ type: "success", message: `${producto.nombre} removido` });
+        const msg = `${producto.nombre} removido del pedido`;
+        setFeedback({ type: "success", message: msg });
         playTone(740, 90);
+        announce(msg);
       }
     };
 
   const resetPedido = () => {
-    setItems({});
-    setMetodoPago("");
-    setObservacion("");
-    setLastPedidoNumero(null);
+    clearPedidoForm();
     setFeedback(null);
   };
 
@@ -428,21 +491,16 @@ function PdvPage() {
       setSending(true);
       const pedidoCreado = (await createPedido(payload)) as PedidoResponse;
       const numeroPedido = pedidoCreado?.id ?? null;
-      setLastPedidoNumero(numeroPedido);
-      setFeedback({
-        type: "success",
-        message: numeroPedido ? `Pedido #${numeroPedido} registrado` : "Pedido registrado"
-      });
-      setItems({});
-      setMetodoPago("");
-      setObservacion("");
+      const successMsg = numeroPedido ? `Pedido #${numeroPedido} registrado` : "Pedido registrado";
+      setFeedback({ type: "success", message: successMsg });
+      clearPedidoForm();
       playTone(990, 170);
-      announce("Pedido registrado correctamente");
+      announce(successMsg + ". Pedido registrado correctamente.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       setFeedback({ type: "error", message: message || "Error al registrar" });
       playTone(220, 160);
-      announce("Error al registrar pedido");
+      announce("Error al registrar pedido: " + (message || "desconocido"));
     } finally {
       setSending(false);
     }
@@ -457,6 +515,343 @@ function PdvPage() {
   const cardBorder = isAccessible ? "border-2 border-slate-900" : "border border-slate-200";
   const headerBg = isAccessible ? "bg-slate-900 text-white" : "bg-[#FECE00] text-[#1F2937]";
   const panelBg = isAccessible ? "bg-white" : "bg-[#F7F7F7]";
+  const easyContinueOffset = "mr-20 sm:mr-28 md:mr-40 xl:mr-48";
+  const accessibleObservationPlaceholder = accessibleObservationType === "cocina"
+    ? "Ej: sin cebolla, extra salsa, bien tostado..."
+    : "Ej: cliente retira afuera, llamar al llegar, sin apuro...";
+  const goNextAccessibleStep = () => setAccessibleStep((currentStep) => Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1));
+  const goPrevAccessibleStep = () => setAccessibleStep((currentStep) => Math.max(1, currentStep - 1));
+
+  useEffect(() => {
+    if (!isAccessible || !isVoiceEnabled) {
+      return;
+    }
+
+    switch (accessibleStep) {
+      case 1:
+        speak("Modo fácil activado. Paso 1: elige una categoría.");
+        break;
+      case 2:
+        speak("Paso 2: elige el producto y responde cuánto quieres con los botones más o menos.");
+        break;
+      case 3:
+        speak("Paso 3: revisa tu pedido.");
+        break;
+      case 4:
+        speak("Paso 4: si quieres, agrega un comentario para cocina o para el cliente.");
+        break;
+      case 5:
+        speak("Paso 5: selecciona el método de pago.");
+        break;
+      case ACCESSIBLE_STEP_COUNT:
+        speak("Paso 6: confirma y registra el pedido.");
+        break;
+    }
+  }, [accessibleStep, isAccessible, isVoiceEnabled, speak]);
+
+  useEffect(() => {
+    if (!isAccessible) {
+      return;
+    }
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setAccessibleStep(1);
+        if (isVoiceEnabled) {
+          speak("Volviendo al paso 1");
+        }
+      }
+
+      if (event.key === "ArrowRight") {
+        setAccessibleStep((currentStep) => Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1));
+      }
+
+      if (event.key === "ArrowLeft") {
+        setAccessibleStep((currentStep) => Math.max(1, currentStep - 1));
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isAccessible, isVoiceEnabled, speak]);
+
+  function AccessibleFlow() {
+    return (
+      <div className="space-y-6">
+        <header className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
+          <h1 className="font-black text-2xl">Riquísimo - Modo Fácil</h1>
+          <p className="mt-2 font-semibold">Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}</p>
+          <div className="mt-3 flex gap-4">
+            <div className="rounded-xl bg-white border p-3">
+              <p className="text-sm">Productos</p>
+              <p className="font-black text-xl">{productos.length}</p>
+            </div>
+            <div className="rounded-xl bg-white border p-3">
+              <p className="text-sm">Items</p>
+              <p className="font-black text-xl">{totalItems}</p>
+            </div>
+            <div className="rounded-xl bg-white border p-3">
+              <p className="text-sm">Total</p>
+              <p className="font-black text-xl">{formatCurrency(total)}</p>
+            </div>
+          </div>
+        </header>
+
+        {feedback && (
+          <div className={`rounded-2xl ${cardBorder} p-4 ${feedback.type === "success" ? "bg-emerald-50 border-emerald-300" : "bg-red-50 border-red-300"}`} role={feedback.type === "success" ? "status" : "alert"} aria-live="polite">
+            <div className="flex items-center justify-center gap-3">
+              <span className={`text-2xl font-bold ${feedback.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
+                {feedback.type === "success" ? "✅" : "❌"}
+              </span>
+              <p className="font-bold text-lg">{feedback.message}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Step panels */}
+        {accessibleStep === 1 && (
+          <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
+            <h2 id="step1" className="font-black text-2xl mb-4">Paso 1: Elige categoría</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {FILTROS.map((filtro) => (
+                <button
+                  key={filtro.value}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(filtro.value);
+                    setAccessibleStep(2);
+                    if (isVoiceEnabled) {
+                      let available = [];
+                      if (filtro.value === "Todos") {
+                        available = productosConCategoria;
+                      } else if (filtro.value === "Destacados") {
+                        const destacados = productosConCategoria.filter((p) => (items[p.id] || 0) > 0);
+                        available = destacados.length > 0 ? destacados : productosConCategoria.slice(0, 4);
+                      } else {
+                        available = productosConCategoria.filter((p) => p.categoria === filtro.value);
+                      }
+                      const count = available.length;
+                      const productList = available.map((p, i) => `${i + 1}. ${p.nombre}`).join(", ");
+                      const countWord = count === 1 ? "producto" : "productos";
+                      speak(`Has seleccionado ${filtro.label}. Hay ${count} ${countWord} disponibles: ${productList}. Ahora elige el producto y marca cuánto quieres con los botones más o menos.`);
+                    }
+                  }}
+                  className={`min-h-[56px] rounded-xl font-bold text-lg flex items-center justify-center gap-2 focus:outline-none focus:ring-4 ${
+                    selectedCategory === filtro.value ? "bg-slate-900 text-white border-2 border-slate-900" : "bg-white text-slate-900 border-2 border-slate-300"
+                  }`}
+                  aria-pressed={selectedCategory === filtro.value}
+                >
+                  <span className="text-2xl">{getCategoriaLabel(filtro.value as any)}</span>
+                  <span>{filtro.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {accessibleStep === 2 && (
+          <section aria-labelledby="step2" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
+            <h2 id="step2" className="font-black text-2xl mb-4">Paso 2: Elige productos</h2>
+            <p className="mb-3 text-lg font-semibold">Elige el producto y responde: ¿cuánto quieres?</p>
+            <p className="mb-4 text-base text-slate-600">Usa los botones de menos y más para ajustar la cantidad.</p>
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+              {accessibleProductos.length === 0 ? (
+                <div className="rounded-xl border-2 border-dashed p-8 text-center col-span-2">
+                  <p className="font-bold text-lg">No hay productos en esta categoría.</p>
+                  <p className="mt-2">Prueba otra categoría o selecciona "Todos".</p>
+                  <div className="mt-4 flex justify-center">
+                    <button type="button" onClick={() => setAccessibleStep(1)} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Volver a categorías</button>
+                  </div>
+                </div>
+              ) : (
+                accessibleProductos.map((producto) => (
+                  <div key={producto.id}>
+                    <ProductCard
+                      producto={producto}
+                      cantidad={items[producto.id] || 0}
+                      isAccessible={true}
+                      onIncrease={() => increaseProduct(producto)}
+                      onDecrease={() => decreaseProduct(producto)}
+                      onAdd={() => {
+                        addProduct(producto);
+                        // remain in step 2 so user can add more
+                      }}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset}`}>Continuar</button>
+            </div>
+          </section>
+        )}
+
+        {accessibleStep === 3 && (
+          <section aria-labelledby="step3" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
+            <h2 id="step3" className="font-black text-2xl mb-4">Paso 3: Revisa tu pedido</h2>
+            {pedidoDetalles.length === 0 ? (
+              <div className="rounded-xl border-2 border-dashed p-8 text-center">
+                <p className="font-bold text-lg">Todavía no hay productos agregados.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {pedidoDetalles.map((item) => (
+                  <div key={item.productoId} className="rounded-lg p-4 bg-white border-2 border-slate-300 flex items-center justify-between">
+                    <div>
+                      <p className="font-black text-lg">{item.producto.nombre}</p>
+                      <p className="text-slate-600">{item.cantidad} x {formatCurrency(item.producto.precio)}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-black text-lg">{formatCurrency(item.subtotal)}</p>
+                      <button type="button" onClick={() => { removeProduct(item.productoId); }} className="rounded-lg bg-red-50 p-3 text-xl">✕</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4">
+              <p className="font-semibold">Subtotal: {formatCurrency(total)}</p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} disabled={pedidoDetalles.length === 0} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${pedidoDetalles.length === 0 ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"}`}>Continuar</button>
+            </div>
+          </section>
+        )}
+
+        {accessibleStep === 4 && (
+          <section aria-labelledby="step4" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
+            <h2 id="step4" className="font-black text-2xl mb-4">Paso 4: Agrega comentario</h2>
+            <p className="mb-3 text-lg font-semibold">Puedes dejar una nota para cocina o para el cliente.</p>
+            <p className="mb-4 text-base text-slate-600">Este paso es opcional. Si no necesitas comentario, puedes continuar igual.</p>
+
+            <div className="mb-4 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setAccessibleObservationType("cocina")}
+                className={`rounded-xl border-2 px-4 py-4 text-left font-bold transition ${
+                  accessibleObservationType === "cocina"
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+                }`}
+                aria-pressed={accessibleObservationType === "cocina"}
+              >
+                <span className="block text-lg">Para cocina</span>
+                <span className={`mt-1 block text-sm ${accessibleObservationType === "cocina" ? "text-white/80" : "text-slate-500"}`}>
+                  Instrucciones de preparacion
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccessibleObservationType("cliente")}
+                className={`rounded-xl border-2 px-4 py-4 text-left font-bold transition ${
+                  accessibleObservationType === "cliente"
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+                }`}
+                aria-pressed={accessibleObservationType === "cliente"}
+              >
+                <span className="block text-lg">Para cliente</span>
+                <span className={`mt-1 block text-sm ${accessibleObservationType === "cliente" ? "text-white/80" : "text-slate-500"}`}>
+                  Indicaciones de entrega o retiro
+                </span>
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="accessibleObservacion" className="mb-2 block font-bold text-base">
+                Comentario
+              </label>
+              <textarea
+                id="accessibleObservacion"
+                rows={4}
+                value={observacion}
+                onChange={(event) => setObservacion(event.target.value)}
+                placeholder={accessibleObservationPlaceholder}
+                className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
+              />
+            </div>
+
+            {observacion.trim() && (
+              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  {accessibleObservationType === "cocina" ? "Comentario para cocina" : "Comentario para cliente"}
+                </p>
+                <p className="mt-2 font-medium text-slate-900">{observacion}</p>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset}`}>Continuar</button>
+            </div>
+          </section>
+        )}
+
+        {accessibleStep === 5 && (
+          <section aria-labelledby="step5" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
+            <h2 id="step5" className="font-black text-2xl mb-4">Paso 5: Método de pago</h2>
+            <div className="space-y-3">
+              {PAYMENT_OPTIONS.map((option) => {
+                const active = metodoPago === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setMetodoPago(option.value)}
+                    className={`w-full flex items-center justify-between rounded-xl py-4 px-4 font-bold ${active ? "bg-slate-900 text-white" : "bg-white text-slate-900 border-2 border-slate-300"}`}
+                    aria-pressed={active}
+                  >
+                    <span className="text-2xl">{option.icon}</span>
+                    <span>{option.label}</span>
+                    {active && <span className="text-sm">Seleccionado</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} disabled={metodoPago === ""} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${metodoPago === "" ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"}`}>Continuar</button>
+            </div>
+          </section>
+        )}
+
+        {accessibleStep === 6 && (
+          <section aria-labelledby="step6" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
+            <h2 id="step6" className="font-black text-2xl mb-4">Paso 6: Registrar pedido</h2>
+            <p className="mb-4">Verifica y confirma. Luego presiona Registrar pedido.</p>
+
+            <div className="rounded-xl bg-white border-2 border-slate-300 p-4 mb-4">
+              <p className="font-bold">Total a pagar</p>
+              <p className="font-black text-3xl">{formatCurrency(total)}</p>
+            </div>
+
+            {observacion.trim() && (
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 mb-4">
+                <p className="font-bold text-slate-900">
+                  {accessibleObservationType === "cocina" ? "Comentario para cocina" : "Comentario para cliente"}
+                </p>
+                <p className="mt-2 text-slate-700">{observacion}</p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-4 px-6 font-bold">Atrás</button>
+              <button type="button" onClick={handleSubmit} disabled={!puedeRegistrar} className={`ml-auto rounded-lg py-4 px-6 font-black text-lg ${easyContinueOffset} ${puedeRegistrar ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-500"}`} style={{ minHeight: 64 }}>
+                {sending ? "Registrando..." : "Registrar pedido"}
+              </button>
+            </div>
+          </section>
+        )}
+      </div>
+    );
+  }
 
   return (
     <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
@@ -525,8 +920,11 @@ function PdvPage() {
           </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-          <section className={`rounded-2xl ${cardBorder} p-6 ${panelBg} print:hidden`}>
+        {isAccessible ? (
+          <AccessibleFlow />
+        ) : (
+          <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+            <section className={`rounded-2xl ${cardBorder} p-6 ${panelBg} print:hidden`}>
             <div className="mb-6">
               <h2 className={`font-black mb-3 ${isAccessible ? "text-2xl" : "text-lg"}`}>Filtrar por categoría</h2>
               <div className={`flex flex-wrap gap-2`}>
@@ -562,14 +960,13 @@ function PdvPage() {
                   <p className={`font-bold ${isAccessible ? "text-xl" : "text-base"}`}>No hay productos en esta categoría</p>
                 </div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {productosFiltrados.map((producto) => (
                     <ProductCard
                       key={producto.id}
                       producto={producto}
                       cantidad={items[producto.id] || 0}
                       isAccessible={isAccessible}
-                      isHighContrast={isHighContrast}
                       onIncrease={() => increaseProduct(producto)}
                       onDecrease={() => decreaseProduct(producto)}
                       onAdd={() => addProduct(producto)}
@@ -581,21 +978,38 @@ function PdvPage() {
           </section>
 
           <aside className={`rounded-2xl ${cardBorder} p-6 ${panelBg} h-fit sticky top-6 print:static print:p-0 print:border-0 print:rounded-none print:bg-transparent`}>
-            <div className="mb-6 flex items-center justify-between gap-3">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
               <h2 className={`font-black ${isAccessible ? "text-2xl" : "text-lg"}`}>Resumen del pedido</h2>
-              <button
-                type="button"
-                onClick={resetPedido}
-                disabled={pedidoDetalles.length === 0}
-                className={`text-2xl p-2 rounded-lg transition ${
-                  isAccessible
-                    ? "hover:bg-slate-100 disabled:opacity-30"
-                    : "hover:bg-red-50 disabled:opacity-30"
-                }`}
-                title="Vaciar pedido"
-              >
-                🗑
-              </button>
+              <div className="ml-auto flex max-w-full items-start gap-2">
+                {feedback && (
+                  <div
+                    ref={feedbackRef}
+                    tabIndex={-1}
+                    role={feedback.type === "success" ? "status" : "alert"}
+                    aria-live="polite"
+                    className="min-w-0 outline-none"
+                  >
+                    <Toast
+                      feedback={feedback}
+                      isAccessible={isAccessible}
+                      className="max-w-[240px] sm:max-w-[280px]"
+                    />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={resetPedido}
+                  disabled={pedidoDetalles.length === 0}
+                  className={`text-2xl p-2 rounded-lg transition ${
+                    isAccessible
+                      ? "hover:bg-slate-100 disabled:opacity-30"
+                      : "hover:bg-red-50 disabled:opacity-30"
+                  }`}
+                  title="Vaciar pedido"
+                >
+                  🗑
+                </button>
+              </div>
             </div>
 
             <div className={`mb-6 max-h-96 overflow-y-auto rounded-xl p-4 ${isAccessible ? "bg-slate-50 border-2 border-slate-900" : "bg-slate-50 border border-slate-200"}`}>
@@ -658,26 +1072,22 @@ function PdvPage() {
             <div className="mb-6 space-y-3">
               <h3 className={`font-bold ${isAccessible ? "text-xl" : "text-base"}`}>Método de pago</h3>
               <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: "efectivo", label: "Efectivo", icon: "💵" },
-                  { value: "tarjeta", label: "Tarjeta", icon: "💳" },
-                  { value: "transferencia", label: "Transferencia", icon: "↔️" }
-                ] as const).map((option) => {
+                {PAYMENT_OPTIONS.map((option) => {
                   const active = metodoPago === option.value;
                   return (
                     <button
                       key={option.value}
                       type="button"
                       onClick={() => setMetodoPago(option.value)}
-                      className={`flex flex-col items-center justify-center gap-2 rounded-lg py-3 font-bold transition ${
-                        active
-                          ? isAccessible
-                            ? "bg-slate-900 text-white border-2 border-slate-900"
-                            : "bg-slate-600 text-white border-2 border-slate-600"
-                          : isAccessible
-                            ? "bg-white text-slate-900 border-2 border-slate-900 hover:bg-slate-50"
-                            : "bg-white text-slate-900 border border-slate-300 hover:bg-slate-50"
-                      }`}
+                        className={`flex flex-col items-center justify-center gap-2 rounded-lg py-3 font-bold transition focus:outline-none focus:ring-4 focus:ring-slate-900 focus:ring-offset-2 ${
+                          active
+                            ? isAccessible
+                              ? "bg-slate-900 text-white border-2 border-slate-900"
+                              : "bg-slate-600 text-white border-2 border-slate-600"
+                            : isAccessible
+                              ? "bg-white text-slate-900 border-2 border-slate-900 hover:bg-slate-50"
+                              : "bg-white text-slate-900 border border-slate-300 hover:bg-slate-50"
+                        }`}
                       aria-pressed={active}
                     >
                       <span className="text-2xl">{option.icon}</span>
@@ -770,14 +1180,10 @@ function PdvPage() {
               </div>
             </div>
           </aside>
-        </div>
+          </div>
+        )}
       </div>
 
-      {feedback && (
-        <div ref={feedbackRef} tabIndex={-1} role={feedback.type === "success" ? "status" : "alert"} aria-live="polite">
-          <Toast feedback={feedback} isAccessible={isAccessible} isHighContrast={isHighContrast} />
-        </div>
-      )}
     </main>
   );
 }

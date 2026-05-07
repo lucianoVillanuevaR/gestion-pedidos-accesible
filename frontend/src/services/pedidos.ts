@@ -10,12 +10,17 @@ export async function createPedido(payload: CreatePedidoPayload) {
 
   if (!res.ok) {
     const fallbackMessage = "Error creando pedido";
+    const rawBody = await res.text();
+
+    if (!rawBody) {
+      throw new Error(fallbackMessage);
+    }
+
     try {
-      const errorBody = (await res.json()) as ApiError;
+      const errorBody = JSON.parse(rawBody) as ApiError;
       throw new Error(errorBody.message || errorBody.error || fallbackMessage);
     } catch {
-      const text = await res.text();
-      throw new Error(text || fallbackMessage);
+      throw new Error(rawBody || fallbackMessage);
     }
   }
 

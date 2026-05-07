@@ -59,11 +59,17 @@ async function main() {
         descripcion: "Pan, carne, queso, tomate, lechuga, palta y mayonesa",
         precio: 10000,
         disponible: true
+      },
+      {
+        nombre: "Ave Palta",
+        descripcion: "Pan, pollo a la plancha, palta y mayonesa casera",
+        precio: 8200,
+        disponible: true
       }
     ]
   });
 
-  console.log(` ${productos.count} productos insertados exitosamente`);
+  console.log(`${productos.count} productos insertados exitosamente`);
 }
 
 main()

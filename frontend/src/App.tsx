@@ -24,12 +24,12 @@ function AppShell() {
     <>
       <AppRoutes />
 
-      {/* Botón flotante de accesibilidad */}
+      {/* Botón flotante de accesibilidad - Esquina inferior derecha */}
       <button
         type="button"
         aria-label="Abrir panel de accesibilidad"
         aria-expanded={isPanelOpen}
-        onClick={() => setIsPanelOpen(true)}
+        onClick={() => setIsPanelOpen((currentState) => !currentState)}
         className={`
           fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6
           flex min-h-[56px] items-center gap-3 rounded-full border px-4 py-3 text-left
@@ -87,4 +87,3 @@ function App() {
 }
 
 export default App;
-

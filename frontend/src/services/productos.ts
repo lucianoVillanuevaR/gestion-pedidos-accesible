@@ -7,9 +7,9 @@ export async function getProductos(): Promise<Producto[]> {
     throw new Error("Error cargando productos");
   }
 
-  const data = await res.json();
-  return (data as any[]).map((p) => ({
-    ...p,
-    precio: typeof p.precio === "string" ? Number(p.precio) : p.precio
+  const data = (await res.json()) as Array<Producto & { precio: number | string }>;
+  return data.map((producto) => ({
+    ...producto,
+    precio: typeof producto.precio === "string" ? Number(producto.precio) : producto.precio
   }));
 }

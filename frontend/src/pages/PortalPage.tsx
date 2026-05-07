@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 
 type PortalPageProps = {
