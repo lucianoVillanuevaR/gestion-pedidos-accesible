@@ -6,16 +6,25 @@
   font-family: "Trebuchet MS", "Segoe UI Variable", "Segoe UI", sans-serif;
   color: #1c1917;
   background-color: #fffbeb;
+  --focus-color: #3b82f6;
 }
 
 html {
   color-scheme: light;
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 body {
   margin: 0;
   min-width: 320px;
   background-color: #fffbeb;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 * {
@@ -31,6 +40,59 @@ input {
   font: inherit;
 }
 
+/* ============================================
+   MODO NORMAL - Compacto y Moderno
+   ============================================ */
+html[data-accessible="false"] body,
+body[data-accessible="false"] {
+  background-color: #fffbeb;
+  color: #1c1917;
+}
+
+html[data-accessible="false"] {
+  font-size: 16px;
+}
+
+html[data-accessible="false"][data-text-size="small"] {
+  font-size: 14px;
+}
+
+html[data-accessible="false"][data-text-size="normal"] {
+  font-size: 16px;
+}
+
+html[data-accessible="false"][data-text-size="large"] {
+  font-size: 18px;
+}
+
+/* ============================================
+   MODO ACCESIBLE - Grande y Claro
+   ============================================ */
+html[data-accessible="true"] body,
+body[data-accessible="true"] {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+html[data-accessible="true"] {
+  font-size: 20px;
+}
+
+html[data-accessible="true"][data-text-size="small"] {
+  font-size: 18px;
+}
+
+html[data-accessible="true"][data-text-size="normal"] {
+  font-size: 20px;
+}
+
+html[data-accessible="true"][data-text-size="large"] {
+  font-size: 24px;
+}
+
+/* ============================================
+   CONTRASTE ALTO
+   ============================================ */
 html[data-contrast="true"] body,
 body[data-contrast="true"] {
   background-color: #ffffff;
@@ -48,6 +110,171 @@ html[data-contrast="true"] textarea {
 html[data-contrast="true"] button:not([aria-pressed="true"]):not(.bg-blue-600):not(.bg-blue-700):not(.bg-red-600):not(.bg-green-600),
 html[data-contrast="true"] input,
 html[data-contrast="true"] select,
+html[data-contrast="true"] textarea {
+  background-color: #ffffff;
+  border-width: 2px;
+}
+
+html[data-contrast="true"] a {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+html[data-contrast="true"] a:visited {
+  color: #7a0099;
+}
+
+/* ============================================
+   REDUCCIÓN DE MOVIMIENTO
+   ============================================ */
+html.reduce-motion,
+html.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+html[data-accessible="true"] button:focus-visible,
+html[data-accessible="true"] input:focus-visible,
+html[data-accessible="true"] select:focus-visible,
+html[data-accessible="true"] textarea:focus-visible,
+html[data-accessible="true"] a:focus-visible,
+html[data-accessible="true"] [tabindex]:focus-visible {
+  outline: 4px solid var(--focus-color);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+}
+
+/* ============================================
+   GRID ADAPTABLE PARA PRODUCTOS
+   ============================================ */
+.product-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+html[data-accessible="true"] .product-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  html[data-accessible="true"] .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   ANIMACIONES SUAVES
+   ============================================ */
+@layer components {
+  .accessible-card-transition {
+    @apply transition-all duration-200;
+  }
+
+  .accessible-button-base {
+    @apply font-bold rounded-lg border transition;
+  }
+
+  .accessible-button-base:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+}
+
+html[data-accessible="false"] h1 {
+  font-size: 2rem;
+}
+
+html[data-accessible="false"] h2 {
+  font-size: 1.5rem;
+}
+
+html[data-accessible="false"] h3 {
+  font-size: 1.25rem;
+}
+
+html[data-accessible="true"] h1 {
+  font-size: 2.5rem;
+}
+
+html[data-accessible="true"] h2 {
+  font-size: 2rem;
+}
+
+html[data-accessible="true"] h3 {
+  font-size: 1.75rem;
+}
+
+/* ============================================
+   ACCESIBILIDAD DE LINKS
+   ============================================ */
+a {
+  position: relative;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+html[data-accessible="true"] a:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #111827;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: none;
+}
+
+/* ============================================
+   MODO OSCURO - Preparación futura
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  html[data-accessible="false"] {
+    color-scheme: light;
+  }
+
+  html[data-accessible="true"] {
+    color-scheme: light;
+  }
+}
 html[data-contrast="true"] textarea {
   background-color: #ffffff !important;
 }

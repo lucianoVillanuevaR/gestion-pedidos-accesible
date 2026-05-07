@@ -1,21 +1,13 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import HomePage from "../pages/HomePage";
 import PortalPage from "../pages/PortalPage";
+import PdvPage from "../pages/PdvPage";
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route
-        path="/pdv"
-        element={
-          <PortalPage
-            accent="blue"
-            title="Panel de Punto de Venta"
-            description="Aquí puede continuar el desarrollo del flujo para cajeros, registro de pedidos y cobro en mostrador."
-          />
-        }
-      />
+      <Route path="/pdv" element={<PdvPage />} />
       <Route
         path="/cocina"
         element={
