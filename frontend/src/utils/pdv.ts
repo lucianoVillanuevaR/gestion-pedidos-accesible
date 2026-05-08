@@ -1,7 +1,8 @@
 import type { MetodoPago, Producto } from "../types";
 
-export type ProductoCategoria = "Sandwich" | "Bebidas" | "Extras" | "Otros";
+export type ProductoCategoria = "Sandwich" | "Completos" | "Bebidas" | "Otros";
 export type FiltroCategoria = ProductoCategoria | "Destacados" | "Todos";
+export type ProductoConCategoria = Producto & { categoria: ProductoCategoria };
 
 export interface PedidoDetalleCalculado {
   producto: Producto;
@@ -13,8 +14,8 @@ export interface PedidoDetalleCalculado {
 export const FILTROS: Array<{ value: FiltroCategoria; label: string }> = [
   { value: "Todos", label: "Todos" },
   { value: "Sandwich", label: "Sandwich" },
+  { value: "Completos", label: "Completos" },
   { value: "Bebidas", label: "Bebidas" },
-  { value: "Extras", label: "Extras" },
   { value: "Destacados", label: "Destacados" }
 ];
 
@@ -33,10 +34,13 @@ export function formatCurrency(value: number) {
 export function detectCategoria(producto: Pick<Producto, "nombre">): ProductoCategoria {
   const nombre = normalizeText(producto.nombre);
 
+  if (nombre.includes("completo")) {
+    return "Completos";
+  }
+
   if (
     nombre.includes("hamburguesa") ||
     nombre.includes("sandwich") ||
-    nombre.includes("completo") ||
     nombre.includes("chacarero") ||
     nombre.includes("luco")
   ) {
@@ -47,10 +51,6 @@ export function detectCategoria(producto: Pick<Producto, "nombre">): ProductoCat
     return "Bebidas";
   }
 
-  if (nombre.includes("papas") || nombre.includes("extra") || nombre.includes("postre") || nombre.includes("ensalada")) {
-    return "Extras";
-  }
-
   return "Otros";
 }
 
@@ -58,10 +58,10 @@ export function getCategoriaLabel(categoria: ProductoCategoria) {
   switch (categoria) {
     case "Sandwich":
       return "Sandwich";
+    case "Completos":
+      return "Completos";
     case "Bebidas":
       return "Bebidas";
-    case "Extras":
-      return "Extras";
     default:
       return "Otros";
   }
@@ -95,4 +95,38 @@ export function buildPedidoSummary(items: Record<number, number>, productos: Pro
   const cantidad = detalles.reduce((accumulator, item) => accumulator + item.cantidad, 0);
 
   return { detalles, total, cantidad };
+}
+
+export function filterProductosByCategory(
+  productos: ProductoConCategoria[],
+  selectedCategory: FiltroCategoria,
+  items: Record<number, number>
+) {
+  if (selectedCategory === "Todos") {
+    return productos;
+  }
+
+  if (selectedCategory === "Destacados") {
+    const destacados = productos.filter((producto) => (items[producto.id] || 0) > 0);
+    return destacados.length > 0 ? destacados : productos.slice(0, 4);
+  }
+
+  return productos.filter((producto) => producto.categoria === selectedCategory);
+}
+
+export function filterProductosBySearch(
+  productos: ProductoConCategoria[],
+  searchTerm: string
+) {
+  if (!searchTerm.trim()) {
+    return productos;
+  }
+
+  const search = searchTerm.toLowerCase();
+
+  return productos.filter(
+    (producto) =>
+      producto.nombre.toLowerCase().includes(search) ||
+      (producto.descripcion && producto.descripcion.toLowerCase().includes(search))
+  );
 }

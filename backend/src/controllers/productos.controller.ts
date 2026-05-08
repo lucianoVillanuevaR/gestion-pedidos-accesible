@@ -4,6 +4,7 @@ import prisma from "../config/prisma";
 export const getProductos = async (_req: Request, res: Response) => {
   try {
     const productos = await prisma.producto.findMany({
+      where: { disponible: true },
       orderBy: { nombre: "asc" }
     });
     res.json(productos);

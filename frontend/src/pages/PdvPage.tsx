@@ -10,10 +10,12 @@ import {
   FILTROS,
   buildPedidoSummary,
   detectCategoria,
+  filterProductosByCategory,
+  filterProductosBySearch,
   formatCurrency,
   getCategoriaLabel,
-  getPaymentLabel,
-  type FiltroCategoria
+  type FiltroCategoria,
+  type ProductoConCategoria
 } from "../utils/pdv";
 
 type FeedbackState = {
@@ -136,13 +138,28 @@ function ProductCard({
       }`}
     >
       <div
-        className={`h-32 flex items-end justify-center font-bold text-5xl ${
+        className={`h-32 overflow-hidden ${
           isAccessible
             ? "bg-slate-100 border-b-2 border-slate-900"
             : "bg-gradient-to-br from-[#FFF8DC] via-[#FFFBF0] to-[#F7F7F7]"
         }`}
-        aria-hidden="true"
-      />
+      >
+        {producto.imagen ? (
+          <img
+            src={producto.imagen}
+            alt={producto.altText || producto.nombre}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div
+            className="flex h-full w-full items-end justify-center bg-gradient-to-br from-[#FFF8DC] via-[#FFFBF0] to-[#F7F7F7] pb-3 text-center text-xs font-bold uppercase tracking-[0.2em] text-slate-500"
+            aria-hidden="true"
+          >
+            {categoria}
+          </div>
+        )}
+      </div>
 
       <div className={`flex-1 p-4 ${isAccessible ? "space-y-2" : "space-y-3"}`}>
         <span
@@ -259,7 +276,7 @@ function PdvPage() {
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<FiltroCategoria>("Todos");
 
-    const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [items, setItems] = useState<Record<number, number>>({});
   const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
@@ -272,30 +289,35 @@ function PdvPage() {
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const ticketRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadProductos = (isMountedRef?: { current: boolean }) => {
     setLoadingProductos(true);
     setLoadingError(null);
 
     getProductos()
       .then((list) => {
-        if (isMounted) {
+        if (!isMountedRef || isMountedRef.current) {
           setProductos(list || []);
         }
       })
       .catch(() => {
-        if (isMounted) {
+        if (!isMountedRef || isMountedRef.current) {
           setLoadingError("No fue posible cargar productos");
         }
       })
       .finally(() => {
-        if (isMounted) {
+        if (!isMountedRef || isMountedRef.current) {
           setLoadingProductos(false);
         }
       });
+  };
+
+  useEffect(() => {
+    const isMountedRef = { current: true };
+
+    loadProductos(isMountedRef);
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
     };
   }, []);
 
@@ -353,7 +375,7 @@ function PdvPage() {
     };
   };
 
-  const productosConCategoria = useMemo(() => {
+  const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
     return productos.map((producto) => ({
       ...producto,
       categoria: detectCategoria(producto)
@@ -361,45 +383,21 @@ function PdvPage() {
   }, [productos]);
 
   const productosFiltrados = useMemo(() => {
-      let filtrados = productosConCategoria;
+    const filtradosPorCategoria = filterProductosByCategory(
+      productosConCategoria,
+      selectedCategory,
+      items
+    );
 
-      // Filtrar por categoría
-      if (selectedCategory !== "Todos") {
-        if (selectedCategory === "Destacados") {
-          const destacados = filtrados.filter((producto) => (items[producto.id] || 0) > 0);
-          filtrados = destacados.length > 0 ? destacados : productosConCategoria.slice(0, 4);
-        } else {
-          filtrados = filtrados.filter((producto) => producto.categoria === selectedCategory);
-        }
-      }
+    return filterProductosBySearch(filtradosPorCategoria, searchTerm);
+  }, [items, productosConCategoria, searchTerm, selectedCategory]);
 
-      // Filtrar por búsqueda
-      if (searchTerm.trim()) {
-        const search = searchTerm.toLowerCase();
-        filtrados = filtrados.filter((producto) => 
-          producto.nombre.toLowerCase().includes(search) ||
-          (producto.descripcion && producto.descripcion.toLowerCase().includes(search))
-        );
-      }
-
-      return filtrados;
-
-    }, [items, productosConCategoria, selectedCategory, searchTerm]);
   const { detalles: pedidoDetalles, total, cantidad: totalItems } = useMemo(() => {
     return buildPedidoSummary(items, productos);
   }, [items, productos]);
 
   const accessibleProductos = useMemo(() => {
-    if (selectedCategory === "Todos") {
-      return productosConCategoria;
-    }
-
-    if (selectedCategory === "Destacados") {
-      const destacados = productosConCategoria.filter((producto) => (items[producto.id] || 0) > 0);
-      return destacados.length > 0 ? destacados : productosConCategoria.slice(0, 4);
-    }
-
-    return productosConCategoria.filter((producto) => producto.categoria === selectedCategory);
+    return filterProductosByCategory(productosConCategoria, selectedCategory, items);
   }, [items, productosConCategoria, selectedCategory]);
 
   const puedeRegistrar = pedidoDetalles.length > 0 && metodoPago !== "" && !sending;
@@ -646,14 +644,7 @@ function PdvPage() {
                     setAccessibleStep(2);
                     if (isVoiceEnabled) {
                       let available = [];
-                      if (filtro.value === "Todos") {
-                        available = productosConCategoria;
-                      } else if (filtro.value === "Destacados") {
-                        const destacados = productosConCategoria.filter((p) => (items[p.id] || 0) > 0);
-                        available = destacados.length > 0 ? destacados : productosConCategoria.slice(0, 4);
-                      } else {
-                        available = productosConCategoria.filter((p) => p.categoria === filtro.value);
-                      }
+                      available = filterProductosByCategory(productosConCategoria, filtro.value, items);
                       const count = available.length;
                       const productList = available.map((p, i) => `${i + 1}. ${p.nombre}`).join(", ");
                       const countWord = count === 1 ? "producto" : "productos";
@@ -941,11 +932,7 @@ function PdvPage() {
                 type="button"
                 onClick={() => {
                   setLoadingError(null);
-                  setLoadingProductos(true);
-                  getProductos()
-                    .then((list) => setProductos(list || []))
-                    .catch(() => setLoadingError("No fue posible cargar productos"))
-                    .finally(() => setLoadingProductos(false));
+                  loadProductos();
                 }}
                 className={`mt-3 font-bold rounded-lg px-4 py-2 transition ${
                   isAccessible
