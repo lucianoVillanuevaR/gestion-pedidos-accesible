@@ -11,6 +11,6 @@ cp .env.example .env
 docker compose up --build
 ```
 
-2. Abrir el frontend en:
+2. Acceder al frontend en:
 
 http://localhost:5173
