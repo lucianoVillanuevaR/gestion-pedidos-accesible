@@ -867,9 +867,24 @@ function PdvPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-4 px-6 font-bold">Atrás</button>
-              <button type="button" onClick={handleSubmit} disabled={!puedeRegistrar} className={`ml-auto rounded-lg py-4 px-6 font-black text-lg ${easyContinueOffset} ${puedeRegistrar ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-500"}`} style={{ minHeight: 64 }}>
-                {sending ? "Registrando..." : "Registrar pedido"}
-              </button>
+              <div className={`ml-auto flex flex-wrap items-center gap-3 ${easyContinueOffset}`}>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  disabled={pedidoDetalles.length === 0}
+                  className={`rounded-lg border-2 py-4 px-6 font-bold text-lg transition ${
+                    pedidoDetalles.length === 0
+                      ? "border-slate-300 bg-slate-200 text-slate-500 cursor-not-allowed"
+                      : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
+                  }`}
+                  style={{ minHeight: 64 }}
+                >
+                  🖨 Imprimir comanda
+                </button>
+                <button type="button" onClick={handleSubmit} disabled={!puedeRegistrar} className={`rounded-lg py-4 px-6 font-black text-lg ${puedeRegistrar ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-500"}`} style={{ minHeight: 64 }}>
+                  {sending ? "Registrando..." : "Registrar pedido"}
+                </button>
+              </div>
             </div>
           </section>
         )}
@@ -884,7 +899,7 @@ function PdvPage() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className={`font-black tracking-tight ${isAccessible ? "text-2xl" : "text-xl"}`}>
-                🍽 Riquísimo - Punto de Venta
+                Riquísimo - Punto de Venta
               </h1>
               <p className={`mt-1 opacity-90 font-medium ${isAccessible ? "text-sm" : "text-xs"}`}>Registra pedidos rápido y seguro</p>
             </div>
@@ -1183,20 +1198,20 @@ function PdvPage() {
                 🔊 Voz
               </button>
             </div>
-
-            <div className="hidden print:block" ref={ticketRef}>
-              <TicketComanda
-                pedidoDetalles={pedidoDetalles}
-                total={total}
-                metodoPago={metodoPago}
-                observacion={observacion}
-                numeroPedido={undefined}
-                isAccessible={isAccessible}
-              />
-            </div>
           </aside>
           </div>
         )}
+
+        <div className="hidden print:block" ref={ticketRef}>
+          <TicketComanda
+            pedidoDetalles={pedidoDetalles}
+            total={total}
+            metodoPago={metodoPago}
+            observacion={observacion}
+            numeroPedido={undefined}
+            isAccessible={isAccessible}
+          />
+        </div>
       </div>
 
     </main>
