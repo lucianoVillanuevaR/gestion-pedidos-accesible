@@ -31,7 +31,7 @@ function AppShell() {
         aria-expanded={isPanelOpen}
         onClick={() => setIsPanelOpen((currentState) => !currentState)}
         className={`
-          fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6
+          fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6 no-print
           flex min-h-[56px] items-center gap-3 rounded-full border px-4 py-3 text-left
           font-bold shadow-xl transition focus-visible:outline focus-visible:outline-4
           focus-visible:outline-offset-4

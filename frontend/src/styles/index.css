@@ -300,3 +300,137 @@ html[data-contrast="true"] button {
   background: #facc15;
   color: #111827;
 }
+
+/* ============================================
+   TICKET / COMANDA
+   ============================================ */
+.ticket-print {
+  width: 80mm;
+  margin: 0 auto;
+  padding: 8mm 6mm;
+  background: #ffffff;
+  color: #111827;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ticket-header,
+.ticket-footer {
+  text-align: center;
+}
+
+.ticket-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.ticket-divider,
+.ticket-items-divider {
+  height: 1px;
+  margin: 10px 0;
+  background: #111827;
+}
+
+.ticket-divider-dashed {
+  margin: 10px 0;
+  border-top: 1px dashed #111827;
+}
+
+.ticket-row,
+.ticket-total-row,
+.ticket-item-line,
+.ticket-items-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.ticket-info,
+.ticket-items,
+.ticket-payment,
+.ticket-observations,
+.ticket-total {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ticket-label,
+.ticket-obs-title {
+  font-weight: 700;
+}
+
+.ticket-value,
+.ticket-price,
+.ticket-total-amount {
+  text-align: right;
+}
+
+.ticket-items-header {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ticket-qty {
+  width: 28px;
+}
+
+.ticket-product {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-price {
+  min-width: 68px;
+}
+
+.ticket-item + .ticket-item {
+  margin-top: 8px;
+}
+
+.ticket-description,
+.ticket-obs-text,
+.ticket-empty,
+.ticket-footer-small {
+  color: #475569;
+}
+
+.ticket-description {
+  margin-top: 2px;
+  padding-left: 36px;
+  font-size: 11px;
+}
+
+.ticket-total-row {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ticket-total-label {
+  grid-column: 1 / span 2;
+}
+
+.ticket-footer p {
+  margin: 0;
+}
+
+.ticket-footer-small {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .ticket-print {
+    width: 100%;
+    margin: 0;
+    padding: 4mm;
+  }
+}

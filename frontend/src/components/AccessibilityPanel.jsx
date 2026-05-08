@@ -88,7 +88,7 @@ function AccessibilityPanel({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/30 px-3 py-4 sm:px-4"
+      className="fixed inset-0 z-50 bg-black/30 px-3 py-4 sm:px-4 no-print"
       onClick={onClose}
       role="presentation"
     >

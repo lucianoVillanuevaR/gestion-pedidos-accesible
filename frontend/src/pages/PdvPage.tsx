@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useReactToPrint } from "react-to-print";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { createPedido } from "../services/pedidos";
 import { getProductos } from "../services/productos";
 import useVoice from "../hooks/useVoice";
+import TicketComanda from "../components/TicketComanda";
 import type { CreatePedidoPayload, MetodoPago, PedidoResponse, Producto } from "../types";
 import {
   FILTROS,
@@ -268,6 +270,7 @@ function PdvPage() {
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
+  const ticketRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -506,9 +509,30 @@ function PdvPage() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: ticketRef,
+    documentTitle: `Comanda-Riquisisimo-${new Date().getTime()}`,
+    pageStyle: `
+      @page {
+        size: 80mm auto;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: white;
+      }
+    `,
+    onAfterPrint: () => {
+      // Opcional: Mostrar confirmación después de imprimir
+      const msg = "Comanda impresa correctamente";
+      setFeedback({ type: "success", message: msg });
+      if (isVoiceEnabled) {
+        speak(msg);
+      }
+    }
+  });
 
   const bgWrapper = isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const textColor = isAccessible ? "text-slate-950" : "text-[#1F2937]";
@@ -855,7 +879,7 @@ function PdvPage() {
 
   return (
     <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
-      <div className={`${headerBg} shadow-md print:hidden`}>
+      <div className={`${headerBg} shadow-md no-print`}>
         <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${isAccessible ? "py-5" : "py-3"}`}>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -924,7 +948,7 @@ function PdvPage() {
           <AccessibleFlow />
         ) : (
           <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-            <section className={`rounded-2xl ${cardBorder} p-6 ${panelBg} print:hidden`}>
+            <section className={`rounded-2xl ${cardBorder} p-6 ${panelBg} print:hidden no-print`}>
             <div className="mb-6">
               <h2 className={`font-black mb-3 ${isAccessible ? "text-2xl" : "text-lg"}`}>Filtrar por categoría</h2>
               <div className={`flex flex-wrap gap-2`}>
@@ -1146,7 +1170,7 @@ function PdvPage() {
               </button>
             </div>
 
-            <div className="flex gap-2 mb-4 print:hidden">
+            <div className="flex gap-2 mb-4 no-print print:hidden">
               <button
                 type="button"
                 onClick={() => speak("Voz de prueba")}
@@ -1160,24 +1184,15 @@ function PdvPage() {
               </button>
             </div>
 
-            <div className="hidden print:block border-t border-slate-900 pt-4 space-y-3 text-sm">
-              <h3 className="text-xl font-black">Comanda Riquísimo</h3>
-              <div className="space-y-2 border-b border-dashed border-slate-400 pb-3">
-                {pedidoDetalles.map((item) => (
-                  <div key={item.productoId} className="flex justify-between gap-2 text-xs">
-                    <span>{item.cantidad}x {item.producto.nombre}</span>
-                    <span>{formatCurrency(item.subtotal)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between font-bold border-t border-slate-900 pt-2">
-                <span>TOTAL:</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
-              <div className="text-xs space-y-1 pt-2 border-t border-slate-900">
-                <p><strong>Método:</strong> {getPaymentLabel(metodoPago)}</p>
-                {observacion && <p><strong>Obs:</strong> {observacion}</p>}
-              </div>
+            <div className="hidden print:block" ref={ticketRef}>
+              <TicketComanda
+                pedidoDetalles={pedidoDetalles}
+                total={total}
+                metodoPago={metodoPago}
+                observacion={observacion}
+                numeroPedido={undefined}
+                isAccessible={isAccessible}
+              />
             </div>
           </aside>
           </div>
