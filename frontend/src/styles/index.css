@@ -7,6 +7,12 @@
   color: #1c1917;
   background-color: #fffbeb;
   --focus-color: #3b82f6;
+  --contrast-bg: #000000;
+  --contrast-surface: #111111;
+  --contrast-surface-muted: #1f2937;
+  --contrast-text: #ffffff;
+  --contrast-accent: #facc15;
+  --contrast-accent-soft: #fde68a;
 }
 
 html {
@@ -93,35 +99,181 @@ html[data-accessible="true"][data-text-size="large"] {
 /* ============================================
    CONTRASTE ALTO
    ============================================ */
+html[data-contrast="true"] {
+  --focus-color: #facc15;
+}
+
 html[data-contrast="true"] body,
 body[data-contrast="true"] {
-  background-color: #ffffff;
-  color: #111827;
+  background-color: var(--contrast-bg);
+  color: var(--contrast-text);
 }
 
 html[data-contrast="true"] button,
 html[data-contrast="true"] input,
 html[data-contrast="true"] select,
 html[data-contrast="true"] textarea {
-  border-color: #111827 !important;
-  color: #111827 !important;
+  border-color: var(--contrast-accent) !important;
 }
 
-html[data-contrast="true"] button:not([aria-pressed="true"]):not(.bg-blue-600):not(.bg-blue-700):not(.bg-red-600):not(.bg-green-600),
 html[data-contrast="true"] input,
 html[data-contrast="true"] select,
 html[data-contrast="true"] textarea {
-  background-color: #ffffff;
-  border-width: 2px;
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-text) !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="true"] input::placeholder,
+html[data-contrast="true"] textarea::placeholder {
+  color: var(--contrast-accent-soft) !important;
+  opacity: 1;
+}
+
+html[data-contrast="true"] .bg-white,
+html[data-contrast="true"] .bg-slate-50,
+html[data-contrast="true"] .bg-slate-100,
+html[data-contrast="true"] .bg-stone-50,
+html[data-contrast="true"] .bg-stone-200,
+html[data-contrast="true"] .bg-yellow-50,
+html[data-contrast="true"] .bg-red-50,
+html[data-contrast="true"] .bg-emerald-50,
+html[data-contrast="true"] .bg-orange-100,
+html[data-contrast="true"] .bg-blue-100,
+html[data-contrast="true"] .bg-\[\#F7F7F7\],
+html[data-contrast="true"] .bg-\[\#FFF8DC\],
+html[data-contrast="true"] .bg-\[\#FFF4BF\],
+html[data-contrast="true"] .bg-\[\#FFFBF0\],
+html[data-contrast="true"] .bg-\[\#F5F5F5\],
+html[data-contrast="true"] .bg-\[\#F7F7F7\] {
+  background-color: var(--contrast-surface) !important;
+}
+
+html[data-contrast="true"] .bg-slate-900,
+html[data-contrast="true"] .bg-slate-600,
+html[data-contrast="true"] .bg-blue-600,
+html[data-contrast="true"] .bg-blue-700,
+html[data-contrast="true"] .bg-green-600,
+html[data-contrast="true"] .bg-green-700,
+html[data-contrast="true"] .bg-\[\#FECE00\] {
+  background-color: var(--contrast-accent) !important;
+  color: #111827 !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .bg-red-600,
+html[data-contrast="true"] .bg-red-700 {
+  background-color: #7f1d1d !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .text-slate-950,
+html[data-contrast="true"] .text-slate-900,
+html[data-contrast="true"] .text-slate-800,
+html[data-contrast="true"] .text-slate-700,
+html[data-contrast="true"] .text-slate-600,
+html[data-contrast="true"] .text-slate-500,
+html[data-contrast="true"] .text-stone-900,
+html[data-contrast="true"] .text-stone-800,
+html[data-contrast="true"] .text-stone-600,
+html[data-contrast="true"] .text-\[\#1F2937\],
+html[data-contrast="true"] .text-emerald-950,
+html[data-contrast="true"] .text-red-950 {
+  color: var(--contrast-text) !important;
+}
+
+html[data-contrast="true"] .text-blue-700,
+html[data-contrast="true"] .text-blue-800,
+html[data-contrast="true"] .text-orange-800,
+html[data-contrast="true"] .text-amber-700,
+html[data-contrast="true"] .text-emerald-600,
+html[data-contrast="true"] .text-red-600 {
+  color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .border,
+html[data-contrast="true"] [class*="border-"] {
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] h1,
+html[data-contrast="true"] h2,
+html[data-contrast="true"] h3,
+html[data-contrast="true"] .contrast-important {
+  color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-body-text {
+  color: var(--contrast-text) !important;
+}
+
+html[data-contrast="true"] .contrast-secondary-text {
+  color: var(--contrast-accent-soft) !important;
+}
+
+html[data-contrast="true"] .contrast-panel {
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-panel-soft {
+  background-color: var(--contrast-surface-muted) !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-input {
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-primary {
+  background-color: var(--contrast-accent) !important;
+  color: #111827 !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-secondary {
+  background-color: transparent !important;
+  color: var(--contrast-accent) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-danger {
+  background-color: #7f1d1d !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-success {
+  background-color: #166534 !important;
+  color: #ffffff !important;
+  border-color: #86efac !important;
+}
+
+html[data-contrast="true"] .contrast-badge {
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-accent) !important;
+  border-color: var(--contrast-accent) !important;
 }
 
 html[data-contrast="true"] a {
-  color: #0066cc;
+  color: var(--contrast-accent);
   text-decoration: underline;
 }
 
 html[data-contrast="true"] a:visited {
-  color: #7a0099;
+  color: var(--contrast-accent-soft);
+}
+
+html[data-contrast="true"] .ticket-print,
+html[data-contrast="true"] .ticket-print * {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-color: #111827 !important;
 }
 
 /* ============================================

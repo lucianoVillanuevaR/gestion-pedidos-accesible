@@ -51,7 +51,7 @@ function AppShell() {
         </span>
         <span className="leading-tight hidden sm:block">
           <span className="block text-base">
-            {isAccessible ? "🎯 OPCIONES" : "Accesibilidad"}
+            {isAccessible ? "OPCIONES" : "Accesibilidad"}
           </span>
           <span className="block text-xs font-medium opacity-90">
             {isAccessible ? "MODO FÁCIL" : "Activar"}

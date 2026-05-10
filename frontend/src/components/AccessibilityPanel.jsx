@@ -122,7 +122,7 @@ function AccessibilityPanel({
                   }
                 `}
               >
-                {isAccessible ? " OPCIONES SIMPLES" : "♿ Accesibilidad"}
+                {isAccessible ? "OPCIONES SIMPLES" : "Accesibilidad"}
               </p>
               <h2
                 className={`
@@ -157,7 +157,7 @@ function AccessibilityPanel({
                 }
               `}
             >
-              ✕
+              Cerrar
             </button>
           </div>
         </div>
@@ -171,7 +171,7 @@ function AccessibilityPanel({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "✅ MODO FÁCIL" : "🎯 Modo accesible"}
+                    {isAccessible ? "MODO FÁCIL" : "Modo accesible"}
                   </h3>
                   <p
                     className={`
@@ -204,7 +204,7 @@ function AccessibilityPanel({
                   className={getButtonClass(isAccessible)}
                 >
                   <span className={isAccessible ? "text-2xl" : ""}>
-                    {isAccessible ? "✓ ACTIVADO" : "ACTIVAR"}
+                    {isAccessible ? "ACTIVADO" : "ACTIVAR"}
                   </span>
                 </button>
               </div>
@@ -214,7 +214,7 @@ function AccessibilityPanel({
             <section className={sectionClass}>
               <div>
                 <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                  {isAccessible ? "📝 TAMAÑO DE LETRAS" : "📝 Tamaño de texto"}
+                  {isAccessible ? "TAMAÑO DE LETRAS" : "Tamaño de texto"}
                 </h3>
                 <p
                   className={`
@@ -272,7 +272,7 @@ function AccessibilityPanel({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "⚡ CONTRASTE FUERTE" : "⚡ Contraste alto"}
+                    {isAccessible ? "CONTRASTE FUERTE" : "Contraste alto"}
                   </h3>
                   <p
                     className={`
@@ -305,7 +305,7 @@ function AccessibilityPanel({
                   className={getButtonClass(isHighContrast)}
                 >
                   <span className={isAccessible ? "text-2xl" : ""}>
-                    {isHighContrast ? "✓ ACTIVADO" : "ACTIVAR"}
+                    {isHighContrast ? "ACTIVADO" : "ACTIVAR"}
                   </span>
                 </button>
               </div>
@@ -316,7 +316,7 @@ function AccessibilityPanel({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "🔊 AYUDA CON VOZ" : "🔊 Ayuda por voz"}
+                    {isAccessible ? "AYUDA CON VOZ" : "Ayuda por voz"}
                   </h3>
                   <p
                     className={`
@@ -349,7 +349,7 @@ function AccessibilityPanel({
                   className={getButtonClass(isVoiceEnabled)}
                 >
                   <span className={isAccessible ? "text-2xl" : ""}>
-                    {isVoiceEnabled ? "✓ ACTIVADO" : "ACTIVAR"}
+                    {isVoiceEnabled ? "ACTIVADO" : "ACTIVAR"}
                   </span>
                 </button>
               </div>
@@ -360,7 +360,7 @@ function AccessibilityPanel({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "🔔 SONIDOS DE AYUDA" : "🔔 Sonidos"}
+                    {isAccessible ? "SONIDOS DE AYUDA" : "Sonidos"}
                   </h3>
                   <p
                     className={`
@@ -393,7 +393,7 @@ function AccessibilityPanel({
                   className={getButtonClass(isSoundEnabled)}
                 >
                   <span className={isAccessible ? "text-2xl" : ""}>
-                    {isSoundEnabled ? "✓ ACTIVADO" : "ACTIVAR"}
+                    {isSoundEnabled ? "ACTIVADO" : "ACTIVAR"}
                   </span>
                 </button>
               </div>
@@ -403,17 +403,17 @@ function AccessibilityPanel({
             {isAccessible && (
               <div
                 className={`
-                  rounded-2xl border-3 border-green-900 bg-green-50 p-6
+                  rounded-2xl border-3 border-green-900 bg-green-50 p-6 contrast-panel-soft
                   space-y-2
                 `}
               >
-                <p className="text-lg font-black text-green-900">
-                  ✅ MODO FÁCIL ACTIVADO
+                <p className="text-lg font-black text-green-900 contrast-important">
+                  MODO FÁCIL ACTIVADO
                 </p>
-                <p className="text-base font-semibold text-slate-800">
+                <p className="text-base font-semibold text-slate-800 contrast-body-text">
                   Todos los textos, botones y espacios se ven más grandes ahora.
                 </p>
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-slate-700 contrast-secondary-text">
                   Presiona TAB para navegar • ESC para cerrar
                 </p>
               </div>
@@ -439,7 +439,7 @@ function AccessibilityPanel({
                 }
               `}
             >
-              {isAccessible ? "🔄 RESTABLECER TODO" : "Restablecer ajustes"}
+              {isAccessible ? "RESTABLECER TODO" : "Restablecer ajustes"}
             </button>
           </div>
         </div>

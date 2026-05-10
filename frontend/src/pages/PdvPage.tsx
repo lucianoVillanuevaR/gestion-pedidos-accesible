@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeftRight, Banknote, CreditCard, Search, Volume2 } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { createPedido } from "../services/pedidos";
@@ -14,6 +15,7 @@ import {
   filterProductosBySearch,
   formatCurrency,
   getCategoriaLabel,
+  getPaymentLabel,
   type FiltroCategoria,
   type ProductoConCategoria
 } from "../utils/pdv";
@@ -25,24 +27,28 @@ type FeedbackState = {
 
 const ACCESSIBLE_STEP_COUNT = 6;
 const PAYMENT_OPTIONS = [
-  { value: "efectivo", label: "Efectivo", icon: "💵" },
-  { value: "tarjeta", label: "Tarjeta", icon: "💳" },
-  { value: "transferencia", label: "Transferencia", icon: "↔️" }
+  { value: "efectivo", label: "Efectivo", Icon: Banknote },
+  { value: "tarjeta", label: "Tarjeta", Icon: CreditCard },
+  { value: "transferencia", label: "Transferencia", Icon: ArrowLeftRight }
 ] as const;
 
 function Toast({
   feedback,
   isAccessible,
+  isHighContrast,
   className = ""
 }: {
   feedback: FeedbackState | null;
   isAccessible: boolean;
+  isHighContrast: boolean;
   className?: string;
 }) {
   if (!feedback) return null;
 
   const isSuccess = feedback.type === "success";
-  const bgClass = isAccessible
+  const bgClass = isHighContrast
+    ? `contrast-panel-soft ${isSuccess ? "border-emerald-300" : "border-red-300"}`
+    : isAccessible
     ? "bg-white border-4 border-slate-900 text-slate-950 shadow-lg"
     : isSuccess
       ? "bg-emerald-50 border border-emerald-300 text-emerald-950"
@@ -55,29 +61,26 @@ function Toast({
           {isSuccess ? "✅" : "❌"}
         </span>
         <div className="min-w-0">
-          <p className={`font-bold ${isAccessible ? "text-lg" : "text-base"}`}>{feedback.message}</p>
+          <p className={`font-bold ${isAccessible ? "text-lg" : "text-base"} ${isHighContrast ? "contrast-important" : ""}`}>{feedback.message}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, isAccessible }: { label: string; value: string | number; isAccessible: boolean }) {
-  return (
-    <div
-      className={`rounded-2xl px-4 ${isAccessible ? "py-3" : "py-2"} ${
-        isAccessible
-          ? "bg-white border-2 border-slate-900 shadow-none"
-          : "bg-white border border-slate-200 shadow-sm"
-      }`}
-    >
-      <p className={`uppercase tracking-wide text-slate-600 font-semibold ${isAccessible ? "text-base" : "text-xs"}`}>{label}</p>
-      <p className={`mt-1 font-black text-slate-900 ${isAccessible ? "text-3xl" : "text-lg"}`}>{value}</p>
-    </div>
-  );
-}
-
-function CategoryButton({ filtro, active, isAccessible, onClick }: { filtro: { value: FiltroCategoria; label: string }; active: boolean; isAccessible: boolean; onClick: () => void }) {
+function CategoryButton({
+  filtro,
+  active,
+  isAccessible,
+  isHighContrast,
+  onClick
+}: {
+  filtro: { value: FiltroCategoria; label: string };
+  active: boolean;
+  isAccessible: boolean;
+  isHighContrast: boolean;
+  onClick: () => void;
+}) {
   const baseClass = `inline-flex items-center justify-center rounded-xl border px-4 py-2 font-bold transition min-h-[48px] text-center`;
 
   if (active) {
@@ -89,7 +92,7 @@ function CategoryButton({ filtro, active, isAccessible, onClick }: { filtro: { v
           isAccessible
             ? "bg-slate-900 text-white border-slate-900"
             : "bg-[#FECE00] text-[#1F2937] border-[#FECE00] shadow-md hover:shadow-lg hover:bg-[#FFD633]"
-        }`}
+        } ${isHighContrast ? "contrast-button-primary" : ""}`}
         aria-current="page"
       >
         {filtro.label}
@@ -105,7 +108,7 @@ function CategoryButton({ filtro, active, isAccessible, onClick }: { filtro: { v
         isAccessible
           ? "bg-white text-slate-900 border-2 border-slate-300 hover:border-slate-900"
           : "bg-white text-[#1F2937] border-slate-200 hover:border-[#FECE00] hover:bg-[#FFFBF0]"
-      }`}
+      } ${isHighContrast ? "contrast-button-secondary" : ""}`}
     >
       {filtro.label}
     </button>
@@ -116,6 +119,7 @@ function ProductCard({
   producto,
   cantidad,
   isAccessible,
+  isHighContrast,
   onIncrease,
   onDecrease,
   onAdd
@@ -123,6 +127,7 @@ function ProductCard({
   producto: Producto;
   cantidad: number;
   isAccessible: boolean;
+  isHighContrast: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
   onAdd: () => void;
@@ -135,7 +140,7 @@ function ProductCard({
         isAccessible
           ? "bg-white border-2 border-slate-900"
           : "bg-white border border-slate-200 hover:shadow-md hover:border-amber-200"
-      }`}
+      } ${isHighContrast ? "contrast-panel" : ""}`}
     >
       <div
         className={`h-32 overflow-hidden ${
@@ -167,22 +172,22 @@ function ProductCard({
             isAccessible
               ? "bg-slate-100 text-slate-900 border border-slate-300"
               : "bg-[#FFF4BF] text-[#B8860B] border border-[#FECE00]"
-          }`}
+          } ${isHighContrast ? "contrast-badge" : ""}`}
         >
           {getCategoriaLabel(categoria)}
         </span>
 
         <div>
-          <h3 className={`font-black leading-tight text-slate-950 ${isAccessible ? "text-2xl" : "text-lg"}`}>
+          <h3 className={`font-black leading-tight text-slate-950 ${isAccessible ? "text-2xl" : "text-lg"} ${isHighContrast ? "contrast-important" : ""}`}>
             {producto.nombre}
           </h3>
           {producto.descripcion && (
-            <p className={`mt-1 text-slate-600 ${isAccessible ? "text-base" : "text-sm"}`}>{producto.descripcion}</p>
+            <p className={`mt-1 text-slate-600 ${isAccessible ? "text-base" : "text-sm"} ${isHighContrast ? "contrast-body-text" : ""}`}>{producto.descripcion}</p>
           )}
         </div>
 
         <div className={`pt-2 border-t ${isAccessible ? "border-slate-300" : "border-amber-100"}`}>
-          <p className={`font-black ${isAccessible ? "text-2xl" : "text-xl"} ${isAccessible ? "text-slate-900" : "text-amber-700"}`}>
+          <p className={`font-black ${isAccessible ? "text-2xl" : "text-xl"} ${isAccessible ? "text-slate-900" : "text-amber-700"} ${isHighContrast ? "contrast-important" : ""}`}>
             {formatCurrency(producto.precio)}
           </p>
         </div>
@@ -268,8 +273,9 @@ function ProductCard({
 }
 
 function PdvPage() {
-  const { isAccessible, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
+  const { speak: speakOnDemand } = useVoice({ enabled: true });
 
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
@@ -285,6 +291,7 @@ function PdvPage() {
   const [sending, setSending] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const ticketRef = useRef<HTMLDivElement | null>(null);
@@ -396,6 +403,12 @@ function PdvPage() {
     return buildPedidoSummary(items, productos);
   }, [items, productos]);
 
+  useEffect(() => {
+    if (pedidoDetalles.length === 0) {
+      setShowResetConfirm(false);
+    }
+  }, [pedidoDetalles.length]);
+
   const accessibleProductos = useMemo(() => {
     return filterProductosByCategory(productosConCategoria, selectedCategory, items);
   }, [items, productosConCategoria, selectedCategory]);
@@ -406,6 +419,38 @@ function PdvPage() {
     if (isVoiceEnabled) {
       speak(message);
     }
+  };
+
+  const handleReadPedidoSummary = () => {
+    if (pedidoDetalles.length === 0) {
+      speakOnDemand("El resumen del pedido está vacío. No hay productos seleccionados.");
+      return;
+    }
+
+    const itemLines = pedidoDetalles.map((item) => {
+      const unitLabel = item.cantidad === 1 ? "unidad" : "unidades";
+      return `${item.cantidad} ${unitLabel} de ${item.producto.nombre}`;
+    });
+
+    const parts = [
+      "Resumen del pedido.",
+      `Hay ${pedidoDetalles.length} ${pedidoDetalles.length === 1 ? "producto" : "productos"} seleccionados.`,
+      `En total son ${totalItems} ${totalItems === 1 ? "item" : "items"}.`,
+      `Detalle: ${itemLines.join(", ")}.`,
+      `Total a pagar ${formatCurrency(total)}.`
+    ];
+
+    if (metodoPago !== "") {
+      parts.push(`Método de pago: ${getPaymentLabel(metodoPago)}.`);
+    }
+
+    if (observacion.trim()) {
+      parts.push(`Observación: ${observacion.trim()}.`);
+    }
+
+    speakOnDemand(parts.join(" "), {
+      rate: isAccessible ? 0.8 : 0.9
+    });
   };
 
   const setItemQuantity = (producto: Producto, nextQuantity: number) => {
@@ -467,6 +512,7 @@ function PdvPage() {
   const resetPedido = () => {
     clearPedidoForm();
     setFeedback(null);
+    setShowResetConfirm(false);
   };
 
   const handleSubmit = async () => {
@@ -532,12 +578,22 @@ function PdvPage() {
     }
   });
 
-  const bgWrapper = isAccessible ? "bg-white" : "bg-[#F7F7F7]";
-  const textColor = isAccessible ? "text-slate-950" : "text-[#1F2937]";
-  const cardBorder = isAccessible ? "border-2 border-slate-900" : "border border-slate-200";
-  const headerBg = isAccessible ? "bg-slate-900 text-white" : "bg-[#FECE00] text-[#1F2937]";
-  const panelBg = isAccessible ? "bg-white" : "bg-[#F7F7F7]";
+  const bgWrapper = isHighContrast ? "bg-black" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
+  const textColor = isHighContrast ? "text-white" : isAccessible ? "text-slate-950" : "text-[#1F2937]";
+  const cardBorder = isHighContrast ? "border-2 border-yellow-400" : isAccessible ? "border-2 border-slate-900" : "border border-slate-200";
+  const headerBg = isHighContrast ? "bg-black text-white border-b-2 border-yellow-400" : isAccessible ? "bg-slate-900 text-white" : "bg-[#FECE00] text-[#1F2937]";
+  const panelBg = isHighContrast ? "bg-black contrast-panel" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const easyContinueOffset = "mr-20 sm:mr-28 md:mr-40 xl:mr-48";
+  const quickActionButtonClass = `inline-flex min-h-[44px] items-center justify-center rounded-lg border px-3 py-2 font-bold text-sm whitespace-nowrap transition ${
+    isHighContrast
+      ? "contrast-button-secondary"
+      : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
+  }`;
+  const quickActionIconButtonClass = `inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border text-lg transition ${
+    isHighContrast
+      ? "contrast-button-secondary"
+      : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
+  }`;
   const accessibleObservationPlaceholder = accessibleObservationType === "cocina"
     ? "Ej: sin cebolla, extra salsa, bien tostado..."
     : "Ej: cliente retira afuera, llamar al llegar, sin apuro...";
@@ -653,7 +709,7 @@ function PdvPage() {
                   }}
                   className={`min-h-[56px] rounded-xl font-bold text-lg flex items-center justify-center gap-2 focus:outline-none focus:ring-4 ${
                     selectedCategory === filtro.value ? "bg-slate-900 text-white border-2 border-slate-900" : "bg-white text-slate-900 border-2 border-slate-300"
-                  }`}
+                  } ${isHighContrast ? (selectedCategory === filtro.value ? "contrast-button-primary" : "contrast-button-secondary") : ""}`}
                   aria-pressed={selectedCategory === filtro.value}
                 >
                   <span className="text-2xl">{getCategoriaLabel(filtro.value as any)}</span>
@@ -675,7 +731,7 @@ function PdvPage() {
                   <p className="font-bold text-lg">No hay productos en esta categoría.</p>
                   <p className="mt-2">Prueba otra categoría o selecciona "Todos".</p>
                   <div className="mt-4 flex justify-center">
-                    <button type="button" onClick={() => setAccessibleStep(1)} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Volver a categorías</button>
+                    <button type="button" onClick={() => setAccessibleStep(1)} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Volver a categorías</button>
                   </div>
                 </div>
               ) : (
@@ -685,6 +741,7 @@ function PdvPage() {
                       producto={producto}
                       cantidad={items[producto.id] || 0}
                       isAccessible={true}
+                      isHighContrast={isHighContrast}
                       onIncrease={() => increaseProduct(producto)}
                       onDecrease={() => decreaseProduct(producto)}
                       onAdd={() => {
@@ -697,8 +754,8 @@ function PdvPage() {
               )}
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset}`}>Continuar</button>
+              <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset} ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -732,8 +789,8 @@ function PdvPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} disabled={pedidoDetalles.length === 0} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${pedidoDetalles.length === 0 ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"}`}>Continuar</button>
+              <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} disabled={pedidoDetalles.length === 0} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${pedidoDetalles.length === 0 ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && pedidoDetalles.length > 0 ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -802,8 +859,8 @@ function PdvPage() {
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset}`}>Continuar</button>
+              <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset} ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -812,27 +869,27 @@ function PdvPage() {
           <section aria-labelledby="step5" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
             <h2 id="step5" className="font-black text-2xl mb-4">Paso 5: Método de pago</h2>
             <div className="space-y-3">
-              {PAYMENT_OPTIONS.map((option) => {
-                const active = metodoPago === option.value;
-                return (
+	              {PAYMENT_OPTIONS.map((option) => {
+	                const active = metodoPago === option.value;
+	                return (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => setMetodoPago(option.value)}
-                    className={`w-full flex items-center justify-between rounded-xl py-4 px-4 font-bold ${active ? "bg-slate-900 text-white" : "bg-white text-slate-900 border-2 border-slate-300"}`}
-                    aria-pressed={active}
-                  >
-                    <span className="text-2xl">{option.icon}</span>
-                    <span>{option.label}</span>
-                    {active && <span className="text-sm">Seleccionado</span>}
-                  </button>
+	                    className={`w-full flex items-center justify-between rounded-xl py-4 px-4 font-bold ${active ? "bg-slate-900 text-white" : "bg-white text-slate-900 border-2 border-slate-300"}`}
+	                    aria-pressed={active}
+	                  >
+	                    <option.Icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+	                    <span>{option.label}</span>
+	                    {active && <span className="text-sm">Seleccionado</span>}
+	                  </button>
                 );
               })}
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold">Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} disabled={metodoPago === ""} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${metodoPago === "" ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"}`}>Continuar</button>
+              <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
+              <button type="button" onClick={goNextAccessibleStep} disabled={metodoPago === ""} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${metodoPago === "" ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && metodoPago !== "" ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -857,7 +914,7 @@ function PdvPage() {
             )}
 
             <div className="flex flex-wrap items-center gap-3">
-              <button type="button" onClick={goPrevAccessibleStep} className="rounded-lg bg-white border-2 border-slate-900 py-4 px-6 font-bold">Atrás</button>
+              <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-4 px-6 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
               <div className={`ml-auto flex flex-wrap items-center gap-3 ${easyContinueOffset}`}>
                 <button
                   type="button"
@@ -867,12 +924,12 @@ function PdvPage() {
                     pedidoDetalles.length === 0
                       ? "border-slate-300 bg-slate-200 text-slate-500 cursor-not-allowed"
                       : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
-                  }`}
+                  } ${isHighContrast && pedidoDetalles.length > 0 ? "contrast-button-secondary" : ""}`}
                   style={{ minHeight: 64 }}
                 >
                   🖨 Imprimir comanda
                 </button>
-                <button type="button" onClick={handleSubmit} disabled={!puedeRegistrar} className={`rounded-lg py-4 px-6 font-black text-lg ${puedeRegistrar ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-500"}`} style={{ minHeight: 64 }}>
+                <button type="button" onClick={handleSubmit} disabled={!puedeRegistrar} className={`rounded-lg border-2 py-4 px-6 font-black text-lg ${puedeRegistrar ? "border-emerald-900 bg-emerald-700 text-white hover:bg-emerald-800" : "border-slate-300 bg-slate-300 text-slate-500"} ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`} style={{ minHeight: 64 }}>
                   {sending ? "Registrando..." : "Registrar pedido"}
                 </button>
               </div>
@@ -885,26 +942,20 @@ function PdvPage() {
 
   return (
     <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
-      <div className={`${headerBg} shadow-md no-print`}>
-        <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${isAccessible ? "py-5" : "py-3"}`}>
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className={`font-black tracking-tight ${isAccessible ? "text-2xl" : "text-xl"}`}>
-                Riquísimo - Punto de Venta
-              </h1>
-              <p className={`mt-1 opacity-90 font-medium ${isAccessible ? "text-sm" : "text-xs"}`}>Registra pedidos rápido y seguro</p>
-            </div>
+	      <div className={`${headerBg} shadow-md no-print`}>
+	        <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${isAccessible ? "py-5" : "py-3"}`}>
+	          <div>
+	            <div>
+	              <h1 className={`font-black tracking-tight contrast-important ${isAccessible ? "text-2xl" : "text-xl"}`}>
+	                Riquísimo - Punto de Venta
+	              </h1>
+	              <p className={`mt-1 opacity-90 font-medium contrast-secondary-text ${isAccessible ? "text-sm" : "text-xs"}`}>Registra pedidos rápido y seguro</p>
+	            </div>
+	          </div>
+	        </div>
+	      </div>
 
-            <div className={`flex gap-3 flex-wrap justify-end`}>
-              <StatCard label="Productos" value={productos.length} isAccessible={isAccessible} />
-              <StatCard label="Items" value={totalItems} isAccessible={isAccessible} />
-              <StatCard label="Total" value={formatCurrency(total)} isAccessible={isAccessible} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-3"}`} style={{ backgroundColor: isAccessible ? "white" : "#F7F7F7" }}>
+      <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
         {loadingProductos && (
           <div
             role="status"
@@ -948,8 +999,8 @@ function PdvPage() {
 
         {isAccessible ? (
           <AccessibleFlow />
-        ) : (
-          <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+	        ) : (
+	          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_480px]">
             <section className={`rounded-2xl ${cardBorder} p-6 ${panelBg} print:hidden no-print`}>
             <div className="mb-6">
               <h2 className={`font-black mb-3 ${isAccessible ? "text-2xl" : "text-lg"}`}>Filtrar por categoría</h2>
@@ -960,23 +1011,27 @@ function PdvPage() {
                     filtro={filtro}
                     active={selectedCategory === filtro.value}
                     isAccessible={isAccessible}
+                    isHighContrast={isHighContrast}
                     onClick={() => setSelectedCategory(filtro.value)}
                   />
                 ))}
               </div>
             </div>
 
-              <div className="mb-6">
-                <label htmlFor="searchProducto" className={`block font-bold mb-2 ${isAccessible ? "text-lg" : "text-sm"}`}>
-                  🔍 Buscar producto
-                </label>
-                <input
+	              <div className="mb-6">
+	                <label htmlFor="searchProducto" className={`block font-bold mb-2 ${isAccessible ? "text-lg" : "text-sm"}`}>
+	                  <span className="inline-flex items-center gap-2 contrast-important">
+	                    <Search className={`h-4 w-4 ${isHighContrast ? "text-current" : "text-black"}`} aria-hidden="true" />
+	                    <span>Buscar producto</span>
+	                  </span>
+	                </label>
+	                <input
                   id="searchProducto"
                   type="text"
                   placeholder={isAccessible ? "Escribe nombre o descripción..." : "Buscar..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-full rounded-lg border px-4 py-2 outline-none transition focus:ring-2 ${isAccessible ? "border-2 border-slate-900 text-lg py-3 focus:ring-slate-900" : "border border-slate-300 focus:ring-blue-400"}`}
+                  className={`w-full rounded-lg border px-4 py-2 outline-none transition focus:ring-2 contrast-input ${isAccessible ? "border-2 border-slate-900 text-lg py-3 focus:ring-slate-900" : "border border-slate-300 focus:ring-blue-400"}`}
                 />
               </div>
 
@@ -993,6 +1048,7 @@ function PdvPage() {
                       producto={producto}
                       cantidad={items[producto.id] || 0}
                       isAccessible={isAccessible}
+                      isHighContrast={isHighContrast}
                       onIncrease={() => increaseProduct(producto)}
                       onDecrease={() => decreaseProduct(producto)}
                       onAdd={() => addProduct(producto)}
@@ -1004,39 +1060,92 @@ function PdvPage() {
           </section>
 
           <aside className={`rounded-2xl ${cardBorder} p-6 ${panelBg} h-fit sticky top-6 print:static print:p-0 print:border-0 print:rounded-none print:bg-transparent`}>
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <div className="mb-6 flex flex-col gap-3">
               <h2 className={`font-black ${isAccessible ? "text-2xl" : "text-lg"}`}>Resumen del pedido</h2>
-              <div className="ml-auto flex max-w-full items-start gap-2">
-                {feedback && (
-                  <div
-                    ref={feedbackRef}
-                    tabIndex={-1}
-                    role={feedback.type === "success" ? "status" : "alert"}
-                    aria-live="polite"
-                    className="min-w-0 outline-none"
-                  >
-                    <Toast
-                      feedback={feedback}
-                      isAccessible={isAccessible}
-                      className="max-w-[240px] sm:max-w-[280px]"
-                    />
-                  </div>
-                )}
+              <div className="flex w-full flex-nowrap items-center gap-2 no-print print:hidden">
                 <button
                   type="button"
-                  onClick={resetPedido}
+                  onClick={handlePrint}
                   disabled={pedidoDetalles.length === 0}
-                  className={`text-2xl p-2 rounded-lg transition ${
-                    isAccessible
-                      ? "hover:bg-slate-100 disabled:opacity-30"
-                      : "hover:bg-red-50 disabled:opacity-30"
-                  }`}
+                  className={`${quickActionButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
+                >
+                  🖨 Imprimir comanda
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReadPedidoSummary}
+                  className={quickActionButtonClass}
+                  aria-label="Leer resumen del pedido"
+                  title="Leer resumen del pedido"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Volume2 className={`h-4 w-4 ${isHighContrast ? "text-current" : "text-black"}`} aria-hidden="true" />
+                    <span>Leer resumen</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(true)}
+                  disabled={pedidoDetalles.length === 0}
+                  className={`${quickActionIconButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                   title="Vaciar pedido"
+                  aria-label="Vaciar pedido"
                 >
                   🗑
                 </button>
               </div>
             </div>
+
+            {showResetConfirm && (
+              <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 no-print print:hidden ${
+                isHighContrast
+                  ? "contrast-panel-soft"
+                  : isAccessible
+                    ? "border-red-700 bg-red-50"
+                    : "border-red-200 bg-red-50"
+              }`}>
+                <p className={`font-bold ${isAccessible ? "text-lg" : "text-sm"}`}>
+                  ¿Está seguro de borrar el pedido?
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={resetPedido}
+                    className={`rounded-lg border px-4 py-2 font-bold transition ${
+                      isHighContrast
+                        ? "contrast-button-danger"
+                        : "border-red-700 bg-red-600 text-white hover:bg-red-700"
+                    }`}
+                  >
+                    Sí, borrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowResetConfirm(false)}
+                    className={`${quickActionButtonClass}`}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {feedback && (
+              <div
+                ref={feedbackRef}
+                tabIndex={-1}
+                role={feedback.type === "success" ? "status" : "alert"}
+                aria-live="polite"
+                className="mb-6 min-w-0 outline-none"
+              >
+                <Toast
+                  feedback={feedback}
+                  isAccessible={isAccessible}
+                  isHighContrast={isHighContrast}
+                  className="w-full"
+                />
+              </div>
+            )}
 
             <div className={`mb-6 max-h-96 overflow-y-auto rounded-xl p-4 ${isAccessible ? "bg-slate-50 border-2 border-slate-900" : "bg-slate-50 border border-slate-200"}`}>
               {pedidoDetalles.length === 0 ? (
@@ -1089,8 +1198,8 @@ function PdvPage() {
                   : "bg-[#FFF8DC] border border-[#FFF4BF]"
               }`}
             >
-              <p className={`text-slate-600 font-semibold ${isAccessible ? "text-base" : "text-xs"} uppercase`}>Total a pagar</p>
-              <p className={`mt-2 font-black ${isAccessible ? "text-4xl text-slate-900" : "text-3xl text-amber-700"}`}>
+              <p className={`text-slate-600 font-semibold ${isAccessible ? "text-base" : "text-xs"} uppercase ${isHighContrast ? "contrast-secondary-text" : ""}`}>Total a pagar</p>
+              <p className={`mt-2 font-black ${isAccessible ? "text-4xl text-slate-900" : "text-3xl text-amber-700"} ${isHighContrast ? "contrast-important" : ""}`}>
                 {formatCurrency(total)}
               </p>
             </div>
@@ -1100,8 +1209,8 @@ function PdvPage() {
               <div className="grid grid-cols-3 gap-2">
                 {PAYMENT_OPTIONS.map((option) => {
                   const active = metodoPago === option.value;
-                  return (
-                    <button
+	                return (
+	                    <button
                       key={option.value}
                       type="button"
                       onClick={() => setMetodoPago(option.value)}
@@ -1114,19 +1223,19 @@ function PdvPage() {
                               ? "bg-white text-slate-900 border-2 border-slate-900 hover:bg-slate-50"
                               : "bg-white text-slate-900 border border-slate-300 hover:bg-slate-50"
                         }`}
-                      aria-pressed={active}
-                    >
-                      <span className="text-2xl">{option.icon}</span>
-                      <span className={`${isAccessible ? "text-sm" : "text-xs"}`}>{option.label}</span>
-                    </button>
-                  );
+	                      aria-pressed={active}
+	                    >
+	                      <option.Icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+	                      <span className={`${isAccessible ? "text-sm" : "text-xs"}`}>{option.label}</span>
+	                    </button>
+	                  );
                 })}
               </div>
             </div>
 
             <div className="mb-6">
               <label htmlFor="observacion" className={`block font-bold mb-2 ${isAccessible ? "text-base" : "text-sm"}`}>
-                Observación
+                <span className="contrast-important">Observación</span>
               </label>
               <textarea
                 id="observacion"
@@ -1134,7 +1243,7 @@ function PdvPage() {
                 value={observacion}
                 onChange={(event) => setObservacion(event.target.value)}
                 placeholder="Ej: sin cebolla, extra salsa..."
-                className={`w-full rounded-lg border px-3 py-2 outline-none transition focus:ring-2 ${
+                className={`w-full rounded-lg border px-3 py-2 outline-none transition focus:ring-2 contrast-input ${
                   isAccessible
                     ? "border-2 border-slate-900 bg-white text-slate-950 focus:ring-slate-900 min-h-[80px] text-base"
                     : "border-slate-300 bg-white text-slate-950 focus:ring-[#2F5FE3] min-h-[72px] text-sm"
@@ -1147,42 +1256,15 @@ function PdvPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={!puedeRegistrar}
-                className={`w-full rounded-lg font-bold transition py-3 ${
+                className={`w-full rounded-lg border-2 font-bold transition py-3 ${
                   puedeRegistrar
                     ? isAccessible
-                      ? "bg-slate-900 text-white border-2 border-slate-900 hover:bg-black min-h-[56px] text-lg"
-                      : "bg-slate-600 text-white border border-slate-500 hover:bg-slate-700 min-h-[56px]"
-                    : "bg-slate-300 text-slate-500 cursor-not-allowed min-h-[56px]"
-                }`}
+                      ? "border-emerald-900 bg-emerald-700 text-white hover:bg-emerald-800 min-h-[56px] text-lg"
+                      : "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800 min-h-[56px]"
+                    : "border-slate-300 bg-slate-300 text-slate-500 cursor-not-allowed min-h-[56px]"
+                } ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`}
               >
                 {sending ? "Registrando..." : "Registrar pedido"}
-              </button>
-
-              <button
-                type="button"
-                onClick={handlePrint}
-                disabled={pedidoDetalles.length === 0}
-                className={`w-full rounded-lg font-bold transition py-3 ${
-                  isAccessible
-                    ? "bg-white text-slate-900 border-2 border-slate-900 hover:bg-slate-100 disabled:opacity-30 min-h-[56px]"
-                    : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200 disabled:opacity-30 min-h-[56px]"
-                }`}
-              >
-                🖨 Imprimir comanda
-              </button>
-            </div>
-
-            <div className="flex gap-2 mb-4 no-print print:hidden">
-              <button
-                type="button"
-                onClick={() => speak("Voz de prueba")}
-                className={`flex-1 rounded-lg font-bold py-2 text-sm transition ${
-                  isAccessible
-                    ? "bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50"
-                    : "bg-slate-100 border border-slate-300 text-slate-900 hover:bg-slate-200"
-                }`}
-              >
-                🔊 Voz
               </button>
             </div>
           </aside>
