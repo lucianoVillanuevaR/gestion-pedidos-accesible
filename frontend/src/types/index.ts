@@ -6,7 +6,7 @@ export interface Producto {
   imagen?: string;
   altText?: string;
   activo?: boolean;
-  categoria?: "Sandwich" | "Bebidas" | "Extras" | "Otros";
+  categoria?: "Sandwich" | "Completos" | "Bebidas" | "Otros";
   destacado?: boolean;
 }
 

@@ -43,32 +43,32 @@ function PortalPage({ accent, description, title }: PortalPageProps) {
   ];
 
   return (
-    <main
-      className={`min-h-screen px-4 py-6 sm:px-6 sm:py-8 ${
-        isAccessible
-          ? isHighContrast
-            ? "bg-[#f5f5f5] text-black"
-            : "bg-[#f7f7f7] text-slate-900"
-          : "bg-[linear-gradient(160deg,#fff7ed_0%,#fffbeb_40%,#ffffff_100%)] text-stone-900"
-      }`}
-    >
+      <main
+        className={`min-h-screen px-4 py-6 sm:px-6 sm:py-8 ${
+          isHighContrast
+            ? "bg-black text-white"
+            : isAccessible
+              ? "bg-[#f7f7f7] text-slate-900"
+              : "bg-[linear-gradient(160deg,#fff7ed_0%,#fffbeb_40%,#ffffff_100%)] text-stone-900"
+        }`}
+      >
       <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[260px_1fr]">
         <aside
-          className={`rounded-2xl p-5 ${
-            isAccessible
-              ? "border-4 border-black bg-white"
-              : "border border-stone-200 bg-white shadow-lg"
+            className={`rounded-2xl p-5 contrast-panel ${
+              isAccessible
+                ? "border-4 border-black bg-white"
+                : "border border-stone-200 bg-white shadow-lg"
           }`}
         >
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-700">
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-700 contrast-important">
                 Riquísimo S.P.A
               </p>
-              <h1 className={`mt-2 font-black ${isAccessible ? "text-[32px]" : "text-3xl"}`}>
+              <h1 className={`mt-2 font-black contrast-important ${isAccessible ? "text-[32px]" : "text-3xl"}`}>
                 {title}
               </h1>
-              <p className={`mt-2 ${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
+              <p className={`mt-2 contrast-body-text ${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
                 {description}
               </p>
             </div>
@@ -85,10 +85,10 @@ function PortalPage({ accent, description, title }: PortalPageProps) {
                 <button
                   key={item}
                   type="button"
-                  className={`flex min-h-[56px] w-full items-center justify-start rounded-xl px-4 text-left font-semibold transition ${
-                    isAccessible
-                      ? "border-2 border-black bg-white text-black hover:bg-gray-100 text-lg"
-                      : "border border-stone-200 bg-stone-50 text-stone-800 hover:bg-stone-100 text-base"
+                    className={`flex min-h-[56px] w-full items-center justify-start rounded-xl px-4 text-left font-semibold transition contrast-button-secondary ${
+                      isAccessible
+                        ? "border-2 border-black bg-white text-black hover:bg-gray-100 text-lg"
+                        : "border border-stone-200 bg-stone-50 text-stone-800 hover:bg-stone-100 text-base"
                   }`}
                 >
                   {item}
@@ -99,22 +99,22 @@ function PortalPage({ accent, description, title }: PortalPageProps) {
         </aside>
 
         <section
-          className={`rounded-2xl p-5 sm:p-6 ${
-            isAccessible
-              ? "border-4 border-black bg-white"
-              : "border border-stone-200 bg-white shadow-2xl shadow-stone-200/60"
+            className={`rounded-2xl p-5 sm:p-6 contrast-panel ${
+              isAccessible
+                ? "border-4 border-black bg-white"
+                : "border border-stone-200 bg-white shadow-2xl shadow-stone-200/60"
           }`}
         >
           <div className="space-y-5">
             <div className="space-y-2">
               <span
-                className={`inline-flex rounded-full px-4 py-2 text-sm font-bold ${
+                className={`inline-flex rounded-full px-4 py-2 text-sm font-bold contrast-badge ${
                   accentClasses[accent].badge
                 }`}
               >
                 Vista lista
               </span>
-              <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
+              <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"} contrast-body-text`}>
                 Modo accesible pensado para lectura clara y acciones simples.
               </p>
             </div>
@@ -123,7 +123,7 @@ function PortalPage({ accent, description, title }: PortalPageProps) {
               {actionCards.map((card) => (
                 <article
                   key={card.title}
-                  className={`rounded-2xl p-4 ${
+                  className={`rounded-2xl p-4 contrast-panel-soft ${
                     isAccessible
                       ? "border-2 border-black bg-gray-50"
                       : "border border-stone-200 bg-stone-50"
@@ -131,10 +131,10 @@ function PortalPage({ accent, description, title }: PortalPageProps) {
                 >
                   <div className="space-y-3">
                     <div className={`h-24 rounded-xl ${isAccessible ? "bg-gray-200" : "bg-stone-200"}`} />
-                    <h2 className={`font-bold ${isAccessible ? "text-2xl" : "text-xl"}`}>
+                    <h2 className={`font-bold contrast-important ${isAccessible ? "text-2xl" : "text-xl"}`}>
                       {card.title}
                     </h2>
-                    <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
+                    <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"} contrast-body-text`}>
                       {card.description}
                     </p>
                     <button
@@ -142,15 +142,15 @@ function PortalPage({ accent, description, title }: PortalPageProps) {
                       className={`min-h-[60px] w-full rounded-xl px-4 font-bold transition ${
                         card.button === "Cancelar"
                           ? isAccessible
-                            ? "border-2 border-black bg-red-600 text-white hover:bg-red-700 text-lg"
-                            : "bg-red-600 text-white hover:bg-red-700"
+                            ? "border-2 border-black bg-red-600 text-white hover:bg-red-700 text-lg contrast-button-danger"
+                            : "bg-red-600 text-white hover:bg-red-700 contrast-button-danger"
                           : card.button === "Pagar"
                             ? isAccessible
-                              ? "border-2 border-black bg-green-600 text-white hover:bg-green-700 text-lg"
-                              : "bg-green-600 text-white hover:bg-green-700"
+                              ? "border-2 border-black bg-green-600 text-white hover:bg-green-700 text-lg contrast-button-primary"
+                              : "bg-green-600 text-white hover:bg-green-700 contrast-button-primary"
                             : isAccessible
-                              ? "border-2 border-black bg-blue-600 text-white hover:bg-blue-700 text-lg"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
+                              ? "border-2 border-black bg-blue-600 text-white hover:bg-blue-700 text-lg contrast-button-primary"
+                              : "bg-blue-600 text-white hover:bg-blue-700 contrast-button-primary"
                       }`}
                     >
                       {card.button}
@@ -161,18 +161,18 @@ function PortalPage({ accent, description, title }: PortalPageProps) {
             </div>
 
             <div
-              className={`rounded-2xl p-4 ${
-                isAccessible
-                  ? "border-2 border-black bg-yellow-50"
-                  : "border border-stone-200 bg-white"
-              }`}
-            >
-              <p className={`font-bold ${isAccessible ? "text-xl" : "text-lg"}`}>
-                Feedback del sistema
-              </p>
-              <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
-                Producto agregado. Pedido enviado. Error al guardar.
-              </p>
+                className={`rounded-2xl p-4 contrast-panel-soft ${
+                  isAccessible
+                    ? "border-2 border-black bg-yellow-50"
+                    : "border border-stone-200 bg-white"
+                }`}
+              >
+                <p className={`font-bold contrast-important ${isAccessible ? "text-xl" : "text-lg"}`}>
+                  Feedback del sistema
+                </p>
+                <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"} contrast-body-text`}>
+                  Producto agregado. Pedido enviado. Error al guardar.
+                </p>
             </div>
           </div>
         </section>

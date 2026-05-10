@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 
 const VOICE_LANGUAGE = "es-CL";
 
@@ -15,9 +15,6 @@ const VOICE_LANGUAGE = "es-CL";
  * WCAG: Audio con control del usuario
  */
 function useVoice({ enabled = false } = {}) {
-  const isSpeakingRef = useRef(false);
-  const utteranceQueueRef = useRef([]);
-
   // Detectar soporte de SpeechSynthesis
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -46,7 +43,6 @@ function useVoice({ enabled = false } = {}) {
         // Cancelar cualquier mensaje previo si no está en cola
         if (!options.queue) {
           speechSynthesis.cancel();
-          isSpeakingRef.current = false;
         }
 
         const utterance = new SpeechSynthesisUtterance(message);
@@ -56,19 +52,16 @@ function useVoice({ enabled = false } = {}) {
         utterance.volume = Math.min(1, options.volume || 1);
 
         utterance.onstart = () => {
-          isSpeakingRef.current = true;
           options.onStart?.();
         };
 
         utterance.onend = () => {
-          isSpeakingRef.current = false;
           options.onEnd?.();
           resolve();
         };
 
         utterance.onerror = (event) => {
           console.warn("Error en SpeechSynthesis:", event.error);
-          isSpeakingRef.current = false;
           options.onError?.(event);
           resolve();
         };
@@ -96,7 +89,6 @@ function useVoice({ enabled = false } = {}) {
     const speechSynthesis = window.speechSynthesis;
     if (speechSynthesis) {
       speechSynthesis.cancel();
-      isSpeakingRef.current = false;
     }
   }, []);
 
