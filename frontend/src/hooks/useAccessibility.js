@@ -55,6 +55,7 @@ function getFontSizeForState(textSize, isAccessible) {
  * - Soporte de voz
  */
 function useAccessibility() {
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isAccessible, setIsAccessible] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -187,7 +188,16 @@ function useAccessibility() {
     setIsSoundEnabled((currentValue) => !currentValue);
   };
 
+  const openAccessibilityPanel = () => {
+    setIsPanelOpen(true);
+  };
+
+  const closeAccessibilityPanel = () => {
+    setIsPanelOpen(false);
+  };
+
   return {
+    isPanelOpen,
     isAccessible,
     textSize,
     isHighContrast,
@@ -195,6 +205,8 @@ function useAccessibility() {
     isSoundEnabled,
     prefersReducedMotion,
     setTextSize: updateTextSize,
+    openAccessibilityPanel,
+    closeAccessibilityPanel,
     toggleAccessibility,
     toggleHighContrast,
     toggleVoiceEnabled,

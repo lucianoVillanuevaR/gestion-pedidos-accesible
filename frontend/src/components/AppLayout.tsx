@@ -12,7 +12,8 @@ function AppLayout() {
 
   const currentRoute = getRouteMeta(location.pathname)
   const isPdvPage = location.pathname === "/pdv"
-  const sidebarOffsetClass = isAccessible ? "lg:pl-[360px]" : "lg:pl-[320px]"
+  const hideSidebar = isPdvPage && isAccessible
+  const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[360px]" : "lg:pl-[320px]"
   const pageShellClass = isPdvPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
   const mainContentClass = isPdvPage
     ? "px-0 py-0"
@@ -67,44 +68,46 @@ function AppLayout() {
         Saltar al contenido principal
       </a>
 
-      <AppSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      {!hideSidebar && <AppSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
 
       <div className={sidebarOffsetClass}>
-        <header
-          className={`sticky top-0 z-30 border-b backdrop-blur lg:hidden ${
-            isHighContrast
-              ? "border-yellow-400 bg-black/95 text-white"
-              : "border-slate-200 bg-white/95 shadow-sm shadow-slate-200/30"
-          }`}
-        >
-          <div className={`mx-auto flex w-full max-w-[1400px] items-center gap-3 px-4 ${isAccessible ? "min-h-[80px] py-4" : "min-h-[68px] py-3"}`}>
-            <button
-              type="button"
-              onClick={() => setIsSidebarOpen(true)}
-              className={`inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
-                isHighContrast
-                  ? "contrast-button-secondary"
-                  : isAccessible
-                    ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-900"
-                    : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200 focus-visible:ring-blue-500"
-              }`}
-              aria-label="Abrir navegación"
-              aria-expanded={isSidebarOpen}
-              aria-controls="main-sidebar"
-            >
-              <Menu className={isAccessible ? "h-6 w-6" : "h-5 w-5"} />
-            </button>
+        {!hideSidebar && (
+          <header
+            className={`sticky top-0 z-30 border-b backdrop-blur lg:hidden ${
+              isHighContrast
+                ? "border-yellow-400 bg-black/95 text-white"
+                : "border-slate-200 bg-white/95 shadow-sm shadow-slate-200/30"
+            }`}
+          >
+            <div className={`mx-auto flex w-full max-w-[1400px] items-center gap-3 px-4 ${isAccessible ? "min-h-[80px] py-4" : "min-h-[68px] py-3"}`}>
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className={`inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
+                  isHighContrast
+                    ? "contrast-button-secondary"
+                    : isAccessible
+                      ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-900"
+                      : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200 focus-visible:ring-blue-500"
+                }`}
+                aria-label="Abrir navegación"
+                aria-expanded={isSidebarOpen}
+                aria-controls="main-sidebar"
+              >
+                <Menu className={isAccessible ? "h-6 w-6" : "h-5 w-5"} />
+              </button>
 
-            <div className="min-w-0">
-              <p className={`font-black leading-tight ${isAccessible ? "text-xl" : "text-sm"} ${isHighContrast ? "text-white" : "text-slate-900"}`}>
-                {currentRoute?.label ?? "Riquísimo"}
-              </p>
-              <p className={`mt-1 truncate ${isAccessible ? "text-sm" : "text-xs"} ${isHighContrast ? "text-white/60" : "text-slate-500"}`}>
-                {currentRoute?.description ?? "Sistema de pedidos"}
-              </p>
+              <div className="min-w-0">
+                <p className={`font-black leading-tight ${isAccessible ? "text-xl" : "text-sm"} ${isHighContrast ? "text-white" : "text-slate-900"}`}>
+                  {currentRoute?.label ?? "Riquísimo"}
+                </p>
+                <p className={`mt-1 truncate ${isAccessible ? "text-sm" : "text-xs"} ${isHighContrast ? "text-white/60" : "text-slate-500"}`}>
+                  {currentRoute?.description ?? "Sistema de pedidos"}
+                </p>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         <main id="main-content" className={mainContentClass}>
           <div className={pageShellClass}>

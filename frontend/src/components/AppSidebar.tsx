@@ -1,4 +1,4 @@
-import { LogOut, X } from "lucide-react"
+import { LogOut, ShieldCheck, X } from "lucide-react"
 import { useLocation } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
 import logoRiq from "../assets/logoRiq.png"
@@ -16,7 +16,7 @@ type AppSidebarProps = {
 function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { isAccessible, isHighContrast } = useAccessibilityContext()
+  const { isAccessible, isHighContrast, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext()
   const { logout, user } = useAuthContext()
 
   if (!user) {
@@ -54,11 +54,21 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
     : `px-4 ${isAccessible ? "py-5" : "py-4"}`
   const navigationSpacingClass = isAccessible ? "space-y-3" : "space-y-2"
   const footerSpacingClass = isAccessible ? "mt-auto border-t px-4 py-5" : "mt-auto border-t px-3 py-4"
+  const accessibilityButtonClass = isHighContrast
+    ? "contrast-button-secondary"
+    : isAccessible
+      ? "border-slate-900 bg-white text-slate-950 hover:bg-slate-50 focus-visible:ring-slate-900"
+      : "border-slate-300 bg-slate-50 text-slate-950 hover:bg-slate-100 focus-visible:ring-blue-500"
 
   const handleLogout = () => {
     logout()
     onClose()
     navigate("/", { replace: true })
+  }
+
+  const handleOpenAccessibility = () => {
+    openAccessibilityPanel()
+    onClose()
   }
 
   return (
@@ -126,6 +136,29 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
         </div>
 
         <div className={`${footerSpacingClass} ${isHighContrast ? "border-yellow-400" : "border-slate-200"}`}>
+          <button
+            type="button"
+            onClick={handleOpenAccessibility}
+            aria-haspopup="dialog"
+            aria-expanded={isPanelOpen}
+            className={`mb-3 inline-flex w-full items-center justify-between gap-3 rounded-2xl border px-4 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${accessibilityButtonClass} ${isAccessible ? "min-h-[68px]" : "min-h-[52px]"}`}
+          >
+            <span className="flex min-w-0 items-center gap-3 text-left">
+              <span className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-10 w-10 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "bg-slate-900 text-white"}`}>
+                ♿
+              </span>
+              <span className="min-w-0">
+                <span className={`block font-black leading-tight ${isAccessible ? "text-lg" : "text-sm"}`}>
+                  Accesibilidad
+                </span>
+                <span className={`mt-0.5 block ${isAccessible ? "text-sm" : "text-xs"} ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
+                  Modo facil, contraste y ayuda
+                </span>
+              </span>
+            </span>
+            <ShieldCheck className={isAccessible ? "h-6 w-6" : "h-5 w-5"} aria-hidden="true" />
+          </button>
+
           <div className={`mb-3 rounded-2xl px-4 py-3 ${isHighContrast ? "bg-black/30" : isAccessible ? "border border-slate-200 bg-slate-50" : "bg-slate-50"}`}>
             <p className={`text-xs font-semibold uppercase tracking-[0.12em] ${isHighContrast ? "text-yellow-200/70" : "text-slate-500"}`}>
               Usuario

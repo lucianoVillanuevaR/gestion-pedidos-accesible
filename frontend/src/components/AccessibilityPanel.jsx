@@ -72,7 +72,6 @@ function AccessibilityPanel({
     : "rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3";
 
   const titleClass = isAccessible ? "text-2xl" : "text-lg";
-  const descriptionClass = isAccessible ? "text-base" : "text-sm";
   const spacingClass = isAccessible ? "space-y-6" : "space-y-5";
 
   const headerPaddingClass = isAccessible ? "px-6 py-5" : "px-5 py-4";

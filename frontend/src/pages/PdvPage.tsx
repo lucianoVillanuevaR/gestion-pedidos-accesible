@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeftRight, Banknote, CreditCard, Printer, Search, Volume2 } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
+import { useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { createPedido } from "../services/pedidos";
 import { getProductos } from "../services/productos";
@@ -309,7 +310,8 @@ function ProductCard({
 }
 
 function PdvPage() {
-  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const navigate = useNavigate();
+  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: true });
 
@@ -538,6 +540,19 @@ function PdvPage() {
       rate: isAccessible ? 0.8 : 0.86
     });
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleReadSummaryRequest = () => {
+      handleReadPedidoSummary();
+    };
+
+    window.addEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
+    return () => window.removeEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
+  }, [handleReadPedidoSummary]);
 
   const setItemQuantity = (producto: Producto, nextQuantity: number) => {
     setItems((currentItems) => {
@@ -887,10 +902,27 @@ function PdvPage() {
               </p>
             </div>
 
-            <div className={`inline-flex min-h-[56px] items-center rounded-2xl border px-4 py-3 ${isHighContrast ? "contrast-panel-soft border-yellow-400" : isAccessible ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900"}`}>
-              <p className="font-black">
-                Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}
-              </p>
+            <div className="flex flex-col items-stretch gap-3">
+              <div className={`inline-flex min-h-[56px] items-center rounded-2xl border px-4 py-3 ${isHighContrast ? "contrast-panel-soft border-yellow-400" : isAccessible ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900"}`}>
+                <p className="font-black">
+                  Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={openAccessibilityPanel}
+                aria-haspopup="dialog"
+                aria-expanded={isPanelOpen}
+                className={`inline-flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border px-4 py-3 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
+                  isHighContrast
+                    ? "contrast-button-secondary"
+                    : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 focus-visible:ring-slate-900"
+                }`}
+              >
+                <span aria-hidden="true" className="text-2xl">♿</span>
+                <span>Accesibilidad</span>
+              </button>
             </div>
           </div>
         </header>
@@ -927,6 +959,35 @@ function PdvPage() {
                   <span>{filtro.label}</span>
                 </button>
               ))}
+            </div>
+
+            <div className="mt-6 border-t border-slate-200 pt-5">
+              <p className="mb-3 text-base font-semibold text-slate-600">Accesos rápidos</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/pedidos")}
+                  className={`min-h-[56px] rounded-xl border-2 px-4 py-3 text-lg font-bold transition ${
+                    isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:border-slate-900"
+                  }`}
+                >
+                  Ir a Pedidos
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/productos")}
+                  className={`min-h-[56px] rounded-xl border-2 px-4 py-3 text-lg font-bold transition ${
+                    isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:border-slate-900"
+                  }`}
+                >
+                  Ir a Productos
+                </button>
+              </div>
             </div>
           </section>
         )}
@@ -1154,8 +1215,8 @@ function PdvPage() {
   return (
     <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
 	      <div className={`${headerBg} no-print`}>
-	        <div className={`mx-auto flex w-full max-w-[1400px] items-center px-4 sm:px-5 lg:px-6 ${isAccessible ? "min-h-[84px] py-4" : "min-h-[64px] py-3"}`}>
-            <h1 className={`font-black tracking-tight contrast-important ${isAccessible ? "text-3xl" : "text-xl"}`}>
+	        <div className={`mx-auto flex w-full max-w-[1520px] items-center px-3 sm:px-4 lg:px-5 xl:px-6 ${isAccessible ? "min-h-[84px] py-4" : "min-h-[64px] py-3"}`}>
+            <h1 className={`font-black leading-none tracking-tight contrast-important ${isAccessible ? "text-3xl" : "text-xl"}`}>
               Punto de Venta
             </h1>
 	        </div>
