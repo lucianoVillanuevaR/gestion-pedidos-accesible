@@ -99,15 +99,14 @@ export function buildPedidoSummary(items: Record<number, number>, productos: Pro
 
 export function filterProductosByCategory(
   productos: ProductoConCategoria[],
-  selectedCategory: FiltroCategoria,
-  items: Record<number, number>
+  selectedCategory: FiltroCategoria
 ) {
   if (selectedCategory === "Todos") {
     return productos;
   }
 
   if (selectedCategory === "Destacados") {
-    const destacados = productos.filter((producto) => (items[producto.id] || 0) > 0);
+    const destacados = productos.filter((producto) => producto.destacado);
     return destacados.length > 0 ? destacados : productos.slice(0, 4);
   }
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import AppRoutes from "./routes/AppRoutes";
 import AccessibilityPanel from "./components/AccessibilityPanel";
 import { AccessibilityProvider, useAccessibilityContext } from "./contexts/AccessibilityContext";
-import useVoice from "./hooks/useVoice";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function AppShell() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -18,7 +18,6 @@ function AppShell() {
     toggleVoiceEnabled,
     toggleSoundEnabled
   } = useAccessibilityContext();
-  const { speak } = useVoice({ enabled: isVoiceEnabled });
 
   return (
     <>
@@ -72,7 +71,6 @@ function AppShell() {
         onToggleContrast={toggleHighContrast}
         onToggleVoice={toggleVoiceEnabled}
         onToggleSound={toggleSoundEnabled}
-        speak={speak}
       />
     </>
   );
@@ -80,9 +78,11 @@ function AppShell() {
 
 function App() {
   return (
-    <AccessibilityProvider>
-      <AppShell />
-    </AccessibilityProvider>
+    <AuthProvider>
+      <AccessibilityProvider>
+        <AppShell />
+      </AccessibilityProvider>
+    </AuthProvider>
   );
 }
 

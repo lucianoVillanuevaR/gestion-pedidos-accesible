@@ -22,8 +22,7 @@ function AccessibilityPanel({
   onSetTextSize,
   onToggleContrast,
   onToggleVoice,
-  onToggleSound,
-  speak
+  onToggleSound
 }) {
   // Manejo de teclado
   useEffect(() => {
@@ -43,13 +42,6 @@ function AccessibilityPanel({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
-
-  // Anunciar cuando voz está habilitada
-  useEffect(() => {
-    if (isVoiceEnabled && isOpen) {
-      speak("Panel de opciones simples abierto. Use Tab para navegar.");
-    }
-  }, [isVoiceEnabled, isOpen, speak]);
 
   if (!isOpen) {
     return null;
@@ -187,14 +179,7 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    onToggleAccessible();
-                    speak(
-                      isAccessible
-                        ? "Modo fácil desactivado"
-                        : "Modo fácil activado"
-                    );
-                  }}
+                  onClick={onToggleAccessible}
                   aria-label={
                     isAccessible
                       ? "Desactivar modo fácil"
@@ -253,7 +238,6 @@ function AccessibilityPanel({
                     type="button"
                     onClick={() => {
                       onSetTextSize(option.value);
-                      speak(`Tamaño de letra: ${option.name}`);
                     }}
                     aria-label={`Tamaño de texto ${option.name}`}
                     aria-pressed={textSize === option.value}
@@ -288,14 +272,7 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    onToggleContrast();
-                    speak(
-                      isHighContrast
-                        ? "Contraste fuerte desactivado"
-                        : "Contraste fuerte activado"
-                    );
-                  }}
+                  onClick={onToggleContrast}
                   aria-label={
                     isHighContrast
                       ? "Desactivar contraste alto"
@@ -332,14 +309,7 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    onToggleVoice();
-                    speak(
-                      isVoiceEnabled
-                        ? "Ayuda por voz desactivada"
-                        : "Ayuda por voz activada"
-                    );
-                  }}
+                  onClick={onToggleVoice}
                   aria-label={
                     isVoiceEnabled
                       ? "Desactivar ayuda por voz"
@@ -376,14 +346,7 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={() => {
-                    onToggleSound();
-                    speak(
-                      isSoundEnabled
-                        ? "Sonidos desactivados"
-                        : "Sonidos activados"
-                    );
-                  }}
+                  onClick={onToggleSound}
                   aria-label={
                     isSoundEnabled
                       ? "Desactivar sonidos"
@@ -428,7 +391,6 @@ function AccessibilityPanel({
                 if (isHighContrast) onToggleContrast();
                 if (isVoiceEnabled) onToggleVoice();
                 if (isSoundEnabled) onToggleSound();
-                speak("Ajustes restablecidos");
               }}
               className={`
                 w-full min-h-[56px] rounded-xl border font-bold transition

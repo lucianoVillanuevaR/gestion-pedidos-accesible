@@ -5,9 +5,20 @@ export interface Producto {
   descripcion?: string;
   imagen?: string;
   altText?: string;
-  activo?: boolean;
-  categoria?: "Sandwich" | "Completos" | "Bebidas" | "Otros";
   destacado?: boolean;
+}
+
+export type UserRole = "cajero" | "cocina" | "admin";
+
+export interface AuthUser {
+  email: string;
+  label: string;
+  role: UserRole;
+  username: string;
+}
+
+export interface DemoUser extends AuthUser {
+  password: string;
 }
 
 export interface PedidoItem {
