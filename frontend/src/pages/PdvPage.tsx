@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeftRight, Banknote, CreditCard, Search, Volume2 } from "lucide-react";
+import { ArrowLeftRight, Banknote, CreditCard, Printer, Search, Volume2 } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { createPedido } from "../services/pedidos";
@@ -753,12 +753,12 @@ function PdvPage() {
   const headerBg = isHighContrast ? "bg-black text-white border-b-2 border-yellow-400" : isAccessible ? "bg-slate-900 text-white border-b border-slate-700" : "bg-[#FECE00] text-[#1F2937] border-b border-amber-200";
   const panelBg = isHighContrast ? "bg-black contrast-panel" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const easyContinueOffset = "mr-20 sm:mr-28 md:mr-40 xl:mr-48";
-  const quickActionButtonClass = `inline-flex min-h-[44px] items-center justify-center rounded-lg border px-3 py-2 font-bold text-sm whitespace-nowrap transition ${
+  const quickActionButtonClass = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 font-bold text-[13px] whitespace-nowrap transition ${
     isHighContrast
       ? "contrast-button-secondary"
       : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
   }`;
-  const quickActionIconButtonClass = `inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border text-lg transition ${
+  const quickActionIconButtonClass = `inline-flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-xl border text-lg transition ${
     isHighContrast
       ? "contrast-button-secondary"
       : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
@@ -1161,7 +1161,7 @@ function PdvPage() {
 	        </div>
 	      </div>
 
-      <div className={`mx-auto w-full max-w-[1400px] px-3 sm:px-4 lg:px-6 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-2 sm:py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
+      <div className={`mx-auto w-full max-w-[1520px] px-3 sm:px-4 lg:px-5 xl:px-6 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-2 sm:py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
         {loadingProductos && (
           <div
             role="status"
@@ -1206,7 +1206,7 @@ function PdvPage() {
         {isAccessible ? (
           <AccessibleFlow />
 	        ) : (
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.45fr)_400px] 2xl:grid-cols-[minmax(0,1.6fr)_430px]">
+            <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
               <section className={`rounded-[22px] ${cardBorder} p-5 ${panelBg} print:hidden no-print`}>
               <div className="mb-5">
               <h2 className={`font-black mb-3 ${isAccessible ? "text-2xl" : "text-lg"}`}>Filtrar por categoría</h2>
@@ -1247,7 +1247,7 @@ function PdvPage() {
                   <p className={`font-bold ${isAccessible ? "text-xl" : "text-base"}`}>No hay productos en esta categoría</p>
                 </div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
                   {productosFiltrados.map((producto) => (
                     <ProductCard
                       key={producto.id}
@@ -1265,17 +1265,18 @@ function PdvPage() {
             </div>
           </section>
 
-          <aside className={`rounded-[22px] ${cardBorder} p-5 ${panelBg} h-fit sticky top-6 print:static print:p-0 print:border-0 print:rounded-none print:bg-transparent`}>
+          <aside className={`rounded-[22px] ${cardBorder} p-6 ${panelBg} h-fit sticky top-6 print:static print:p-0 print:border-0 print:rounded-none print:bg-transparent`}>
             <div className="mb-5 flex flex-col gap-3">
               <h2 className={`font-black ${isAccessible ? "text-2xl" : "text-lg"}`}>Resumen del pedido</h2>
-              <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-2 no-print print:hidden">
+              <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-3 no-print print:hidden">
                 <button
                   type="button"
                   onClick={handlePrint}
                   disabled={pedidoDetalles.length === 0}
                   className={`w-full min-w-0 ${quickActionButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                 >
-                  🖨 Imprimir comanda
+                  <Printer className={`h-4 w-4 shrink-0 ${isHighContrast ? "text-current" : "text-slate-700"}`} aria-hidden="true" />
+                  <span>Imprimir</span>
                 </button>
                 <button
                   type="button"
@@ -1286,7 +1287,7 @@ function PdvPage() {
                 >
                   <span className="inline-flex items-center gap-2">
                     <Volume2 className={`h-4 w-4 ${isHighContrast ? "text-current" : "text-black"}`} aria-hidden="true" />
-                    <span>Leer resumen</span>
+                    <span>Leer</span>
                   </span>
                 </button>
                 <button
@@ -1353,17 +1354,17 @@ function PdvPage() {
               </div>
             )}
 
-            <div className={`mb-5 max-h-96 overflow-y-auto rounded-xl p-4 ${isAccessible ? "bg-slate-50 border-2 border-slate-900" : "bg-slate-50 border border-slate-200"}`}>
+            <div className={`mb-5 max-h-96 overflow-y-auto rounded-xl p-5 ${isAccessible ? "bg-slate-50 border-2 border-slate-900" : "bg-slate-50 border border-slate-200"}`}>
               {pedidoDetalles.length === 0 ? (
                 <p className={`text-center font-bold text-slate-500 ${isAccessible ? "text-lg" : "text-base"}`}>
                   Sin productos seleccionados
                 </p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {pedidoDetalles.map((item) => (
                     <div
                       key={item.productoId}
-                      className={`rounded-lg p-3 flex items-start justify-between gap-2 ${
+                      className={`rounded-xl p-4 flex items-start justify-between gap-3 ${
                         isAccessible
                           ? "bg-white border border-slate-300"
                           : "bg-white border border-slate-200"
@@ -1398,7 +1399,7 @@ function PdvPage() {
             </div>
 
             <div
-              className={`mb-5 rounded-xl p-4 ${
+              className={`mb-5 rounded-xl p-5 ${
                 isAccessible
                   ? "bg-slate-100 border-2 border-slate-900"
                   : "bg-[#FFF8DC] border border-[#FFF4BF]"
@@ -1412,7 +1413,7 @@ function PdvPage() {
 
             <div className="mb-5 space-y-3">
               <h3 className={`font-bold ${isAccessible ? "text-xl" : "text-base"}`}>Método de pago</h3>
-              <div className="grid grid-cols-3 gap-2 xl:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid grid-cols-3 gap-3">
                 {PAYMENT_OPTIONS.map((option) => {
                   const active = metodoPago === option.value;
 	                return (
@@ -1420,7 +1421,7 @@ function PdvPage() {
                       key={option.value}
                       type="button"
                       onClick={() => selectMetodoPago(option.value)}
-                        className={`flex flex-col items-center justify-center gap-2 rounded-lg py-3 font-bold transition focus:outline-none focus:ring-4 focus:ring-slate-900 focus:ring-offset-2 ${
+                        className={`flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl px-2 py-3 font-bold transition focus:outline-none focus:ring-4 focus:ring-slate-900 focus:ring-offset-2 ${
                           active
                             ? isAccessible
                               ? "bg-slate-900 text-white border-2 border-slate-900"

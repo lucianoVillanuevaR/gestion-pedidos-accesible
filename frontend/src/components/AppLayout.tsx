@@ -13,7 +13,7 @@ function AppLayout() {
   const currentRoute = getRouteMeta(location.pathname)
   const isPdvPage = location.pathname === "/pdv"
   const sidebarOffsetClass = isAccessible ? "lg:pl-[360px]" : "lg:pl-[320px]"
-  const pageShellClass = "mx-auto w-full max-w-[1400px]"
+  const pageShellClass = isPdvPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
   const mainContentClass = isPdvPage
     ? "px-0 py-0"
     : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isAccessible ? "lg:px-10" : ""}`
