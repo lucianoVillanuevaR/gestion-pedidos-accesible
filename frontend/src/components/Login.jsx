@@ -2,36 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fondoR from "../assets/fondoR.png";
 import logoRiq from "../assets/logoRiq.png";
+import { DEMO_USERS, getDefaultRouteForRole } from "../constants/auth";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
+import { useAuthContext } from "../contexts/AuthContext";
 import useVoice from "../hooks/useVoice";
-
-// Credenciales simuladas para demostrar la redirección por perfil.
-const DEMO_USERS = [
-  {
-    email: "cajero@demo.cl",
-    username: "cajero",
-    password: "123456",
-    route: "/pdv",
-    label: "Cajero"
-  },
-  {
-    email: "cocina@demo.cl",
-    username: "cocina",
-    password: "123456",
-    route: "/cocina",
-    label: "Cocina"
-  },
-  {
-    email: "admin@demo.cl",
-    username: "admin",
-    password: "123456",
-    route: "/dashboard",
-    label: "Administrador"
-  }
-];
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuthContext();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -59,46 +37,39 @@ function Login() {
 
   const announceError = (message) => {
     setFeedback({ type: "error", message });
-    speak(message);
+    speak(message, {
+      priority: "high",
+      dedupeKey: `login-error:${message}`,
+      cooldownMs: 3000,
+      interrupt: true
+    });
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (!identifier.trim() || !password.trim()) {
-      announceError("Debe completar usuario y contraseña");
-      return;
-    }
+    const loginResult = login({ identifier, password });
 
-    const normalizedIdentifier = identifier.trim().toLowerCase();
-    const matchingUser = DEMO_USERS.find((user) => {
-      return (
-        user.email === normalizedIdentifier ||
-        user.username === normalizedIdentifier
-      );
-    });
-
-    if (!matchingUser || matchingUser.password !== password) {
-      announceError("Usuario o contraseña incorrectos");
+    if (!loginResult.ok) {
+      announceError(loginResult.message);
       return;
     }
 
     setFeedback({ type: "success", message: "Bienvenido al sistema" });
-    speak("Bienvenido al sistema");
+    speak("Bienvenido", {
+      priority: "high",
+      dedupeKey: "login-success",
+      cooldownMs: 3000,
+      interrupt: true
+    });
 
     if (navigateTimerRef.current) {
       window.clearTimeout(navigateTimerRef.current);
     }
 
     navigateTimerRef.current = window.setTimeout(() => {
-      navigate(matchingUser.route, { replace: true });
+      navigate(getDefaultRouteForRole(loginResult.user.role), { replace: true });
     }, 700);
-  };
-
-  const handleFieldFocus = (message) => {
-    if (isVoiceEnabled) {
-      speak(message);
-    }
   };
 
   // Clases condicionales según modo accesible
@@ -193,7 +164,6 @@ function Login() {
                       resetFeedback();
                     }
                   }}
-                  onFocus={() => handleFieldFocus("Ingrese su usuario o correo")}
                   className={inputClass}
                   aria-describedby={feedback.message ? "login-feedback" : undefined}
                 />
@@ -211,12 +181,11 @@ function Login() {
                     placeholder="Ingrese su contraseña"
                     value={password}
                     onChange={(event) => {
-                      setPassword(event.target.value);
-                      if (feedback.message) {
-                        resetFeedback();
-                      }
-                    }}
-                    onFocus={() => handleFieldFocus("Ingrese su contraseña")}
+                    setPassword(event.target.value);
+                    if (feedback.message) {
+                      resetFeedback();
+                    }
+                  }}
                     className={passwordInputClass}
                     aria-describedby={feedback.message ? "login-feedback" : undefined}
                   />

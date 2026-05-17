@@ -1,21 +1,123 @@
 import { useCallback, useEffect } from "react";
 
 const VOICE_LANGUAGE = "es-CL";
+const DEFAULT_RATE = 0.86;
+const DEFAULT_PITCH = 0.95;
+const DEFAULT_VOLUME = 0.82;
+const DEFAULT_DELAY_MS = 140;
+const DEFAULT_COOLDOWN_MS = 2600;
+const DEFAULT_MIN_GAP_MS = 350;
+const RECENT_MESSAGES_TTL_MS = 15000;
+const GOOGLE_SPANISH_VOICE_NAMES = [
+  "google espanol",
+  "google spanish",
+  "google espanol de estados unidos",
+  "google spanish united states"
+];
+
+const PRIORITY_LEVELS = {
+  low: 0,
+  normal: 1,
+  high: 2
+};
+
+let pendingSpeakTimer = null;
+let pendingResolve = null;
+let activeResolve = null;
+let activeSpeechToken = 0;
+let lastSpokenAt = 0;
+let lastSpokenKey = "";
+let lastPriorityLevel = PRIORITY_LEVELS.normal;
+
+const recentMessages = new Map();
+
+function normalizeMessage(message) {
+  return String(message || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+function cleanupRecentMessages(now) {
+  for (const [key, timestamp] of recentMessages.entries()) {
+    if (now - timestamp > RECENT_MESSAGES_TTL_MS) {
+      recentMessages.delete(key);
+    }
+  }
+}
+
+function resolvePendingSpeak(result) {
+  if (pendingResolve) {
+    const resolver = pendingResolve;
+    pendingResolve = null;
+    resolver(result);
+  }
+}
+
+function resolveActiveSpeak(result) {
+  if (activeResolve) {
+    const resolver = activeResolve;
+    activeResolve = null;
+    resolver(result);
+  }
+}
+
+function cancelGlobalSpeech(speechSynthesis) {
+  activeSpeechToken += 1;
+
+  if (pendingSpeakTimer) {
+    window.clearTimeout(pendingSpeakTimer);
+    pendingSpeakTimer = null;
+    resolvePendingSpeak(false);
+  }
+
+  if (speechSynthesis) {
+    speechSynthesis.cancel();
+  }
+
+  resolveActiveSpeak(false);
+}
+
+function normalizeVoiceName(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function getPreferredVoice(speechSynthesis) {
+  const voices = speechSynthesis.getVoices();
+
+  if (!voices || voices.length === 0) {
+    return null;
+  }
+
+  const isSpanishVoice = (voice) => voice.lang?.toLowerCase().startsWith("es");
+  const isChileSpanishVoice = (voice) => voice.lang?.toLowerCase() === VOICE_LANGUAGE.toLowerCase() || voice.lang?.toLowerCase().startsWith("es-cl");
+  const isGoogleVoice = (voice) => normalizeVoiceName(voice.name).includes("google");
+  const hasGoogleSpanishName = (voice) => {
+    const normalizedName = normalizeVoiceName(voice.name);
+    return GOOGLE_SPANISH_VOICE_NAMES.some((name) => normalizedName.includes(name));
+  };
+
+  return (
+    voices.find((voice) => hasGoogleSpanishName(voice) && isChileSpanishVoice(voice)) ||
+    voices.find((voice) => hasGoogleSpanishName(voice) && isSpanishVoice(voice)) ||
+    voices.find((voice) => isGoogleVoice(voice) && isChileSpanishVoice(voice)) ||
+    voices.find((voice) => isGoogleVoice(voice) && isSpanishVoice(voice)) ||
+    voices.find((voice) => voice.lang?.toLowerCase() === VOICE_LANGUAGE.toLowerCase()) ||
+    voices.find((voice) => voice.lang?.toLowerCase().startsWith("es-cl")) ||
+    voices.find((voice) => voice.lang?.toLowerCase().startsWith("es")) ||
+    null
+  );
+}
 
 /**
- * Gestiona retroalimentación de voz con SpeechSynthesis
- * Accesibilidad: proporciona retroalimentación auditiva clara
- * 
- * Casos de uso:
- * - Confirmación de acciones
- * - Guía de navegación
- * - Instrucciones para adultos mayores
- * - Lectores de pantalla amigables
- * 
- * WCAG: Audio con control del usuario
+ * Gestiona retroalimentación de voz breve y poco invasiva.
+ * La voz se usa como guía simple, no como lector de pantalla completo.
  */
 function useVoice({ enabled = false } = {}) {
-  // Detectar soporte de SpeechSynthesis
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -24,13 +126,30 @@ function useVoice({ enabled = false } = {}) {
     const speechSynthesis = window.speechSynthesis;
     if (!speechSynthesis) {
       console.warn("SpeechSynthesis no está soportada en este navegador");
+      return;
     }
+
+    const warmVoices = () => {
+      speechSynthesis.getVoices();
+    };
+
+    warmVoices();
+    speechSynthesis.addEventListener?.("voiceschanged", warmVoices);
+
+    return () => {
+      speechSynthesis.removeEventListener?.("voiceschanged", warmVoices);
+    };
   }, []);
 
   const speak = useCallback(
     (message, options = {}) => {
       if (typeof window === "undefined" || !enabled) {
-        return Promise.resolve();
+        return Promise.resolve(false);
+      }
+
+      const text = String(message || "").trim();
+      if (!text) {
+        return Promise.resolve(false);
       }
 
       const speechSynthesis = window.speechSynthesis;
@@ -39,34 +158,94 @@ function useVoice({ enabled = false } = {}) {
         return Promise.reject(new Error("SpeechSynthesis no disponible"));
       }
 
-      return new Promise((resolve) => {
-        // Cancelar cualquier mensaje previo si no está en cola
-        if (!options.queue) {
-          speechSynthesis.cancel();
+      const now = Date.now();
+      cleanupRecentMessages(now);
+
+      const priorityLevel = PRIORITY_LEVELS[options.priority || "normal"] ?? PRIORITY_LEVELS.normal;
+      const normalizedMessage = normalizeMessage(text);
+      const dedupeKey = options.dedupeKey || normalizedMessage;
+      const cooldownMs = options.cooldownMs ?? DEFAULT_COOLDOWN_MS;
+      const minGapMs = options.minGapMs ?? DEFAULT_MIN_GAP_MS;
+      const isBusy = speechSynthesis.speaking || speechSynthesis.pending || pendingSpeakTimer !== null;
+      const force = Boolean(options.force);
+      const interrupt = options.interrupt ?? priorityLevel >= PRIORITY_LEVELS.high;
+
+      if (!force) {
+        const lastMessageAt = recentMessages.get(dedupeKey) ?? 0;
+        const repeatedTooSoon = cooldownMs > 0 && now - lastMessageAt < cooldownMs;
+        const tooCloseToPreviousMessage =
+          lastSpokenAt > 0 &&
+          now - lastSpokenAt < minGapMs &&
+          priorityLevel <= lastPriorityLevel;
+        const duplicateOfLastMessage = lastSpokenKey === dedupeKey && now - lastSpokenAt < cooldownMs;
+
+        if (repeatedTooSoon || tooCloseToPreviousMessage || duplicateOfLastMessage) {
+          return Promise.resolve(false);
         }
 
-        const utterance = new SpeechSynthesisUtterance(message);
-        utterance.lang = options.language || VOICE_LANGUAGE;
-        utterance.rate = options.rate || 0.9; // Velocidad más lenta para adultos mayores
-        utterance.pitch = options.pitch || 1;
-        utterance.volume = Math.min(1, options.volume || 1);
+        if (isBusy && !interrupt) {
+          return Promise.resolve(false);
+        }
+      }
 
-        utterance.onstart = () => {
-          options.onStart?.();
+      cancelGlobalSpeech(speechSynthesis);
+
+      return new Promise((resolve) => {
+        const startSpeech = () => {
+          pendingSpeakTimer = null;
+          pendingResolve = null;
+
+          const utterance = new SpeechSynthesisUtterance(text);
+          const voice = getPreferredVoice(speechSynthesis);
+          const token = activeSpeechToken + 1;
+
+          activeSpeechToken = token;
+          activeResolve = resolve;
+          lastSpokenAt = Date.now();
+          lastSpokenKey = dedupeKey;
+          lastPriorityLevel = priorityLevel;
+          recentMessages.set(dedupeKey, lastSpokenAt);
+
+          utterance.lang = options.language || voice?.lang || VOICE_LANGUAGE;
+          utterance.voice = voice || null;
+          utterance.rate = options.rate ?? DEFAULT_RATE;
+          utterance.pitch = options.pitch ?? DEFAULT_PITCH;
+          utterance.volume = Math.min(1, Math.max(0, options.volume ?? DEFAULT_VOLUME));
+
+          utterance.onstart = () => {
+            options.onStart?.();
+          };
+
+          utterance.onend = () => {
+            if (token !== activeSpeechToken) {
+              return;
+            }
+
+            activeResolve = null;
+            options.onEnd?.();
+            resolve(true);
+          };
+
+          utterance.onerror = (event) => {
+            if (token !== activeSpeechToken) {
+              return;
+            }
+
+            activeResolve = null;
+            console.warn("Error en SpeechSynthesis:", event.error);
+            options.onError?.(event);
+            resolve(false);
+          };
+
+          speechSynthesis.cancel();
+          speechSynthesis.speak(utterance);
         };
 
-        utterance.onend = () => {
-          options.onEnd?.();
-          resolve();
-        };
-
-        utterance.onerror = (event) => {
-          console.warn("Error en SpeechSynthesis:", event.error);
-          options.onError?.(event);
-          resolve();
-        };
-
-        speechSynthesis.speak(utterance);
+        pendingResolve = resolve;
+        pendingSpeakTimer = window.setTimeout(
+          startSpeech,
+          options.delayMs ?? DEFAULT_DELAY_MS
+        );
       });
     },
     [enabled]
@@ -78,7 +257,7 @@ function useVoice({ enabled = false } = {}) {
     }
 
     const speechSynthesis = window.speechSynthesis;
-    return speechSynthesis ? speechSynthesis.speaking : false;
+    return speechSynthesis ? speechSynthesis.speaking || speechSynthesis.pending : false;
   }, []);
 
   const stop = useCallback(() => {
@@ -86,10 +265,7 @@ function useVoice({ enabled = false } = {}) {
       return;
     }
 
-    const speechSynthesis = window.speechSynthesis;
-    if (speechSynthesis) {
-      speechSynthesis.cancel();
-    }
+    cancelGlobalSpeech(window.speechSynthesis);
   }, []);
 
   return {

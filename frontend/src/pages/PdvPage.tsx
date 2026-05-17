@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeftRight, Banknote, CreditCard, Search, Volume2 } from "lucide-react";
+import { ArrowLeftRight, Banknote, CreditCard, Printer, Search, Volume2 } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
+import { useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { createPedido } from "../services/pedidos";
 import { getProductos } from "../services/productos";
@@ -25,12 +26,48 @@ type FeedbackState = {
   message: string;
 };
 
+type SoundCue = "add" | "decrease" | "remove" | "clear" | "success" | "error";
+
+type ToneStep = {
+  delayMs?: number;
+  durationMs: number;
+  frequency: number;
+  type?: OscillatorType;
+  volume?: number;
+};
+
 const ACCESSIBLE_STEP_COUNT = 6;
 const PAYMENT_OPTIONS = [
   { value: "efectivo", label: "Efectivo", Icon: Banknote },
   { value: "tarjeta", label: "Tarjeta", Icon: CreditCard },
   { value: "transferencia", label: "Transferencia", Icon: ArrowLeftRight }
 ] as const;
+
+const SOUND_CUES: Record<SoundCue, ToneStep[]> = {
+  add: [
+    { frequency: 880, durationMs: 70, type: "triangle", volume: 0.07 }
+  ],
+  decrease: [
+    { frequency: 640, durationMs: 75, type: "sine", volume: 0.062 }
+  ],
+  remove: [
+    { frequency: 620, durationMs: 65, type: "sine", volume: 0.062 },
+    { frequency: 520, durationMs: 90, delayMs: 55, type: "sine", volume: 0.07 }
+  ],
+  clear: [
+    { frequency: 660, durationMs: 60, type: "triangle", volume: 0.055 },
+    { frequency: 520, durationMs: 75, delayMs: 60, type: "triangle", volume: 0.062 },
+    { frequency: 380, durationMs: 110, delayMs: 135, type: "sine", volume: 0.07 }
+  ],
+  success: [
+    { frequency: 880, durationMs: 75, type: "triangle", volume: 0.062 },
+    { frequency: 1040, durationMs: 120, delayMs: 70, type: "triangle", volume: 0.075 }
+  ],
+  error: [
+    { frequency: 260, durationMs: 90, type: "sawtooth", volume: 0.055 },
+    { frequency: 220, durationMs: 140, delayMs: 75, type: "sawtooth", volume: 0.062 }
+  ]
+};
 
 function Toast({
   feedback,
@@ -146,14 +183,14 @@ function ProductCard({
         className={`h-32 overflow-hidden ${
           isAccessible
             ? "bg-slate-100 border-b-2 border-slate-900"
-            : "bg-gradient-to-br from-[#FFF8DC] via-[#FFFBF0] to-[#F7F7F7]"
+            : "bg-[#FECE00]"
         }`}
       >
         {producto.imagen ? (
           <img
             src={producto.imagen}
             alt={producto.altText || producto.nombre}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
             loading="lazy"
           />
         ) : (
@@ -273,7 +310,8 @@ function ProductCard({
 }
 
 function PdvPage() {
-  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const navigate = useNavigate();
+  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: true });
 
@@ -295,6 +333,8 @@ function PdvPage() {
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const ticketRef = useRef<HTMLDivElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastSoundEndRef = useRef(0);
 
   const loadProductos = (isMountedRef?: { current: boolean }) => {
     setLoadingProductos(true);
@@ -354,33 +394,74 @@ function PdvPage() {
     setAccessibleStep(1);
   }, [isAccessible]);
 
-  const playTone = (frequency = 880, duration = 120) => {
+  const getAudioContext = () => {
     if (!isSoundEnabled || typeof window === "undefined") {
-      return;
+      return null;
     }
 
     const AudioContextClass = window.AudioContext || (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) {
-      return;
+      return null;
     }
 
-    const context = new AudioContextClass();
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      audioContextRef.current = new AudioContextClass();
+    }
+
+    if (audioContextRef.current.state === "suspended") {
+      void audioContextRef.current.resume().catch(() => {});
+    }
+
+    return audioContextRef.current;
+  };
+
+  const scheduleTone = (context: AudioContext, startAt: number, step: ToneStep) => {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
 
-    oscillator.type = "sine";
-    oscillator.frequency.value = frequency;
-    gain.gain.value = 0.04;
+    oscillator.type = step.type || "sine";
+    oscillator.frequency.setValueAtTime(step.frequency, startAt);
+
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.exponentialRampToValueAtTime(step.volume || 0.045, startAt + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + step.durationMs / 1000);
 
     oscillator.connect(gain);
     gain.connect(context.destination);
 
-    oscillator.start();
-    oscillator.stop(context.currentTime + duration / 1000);
-    oscillator.onended = () => {
-      context.close();
-    };
+    oscillator.start(startAt);
+    oscillator.stop(startAt + step.durationMs / 1000 + 0.02);
   };
+
+  const playSoundCue = (cue: SoundCue) => {
+    const context = getAudioContext();
+    if (!context) {
+      return;
+    }
+
+    const steps = SOUND_CUES[cue];
+    const baseStart = Math.max(context.currentTime + 0.01, lastSoundEndRef.current + 0.03);
+    let soundEnd = baseStart;
+
+    steps.forEach((step) => {
+      const startAt = baseStart + (step.delayMs || 0) / 1000;
+      scheduleTone(context, startAt, step);
+      soundEnd = Math.max(soundEnd, startAt + step.durationMs / 1000);
+    });
+
+    lastSoundEndRef.current = soundEnd;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (!audioContextRef.current) {
+        return;
+      }
+
+      void audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    };
+  }, []);
 
   const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
     return productos.map((producto) => ({
@@ -392,12 +473,11 @@ function PdvPage() {
   const productosFiltrados = useMemo(() => {
     const filtradosPorCategoria = filterProductosByCategory(
       productosConCategoria,
-      selectedCategory,
-      items
+      selectedCategory
     );
 
     return filterProductosBySearch(filtradosPorCategoria, searchTerm);
-  }, [items, productosConCategoria, searchTerm, selectedCategory]);
+  }, [productosConCategoria, searchTerm, selectedCategory]);
 
   const { detalles: pedidoDetalles, total, cantidad: totalItems } = useMemo(() => {
     return buildPedidoSummary(items, productos);
@@ -410,32 +490,36 @@ function PdvPage() {
   }, [pedidoDetalles.length]);
 
   const accessibleProductos = useMemo(() => {
-    return filterProductosByCategory(productosConCategoria, selectedCategory, items);
-  }, [items, productosConCategoria, selectedCategory]);
+    return filterProductosByCategory(productosConCategoria, selectedCategory);
+  }, [productosConCategoria, selectedCategory]);
 
   const puedeRegistrar = pedidoDetalles.length > 0 && metodoPago !== "" && !sending;
 
-  const announce = (message: string) => {
+  const announce = (message: string, options = {}) => {
     if (isVoiceEnabled) {
-      speak(message);
+      speak(message, options);
     }
   };
 
   const handleReadPedidoSummary = () => {
     if (pedidoDetalles.length === 0) {
-      speakOnDemand("El resumen del pedido está vacío. No hay productos seleccionados.");
+      speakOnDemand("No hay productos seleccionados.", {
+        priority: "high",
+        dedupeKey: "read-summary-empty",
+        force: true,
+        interrupt: true,
+        rate: 0.82
+      });
       return;
     }
 
     const itemLines = pedidoDetalles.map((item) => {
-      const unitLabel = item.cantidad === 1 ? "unidad" : "unidades";
-      return `${item.cantidad} ${unitLabel} de ${item.producto.nombre}`;
+      return `${item.cantidad} ${item.producto.nombre}`;
     });
 
     const parts = [
       "Resumen del pedido.",
-      `Hay ${pedidoDetalles.length} ${pedidoDetalles.length === 1 ? "producto" : "productos"} seleccionados.`,
-      `En total son ${totalItems} ${totalItems === 1 ? "item" : "items"}.`,
+      `Tienes ${totalItems} ${totalItems === 1 ? "producto" : "productos"}.`,
       `Detalle: ${itemLines.join(", ")}.`,
       `Total a pagar ${formatCurrency(total)}.`
     ];
@@ -449,9 +533,26 @@ function PdvPage() {
     }
 
     speakOnDemand(parts.join(" "), {
-      rate: isAccessible ? 0.8 : 0.9
+      priority: "high",
+      dedupeKey: "read-summary",
+      force: true,
+      interrupt: true,
+      rate: isAccessible ? 0.8 : 0.86
     });
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleReadSummaryRequest = () => {
+      handleReadPedidoSummary();
+    };
+
+    window.addEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
+    return () => window.removeEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
+  }, [handleReadPedidoSummary]);
 
   const setItemQuantity = (producto: Producto, nextQuantity: number) => {
     setItems((currentItems) => {
@@ -478,50 +579,122 @@ function PdvPage() {
   const addProduct = (producto: Producto) => {
     const nextQuantity = (items[producto.id] || 0) + 1;
     setItemQuantity(producto, nextQuantity);
-    const msg = `${producto.nombre} agregado al pedido`;
+    const msg = "Producto agregado";
     setFeedback({ type: "success", message: msg });
-    playTone(880, 90);
-    announce(msg);
+    playSoundCue("add");
+    announce(msg, {
+      priority: "normal",
+      dedupeKey: "product-added",
+      cooldownMs: 1800
+    });
   };
 
   const increaseProduct = (producto: Producto) => {
     const nextQuantity = (items[producto.id] || 0) + 1;
     setItemQuantity(producto, nextQuantity);
+    playSoundCue("add");
+    announce("Cantidad aumentada", {
+      priority: "low",
+      dedupeKey: "quantity-up",
+      cooldownMs: 1500
+    });
   };
 
   const decreaseProduct = (producto: Producto) => {
     const currentQuantity = items[producto.id] || 0;
     setItemQuantity(producto, currentQuantity - 1);
+
+    if (currentQuantity <= 1) {
+      playSoundCue("remove");
+      announce("Producto quitado", {
+        priority: "low",
+        dedupeKey: "product-removed",
+        cooldownMs: 1500
+      });
+      return;
+    }
+
+    playSoundCue("decrease");
+    announce("Cantidad reducida", {
+      priority: "low",
+      dedupeKey: "quantity-down",
+      cooldownMs: 1500
+    });
   };
 
-    const removeProduct = (productoId: number) => {
-      setItems((prevItems) => {
-        const newItems = { ...prevItems };
-        delete newItems[productoId];
-        return newItems;
-      });
-      const producto = productos.find(p => p.id === productoId);
-      if (producto) {
-        const msg = `${producto.nombre} removido del pedido`;
-        setFeedback({ type: "success", message: msg });
-        playTone(740, 90);
-        announce(msg);
-      }
-    };
+  const removeProduct = (productoId: number) => {
+    setItems((prevItems) => {
+      const newItems = { ...prevItems };
+      delete newItems[productoId];
+      return newItems;
+    });
+
+    setFeedback({ type: "success", message: "Producto quitado" });
+    playSoundCue("remove");
+    announce("Producto quitado", {
+      priority: "normal",
+      dedupeKey: "product-removed",
+      cooldownMs: 1500
+    });
+  };
 
   const resetPedido = () => {
     clearPedidoForm();
     setFeedback(null);
     setShowResetConfirm(false);
+    playSoundCue("clear");
+    announce("Pedido borrado", {
+      priority: "high",
+      dedupeKey: "pedido-reset",
+      cooldownMs: 2000,
+      interrupt: true
+    });
+  };
+
+  const openResetConfirm = () => {
+    setShowResetConfirm(true);
+    announce("¿Seguro que quieres borrar?", {
+      priority: "high",
+      dedupeKey: "confirm-reset",
+      cooldownMs: 1800,
+      interrupt: true
+    });
+  };
+
+  const selectMetodoPago = (value: MetodoPago) => {
+    setMetodoPago(value);
+
+    const voiceMessage =
+      value === "efectivo"
+        ? "Pago en efectivo"
+        : value === "tarjeta"
+          ? "Pago con tarjeta"
+          : "Pago por transferencia";
+
+    announce(voiceMessage, {
+      priority: "normal",
+      dedupeKey: `payment-${value}`,
+      cooldownMs: 1400
+    });
   };
 
   const handleSubmit = async () => {
     setFeedback(null);
 
     if (!puedeRegistrar) {
-      setFeedback({ type: "error", message: "Seleccione productos y método de pago" });
-      playTone(220, 160);
-      announce("Error al registrar pedido");
+      const message =
+        pedidoDetalles.length === 0
+          ? "No hay productos seleccionados"
+          : "Selecciona método de pago";
+
+      setFeedback({ type: "error", message });
+      playSoundCue("error");
+      announce(message, {
+        priority: "high",
+        dedupeKey: `submit-error:${message}`,
+        cooldownMs: 2500,
+        interrupt: true
+      });
       return;
     }
 
@@ -541,13 +714,23 @@ function PdvPage() {
       const successMsg = numeroPedido ? `Pedido #${numeroPedido} registrado` : "Pedido registrado";
       setFeedback({ type: "success", message: successMsg });
       clearPedidoForm();
-      playTone(990, 170);
-      announce(successMsg + ". Pedido registrado correctamente.");
+      playSoundCue("success");
+      announce("Pedido registrado", {
+        priority: "high",
+        dedupeKey: "pedido-registrado",
+        cooldownMs: 3000,
+        interrupt: true
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       setFeedback({ type: "error", message: message || "Error al registrar" });
-      playTone(220, 160);
-      announce("Error al registrar pedido: " + (message || "desconocido"));
+      playSoundCue("error");
+      announce("No pudimos registrar el pedido", {
+        priority: "high",
+        dedupeKey: "pedido-registrado-error",
+        cooldownMs: 3000,
+        interrupt: true
+      });
     } finally {
       setSending(false);
     }
@@ -569,27 +752,28 @@ function PdvPage() {
       }
     `,
     onAfterPrint: () => {
-      // Opcional: Mostrar confirmación después de imprimir
       const msg = "Comanda impresa correctamente";
       setFeedback({ type: "success", message: msg });
-      if (isVoiceEnabled) {
-        speak(msg);
-      }
+      announce("Comanda impresa", {
+        priority: "normal",
+        dedupeKey: "print-success",
+        cooldownMs: 2500
+      });
     }
   });
 
   const bgWrapper = isHighContrast ? "bg-black" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const textColor = isHighContrast ? "text-white" : isAccessible ? "text-slate-950" : "text-[#1F2937]";
   const cardBorder = isHighContrast ? "border-2 border-yellow-400" : isAccessible ? "border-2 border-slate-900" : "border border-slate-200";
-  const headerBg = isHighContrast ? "bg-black text-white border-b-2 border-yellow-400" : isAccessible ? "bg-slate-900 text-white" : "bg-[#FECE00] text-[#1F2937]";
+  const headerBg = isHighContrast ? "bg-black text-white border-b-2 border-yellow-400" : isAccessible ? "bg-slate-900 text-white border-b border-slate-700" : "bg-[#FECE00] text-[#1F2937] border-b border-amber-200";
   const panelBg = isHighContrast ? "bg-black contrast-panel" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const easyContinueOffset = "mr-20 sm:mr-28 md:mr-40 xl:mr-48";
-  const quickActionButtonClass = `inline-flex min-h-[44px] items-center justify-center rounded-lg border px-3 py-2 font-bold text-sm whitespace-nowrap transition ${
+  const quickActionButtonClass = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 font-bold text-[13px] whitespace-nowrap transition ${
     isHighContrast
       ? "contrast-button-secondary"
       : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
   }`;
-  const quickActionIconButtonClass = `inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-lg border text-lg transition ${
+  const quickActionIconButtonClass = `inline-flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-xl border text-lg transition ${
     isHighContrast
       ? "contrast-button-secondary"
       : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
@@ -607,22 +791,46 @@ function PdvPage() {
 
     switch (accessibleStep) {
       case 1:
-        speak("Modo fácil activado. Paso 1: elige una categoría.");
+        speak("Selecciona una categoría", {
+          priority: "normal",
+          dedupeKey: "pdv-step-1",
+          cooldownMs: 4000
+        });
         break;
       case 2:
-        speak("Paso 2: elige el producto y responde cuánto quieres con los botones más o menos.");
+        speak("Elige un producto", {
+          priority: "normal",
+          dedupeKey: "pdv-step-2",
+          cooldownMs: 4000
+        });
         break;
       case 3:
-        speak("Paso 3: revisa tu pedido.");
+        speak("Revisa tu pedido", {
+          priority: "normal",
+          dedupeKey: "pdv-step-3",
+          cooldownMs: 4000
+        });
         break;
       case 4:
-        speak("Paso 4: si quieres, agrega un comentario para cocina o para el cliente.");
+        speak("Si quieres, agrega una observación", {
+          priority: "normal",
+          dedupeKey: "pdv-step-4",
+          cooldownMs: 4000
+        });
         break;
       case 5:
-        speak("Paso 5: selecciona el método de pago.");
+        speak("Selecciona método de pago", {
+          priority: "normal",
+          dedupeKey: "pdv-step-5",
+          cooldownMs: 4000
+        });
         break;
       case ACCESSIBLE_STEP_COUNT:
-        speak("Paso 6: confirma y registra el pedido.");
+        speak("Revisa y registra el pedido", {
+          priority: "normal",
+          dedupeKey: "pdv-step-6",
+          cooldownMs: 4000
+        });
         break;
     }
   }, [accessibleStep, isAccessible, isVoiceEnabled, speak]);
@@ -635,9 +843,6 @@ function PdvPage() {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setAccessibleStep(1);
-        if (isVoiceEnabled) {
-          speak("Volviendo al paso 1");
-        }
       }
 
       if (event.key === "ArrowRight") {
@@ -654,23 +859,70 @@ function PdvPage() {
   }, [isAccessible, isVoiceEnabled, speak]);
 
   function AccessibleFlow() {
+    const stepGuidance = [
+      {
+        title: "Elige una categoría",
+        description: "Toca una sola categoría para ver solo lo necesario y seguir sin perderte."
+      },
+      {
+        title: "Elige un producto",
+        description: "Selecciona un producto y usa los botones grandes para indicar la cantidad."
+      },
+      {
+        title: "Revisa tu pedido",
+        description: "Confirma lo que elegiste antes de seguir al siguiente paso."
+      },
+      {
+        title: "Agrega un comentario",
+        description: "Este paso es opcional. Solo úsalo si realmente necesitas dejar una nota."
+      },
+      {
+        title: "Selecciona el pago",
+        description: "Escoge un método de pago con una sola pulsación."
+      },
+      {
+        title: "Registrar pedido",
+        description: "Revisa todo y presiona el botón principal para finalizar."
+      }
+    ][accessibleStep - 1];
+
     return (
-      <div className="space-y-6">
-        <header className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h1 className="font-black text-2xl">Riquísimo - Modo Fácil</h1>
-          <p className="mt-2 font-semibold">Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}</p>
-          <div className="mt-3 flex gap-4">
-            <div className="rounded-xl bg-white border p-3">
-              <p className="text-sm">Productos</p>
-              <p className="font-black text-xl">{productos.length}</p>
+      <div className="space-y-5">
+        <header className={`rounded-3xl ${cardBorder} p-6 sm:p-8 ${panelBg}`}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
+                Riquísimo · Modo Fácil
+              </p>
+              <h1 className={`mt-3 font-black tracking-tight ${isAccessible ? "text-[2rem] sm:text-[2.35rem]" : "text-2xl"}`}>
+                {stepGuidance.title}
+              </h1>
+              <p className={`mt-3 max-w-2xl leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"} ${isAccessible ? "text-lg" : "text-base"}`}>
+                {stepGuidance.description}
+              </p>
             </div>
-            <div className="rounded-xl bg-white border p-3">
-              <p className="text-sm">Items</p>
-              <p className="font-black text-xl">{totalItems}</p>
-            </div>
-            <div className="rounded-xl bg-white border p-3">
-              <p className="text-sm">Total</p>
-              <p className="font-black text-xl">{formatCurrency(total)}</p>
+
+            <div className="flex flex-col items-stretch gap-3">
+              <div className={`inline-flex min-h-[56px] items-center rounded-2xl border px-4 py-3 ${isHighContrast ? "contrast-panel-soft border-yellow-400" : isAccessible ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900"}`}>
+                <p className="font-black">
+                  Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={openAccessibilityPanel}
+                aria-haspopup="dialog"
+                aria-expanded={isPanelOpen}
+                className={`inline-flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border px-4 py-3 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
+                  isHighContrast
+                    ? "contrast-button-secondary"
+                    : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 focus-visible:ring-slate-900"
+                }`}
+              >
+                <span aria-hidden="true" className="text-2xl">♿</span>
+                <span>Accesibilidad</span>
+              </button>
             </div>
           </div>
         </header>
@@ -698,24 +950,44 @@ function PdvPage() {
                   onClick={() => {
                     setSelectedCategory(filtro.value);
                     setAccessibleStep(2);
-                    if (isVoiceEnabled) {
-                      let available = [];
-                      available = filterProductosByCategory(productosConCategoria, filtro.value, items);
-                      const count = available.length;
-                      const productList = available.map((p, i) => `${i + 1}. ${p.nombre}`).join(", ");
-                      const countWord = count === 1 ? "producto" : "productos";
-                      speak(`Has seleccionado ${filtro.label}. Hay ${count} ${countWord} disponibles: ${productList}. Ahora elige el producto y marca cuánto quieres con los botones más o menos.`);
-                    }
                   }}
                   className={`min-h-[56px] rounded-xl font-bold text-lg flex items-center justify-center gap-2 focus:outline-none focus:ring-4 ${
                     selectedCategory === filtro.value ? "bg-slate-900 text-white border-2 border-slate-900" : "bg-white text-slate-900 border-2 border-slate-300"
                   } ${isHighContrast ? (selectedCategory === filtro.value ? "contrast-button-primary" : "contrast-button-secondary") : ""}`}
                   aria-pressed={selectedCategory === filtro.value}
                 >
-                  <span className="text-2xl">{getCategoriaLabel(filtro.value as any)}</span>
                   <span>{filtro.label}</span>
                 </button>
               ))}
+            </div>
+
+            <div className="mt-6 border-t border-slate-200 pt-5">
+              <p className="mb-3 text-base font-semibold text-slate-600">Accesos rápidos</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/pedidos")}
+                  className={`min-h-[56px] rounded-xl border-2 px-4 py-3 text-lg font-bold transition ${
+                    isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:border-slate-900"
+                  }`}
+                >
+                  Ir a Pedidos
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/productos")}
+                  className={`min-h-[56px] rounded-xl border-2 px-4 py-3 text-lg font-bold transition ${
+                    isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 hover:border-slate-900"
+                  }`}
+                >
+                  Ir a Productos
+                </button>
+              </div>
             </div>
           </section>
         )}
@@ -875,7 +1147,7 @@ function PdvPage() {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setMetodoPago(option.value)}
+                    onClick={() => selectMetodoPago(option.value)}
 	                    className={`w-full flex items-center justify-between rounded-xl py-4 px-4 font-bold ${active ? "bg-slate-900 text-white" : "bg-white text-slate-900 border-2 border-slate-300"}`}
 	                    aria-pressed={active}
 	                  >
@@ -942,20 +1214,15 @@ function PdvPage() {
 
   return (
     <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
-	      <div className={`${headerBg} shadow-md no-print`}>
-	        <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${isAccessible ? "py-5" : "py-3"}`}>
-	          <div>
-	            <div>
-	              <h1 className={`font-black tracking-tight contrast-important ${isAccessible ? "text-2xl" : "text-xl"}`}>
-	                Riquísimo - Punto de Venta
-	              </h1>
-	              <p className={`mt-1 opacity-90 font-medium contrast-secondary-text ${isAccessible ? "text-sm" : "text-xs"}`}>Registra pedidos rápido y seguro</p>
-	            </div>
-	          </div>
+	      <div className={`${headerBg} no-print`}>
+	        <div className={`mx-auto flex w-full max-w-[1520px] items-center px-3 sm:px-4 lg:px-5 xl:px-6 ${isAccessible ? "min-h-[84px] py-4" : "min-h-[64px] py-3"}`}>
+            <h1 className={`font-black leading-none tracking-tight contrast-important ${isAccessible ? "text-3xl" : "text-xl"}`}>
+              Punto de Venta
+            </h1>
 	        </div>
 	      </div>
 
-      <div className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
+      <div className={`mx-auto w-full max-w-[1520px] px-3 sm:px-4 lg:px-5 xl:px-6 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-2 sm:py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
         {loadingProductos && (
           <div
             role="status"
@@ -1000,9 +1267,9 @@ function PdvPage() {
         {isAccessible ? (
           <AccessibleFlow />
 	        ) : (
-	          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_480px]">
-            <section className={`rounded-2xl ${cardBorder} p-6 ${panelBg} print:hidden no-print`}>
-            <div className="mb-6">
+            <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
+              <section className={`rounded-[22px] ${cardBorder} p-5 ${panelBg} print:hidden no-print`}>
+              <div className="mb-5">
               <h2 className={`font-black mb-3 ${isAccessible ? "text-2xl" : "text-lg"}`}>Filtrar por categoría</h2>
               <div className={`flex flex-wrap gap-2`}>
                 {FILTROS.map((filtro) => (
@@ -1018,7 +1285,7 @@ function PdvPage() {
               </div>
             </div>
 
-	              <div className="mb-6">
+                <div className="mb-5">
 	                <label htmlFor="searchProducto" className={`block font-bold mb-2 ${isAccessible ? "text-lg" : "text-sm"}`}>
 	                  <span className="inline-flex items-center gap-2 contrast-important">
 	                    <Search className={`h-4 w-4 ${isHighContrast ? "text-current" : "text-black"}`} aria-hidden="true" />
@@ -1035,13 +1302,13 @@ function PdvPage() {
                 />
               </div>
 
-            <div className="space-y-6">
+            <div className="space-y-5">
               {!loadingProductos && productosFiltrados.length === 0 && !loadingError ? (
                 <div className={`rounded-2xl border-2 border-dashed p-8 text-center ${isAccessible ? "border-slate-300 bg-slate-50" : "border-slate-300 bg-slate-50"}`}>
                   <p className={`font-bold ${isAccessible ? "text-xl" : "text-base"}`}>No hay productos en esta categoría</p>
                 </div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
                   {productosFiltrados.map((producto) => (
                     <ProductCard
                       key={producto.id}
@@ -1059,35 +1326,36 @@ function PdvPage() {
             </div>
           </section>
 
-          <aside className={`rounded-2xl ${cardBorder} p-6 ${panelBg} h-fit sticky top-6 print:static print:p-0 print:border-0 print:rounded-none print:bg-transparent`}>
-            <div className="mb-6 flex flex-col gap-3">
+          <aside className={`rounded-[22px] ${cardBorder} p-6 ${panelBg} h-fit sticky top-6 print:static print:p-0 print:border-0 print:rounded-none print:bg-transparent`}>
+            <div className="mb-5 flex flex-col gap-3">
               <h2 className={`font-black ${isAccessible ? "text-2xl" : "text-lg"}`}>Resumen del pedido</h2>
-              <div className="flex w-full flex-nowrap items-center gap-2 no-print print:hidden">
+              <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-3 no-print print:hidden">
                 <button
                   type="button"
                   onClick={handlePrint}
                   disabled={pedidoDetalles.length === 0}
-                  className={`${quickActionButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
+                  className={`w-full min-w-0 ${quickActionButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                 >
-                  🖨 Imprimir comanda
+                  <Printer className={`h-4 w-4 shrink-0 ${isHighContrast ? "text-current" : "text-slate-700"}`} aria-hidden="true" />
+                  <span>Imprimir</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleReadPedidoSummary}
-                  className={quickActionButtonClass}
+                  className={`w-full min-w-0 ${quickActionButtonClass}`}
                   aria-label="Leer resumen del pedido"
                   title="Leer resumen del pedido"
                 >
                   <span className="inline-flex items-center gap-2">
                     <Volume2 className={`h-4 w-4 ${isHighContrast ? "text-current" : "text-black"}`} aria-hidden="true" />
-                    <span>Leer resumen</span>
+                    <span>Leer</span>
                   </span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowResetConfirm(true)}
+                  onClick={openResetConfirm}
                   disabled={pedidoDetalles.length === 0}
-                  className={`${quickActionIconButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
+                  className={`justify-self-end ${quickActionIconButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                   title="Vaciar pedido"
                   aria-label="Vaciar pedido"
                 >
@@ -1107,7 +1375,7 @@ function PdvPage() {
                 <p className={`font-bold ${isAccessible ? "text-lg" : "text-sm"}`}>
                   ¿Está seguro de borrar el pedido?
                 </p>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
                     onClick={resetPedido}
@@ -1147,17 +1415,17 @@ function PdvPage() {
               </div>
             )}
 
-            <div className={`mb-6 max-h-96 overflow-y-auto rounded-xl p-4 ${isAccessible ? "bg-slate-50 border-2 border-slate-900" : "bg-slate-50 border border-slate-200"}`}>
+            <div className={`mb-5 max-h-96 overflow-y-auto rounded-xl p-5 ${isAccessible ? "bg-slate-50 border-2 border-slate-900" : "bg-slate-50 border border-slate-200"}`}>
               {pedidoDetalles.length === 0 ? (
                 <p className={`text-center font-bold text-slate-500 ${isAccessible ? "text-lg" : "text-base"}`}>
                   Sin productos seleccionados
                 </p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {pedidoDetalles.map((item) => (
                     <div
                       key={item.productoId}
-                      className={`rounded-lg p-3 flex items-start justify-between gap-2 ${
+                      className={`rounded-xl p-4 flex items-start justify-between gap-3 ${
                         isAccessible
                           ? "bg-white border border-slate-300"
                           : "bg-white border border-slate-200"
@@ -1192,7 +1460,7 @@ function PdvPage() {
             </div>
 
             <div
-              className={`mb-6 rounded-xl p-4 ${
+              className={`mb-5 rounded-xl p-5 ${
                 isAccessible
                   ? "bg-slate-100 border-2 border-slate-900"
                   : "bg-[#FFF8DC] border border-[#FFF4BF]"
@@ -1204,17 +1472,17 @@ function PdvPage() {
               </p>
             </div>
 
-            <div className="mb-6 space-y-3">
+            <div className="mb-5 space-y-3">
               <h3 className={`font-bold ${isAccessible ? "text-xl" : "text-base"}`}>Método de pago</h3>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {PAYMENT_OPTIONS.map((option) => {
                   const active = metodoPago === option.value;
 	                return (
 	                    <button
                       key={option.value}
                       type="button"
-                      onClick={() => setMetodoPago(option.value)}
-                        className={`flex flex-col items-center justify-center gap-2 rounded-lg py-3 font-bold transition focus:outline-none focus:ring-4 focus:ring-slate-900 focus:ring-offset-2 ${
+                      onClick={() => selectMetodoPago(option.value)}
+                        className={`flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl px-2 py-3 font-bold transition focus:outline-none focus:ring-4 focus:ring-slate-900 focus:ring-offset-2 ${
                           active
                             ? isAccessible
                               ? "bg-slate-900 text-white border-2 border-slate-900"
@@ -1233,7 +1501,7 @@ function PdvPage() {
               </div>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-5">
               <label htmlFor="observacion" className={`block font-bold mb-2 ${isAccessible ? "text-base" : "text-sm"}`}>
                 <span className="contrast-important">Observación</span>
               </label>

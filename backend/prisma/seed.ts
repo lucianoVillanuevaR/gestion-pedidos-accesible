@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
