@@ -31,28 +31,28 @@ function AppShell() {
         onClick={() => setIsPanelOpen((currentState) => !currentState)}
         className={`
           fixed bottom-4 right-4 z-50 sm:bottom-6 sm:right-6 no-print
-          flex min-h-[56px] items-center gap-3 rounded-full border px-4 py-3 text-left
-          font-bold shadow-xl transition focus-visible:outline focus-visible:outline-4
+          flex min-h-[64px] items-center gap-4 rounded-2xl border px-5 py-4 text-left
+          font-black shadow-2xl transition duration-200 ease-out focus-visible:outline focus-visible:outline-4
           focus-visible:outline-offset-4
           ${isAccessible || isPanelOpen
-            ? "border-slate-700 bg-white text-slate-900 hover:bg-slate-50 focus-visible:outline-blue-700"
-            : "border-blue-700 bg-blue-600 text-white hover:bg-blue-700 focus-visible:outline-blue-300"
+            ? "border-slate-800 bg-white text-slate-900 hover:-translate-y-0.5 hover:bg-slate-50 focus-visible:outline-blue-700"
+            : "border-blue-700 bg-blue-600 text-white hover:-translate-y-0.5 hover:bg-blue-700 focus-visible:outline-blue-300"
           }
         `}
       >
         <span
           aria-hidden="true"
-          className={`grid h-9 w-9 place-items-center rounded-full text-lg ${
+          className={`grid h-11 w-11 place-items-center rounded-2xl text-xl shadow-inner ${
             isAccessible || isPanelOpen ? "bg-slate-100 text-slate-900" : "bg-white/15 text-white"
           }`}
         >
           ♿
         </span>
-        <span className="leading-tight hidden sm:block">
-          <span className="block text-base">
+        <span className="hidden leading-tight sm:block">
+          <span className="block text-lg">
             {isAccessible ? "OPCIONES" : "Accesibilidad"}
           </span>
-          <span className="block text-xs font-medium opacity-90">
+          <span className="block text-sm font-semibold opacity-90">
             {isAccessible ? "MODO FÁCIL" : "Activar"}
           </span>
         </span>

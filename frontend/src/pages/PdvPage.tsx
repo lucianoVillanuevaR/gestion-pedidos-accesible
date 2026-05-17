@@ -844,23 +844,53 @@ function PdvPage() {
   }, [isAccessible, isVoiceEnabled, speak]);
 
   function AccessibleFlow() {
+    const stepGuidance = [
+      {
+        title: "Elige una categoría",
+        description: "Toca una sola categoría para ver solo lo necesario y seguir sin perderte."
+      },
+      {
+        title: "Elige un producto",
+        description: "Selecciona un producto y usa los botones grandes para indicar la cantidad."
+      },
+      {
+        title: "Revisa tu pedido",
+        description: "Confirma lo que elegiste antes de seguir al siguiente paso."
+      },
+      {
+        title: "Agrega un comentario",
+        description: "Este paso es opcional. Solo úsalo si realmente necesitas dejar una nota."
+      },
+      {
+        title: "Selecciona el pago",
+        description: "Escoge un método de pago con una sola pulsación."
+      },
+      {
+        title: "Registrar pedido",
+        description: "Revisa todo y presiona el botón principal para finalizar."
+      }
+    ][accessibleStep - 1];
+
     return (
-      <div className="space-y-6">
-        <header className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h1 className="font-black text-2xl">Riquísimo - Modo Fácil</h1>
-          <p className="mt-2 font-semibold">Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}</p>
-          <div className="mt-3 flex gap-4">
-            <div className="rounded-xl bg-white border p-3">
-              <p className="text-sm">Productos</p>
-              <p className="font-black text-xl">{productos.length}</p>
+      <div className="space-y-5">
+        <header className={`rounded-3xl ${cardBorder} p-6 sm:p-8 ${panelBg}`}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
+                Riquísimo · Modo Fácil
+              </p>
+              <h1 className={`mt-3 font-black tracking-tight ${isAccessible ? "text-[2rem] sm:text-[2.35rem]" : "text-2xl"}`}>
+                {stepGuidance.title}
+              </h1>
+              <p className={`mt-3 max-w-2xl leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"} ${isAccessible ? "text-lg" : "text-base"}`}>
+                {stepGuidance.description}
+              </p>
             </div>
-            <div className="rounded-xl bg-white border p-3">
-              <p className="text-sm">Items</p>
-              <p className="font-black text-xl">{totalItems}</p>
-            </div>
-            <div className="rounded-xl bg-white border p-3">
-              <p className="text-sm">Total</p>
-              <p className="font-black text-xl">{formatCurrency(total)}</p>
+
+            <div className={`inline-flex min-h-[56px] items-center rounded-2xl border px-4 py-3 ${isHighContrast ? "contrast-panel-soft border-yellow-400" : isAccessible ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900"}`}>
+              <p className="font-black">
+                Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}
+              </p>
             </div>
           </div>
         </header>
@@ -1124,14 +1154,14 @@ function PdvPage() {
   return (
     <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
 	      <div className={`${headerBg} no-print`}>
-	        <div className={`flex w-full items-center px-4 sm:px-5 lg:px-6 ${isAccessible ? "min-h-[76px]" : "min-h-[64px]"}`}>
-            <h1 className={`font-black tracking-tight contrast-important ${isAccessible ? "text-2xl" : "text-xl"}`}>
+	        <div className={`mx-auto flex w-full max-w-[1400px] items-center px-4 sm:px-5 lg:px-6 ${isAccessible ? "min-h-[84px] py-4" : "min-h-[64px] py-3"}`}>
+            <h1 className={`font-black tracking-tight contrast-important ${isAccessible ? "text-3xl" : "text-xl"}`}>
               Punto de Venta
             </h1>
 	        </div>
 	      </div>
 
-      <div className={`w-full px-2 sm:px-3 lg:px-4 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-2 sm:py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
+      <div className={`mx-auto w-full max-w-[1400px] px-3 sm:px-4 lg:px-6 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-2 sm:py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
         {loadingProductos && (
           <div
             role="status"

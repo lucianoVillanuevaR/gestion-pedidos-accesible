@@ -25,7 +25,7 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
 
   const navigationItems = getSidebarNavigation(user.role)
   const isPdvPage = location.pathname === "/pdv"
-  const widthClass = isAccessible ? "w-[92vw] max-w-[360px] lg:w-[360px]" : "w-[86vw] max-w-[320px] lg:w-[320px]"
+  const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[86vw] max-w-[320px] lg:w-[320px]"
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"
     : isAccessible
@@ -53,7 +53,7 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
     ? `min-h-[64px] px-4 ${isAccessible ? "py-4" : ""}`
     : `px-4 ${isAccessible ? "py-5" : "py-4"}`
   const navigationSpacingClass = isAccessible ? "space-y-3" : "space-y-2"
-  const footerSpacingClass = isAccessible ? "px-4 py-5" : "px-3 py-4"
+  const footerSpacingClass = isAccessible ? "mt-auto border-t px-4 py-5" : "mt-auto border-t px-3 py-4"
 
   const handleLogout = () => {
     logout()
@@ -92,7 +92,7 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
               <img src={logoRiq} alt="Logo de Riquísimo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
-              <p className={`truncate font-black tracking-tight ${brandTitleClass} ${isAccessible ? "text-xl" : "text-sm"}`}>
+              <p className={`truncate font-black tracking-tight ${brandTitleClass} ${isAccessible ? "text-[1.5rem]" : "text-sm"}`}>
                 Riquísimo
               </p>
               <p className={`text-[10px] leading-tight ${brandSubtitleClass} ${isAccessible ? "text-sm font-medium" : ""}`}>
@@ -125,7 +125,7 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
           </nav>
         </div>
 
-        <div className={`border-t ${footerSpacingClass} ${isHighContrast ? "border-yellow-400" : "border-slate-200"}`}>
+        <div className={`${footerSpacingClass} ${isHighContrast ? "border-yellow-400" : "border-slate-200"}`}>
           <div className={`mb-3 rounded-2xl px-4 py-3 ${isHighContrast ? "bg-black/30" : isAccessible ? "border border-slate-200 bg-slate-50" : "bg-slate-50"}`}>
             <p className={`text-xs font-semibold uppercase tracking-[0.12em] ${isHighContrast ? "text-yellow-200/70" : "text-slate-500"}`}>
               Usuario
@@ -141,13 +141,13 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
           <button
             type="button"
             onClick={handleLogout}
-            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 font-semibold transition ${
+            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
               isHighContrast
                 ? "contrast-button-secondary"
                 : isAccessible
-                  ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
-                  : "border-slate-300 bg-slate-50 text-slate-950 hover:bg-slate-100"
-            } ${isAccessible ? "min-h-[56px] text-base" : "min-h-[40px] text-xs"}`}
+                  ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-900"
+                  : "border-slate-300 bg-slate-50 text-slate-950 hover:bg-slate-100 focus-visible:ring-blue-500"
+            } ${isAccessible ? "min-h-[60px] text-base" : "min-h-[40px] text-xs"}`}
           >
             <LogOut className={isAccessible ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
             <span>Cerrar sesión</span>
@@ -160,12 +160,12 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                 onClose()
                 navigate(getDefaultRouteForRole(user.role))
               }}
-              className={`mt-2 w-full rounded-xl border px-4 py-3 font-medium transition ${
+              className={`mt-2 w-full rounded-xl border px-4 py-3 font-medium transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
                 isHighContrast
                   ? "contrast-button-secondary"
                   : isAccessible
-                    ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                    : "border-slate-300 bg-transparent text-slate-600 hover:bg-slate-50"
+                    ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-900"
+                    : "border-slate-300 bg-transparent text-slate-600 hover:bg-slate-50 focus-visible:ring-blue-500"
               }`}
             >
               Volver al inicio
