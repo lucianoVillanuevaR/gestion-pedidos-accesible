@@ -1,4 +1,4 @@
-import { LogOut, ShieldCheck, X } from "lucide-react"
+import { Accessibility, LogOut, ShieldCheck, X } from "lucide-react"
 import { useLocation } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
 import logoRiq from "../assets/logoRiq.png"
@@ -145,7 +145,7 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
           >
             <span className="flex min-w-0 items-center gap-3 text-left">
               <span className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-10 w-10 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "bg-slate-900 text-white"}`}>
-                ♿
+                <Accessibility className={isAccessible ? "h-6 w-6" : "h-5 w-5"} aria-hidden="true" />
               </span>
               <span className="min-w-0">
                 <span className={`block font-black leading-tight ${isAccessible ? "text-lg" : "text-sm"}`}>
@@ -178,8 +178,8 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
               isHighContrast
                 ? "contrast-button-secondary"
                 : isAccessible
-                  ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-900"
-                  : "border-slate-300 bg-slate-50 text-slate-950 hover:bg-slate-100 focus-visible:ring-blue-500"
+                  ? "border-red-800 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
+                  : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:ring-red-500"
             } ${isAccessible ? "min-h-[60px] text-base" : "min-h-[40px] text-xs"}`}
           >
             <LogOut className={isAccessible ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />

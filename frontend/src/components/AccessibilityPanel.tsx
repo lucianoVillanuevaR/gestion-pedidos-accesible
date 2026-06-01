@@ -1,15 +1,21 @@
 import { useEffect } from "react";
+import type { AccessibilityTextSize } from "../constants/accessibility";
 
-/**
- * Panel principal de accesibilidad con dos experiencias visuales:
- * 1. Modo Normal: compacto, moderno
- * 2. Modo Accesible: expandido, claro, legible
- * 
- * Características WCAG:
- * - Navegación completa por teclado
- * - Contraste AA/AAA
- * - Semántica HTML correcta
- */
+type AccessibilityPanelProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  isAccessible: boolean;
+  textSize: AccessibilityTextSize;
+  isHighContrast: boolean;
+  isVoiceEnabled: boolean;
+  isSoundEnabled: boolean;
+  onToggleAccessible: () => void;
+  onSetTextSize: (value: AccessibilityTextSize) => void;
+  onToggleContrast: () => void;
+  onToggleVoice: () => void;
+  onToggleSound: () => void;
+};
+
 function AccessibilityPanel({
   isOpen,
   onClose,
@@ -23,14 +29,13 @@ function AccessibilityPanel({
   onToggleContrast,
   onToggleVoice,
   onToggleSound
-}) {
-  // Manejo de teclado
+}: AccessibilityPanelProps) {
   useEffect(() => {
     if (!isOpen) {
       return undefined;
     }
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
       }
@@ -47,8 +52,7 @@ function AccessibilityPanel({
     return null;
   }
 
-  // Clases base para botones según modo
-  const getButtonClass = (active) => {
+  const getButtonClass = (active: boolean) => {
     const baseClass = "min-h-[56px] rounded-xl border px-4 py-3 font-bold transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4";
 
     if (isAccessible) {
@@ -66,20 +70,36 @@ function AccessibilityPanel({
     }`;
   };
 
-  // Clases para contenedor de opciones
   const sectionClass = isAccessible
     ? "rounded-2xl border-3 border-slate-900 bg-white p-6 space-y-4"
     : "rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3";
 
   const titleClass = isAccessible ? "text-2xl" : "text-lg";
   const spacingClass = isAccessible ? "space-y-6" : "space-y-5";
-
   const headerPaddingClass = isAccessible ? "px-6 py-5" : "px-5 py-4";
   const contentPaddingClass = isAccessible ? "px-6 py-6" : "px-5 py-5";
 
+  const sizeOptions: Array<{ value: AccessibilityTextSize; label: string; name: string }> = [
+    {
+      value: "small",
+      label: isAccessible ? " CHICA" : "A-",
+      name: "Pequeño"
+    },
+    {
+      value: "normal",
+      label: isAccessible ? " NORMAL" : "A",
+      name: "Normal"
+    },
+    {
+      value: "large",
+      label: isAccessible ? " GRANDE" : "A+",
+      name: "Grande"
+    }
+  ];
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/30 px-3 py-4 sm:px-4 no-print"
+      className="fixed inset-0 z-50 bg-black/30 px-3 py-4 no-print sm:px-4"
       onClick={onClose}
       role="presentation"
     >
@@ -107,10 +127,7 @@ function AccessibilityPanel({
               <p
                 className={`
                   font-bold uppercase tracking-[0.16em]
-                  ${isAccessible
-                    ? "text-xl text-slate-900"
-                    : "text-sm text-blue-700"
-                  }
+                  ${isAccessible ? "text-xl text-slate-900" : "text-sm text-blue-700"}
                 `}
               >
                 {isAccessible ? "OPCIONES SIMPLES" : "Accesibilidad"}
@@ -153,11 +170,8 @@ function AccessibilityPanel({
           </div>
         </div>
 
-        <div
-          className={`flex-1 overflow-y-auto ${contentPaddingClass} sm:px-6`}
-        >
+        <div className={`flex-1 overflow-y-auto ${contentPaddingClass} sm:px-6`}>
           <div className={spacingClass}>
-            {/* MODO ACCESIBLE */}
             <section className={sectionClass}>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -179,11 +193,7 @@ function AccessibilityPanel({
                 <button
                   type="button"
                   onClick={onToggleAccessible}
-                  aria-label={
-                    isAccessible
-                      ? "Desactivar modo fácil"
-                      : "Activar modo fácil"
-                  }
+                  aria-label={isAccessible ? "Desactivar modo fácil" : "Activar modo fácil"}
                   aria-pressed={isAccessible}
                   className={getButtonClass(isAccessible)}
                 >
@@ -194,7 +204,6 @@ function AccessibilityPanel({
               </div>
             </section>
 
-            {/* TAMAÑO DE TEXTO */}
             <section className={sectionClass}>
               <div>
                 <h3 className={`font-black text-slate-900 ${titleClass}`}>
@@ -212,26 +221,8 @@ function AccessibilityPanel({
                 </p>
               </div>
 
-              <div
-                className="grid gap-3 grid-cols-3"
-              >
-                {[
-                  {
-                    value: "small",
-                    label: isAccessible ? " CHICA" : "A-",
-                    name: "Pequeño"
-                  },
-                  {
-                    value: "normal",
-                    label: isAccessible ? " NORMAL" : "A",
-                    name: "Normal"
-                  },
-                  {
-                    value: "large",
-                    label: isAccessible ? " GRANDE" : "A+",
-                    name: "Grande"
-                  }
-                ].map((option) => (
+              <div className="grid grid-cols-3 gap-3">
+                {sizeOptions.map((option) => (
                   <button
                     key={option.value}
                     type="button"
@@ -250,7 +241,6 @@ function AccessibilityPanel({
               </div>
             </section>
 
-            {/* CONTRASTE */}
             <section className={sectionClass}>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -272,11 +262,7 @@ function AccessibilityPanel({
                 <button
                   type="button"
                   onClick={onToggleContrast}
-                  aria-label={
-                    isHighContrast
-                      ? "Desactivar contraste alto"
-                      : "Activar contraste alto"
-                  }
+                  aria-label={isHighContrast ? "Desactivar contraste alto" : "Activar contraste alto"}
                   aria-pressed={isHighContrast}
                   className={getButtonClass(isHighContrast)}
                 >
@@ -287,7 +273,6 @@ function AccessibilityPanel({
               </div>
             </section>
 
-            {/* VOZ */}
             <section className={sectionClass}>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -309,11 +294,7 @@ function AccessibilityPanel({
                 <button
                   type="button"
                   onClick={onToggleVoice}
-                  aria-label={
-                    isVoiceEnabled
-                      ? "Desactivar ayuda por voz"
-                      : "Activar ayuda por voz"
-                  }
+                  aria-label={isVoiceEnabled ? "Desactivar ayuda por voz" : "Activar ayuda por voz"}
                   aria-pressed={isVoiceEnabled}
                   className={getButtonClass(isVoiceEnabled)}
                 >
@@ -324,7 +305,6 @@ function AccessibilityPanel({
               </div>
             </section>
 
-            {/* SONIDOS */}
             <section className={sectionClass}>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -346,11 +326,7 @@ function AccessibilityPanel({
                 <button
                   type="button"
                   onClick={onToggleSound}
-                  aria-label={
-                    isSoundEnabled
-                      ? "Desactivar sonidos"
-                      : "Activar sonidos"
-                  }
+                  aria-label={isSoundEnabled ? "Desactivar sonidos" : "Activar sonidos"}
                   aria-pressed={isSoundEnabled}
                   className={getButtonClass(isSoundEnabled)}
                 >
@@ -361,27 +337,20 @@ function AccessibilityPanel({
               </div>
             </section>
 
-            {/* INFORMACIÓN MODAL - Modo Accesible Activo */}
             {isAccessible && (
-              <div
-                className={`
-                  rounded-2xl border-3 border-green-900 bg-green-50 p-6 contrast-panel-soft
-                  space-y-2
-                `}
-              >
-                <p className="text-lg font-black text-green-900 contrast-important">
+              <div className="contrast-panel-soft space-y-2 rounded-2xl border-3 border-green-900 bg-green-50 p-6">
+                <p className="contrast-important text-lg font-black text-green-900">
                   MODO FÁCIL ACTIVADO
                 </p>
-                <p className="text-base font-semibold text-slate-800 contrast-body-text">
+                <p className="contrast-body-text text-base font-semibold text-slate-800">
                   Todos los textos, botones y espacios se ven más grandes ahora.
                 </p>
-                <p className="text-sm text-slate-700 contrast-secondary-text">
+                <p className="contrast-secondary-text text-sm text-slate-700">
                   Presiona TAB para navegar • ESC para cerrar
                 </p>
               </div>
             )}
 
-            {/* RESTABLECER */}
             <button
               type="button"
               onClick={() => {

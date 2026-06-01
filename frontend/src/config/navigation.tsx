@@ -22,7 +22,7 @@ export type AppNavigationItem = {
   sidebarRoles?: UserRole[]
 }
 
-export const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
+const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
   {
     label: "Inicio",
     path: "/inicio",
