@@ -1,3 +1,4 @@
+import { AlertTriangle, CheckCircle2, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fondoR from "../assets/fondoR.png";
@@ -7,20 +8,21 @@ import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
 import useVoice from "../hooks/useVoice";
 
+type FeedbackState = {
+  type: "" | "success" | "error";
+  message: string;
+};
+
 function Login() {
   const navigate = useNavigate();
-  const { login } = useAuthContext();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
-  const navigateTimerRef = useRef(null);
-  const {
-    isAccessible,
-    isHighContrast,
-    isVoiceEnabled
-  } = useAccessibilityContext();
+  const [feedback, setFeedback] = useState<FeedbackState>({ type: "", message: "" });
+  const navigateTimerRef = useRef<number | null>(null);
+  const { login } = useAuthContext();
+  const { isAccessible, isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
 
   useEffect(() => {
@@ -35,82 +37,73 @@ function Login() {
     setFeedback({ type: "", message: "" });
   };
 
-  const announceError = (message) => {
+  const announceError = (message: string) => {
     setFeedback({ type: "error", message });
-    speak(message, {
-      priority: "high",
-      dedupeKey: `login-error:${message}`,
-      cooldownMs: 3000,
-      interrupt: true
-    });
+    speak(message);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const loginResult = login({ identifier, password });
+    const result = login({ identifier, password });
 
-    if (!loginResult.ok) {
-      announceError(loginResult.message);
+    if (!result.ok) {
+      announceError(result.message);
       return;
     }
 
     setFeedback({ type: "success", message: "Bienvenido al sistema" });
-    speak("Bienvenido", {
-      priority: "high",
-      dedupeKey: "login-success",
-      cooldownMs: 3000,
-      interrupt: true
-    });
+    speak("Bienvenido al sistema");
 
     if (navigateTimerRef.current) {
       window.clearTimeout(navigateTimerRef.current);
     }
 
     navigateTimerRef.current = window.setTimeout(() => {
-      navigate(getDefaultRouteForRole(loginResult.user.role), { replace: true });
+      navigate(getDefaultRouteForRole(result.user.role), { replace: true });
     }, 700);
   };
 
-  // Clases condicionales según modo accesible
+  const handleFieldFocus = (message: string) => {
+    if (isVoiceEnabled) {
+      speak(message);
+    }
+  };
+
   const labelClass = isAccessible
-    ? "block text-xl font-bold text-slate-900 contrast-important"
-    : "block text-sm font-semibold text-slate-700 contrast-important";
+    ? "block text-xl font-bold text-slate-900"
+    : "block text-sm font-semibold text-slate-700";
 
   const inputClass = isAccessible
-    ? `w-full min-h-[64px] px-4 py-3 text-xl rounded-xl bg-white contrast-input focus:border-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 ${
+    ? `w-full min-h-[64px] px-4 py-3 text-xl rounded-xl bg-white focus:border-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 ${
         isHighContrast ? "border-2 border-slate-900" : "border border-slate-700"
       }`
-    : "w-full min-h-[56px] px-4 py-3 text-base border border-slate-900/25 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white/95 shadow-sm contrast-input";
+    : "w-full min-h-[56px] px-4 py-3 text-base border border-slate-900/25 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white/95 shadow-sm";
 
   const submitButtonClass = isAccessible
-    ? "w-full min-h-[72px] px-6 py-4 text-2xl font-bold bg-blue-600 text-white rounded-xl border border-slate-900/40 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition contrast-button-primary"
-    : "w-full min-h-[60px] px-6 py-3 text-lg font-bold bg-blue-600 text-white rounded-lg border border-slate-900/25 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition contrast-button-primary";
+    ? "w-full min-h-[72px] px-6 py-4 text-2xl font-bold bg-blue-600 text-white rounded-xl border border-slate-900/40 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 transition"
+    : "w-full min-h-[60px] px-6 py-3 text-lg font-bold bg-blue-600 text-white rounded-lg border border-slate-900/25 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition";
 
   const passwordInputClass = `${inputClass} pr-24`;
 
   const passwordToggleClass = isAccessible
-    ? `absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-300 contrast-button-secondary ${
+    ? `absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-300 ${
         isHighContrast ? "border border-slate-900" : "border border-slate-700"
       }`
-    : "absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-slate-900/25 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-200 contrast-button-secondary";
+    : "absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-slate-900/25 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-200";
 
   const cardClass = isAccessible
-    ? "rounded-2xl border-2 border-black bg-white p-8 shadow-lg shadow-slate-200 sm:p-10 contrast-panel"
-    : "rounded-2xl border-2 border-black bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.14)] sm:p-10 contrast-panel";
+    ? "rounded-2xl border border-slate-900/25 bg-white p-8 shadow-lg shadow-slate-200 sm:p-10"
+    : "rounded-2xl border border-slate-900/20 bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.14)] sm:p-10";
 
   return (
     <>
       <main
-        className={`relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 sm:py-16 transition-colors ${
-          isHighContrast
-            ? "bg-black text-white"
-            : isAccessible
-            ? "bg-[#f5f5f5]"
-            : "bg-cover bg-center bg-no-repeat"
+        className={`relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 transition-colors sm:py-16 ${
+          isAccessible ? "bg-[#f5f5f5]" : "bg-cover bg-center bg-no-repeat"
         }`}
         style={
-          isAccessible || isHighContrast
+          isAccessible
             ? undefined
             : {
                 backgroundImage: `url(${fondoR})`
@@ -122,10 +115,8 @@ function Login() {
             <header className={isAccessible ? "space-y-5 text-center" : "space-y-4 text-center"}>
               <div
                 className={`mx-auto inline-flex justify-center rounded-2xl ${
-                  isAccessible
-                    ? "border border-slate-300 bg-yellow-100 p-3"
-                    : "bg-white/70 p-2 shadow-sm ring-1 ring-white/80"
-                } contrast-panel-soft`}
+                  isAccessible ? "border border-slate-300 bg-yellow-100 p-3" : "bg-white/70 p-2 shadow-sm ring-1 ring-white/80"
+                }`}
               >
                 <img
                   src={logoRiq}
@@ -134,15 +125,15 @@ function Login() {
                 />
               </div>
 
-              <h1 className={isAccessible ? "text-[32px] font-bold text-slate-900 contrast-important" : "text-3xl font-bold text-slate-900 contrast-important"}>
+              <h1 className={isAccessible ? "text-[32px] font-bold text-slate-900" : "text-3xl font-bold text-slate-900"}>
                 Riquísimo S.P.A
               </h1>
 
-              <p className={isAccessible ? "text-xl text-slate-700 contrast-body-text" : "text-sm text-slate-600 contrast-body-text"}>
+              <p className={isAccessible ? "text-xl text-slate-700" : "text-sm text-slate-600"}>
                 Sistema de gestión de pedidos
               </p>
 
-              <p className={isAccessible ? "text-lg font-semibold text-slate-800 contrast-important" : "text-sm text-slate-500 contrast-important"}>
+              <p className={isAccessible ? "text-lg font-semibold text-slate-800" : "text-sm text-slate-500"}>
                 Iniciar sesión
               </p>
             </header>
@@ -164,6 +155,7 @@ function Login() {
                       resetFeedback();
                     }
                   }}
+                  onFocus={() => handleFieldFocus("Ingrese su usuario o correo")}
                   className={inputClass}
                   aria-describedby={feedback.message ? "login-feedback" : undefined}
                 />
@@ -181,11 +173,12 @@ function Login() {
                     placeholder="Ingrese su contraseña"
                     value={password}
                     onChange={(event) => {
-                    setPassword(event.target.value);
-                    if (feedback.message) {
-                      resetFeedback();
-                    }
-                  }}
+                      setPassword(event.target.value);
+                      if (feedback.message) {
+                        resetFeedback();
+                      }
+                    }}
+                    onFocus={() => handleFieldFocus("Ingrese su contraseña")}
                     className={passwordInputClass}
                     aria-describedby={feedback.message ? "login-feedback" : undefined}
                   />
@@ -197,9 +190,11 @@ function Login() {
                     aria-pressed={showPassword}
                     title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
-                    <span aria-hidden="true" className="mr-1">
-                      {showPassword ? "🙈" : "👁"}
-                    </span>
+                    {showPassword ? (
+                      <EyeOff className="mr-1 h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="mr-1 h-4 w-4" aria-hidden="true" />
+                    )}
                     <span className={isAccessible ? "text-sm" : "hidden sm:inline"}>
                       {showPassword ? "Ocultar" : "Mostrar"}
                     </span>
@@ -210,34 +205,37 @@ function Login() {
               <button type="submit" className={submitButtonClass}>
                 Ingresar al sistema
               </button>
-
             </form>
 
-              {feedback.message && (
-                <div
-                  id="login-feedback"
-                  role="status"
-                  aria-live="polite"
-                  className={`flex items-start gap-3 rounded-xl p-4 ${
-                    feedback.type === "success"
-                      ? isAccessible
-                        ? "border border-emerald-700 bg-emerald-100 text-emerald-950"
-                        : "border border-emerald-200 bg-emerald-50 text-emerald-900"
-                      : isAccessible
-                        ? "border border-red-700 bg-red-100 text-red-950"
-                        : "border border-red-200 bg-red-50 text-red-900"
-                  }`}
-                >
-                  <span aria-hidden="true" className="mt-0.5 text-lg font-black">
-                    {feedback.type === "success" ? "✓" : "⚠"}
-                  </span>
-                  <p className={isAccessible ? "text-lg font-semibold" : "text-sm font-semibold"}>
-                    {feedback.message}
-                  </p>
-                </div>
-              )}
+            {feedback.message && (
+              <div
+                id="login-feedback"
+                role="status"
+                aria-live="polite"
+                className={`flex items-start gap-3 rounded-xl p-4 ${
+                  feedback.type === "success"
+                    ? isAccessible
+                      ? "border border-emerald-700 bg-emerald-100 text-emerald-950"
+                      : "border border-emerald-200 bg-emerald-50 text-emerald-900"
+                    : isAccessible
+                      ? "border border-red-700 bg-red-100 text-red-950"
+                      : "border border-red-200 bg-red-50 text-red-900"
+                }`}
+              >
+                <span aria-hidden="true" className="mt-0.5">
+                  {feedback.type === "success" ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5" />
+                  )}
+                </span>
+                <p className={isAccessible ? "text-lg font-semibold" : "text-sm font-semibold"}>
+                  {feedback.message}
+                </p>
+              </div>
+            )}
 
-            <div className={`rounded-lg contrast-panel ${isAccessible ? "border border-slate-300" : "border border-slate-200"}`}>
+            <div className={`rounded-lg ${isAccessible ? "border border-slate-300" : "border border-slate-200"}`}>
               <button
                 type="button"
                 onClick={() => setShowDemoAccounts((currentValue) => !currentValue)}
@@ -245,19 +243,17 @@ function Login() {
                   isAccessible
                     ? "min-h-[60px] bg-slate-50 text-slate-900 text-lg hover:bg-slate-100"
                     : "min-h-[52px] bg-slate-100 text-slate-900 text-sm hover:bg-slate-200"
-                } contrast-button-secondary`}
+                }`}
                 aria-expanded={showDemoAccounts}
               >
-                <span className="contrast-important">Accesos de prueba</span>
-                <span aria-hidden="true" className={`transition ${showDemoAccounts ? "rotate-180" : ""}`}>
-                  ▼
-                </span>
+                <span>Accesos de prueba</span>
+                <ChevronDown aria-hidden="true" className={`h-4 w-4 transition ${showDemoAccounts ? "rotate-180" : ""}`} />
               </button>
 
               {showDemoAccounts && (
-                <div className={`space-y-3 border-t p-4 contrast-panel-soft ${isAccessible ? "border-slate-300 bg-white" : "border-slate-200 bg-white"}`}>
+                <div className={`space-y-3 border-t p-4 ${isAccessible ? "border-slate-300 bg-white" : "border-slate-200 bg-white"}`}>
                   {DEMO_USERS.map((user) => (
-                    <div key={user.email} className="space-y-1 rounded-lg bg-slate-50 p-3 contrast-panel">
+                    <div key={user.email} className="space-y-1 rounded-lg bg-slate-50 p-3">
                       <p className={isAccessible ? "text-lg font-semibold text-slate-900" : "text-xs font-semibold text-slate-700"}>
                         {user.label}
                       </p>

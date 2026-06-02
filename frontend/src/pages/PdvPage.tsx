@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeftRight, Banknote, CreditCard, Printer, Search, Volume2 } from "lucide-react";
+import { Accessibility, AlertTriangle, ArrowLeftRight, Banknote, CheckCircle2, CreditCard, LoaderCircle, Printer, Search, Volume2, XCircle } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
@@ -94,8 +94,12 @@ function Toast({
   return (
     <div className={`rounded-2xl px-4 py-3 ${bgClass} animate-in fade-in slide-in-from-right-4 duration-300 ${className}`}>
       <div className="flex items-start gap-3">
-        <span className={`text-2xl font-bold shrink-0 ${isAccessible ? "" : isSuccess ? "text-emerald-600" : "text-red-600"}`}>
-          {isSuccess ? "✅" : "❌"}
+        <span className={`shrink-0 ${isAccessible ? "" : isSuccess ? "text-emerald-600" : "text-red-600"}`}>
+          {isSuccess ? (
+            <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+          ) : (
+            <XCircle className="h-6 w-6" aria-hidden="true" />
+          )}
         </span>
         <div className="min-w-0">
           <p className={`font-bold ${isAccessible ? "text-lg" : "text-base"} ${isHighContrast ? "contrast-important" : ""}`}>{feedback.message}</p>
@@ -680,6 +684,7 @@ function PdvPage() {
 
   const handleSubmit = async () => {
     setFeedback(null);
+    let shouldResetAccessibleFlow = false;
 
     if (!puedeRegistrar) {
       const message =
@@ -721,6 +726,7 @@ function PdvPage() {
         cooldownMs: 3000,
         interrupt: true
       });
+      shouldResetAccessibleFlow = isAccessible;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       setFeedback({ type: "error", message: message || "Error al registrar" });
@@ -733,6 +739,16 @@ function PdvPage() {
       });
     } finally {
       setSending(false);
+
+      if (shouldResetAccessibleFlow) {
+        setSelectedCategory("Todos");
+        setSearchTerm("");
+        setAccessibleStep(1);
+
+        if (typeof window !== "undefined") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      }
     }
   };
 
@@ -767,7 +783,6 @@ function PdvPage() {
   const cardBorder = isHighContrast ? "border-2 border-yellow-400" : isAccessible ? "border-2 border-slate-900" : "border border-slate-200";
   const headerBg = isHighContrast ? "bg-black text-white border-b-2 border-yellow-400" : isAccessible ? "bg-slate-900 text-white border-b border-slate-700" : "bg-[#FECE00] text-[#1F2937] border-b border-amber-200";
   const panelBg = isHighContrast ? "bg-black contrast-panel" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
-  const easyContinueOffset = "mr-20 sm:mr-28 md:mr-40 xl:mr-48";
   const quickActionButtonClass = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 font-bold text-[13px] whitespace-nowrap transition ${
     isHighContrast
       ? "contrast-button-secondary"
@@ -920,7 +935,7 @@ function PdvPage() {
                     : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50 focus-visible:ring-slate-900"
                 }`}
               >
-                <span aria-hidden="true" className="text-2xl">♿</span>
+                <Accessibility aria-hidden="true" className="h-6 w-6" />
                 <span>Accesibilidad</span>
               </button>
             </div>
@@ -930,8 +945,12 @@ function PdvPage() {
         {feedback && (
           <div className={`rounded-2xl ${cardBorder} p-4 ${feedback.type === "success" ? "bg-emerald-50 border-emerald-300" : "bg-red-50 border-red-300"}`} role={feedback.type === "success" ? "status" : "alert"} aria-live="polite">
             <div className="flex items-center justify-center gap-3">
-              <span className={`text-2xl font-bold ${feedback.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
-                {feedback.type === "success" ? "✅" : "❌"}
+              <span className={`shrink-0 ${feedback.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
+                {feedback.type === "success" ? (
+                  <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+                ) : (
+                  <XCircle className="h-6 w-6" aria-hidden="true" />
+                )}
               </span>
               <p className="font-bold text-lg">{feedback.message}</p>
             </div>
@@ -1027,7 +1046,7 @@ function PdvPage() {
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset} ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
+              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -1062,7 +1081,7 @@ function PdvPage() {
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} disabled={pedidoDetalles.length === 0} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${pedidoDetalles.length === 0 ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && pedidoDetalles.length > 0 ? "contrast-button-primary" : ""}`}>Continuar</button>
+              <button type="button" onClick={goNextAccessibleStep} disabled={pedidoDetalles.length === 0} className={`ml-auto rounded-lg py-3 px-4 font-bold ${pedidoDetalles.length === 0 ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && pedidoDetalles.length > 0 ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -1132,7 +1151,7 @@ function PdvPage() {
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${easyContinueOffset} ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
+              <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -1161,7 +1180,7 @@ function PdvPage() {
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-              <button type="button" onClick={goNextAccessibleStep} disabled={metodoPago === ""} className={`ml-auto rounded-lg py-3 px-4 font-bold ${easyContinueOffset} ${metodoPago === "" ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && metodoPago !== "" ? "contrast-button-primary" : ""}`}>Continuar</button>
+              <button type="button" onClick={goNextAccessibleStep} disabled={metodoPago === ""} className={`ml-auto rounded-lg py-3 px-4 font-bold ${metodoPago === "" ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && metodoPago !== "" ? "contrast-button-primary" : ""}`}>Continuar</button>
             </div>
           </section>
         )}
@@ -1187,7 +1206,7 @@ function PdvPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-4 px-6 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-              <div className={`ml-auto flex flex-wrap items-center gap-3 ${easyContinueOffset}`}>
+              <div className="ml-auto flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={handlePrint}
@@ -1231,7 +1250,7 @@ function PdvPage() {
               isAccessible ? "bg-white border-2 border-slate-900" : "bg-[#FFF8DC] border border-[#FFF4BF]"
             }`}
           >
-            <span className="text-4xl animate-spin">⏳</span>
+            <LoaderCircle className="h-10 w-10 animate-spin" aria-hidden="true" />
             <p className={`font-bold ${isAccessible ? "text-xl" : "text-lg"}`}>Cargando productos...</p>
           </div>
         )}
@@ -1243,7 +1262,7 @@ function PdvPage() {
               isAccessible ? "bg-white border-4 border-slate-900" : "bg-red-50 border border-red-300"
             }`}
           >
-            <span className="text-4xl shrink-0">⚠️</span>
+            <AlertTriangle className="h-10 w-10 shrink-0" aria-hidden="true" />
             <div className="flex-1">
               <p className={`font-black ${isAccessible ? "text-xl" : "text-lg"}`}>{loadingError}</p>
               <button
@@ -1546,7 +1565,6 @@ function PdvPage() {
             metodoPago={metodoPago}
             observacion={observacion}
             numeroPedido={undefined}
-            isAccessible={isAccessible}
           />
         </div>
       </div>

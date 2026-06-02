@@ -19,26 +19,45 @@ const PRIORITY_LEVELS = {
   low: 0,
   normal: 1,
   high: 2
+} as const;
+
+type SpeakPriority = keyof typeof PRIORITY_LEVELS;
+
+export type SpeakOptions = {
+  language?: string;
+  rate?: number;
+  pitch?: number;
+  volume?: number;
+  delayMs?: number;
+  cooldownMs?: number;
+  minGapMs?: number;
+  dedupeKey?: string;
+  force?: boolean;
+  interrupt?: boolean;
+  priority?: SpeakPriority;
+  onStart?: () => void;
+  onEnd?: () => void;
+  onError?: (event: SpeechSynthesisErrorEvent) => void;
 };
 
-let pendingSpeakTimer = null;
-let pendingResolve = null;
-let activeResolve = null;
+let pendingSpeakTimer: number | null = null;
+let pendingResolve: ((result: boolean) => void) | null = null;
+let activeResolve: ((result: boolean) => void) | null = null;
 let activeSpeechToken = 0;
 let lastSpokenAt = 0;
 let lastSpokenKey = "";
-let lastPriorityLevel = PRIORITY_LEVELS.normal;
+let lastPriorityLevel: number = PRIORITY_LEVELS.normal;
 
-const recentMessages = new Map();
+const recentMessages = new Map<string, number>();
 
-function normalizeMessage(message) {
+function normalizeMessage(message: string) {
   return String(message || "")
     .trim()
     .replace(/\s+/g, " ")
     .toLowerCase();
 }
 
-function cleanupRecentMessages(now) {
+function cleanupRecentMessages(now: number) {
   for (const [key, timestamp] of recentMessages.entries()) {
     if (now - timestamp > RECENT_MESSAGES_TTL_MS) {
       recentMessages.delete(key);
@@ -46,7 +65,7 @@ function cleanupRecentMessages(now) {
   }
 }
 
-function resolvePendingSpeak(result) {
+function resolvePendingSpeak(result: boolean) {
   if (pendingResolve) {
     const resolver = pendingResolve;
     pendingResolve = null;
@@ -54,7 +73,7 @@ function resolvePendingSpeak(result) {
   }
 }
 
-function resolveActiveSpeak(result) {
+function resolveActiveSpeak(result: boolean) {
   if (activeResolve) {
     const resolver = activeResolve;
     activeResolve = null;
@@ -62,7 +81,7 @@ function resolveActiveSpeak(result) {
   }
 }
 
-function cancelGlobalSpeech(speechSynthesis) {
+function cancelGlobalSpeech(speechSynthesis: SpeechSynthesis) {
   activeSpeechToken += 1;
 
   if (pendingSpeakTimer) {
@@ -71,14 +90,11 @@ function cancelGlobalSpeech(speechSynthesis) {
     resolvePendingSpeak(false);
   }
 
-  if (speechSynthesis) {
-    speechSynthesis.cancel();
-  }
-
+  speechSynthesis.cancel();
   resolveActiveSpeak(false);
 }
 
-function normalizeVoiceName(name) {
+function normalizeVoiceName(name: string) {
   return String(name || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -86,17 +102,18 @@ function normalizeVoiceName(name) {
     .toLowerCase();
 }
 
-function getPreferredVoice(speechSynthesis) {
+function getPreferredVoice(speechSynthesis: SpeechSynthesis) {
   const voices = speechSynthesis.getVoices();
 
   if (!voices || voices.length === 0) {
     return null;
   }
 
-  const isSpanishVoice = (voice) => voice.lang?.toLowerCase().startsWith("es");
-  const isChileSpanishVoice = (voice) => voice.lang?.toLowerCase() === VOICE_LANGUAGE.toLowerCase() || voice.lang?.toLowerCase().startsWith("es-cl");
-  const isGoogleVoice = (voice) => normalizeVoiceName(voice.name).includes("google");
-  const hasGoogleSpanishName = (voice) => {
+  const isSpanishVoice = (voice: SpeechSynthesisVoice) => voice.lang?.toLowerCase().startsWith("es") ?? false;
+  const isChileSpanishVoice = (voice: SpeechSynthesisVoice) =>
+    voice.lang?.toLowerCase() === VOICE_LANGUAGE.toLowerCase() || voice.lang?.toLowerCase().startsWith("es-cl") || false;
+  const isGoogleVoice = (voice: SpeechSynthesisVoice) => normalizeVoiceName(voice.name).includes("google");
+  const hasGoogleSpanishName = (voice: SpeechSynthesisVoice) => {
     const normalizedName = normalizeVoiceName(voice.name);
     return GOOGLE_SPANISH_VOICE_NAMES.some((name) => normalizedName.includes(name));
   };
@@ -117,7 +134,7 @@ function getPreferredVoice(speechSynthesis) {
  * Gestiona retroalimentación de voz breve y poco invasiva.
  * La voz se usa como guía simple, no como lector de pantalla completo.
  */
-function useVoice({ enabled = false } = {}) {
+function useVoice({ enabled = false }: { enabled?: boolean } = {}) {
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -134,15 +151,15 @@ function useVoice({ enabled = false } = {}) {
     };
 
     warmVoices();
-    speechSynthesis.addEventListener?.("voiceschanged", warmVoices);
+    speechSynthesis.addEventListener("voiceschanged", warmVoices);
 
     return () => {
-      speechSynthesis.removeEventListener?.("voiceschanged", warmVoices);
+      speechSynthesis.removeEventListener("voiceschanged", warmVoices);
     };
   }, []);
 
   const speak = useCallback(
-    (message, options = {}) => {
+    (message: string, options: SpeakOptions = {}) => {
       if (typeof window === "undefined" || !enabled) {
         return Promise.resolve(false);
       }
@@ -161,7 +178,8 @@ function useVoice({ enabled = false } = {}) {
       const now = Date.now();
       cleanupRecentMessages(now);
 
-      const priorityLevel = PRIORITY_LEVELS[options.priority || "normal"] ?? PRIORITY_LEVELS.normal;
+      const priority = options.priority ?? "normal";
+      const priorityLevel: number = PRIORITY_LEVELS[priority];
       const normalizedMessage = normalizeMessage(text);
       const dedupeKey = options.dedupeKey || normalizedMessage;
       const cooldownMs = options.cooldownMs ?? DEFAULT_COOLDOWN_MS;
@@ -174,9 +192,7 @@ function useVoice({ enabled = false } = {}) {
         const lastMessageAt = recentMessages.get(dedupeKey) ?? 0;
         const repeatedTooSoon = cooldownMs > 0 && now - lastMessageAt < cooldownMs;
         const tooCloseToPreviousMessage =
-          lastSpokenAt > 0 &&
-          now - lastSpokenAt < minGapMs &&
-          priorityLevel <= lastPriorityLevel;
+          lastSpokenAt > 0 && now - lastSpokenAt < minGapMs && priorityLevel <= lastPriorityLevel;
         const duplicateOfLastMessage = lastSpokenKey === dedupeKey && now - lastSpokenAt < cooldownMs;
 
         if (repeatedTooSoon || tooCloseToPreviousMessage || duplicateOfLastMessage) {
@@ -190,7 +206,7 @@ function useVoice({ enabled = false } = {}) {
 
       cancelGlobalSpeech(speechSynthesis);
 
-      return new Promise((resolve) => {
+      return new Promise<boolean>((resolve) => {
         const startSpeech = () => {
           pendingSpeakTimer = null;
           pendingResolve = null;
@@ -242,37 +258,14 @@ function useVoice({ enabled = false } = {}) {
         };
 
         pendingResolve = resolve;
-        pendingSpeakTimer = window.setTimeout(
-          startSpeech,
-          options.delayMs ?? DEFAULT_DELAY_MS
-        );
+        pendingSpeakTimer = window.setTimeout(startSpeech, options.delayMs ?? DEFAULT_DELAY_MS);
       });
     },
     [enabled]
   );
 
-  const isSpeaking = useCallback(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    const speechSynthesis = window.speechSynthesis;
-    return speechSynthesis ? speechSynthesis.speaking || speechSynthesis.pending : false;
-  }, []);
-
-  const stop = useCallback(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    cancelGlobalSpeech(window.speechSynthesis);
-  }, []);
-
   return {
-    speak,
-    isSpeaking,
-    stop,
-    isEnabled: enabled
+    speak
   };
 }
 

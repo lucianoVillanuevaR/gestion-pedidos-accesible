@@ -1,14 +1,32 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ACCESSIBILITY_CONTRAST_STORAGE_KEY,
   ACCESSIBILITY_MODE_STORAGE_KEY,
+  ACCESSIBILITY_SOUND_STORAGE_KEY,
   ACCESSIBILITY_TEXT_SIZE_STORAGE_KEY,
+  ACCESSIBILITY_TEXT_SIZES,
   ACCESSIBILITY_VOICE_STORAGE_KEY,
-  ACCESSIBILITY_SOUND_STORAGE_KEY
+  type AccessibilityTextSize
 } from "../constants/accessibility";
-const TEXT_SIZE_VALUES = ["small", "normal", "large"];
 
-function readBooleanStorage(key) {
+export type AccessibilityState = {
+  isPanelOpen: boolean;
+  isAccessible: boolean;
+  textSize: AccessibilityTextSize;
+  isHighContrast: boolean;
+  isVoiceEnabled: boolean;
+  isSoundEnabled: boolean;
+  prefersReducedMotion: boolean;
+  setTextSize: (value: AccessibilityTextSize) => void;
+  openAccessibilityPanel: () => void;
+  closeAccessibilityPanel: () => void;
+  toggleAccessibility: () => void;
+  toggleHighContrast: () => void;
+  toggleVoiceEnabled: () => void;
+  toggleSoundEnabled: () => void;
+};
+
+function readBooleanStorage(key: string) {
   if (typeof window === "undefined") {
     return false;
   }
@@ -16,26 +34,20 @@ function readBooleanStorage(key) {
   return window.localStorage.getItem(key) === "true";
 }
 
-function readTextSizeStorage() {
+function readTextSizeStorage(): AccessibilityTextSize {
   if (typeof window === "undefined") {
     return "normal";
   }
 
-  const savedValue = window.localStorage.getItem(
-    ACCESSIBILITY_TEXT_SIZE_STORAGE_KEY
-  );
+  const savedValue = window.localStorage.getItem(ACCESSIBILITY_TEXT_SIZE_STORAGE_KEY);
 
-  return TEXT_SIZE_VALUES.includes(savedValue) ? savedValue : "normal";
+  return ACCESSIBILITY_TEXT_SIZES.includes(savedValue as AccessibilityTextSize)
+    ? (savedValue as AccessibilityTextSize)
+    : "normal";
 }
 
-/**
- * Calcula el tamaño de fuente base según el modo y preferencia del usuario
- * Modo Accesible: fuentes más grandes
- * Modo Normal: fuentes compactas
- * WCAG: proporciones accesibles para legibilidad
- */
-function getFontSizeForState(textSize, isAccessible) {
-  const sizeMap = {
+function getFontSizeForState(textSize: AccessibilityTextSize, isAccessible: boolean) {
+  const sizeMap: Record<AccessibilityTextSize, string> = {
     small: isAccessible ? "18px" : "14px",
     normal: isAccessible ? "20px" : "16px",
     large: isAccessible ? "24px" : "18px"
@@ -44,17 +56,7 @@ function getFontSizeForState(textSize, isAccessible) {
   return sizeMap[textSize];
 }
 
-/**
- * Gestiona preferencias de accesibilidad
- * Proporciona dos experiencias visuales claramente diferenciadas:
- * 1. Modo Normal: compacto, moderno, eficiente
- * 2. Modo Accesible: expandido, simple, legible
- * 
- * - Contraste AA mínimo
- * - Navegación por teclado
- * - Soporte de voz
- */
-function useAccessibility() {
+function useAccessibility(): AccessibilityState {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isAccessible, setIsAccessible] = useState(() => {
     if (typeof window === "undefined") {
@@ -63,9 +65,7 @@ function useAccessibility() {
 
     return window.localStorage.getItem(ACCESSIBILITY_MODE_STORAGE_KEY) === "true";
   });
-  
-  const [textSize, setTextSize] = useState(readTextSizeStorage);
-  
+  const [textSize, setTextSizeState] = useState(readTextSizeStorage);
   const [isHighContrast, setIsHighContrast] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -73,7 +73,6 @@ function useAccessibility() {
 
     return readBooleanStorage(ACCESSIBILITY_CONTRAST_STORAGE_KEY);
   });
-  
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -81,7 +80,6 @@ function useAccessibility() {
 
     return readBooleanStorage(ACCESSIBILITY_VOICE_STORAGE_KEY);
   });
-  
   const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -89,8 +87,6 @@ function useAccessibility() {
 
     return readBooleanStorage(ACCESSIBILITY_SOUND_STORAGE_KEY);
   });
-
-  // Detectar preferencias de sistema
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -98,47 +94,29 @@ function useAccessibility() {
       return;
     }
 
-    // Detectar preferencia de reducción de movimiento (WCAG)
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mediaQuery.matches);
 
-    const handleChange = (e) => {
-      setPrefersReducedMotion(e.matches);
+    const handleChange = (event: MediaQueryListEvent) => {
+      setPrefersReducedMotion(event.matches);
     };
 
     mediaQuery.addEventListener("change", handleChange);
+
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  // Sincronizar con localStorage y aplicar estilos globales
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    // Guardar preferencias
-    window.localStorage.setItem(
-      ACCESSIBILITY_MODE_STORAGE_KEY,
-      String(isAccessible)
-    );
-    window.localStorage.setItem(
-      ACCESSIBILITY_TEXT_SIZE_STORAGE_KEY,
-      textSize
-    );
-    window.localStorage.setItem(
-      ACCESSIBILITY_CONTRAST_STORAGE_KEY,
-      String(isHighContrast)
-    );
-    window.localStorage.setItem(
-      ACCESSIBILITY_VOICE_STORAGE_KEY,
-      String(isVoiceEnabled)
-    );
-    window.localStorage.setItem(
-      ACCESSIBILITY_SOUND_STORAGE_KEY,
-      String(isSoundEnabled)
-    );
+    window.localStorage.setItem(ACCESSIBILITY_MODE_STORAGE_KEY, String(isAccessible));
+    window.localStorage.setItem(ACCESSIBILITY_TEXT_SIZE_STORAGE_KEY, textSize);
+    window.localStorage.setItem(ACCESSIBILITY_CONTRAST_STORAGE_KEY, String(isHighContrast));
+    window.localStorage.setItem(ACCESSIBILITY_VOICE_STORAGE_KEY, String(isVoiceEnabled));
+    window.localStorage.setItem(ACCESSIBILITY_SOUND_STORAGE_KEY, String(isSoundEnabled));
 
-    // Aplicar atributos de datos para CSS
     const doc = window.document.documentElement;
     const body = window.document.body;
 
@@ -154,47 +132,44 @@ function useAccessibility() {
     body.dataset.sound = String(isSoundEnabled);
     body.dataset.textSize = textSize;
 
-    // Aplicar tamaño de fuente base
     doc.style.fontSize = getFontSizeForState(textSize, isAccessible);
 
-    // Aplicar clases para animaciones si no reduce movimiento
     if (prefersReducedMotion) {
       doc.classList.add("reduce-motion");
     } else {
       doc.classList.remove("reduce-motion");
     }
-
   }, [isAccessible, textSize, isHighContrast, isVoiceEnabled, isSoundEnabled, prefersReducedMotion]);
 
-  const toggleAccessibility = () => {
+  const toggleAccessibility = useCallback(() => {
     setIsAccessible((currentValue) => !currentValue);
-  };
+  }, []);
 
-  const updateTextSize = (value) => {
-    if (TEXT_SIZE_VALUES.includes(value)) {
-      setTextSize(value);
+  const updateTextSize = useCallback((value: AccessibilityTextSize) => {
+    if (ACCESSIBILITY_TEXT_SIZES.includes(value)) {
+      setTextSizeState(value);
     }
-  };
+  }, []);
 
-  const toggleHighContrast = () => {
+  const toggleHighContrast = useCallback(() => {
     setIsHighContrast((currentValue) => !currentValue);
-  };
+  }, []);
 
-  const toggleVoiceEnabled = () => {
+  const toggleVoiceEnabled = useCallback(() => {
     setIsVoiceEnabled((currentValue) => !currentValue);
-  };
+  }, []);
 
-  const toggleSoundEnabled = () => {
+  const toggleSoundEnabled = useCallback(() => {
     setIsSoundEnabled((currentValue) => !currentValue);
-  };
+  }, []);
 
-  const openAccessibilityPanel = () => {
+  const openAccessibilityPanel = useCallback(() => {
     setIsPanelOpen(true);
-  };
+  }, []);
 
-  const closeAccessibilityPanel = () => {
+  const closeAccessibilityPanel = useCallback(() => {
     setIsPanelOpen(false);
-  };
+  }, []);
 
   return {
     isPanelOpen,

@@ -21,7 +21,7 @@ export interface DemoUser extends AuthUser {
   password: string;
 }
 
-export interface PedidoItem {
+interface PedidoItem {
   productoId: number;
   cantidad: number;
 }
@@ -34,7 +34,7 @@ export interface CreatePedidoPayload {
   observacion?: string;
 }
 
-export interface PedidoDetalleResponse {
+interface PedidoDetalleResponse {
   id: number;
   pedidoId: number;
   productoId: number;

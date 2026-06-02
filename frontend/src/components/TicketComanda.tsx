@@ -1,19 +1,23 @@
+import { UtensilsCrossed } from "lucide-react";
 import { formatCurrency, getPaymentLabel } from "../utils/pdv";
+import type { MetodoPago, Producto } from "../types";
 
-/**
- * Componente TicketComanda
- * Renderiza una comanda con formato tipo ticket para impresora térmica
- * Se imprime usando react-to-print
- */
-const TicketComanda = ({
-  pedidoDetalles,
-  total,
-  metodoPago,
-  observacion,
-  numeroPedido,
-  isAccessible
-}) => {
-  // Obtener fecha y hora actual
+type TicketDetalle = {
+  productoId: number;
+  cantidad: number;
+  subtotal: number;
+  producto: Producto;
+};
+
+type TicketComandaProps = {
+  pedidoDetalles: TicketDetalle[];
+  total: number;
+  metodoPago: MetodoPago | "";
+  observacion?: string;
+  numeroPedido?: string | number;
+};
+
+function TicketComanda({ pedidoDetalles, total, metodoPago, observacion, numeroPedido }: TicketComandaProps) {
   const now = new Date();
   const fecha = now.toLocaleDateString("es-ES", {
     weekday: "short",
@@ -29,13 +33,11 @@ const TicketComanda = ({
 
   return (
     <div className="ticket-print">
-      {/* Encabezado */}
       <div className="ticket-header">
         <h1 className="ticket-title">COMANDA RIQUÍSIMO</h1>
         <div className="ticket-divider"></div>
       </div>
 
-      {/* Información de la comanda */}
       <div className="ticket-info">
         {numeroPedido && (
           <div className="ticket-row">
@@ -55,7 +57,6 @@ const TicketComanda = ({
 
       <div className="ticket-divider-dashed"></div>
 
-      {/* Detalle de productos */}
       <div className="ticket-items">
         <div className="ticket-items-header">
           <span className="ticket-qty">CAN</span>
@@ -75,9 +76,7 @@ const TicketComanda = ({
                 <span className="ticket-price">{formatCurrency(item.subtotal)}</span>
               </div>
               {item.producto.descripcion && (
-                <div className="ticket-description">
-                  {item.producto.descripcion}
-                </div>
+                <div className="ticket-description">{item.producto.descripcion}</div>
               )}
             </div>
           ))
@@ -86,7 +85,6 @@ const TicketComanda = ({
 
       <div className="ticket-divider-dashed"></div>
 
-      {/* Total */}
       <div className="ticket-total">
         <div className="ticket-total-row">
           <span className="ticket-total-label">TOTAL:</span>
@@ -94,7 +92,6 @@ const TicketComanda = ({
         </div>
       </div>
 
-      {/* Método de pago */}
       <div className="ticket-divider-dashed"></div>
       <div className="ticket-payment">
         <div className="ticket-row">
@@ -103,7 +100,6 @@ const TicketComanda = ({
         </div>
       </div>
 
-      {/* Observaciones */}
       {observacion && (
         <>
           <div className="ticket-divider-dashed"></div>
@@ -114,14 +110,16 @@ const TicketComanda = ({
         </>
       )}
 
-      {/* Pie de página */}
       <div className="ticket-divider"></div>
       <div className="ticket-footer">
         <p>Gracias por su compra</p>
-        <p className="ticket-footer-small">Riquísimo 🍽</p>
+        <p className="ticket-footer-small inline-flex items-center justify-center gap-1">
+          <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
+          <span>Riquísimo</span>
+        </p>
       </div>
     </div>
   );
-};
+}
 
 export default TicketComanda;

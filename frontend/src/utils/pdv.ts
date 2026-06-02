@@ -4,7 +4,7 @@ export type ProductoCategoria = "Sandwich" | "Completos" | "Bebidas" | "Otros";
 export type FiltroCategoria = ProductoCategoria | "Destacados" | "Todos";
 export type ProductoConCategoria = Producto & { categoria: ProductoCategoria };
 
-export interface PedidoDetalleCalculado {
+interface PedidoDetalleCalculado {
   producto: Producto;
   productoId: number;
   cantidad: number;
