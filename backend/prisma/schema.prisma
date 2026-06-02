@@ -8,38 +8,82 @@ generator client {
 }
 
 model Producto {
-  id            Int             @id @default(autoincrement())
-  nombre        String          @unique
-  descripcion   String
-  precio        Decimal         @db.Decimal(10, 2)
-  disponible    Boolean         @default(true)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  detallesPedido DetallePedido[]
+  id                  Int             @id @default(autoincrement())
+  nombre              String          @unique
+  descripcion         String?
+  precio              Decimal         @db.Decimal(10, 2)
+  precioOriginal      Decimal?        @map("precio_original") @db.Decimal(10, 2)
+  descuentoPorcentaje Int?            @map("descuento_porcentaje")
+  disponible          Boolean         @default(true)
+  destacado           Boolean         @default(false)
+  promocion           Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  categorias          Categoria[]
+  variantes           Variante[]
+  inventario          Inventario?
+  detallesPedido      DetallePedido[]
+}
+
+model Categoria {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @unique
+  descripcion String?
+  orden       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  productos   Producto[]
+}
+
+model Variante {
+  id          Int      @id @default(autoincrement())
+  productoId  Int
+  nombre      String
+  descripcion String?
+  orden       Int      @default(0)
+  disponible  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, nombre])
+  @@index([productoId])
+}
+
+model Inventario {
+  id          Int      @id @default(autoincrement())
+  productoId  Int      @unique
+  stockActual Int      @map("stock_actual")
+  stockMinimo Int      @map("stock_minimo")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 }
 
 model Pedido {
-  id            Int             @id @default(autoincrement())
-  total         Decimal         @db.Decimal(10, 2)
-  estado        String          @default("pendiente")
-  metodoPago    String
-  observacion   String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  detalles      DetallePedido[]
+  id          Int             @id @default(autoincrement())
+  total       Decimal         @db.Decimal(10, 2)
+  estado      String          @default("pendiente")
+  metodoPago  String
+  observacion String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  detalles    DetallePedido[]
 }
 
 model DetallePedido {
-  id             Int      @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   pedidoId       Int
   productoId     Int
   cantidad       Int
-  precioUnitario Decimal  @db.Decimal(10, 2)
-  subtotal       Decimal  @db.Decimal(10, 2)
-  
-  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  producto       Producto @relation(fields: [productoId], references: [id])
-  
+  precioUnitario Decimal @db.Decimal(10, 2)
+  subtotal       Decimal @db.Decimal(10, 2)
+
+  pedido   Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto Producto @relation(fields: [productoId], references: [id])
+
   @@index([pedidoId])
   @@index([productoId])
 }

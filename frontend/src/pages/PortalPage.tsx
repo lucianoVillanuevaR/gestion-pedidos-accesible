@@ -1,185 +1,156 @@
-import { Link } from "react-router-dom";
-import { useAccessibilityContext } from "../contexts/AccessibilityContext";
+import { ArrowRight, CircleCheckBig } from "lucide-react"
+import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 
-type PortalPageProps = {
-  accent: "blue" | "orange" | "stone";
-  description: string;
-  title: string;
-};
-
-const accentClasses = {
-  blue: {
-    badge: "bg-blue-100 text-blue-800",
-    button: "bg-blue-600 text-white hover:bg-blue-700"
-  },
-  orange: {
-    badge: "bg-orange-100 text-orange-800",
-    button: "bg-orange-500 text-white hover:bg-orange-600"
-  },
-  stone: {
-    badge: "bg-stone-200 text-stone-800",
-    button: "bg-stone-900 text-white hover:bg-stone-800"
-  }
-};
-
-function PortalPage({ accent, description, title }: PortalPageProps) {
-  const { isAccessible, isHighContrast } = useAccessibilityContext();
-
-  const actionCards = [
-    {
-      title: "Tomar pedido",
-      description: "Registrar un pedido nuevo.",
-      button: "Ingresar"
-    },
-    {
-      title: "Cobrar pedido",
-      description: "Ver y pagar pedidos pendientes.",
-      button: "Pagar"
-    },
-    {
-      title: "Cancelar pedido",
-      description: "Anular un pedido con aviso claro.",
-      button: "Cancelar"
-    }
-  ];
-
-  return (
-    <main
-      className={`min-h-screen px-4 py-6 sm:px-6 sm:py-8 ${
-        isAccessible
-          ? isHighContrast
-            ? "bg-[#f5f5f5] text-black"
-            : "bg-[#f7f7f7] text-slate-900"
-          : "bg-[linear-gradient(160deg,#fff7ed_0%,#fffbeb_40%,#ffffff_100%)] text-stone-900"
-      }`}
-    >
-      <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[260px_1fr]">
-        <aside
-          className={`rounded-2xl p-5 ${
-            isAccessible
-              ? "border-4 border-black bg-white"
-              : "border border-stone-200 bg-white shadow-lg"
-          }`}
-        >
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-700">
-                Riquísimo S.P.A
-              </p>
-              <h1 className={`mt-2 font-black ${isAccessible ? "text-[32px]" : "text-3xl"}`}>
-                {title}
-              </h1>
-              <p className={`mt-2 ${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
-                {description}
-              </p>
-            </div>
-
-            <nav className="space-y-2" aria-label="Navegación principal">
-              {[
-                "Pedidos",
-                "Caja",
-                "Cocina",
-                "Inventario",
-                "Usuarios",
-                "Salir"
-              ].map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className={`flex min-h-[56px] w-full items-center justify-start rounded-xl px-4 text-left font-semibold transition ${
-                    isAccessible
-                      ? "border-2 border-black bg-white text-black hover:bg-gray-100 text-lg"
-                      : "border border-stone-200 bg-stone-50 text-stone-800 hover:bg-stone-100 text-base"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </aside>
-
-        <section
-          className={`rounded-2xl p-5 sm:p-6 ${
-            isAccessible
-              ? "border-4 border-black bg-white"
-              : "border border-stone-200 bg-white shadow-2xl shadow-stone-200/60"
-          }`}
-        >
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <span
-                className={`inline-flex rounded-full px-4 py-2 text-sm font-bold ${
-                  accentClasses[accent].badge
-                }`}
-              >
-                Vista lista
-              </span>
-              <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
-                Modo accesible pensado para lectura clara y acciones simples.
-              </p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              {actionCards.map((card) => (
-                <article
-                  key={card.title}
-                  className={`rounded-2xl p-4 ${
-                    isAccessible
-                      ? "border-2 border-black bg-gray-50"
-                      : "border border-stone-200 bg-stone-50"
-                  }`}
-                >
-                  <div className="space-y-3">
-                    <div className={`h-24 rounded-xl ${isAccessible ? "bg-gray-200" : "bg-stone-200"}`} />
-                    <h2 className={`font-bold ${isAccessible ? "text-2xl" : "text-xl"}`}>
-                      {card.title}
-                    </h2>
-                    <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
-                      {card.description}
-                    </p>
-                    <button
-                      type="button"
-                      className={`min-h-[60px] w-full rounded-xl px-4 font-bold transition ${
-                        card.button === "Cancelar"
-                          ? isAccessible
-                            ? "border-2 border-black bg-red-600 text-white hover:bg-red-700 text-lg"
-                            : "bg-red-600 text-white hover:bg-red-700"
-                          : card.button === "Pagar"
-                            ? isAccessible
-                              ? "border-2 border-black bg-green-600 text-white hover:bg-green-700 text-lg"
-                              : "bg-green-600 text-white hover:bg-green-700"
-                            : isAccessible
-                              ? "border-2 border-black bg-blue-600 text-white hover:bg-blue-700 text-lg"
-                              : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
-                    >
-                      {card.button}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div
-              className={`rounded-2xl p-4 ${
-                isAccessible
-                  ? "border-2 border-black bg-yellow-50"
-                  : "border border-stone-200 bg-white"
-              }`}
-            >
-              <p className={`font-bold ${isAccessible ? "text-xl" : "text-lg"}`}>
-                Feedback del sistema
-              </p>
-              <p className={`${isAccessible ? "text-lg text-black" : "text-sm text-stone-600"}`}>
-                Producto agregado. Pedido enviado. Error al guardar.
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
-  );
+type PortalAction = {
+  button: string
+  description: string
+  title: string
 }
 
-export default PortalPage;
+type PortalStat = {
+  label: string
+  value: string
+}
+
+type PortalPageProps = {
+  accent?: "amber" | "orange" | "slate"
+  actions?: PortalAction[]
+  badge?: string
+  description: string
+  note?: string
+  noteTitle?: string
+  stats?: PortalStat[]
+  title: string
+}
+
+const accentStyles = {
+  amber: {
+    badge: "bg-[#FECE00] text-slate-950 border-yellow-200",
+    button: "bg-slate-900 text-white hover:bg-black"
+  },
+  orange: {
+    badge: "bg-orange-100 text-orange-900 border-orange-200",
+    button: "bg-orange-500 text-white hover:bg-orange-600"
+  },
+  slate: {
+    badge: "bg-slate-900 text-white border-slate-700",
+    button: "bg-slate-800 text-white hover:bg-slate-900"
+  }
+}
+
+function PortalPage({
+  accent = "amber",
+  actions = [],
+  badge = "Vista lista",
+  description,
+  note = "Este espacio puede crecer con acciones guiadas, estados claros y accesos rápidos según el rol.",
+  noteTitle = "Preparado para seguir creciendo",
+  stats = [],
+  title
+}: PortalPageProps) {
+  const { isAccessible, isHighContrast } = useAccessibilityContext()
+
+  const pageShellClass = isHighContrast
+    ? "contrast-panel border-yellow-400 bg-black"
+    : "border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
+
+  const softPanelClass = isHighContrast
+    ? "contrast-panel-soft"
+    : "border border-slate-200 bg-[linear-gradient(180deg,#fffdf7_0%,#ffffff_100%)]"
+
+  return (
+    <section className="mx-auto w-full max-w-7xl space-y-6">
+      <header className={`rounded-[28px] p-6 sm:p-8 ${pageShellClass}`}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <span
+              className={`inline-flex rounded-full border px-4 py-2 text-sm font-black uppercase tracking-[0.18em] ${
+                isHighContrast ? "contrast-badge" : accentStyles[accent].badge
+              }`}
+            >
+              {badge}
+            </span>
+            <h1 className={`mt-5 font-black tracking-tight ${isAccessible ? "text-[2.15rem]" : "text-[2rem]"}`}>
+              {title}
+            </h1>
+            <p className={`mt-3 max-w-2xl leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"} ${isAccessible ? "text-lg" : "text-base"}`}>
+              {description}
+            </p>
+          </div>
+
+          {stats.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[320px]">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className={`rounded-2xl border px-4 py-4 ${
+                    isHighContrast
+                      ? "contrast-panel-soft"
+                      : "border-yellow-100 bg-[#FFF8DC]"
+                  }`}
+                >
+                  <p className={`text-xs font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
+                    {stat.label}
+                  </p>
+                  <p className={`mt-2 font-black ${isAccessible ? "text-3xl" : "text-2xl"} ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
+                    {stat.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {actions.length > 0 && (
+        <div className="grid gap-4 xl:grid-cols-3">
+          {actions.map((action) => (
+            <article
+              key={action.title}
+              className={`rounded-[26px] p-5 sm:p-6 ${softPanelClass}`}
+            >
+              <div className="flex h-full flex-col">
+                <span
+                  className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border ${
+                    isHighContrast
+                      ? "contrast-panel"
+                      : "border-yellow-200 bg-[#FFF8DC] text-slate-950"
+                  }`}
+                  aria-hidden="true"
+                >
+                  <CircleCheckBig className="h-5 w-5" />
+                </span>
+
+                <h2 className={`mt-5 font-black ${isAccessible ? "text-2xl" : "text-xl"}`}>{action.title}</h2>
+                <p className={`mt-3 flex-1 leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"} ${isAccessible ? "text-lg" : "text-sm"}`}>
+                  {action.description}
+                </p>
+
+                <button
+                  type="button"
+                  className={`mt-6 inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 font-black transition ${
+                    isHighContrast
+                      ? "contrast-button-primary"
+                      : accentStyles[accent].button
+                  } ${isAccessible ? "text-lg" : "text-base"}`}
+                >
+                  <span>{action.button}</span>
+                  <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <section className={`rounded-[26px] p-5 sm:p-6 ${softPanelClass}`}>
+        <p className={`font-black ${isAccessible ? "text-2xl" : "text-xl"}`}>{noteTitle}</p>
+        <p className={`mt-3 max-w-3xl leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"} ${isAccessible ? "text-lg" : "text-base"}`}>
+          {note}
+        </p>
+      </section>
+    </section>
+  )
+}
+
+export default PortalPage

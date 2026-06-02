@@ -6,16 +6,31 @@
   font-family: "Trebuchet MS", "Segoe UI Variable", "Segoe UI", sans-serif;
   color: #1c1917;
   background-color: #fffbeb;
+  --focus-color: #3b82f6;
+  --contrast-bg: #000000;
+  --contrast-surface: #111111;
+  --contrast-surface-muted: #1f2937;
+  --contrast-text: #ffffff;
+  --contrast-accent: #facc15;
+  --contrast-accent-soft: #fde68a;
 }
 
 html {
   color-scheme: light;
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 body {
   margin: 0;
   min-width: 320px;
   background-color: #fffbeb;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 * {
@@ -31,23 +46,387 @@ input {
   font: inherit;
 }
 
-html[data-contrast="true"] body,
-body[data-contrast="true"] {
+/* ============================================
+   MODO NORMAL - Compacto y Moderno
+   ============================================ */
+html[data-accessible="false"] body,
+body[data-accessible="false"] {
+  background-color: #fffbeb;
+  color: #1c1917;
+}
+
+html[data-accessible="false"] {
+  font-size: 16px;
+}
+
+html[data-accessible="false"][data-text-size="small"] {
+  font-size: 14px;
+}
+
+html[data-accessible="false"][data-text-size="normal"] {
+  font-size: 16px;
+}
+
+html[data-accessible="false"][data-text-size="large"] {
+  font-size: 18px;
+}
+
+/* ============================================
+   MODO ACCESIBLE - Grande y Claro
+   ============================================ */
+html[data-accessible="true"] body,
+body[data-accessible="true"] {
   background-color: #ffffff;
   color: #111827;
+}
+
+html[data-accessible="true"] {
+  font-size: 20px;
+}
+
+html[data-accessible="true"][data-text-size="small"] {
+  font-size: 18px;
+}
+
+html[data-accessible="true"][data-text-size="normal"] {
+  font-size: 20px;
+}
+
+html[data-accessible="true"][data-text-size="large"] {
+  font-size: 24px;
+}
+
+/* ============================================
+   CONTRASTE ALTO
+   ============================================ */
+html[data-contrast="true"] {
+  --focus-color: #facc15;
+}
+
+html[data-contrast="true"] body,
+body[data-contrast="true"] {
+  background-color: var(--contrast-bg);
+  color: var(--contrast-text);
 }
 
 html[data-contrast="true"] button,
 html[data-contrast="true"] input,
 html[data-contrast="true"] select,
 html[data-contrast="true"] textarea {
-  border-color: #111827 !important;
-  color: #111827 !important;
+  border-color: var(--contrast-accent) !important;
 }
 
-html[data-contrast="true"] button:not([aria-pressed="true"]):not(.bg-blue-600):not(.bg-blue-700):not(.bg-red-600):not(.bg-green-600),
 html[data-contrast="true"] input,
 html[data-contrast="true"] select,
+html[data-contrast="true"] textarea {
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-text) !important;
+  border-width: 2px !important;
+}
+
+html[data-contrast="true"] input::placeholder,
+html[data-contrast="true"] textarea::placeholder {
+  color: var(--contrast-accent-soft) !important;
+  opacity: 1;
+}
+
+html[data-contrast="true"] .bg-white,
+html[data-contrast="true"] .bg-slate-50,
+html[data-contrast="true"] .bg-slate-100,
+html[data-contrast="true"] .bg-stone-50,
+html[data-contrast="true"] .bg-stone-200,
+html[data-contrast="true"] .bg-yellow-50,
+html[data-contrast="true"] .bg-red-50,
+html[data-contrast="true"] .bg-emerald-50,
+html[data-contrast="true"] .bg-orange-100,
+html[data-contrast="true"] .bg-blue-100,
+html[data-contrast="true"] .bg-\[\#F7F7F7\],
+html[data-contrast="true"] .bg-\[\#FFF8DC\],
+html[data-contrast="true"] .bg-\[\#FFF4BF\],
+html[data-contrast="true"] .bg-\[\#FFFBF0\],
+html[data-contrast="true"] .bg-\[\#F5F5F5\],
+html[data-contrast="true"] .bg-\[\#F7F7F7\] {
+  background-color: var(--contrast-surface) !important;
+}
+
+html[data-contrast="true"] .bg-slate-900,
+html[data-contrast="true"] .bg-slate-600,
+html[data-contrast="true"] .bg-blue-600,
+html[data-contrast="true"] .bg-blue-700,
+html[data-contrast="true"] .bg-green-600,
+html[data-contrast="true"] .bg-green-700,
+html[data-contrast="true"] .bg-\[\#FECE00\] {
+  background-color: var(--contrast-accent) !important;
+  color: #111827 !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .bg-red-600,
+html[data-contrast="true"] .bg-red-700 {
+  background-color: #7f1d1d !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .text-slate-950,
+html[data-contrast="true"] .text-slate-900,
+html[data-contrast="true"] .text-slate-800,
+html[data-contrast="true"] .text-slate-700,
+html[data-contrast="true"] .text-slate-600,
+html[data-contrast="true"] .text-slate-500,
+html[data-contrast="true"] .text-stone-900,
+html[data-contrast="true"] .text-stone-800,
+html[data-contrast="true"] .text-stone-600,
+html[data-contrast="true"] .text-\[\#1F2937\],
+html[data-contrast="true"] .text-emerald-950,
+html[data-contrast="true"] .text-red-950 {
+  color: var(--contrast-text) !important;
+}
+
+html[data-contrast="true"] .text-blue-700,
+html[data-contrast="true"] .text-blue-800,
+html[data-contrast="true"] .text-orange-800,
+html[data-contrast="true"] .text-amber-700,
+html[data-contrast="true"] .text-emerald-600,
+html[data-contrast="true"] .text-red-600 {
+  color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .border,
+html[data-contrast="true"] [class*="border-"] {
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] h1,
+html[data-contrast="true"] h2,
+html[data-contrast="true"] h3,
+html[data-contrast="true"] .contrast-important {
+  color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-body-text {
+  color: var(--contrast-text) !important;
+}
+
+html[data-contrast="true"] .contrast-secondary-text {
+  color: var(--contrast-accent-soft) !important;
+}
+
+html[data-contrast="true"] .contrast-panel {
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-panel-soft {
+  background-color: var(--contrast-surface-muted) !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-input {
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-primary {
+  background-color: var(--contrast-accent) !important;
+  color: #111827 !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-secondary {
+  background-color: transparent !important;
+  color: var(--contrast-accent) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-danger {
+  background-color: #7f1d1d !important;
+  color: var(--contrast-text) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] .contrast-button-success {
+  background-color: #166534 !important;
+  color: #ffffff !important;
+  border-color: #86efac !important;
+}
+
+html[data-contrast="true"] .contrast-badge {
+  background-color: var(--contrast-surface) !important;
+  color: var(--contrast-accent) !important;
+  border-color: var(--contrast-accent) !important;
+}
+
+html[data-contrast="true"] a {
+  color: var(--contrast-accent);
+  text-decoration: underline;
+}
+
+html[data-contrast="true"] a:visited {
+  color: var(--contrast-accent-soft);
+}
+
+html[data-contrast="true"] .ticket-print,
+html[data-contrast="true"] .ticket-print * {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border-color: #111827 !important;
+}
+
+/* ============================================
+   REDUCCIÓN DE MOVIMIENTO
+   ============================================ */
+html.reduce-motion,
+html.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+html[data-accessible="true"] button:focus-visible,
+html[data-accessible="true"] input:focus-visible,
+html[data-accessible="true"] select:focus-visible,
+html[data-accessible="true"] textarea:focus-visible,
+html[data-accessible="true"] a:focus-visible,
+html[data-accessible="true"] [tabindex]:focus-visible {
+  outline: 4px solid var(--focus-color);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
+}
+
+/* ============================================
+   GRID ADAPTABLE PARA PRODUCTOS
+   ============================================ */
+.product-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+html[data-accessible="true"] .product-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  html[data-accessible="true"] .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   ANIMACIONES SUAVES
+   ============================================ */
+@layer components {
+  .accessible-card-transition {
+    @apply transition-all duration-200;
+  }
+
+  .accessible-button-base {
+    @apply font-bold rounded-lg border transition;
+  }
+
+  .accessible-button-base:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+}
+
+html[data-accessible="false"] h1 {
+  font-size: 2rem;
+}
+
+html[data-accessible="false"] h2 {
+  font-size: 1.5rem;
+}
+
+html[data-accessible="false"] h3 {
+  font-size: 1.25rem;
+}
+
+html[data-accessible="true"] h1 {
+  font-size: 2.5rem;
+}
+
+html[data-accessible="true"] h2 {
+  font-size: 2rem;
+}
+
+html[data-accessible="true"] h3 {
+  font-size: 1.75rem;
+}
+
+/* ============================================
+   ACCESIBILIDAD DE LINKS
+   ============================================ */
+a {
+  position: relative;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+html[data-accessible="true"] a:focus-visible {
+  outline: 3px solid var(--focus-color);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #111827;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: none;
+}
+
+/* ============================================
+   MODO OSCURO - Preparación futura
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  html[data-accessible="false"] {
+    color-scheme: light;
+  }
+
+  html[data-accessible="true"] {
+    color-scheme: light;
+  }
+}
 html[data-contrast="true"] textarea {
   background-color: #ffffff !important;
 }
@@ -72,4 +451,138 @@ html[data-contrast="true"] button {
 ::selection {
   background: #facc15;
   color: #111827;
+}
+
+/* ============================================
+   TICKET / COMANDA
+   ============================================ */
+.ticket-print {
+  width: 80mm;
+  margin: 0 auto;
+  padding: 8mm 6mm;
+  background: #ffffff;
+  color: #111827;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ticket-header,
+.ticket-footer {
+  text-align: center;
+}
+
+.ticket-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.ticket-divider,
+.ticket-items-divider {
+  height: 1px;
+  margin: 10px 0;
+  background: #111827;
+}
+
+.ticket-divider-dashed {
+  margin: 10px 0;
+  border-top: 1px dashed #111827;
+}
+
+.ticket-row,
+.ticket-total-row,
+.ticket-item-line,
+.ticket-items-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.ticket-info,
+.ticket-items,
+.ticket-payment,
+.ticket-observations,
+.ticket-total {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ticket-label,
+.ticket-obs-title {
+  font-weight: 700;
+}
+
+.ticket-value,
+.ticket-price,
+.ticket-total-amount {
+  text-align: right;
+}
+
+.ticket-items-header {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ticket-qty {
+  width: 28px;
+}
+
+.ticket-product {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ticket-price {
+  min-width: 68px;
+}
+
+.ticket-item + .ticket-item {
+  margin-top: 8px;
+}
+
+.ticket-description,
+.ticket-obs-text,
+.ticket-empty,
+.ticket-footer-small {
+  color: #475569;
+}
+
+.ticket-description {
+  margin-top: 2px;
+  padding-left: 36px;
+  font-size: 11px;
+}
+
+.ticket-total-row {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ticket-total-label {
+  grid-column: 1 / span 2;
+}
+
+.ticket-footer p {
+  margin: 0;
+}
+
+.ticket-footer-small {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .ticket-print {
+    width: 100%;
+    margin: 0;
+    padding: 4mm;
+  }
 }

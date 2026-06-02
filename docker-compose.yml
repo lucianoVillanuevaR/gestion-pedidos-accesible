@@ -7,7 +7,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_URL: ${VITE_API_URL}
+      VITE_API_URL: /api
+      VITE_API_PROXY_TARGET: http://backend:3000
     volumes:
       - ./frontend:/app
       - /app/node_modules

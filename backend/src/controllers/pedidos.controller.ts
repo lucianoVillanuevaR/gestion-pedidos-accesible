@@ -4,6 +4,13 @@ import { Decimal } from "@prisma/client/runtime/library";
 
 const ESTADOS_VALIDOS = ["pendiente", "en_preparacion", "listo", "entregado", "cancelado"];
 const METODOS_PAGO_VALIDOS = ["efectivo", "tarjeta", "transferencia"];
+const PEDIDO_WITH_DETALLES_INCLUDE = {
+  detalles: {
+    include: {
+      producto: true
+    }
+  }
+} as const;
 
 interface CrearPedidoBody {
   detalles: Array<{
@@ -87,13 +94,7 @@ export const crearPedido = async (req: Request, res: Response) => {
           }))
         }
       },
-      include: {
-        detalles: {
-          include: {
-            producto: true
-          }
-        }
-      }
+      include: PEDIDO_WITH_DETALLES_INCLUDE
     });
 
     res.status(201).json(pedido);
@@ -103,16 +104,10 @@ export const crearPedido = async (req: Request, res: Response) => {
   }
 };
 
-export const getPedidos = async (req: Request, res: Response) => {
+export const getPedidos = async (_req: Request, res: Response) => {
   try {
     const pedidos = await prisma.pedido.findMany({
-      include: {
-        detalles: {
-          include: {
-            producto: true
-          }
-        }
-      },
+      include: PEDIDO_WITH_DETALLES_INCLUDE,
       orderBy: { createdAt: "desc" }
     });
     res.json(pedidos);
@@ -127,13 +122,7 @@ export const getPedidoById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const pedido = await prisma.pedido.findUnique({
       where: { id: Number(id) },
-      include: {
-        detalles: {
-          include: {
-            producto: true
-          }
-        }
-      }
+      include: PEDIDO_WITH_DETALLES_INCLUDE
     });
 
     if (!pedido) {
@@ -170,13 +159,7 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
     const pedidoActualizado = await prisma.pedido.update({
       where: { id: Number(id) },
       data: { estado },
-      include: {
-        detalles: {
-          include: {
-            producto: true
-          }
-        }
-      }
+      include: PEDIDO_WITH_DETALLES_INCLUDE
     });
 
     res.json(pedidoActualizado);

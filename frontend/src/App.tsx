@@ -1,49 +1,41 @@
-import { useState } from "react";
 import AppRoutes from "./routes/AppRoutes";
-import AccessibilityButton from "./components/AccessibilityButton";
 import AccessibilityPanel from "./components/AccessibilityPanel";
 import { AccessibilityProvider, useAccessibilityContext } from "./contexts/AccessibilityContext";
-import useVoice from "./hooks/useVoice";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function AppShell() {
-  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const {
+    isPanelOpen,
     isAccessible,
     textSize,
     isHighContrast,
     isVoiceEnabled,
+    isSoundEnabled,
+    closeAccessibilityPanel,
     toggleAccessibility,
     setTextSize,
     toggleHighContrast,
-    toggleVoiceEnabled
+    toggleVoiceEnabled,
+    toggleSoundEnabled
   } = useAccessibilityContext();
-  const { speak } = useVoice({ enabled: isVoiceEnabled });
 
   return (
     <>
       <AppRoutes />
 
-      <AccessibilityButton
-        isAccessible={isAccessible}
-        textSize={textSize}
-        isHighContrast={isHighContrast}
-        isVoiceEnabled={isVoiceEnabled}
-        isOpen={isPanelOpen}
-        onOpen={() => setIsPanelOpen(true)}
-      />
-
       <AccessibilityPanel
         isOpen={isPanelOpen}
-        onClose={() => setIsPanelOpen(false)}
+        onClose={closeAccessibilityPanel}
         isAccessible={isAccessible}
         textSize={textSize}
         isHighContrast={isHighContrast}
         isVoiceEnabled={isVoiceEnabled}
+        isSoundEnabled={isSoundEnabled}
         onToggleAccessible={toggleAccessibility}
         onSetTextSize={setTextSize}
         onToggleContrast={toggleHighContrast}
         onToggleVoice={toggleVoiceEnabled}
-        speak={speak}
+        onToggleSound={toggleSoundEnabled}
       />
     </>
   );
@@ -51,11 +43,12 @@ function AppShell() {
 
 function App() {
   return (
-    <AccessibilityProvider>
-      <AppShell />
-    </AccessibilityProvider>
+    <AuthProvider>
+      <AccessibilityProvider>
+        <AppShell />
+      </AccessibilityProvider>
+    </AuthProvider>
   );
 }
 
 export default App;
-
