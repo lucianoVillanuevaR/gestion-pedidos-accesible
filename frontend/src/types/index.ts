@@ -28,25 +28,28 @@ interface PedidoItem {
 
 export type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
 
+export type EstadoPedido = "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
+
 export interface CreatePedidoPayload {
   detalles: PedidoItem[];
   metodoPago: MetodoPago;
   observacion?: string;
 }
 
-interface PedidoDetalleResponse {
+export interface PedidoDetalleResponse {
   id: number;
   pedidoId: number;
   productoId: number;
   cantidad: number;
   precioUnitario: string;
   subtotal: string;
+  producto?: Producto;
 }
 
 export interface PedidoResponse {
   id: number;
   total: string;
-  estado: string;
+  estado: EstadoPedido;
   metodoPago: MetodoPago;
   observacion?: string | null;
   createdAt?: string;

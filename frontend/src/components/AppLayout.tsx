@@ -12,12 +12,20 @@ function AppLayout() {
 
   const currentRoute = getRouteMeta(location.pathname)
   const isPdvPage = location.pathname === "/pdv"
-  const hideSidebar = isPdvPage && isAccessible
+  const isPedidosPage = location.pathname === "/pedidos"
+  const hideSidebar = (isPdvPage || isPedidosPage) && isAccessible
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[360px]" : "lg:pl-[320px]"
-  const pageShellClass = isPdvPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
-  const mainContentClass = isPdvPage
+  const pageShellClass = isPdvPage || isPedidosPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
+  const mainContentClass = isPdvPage || isPedidosPage
     ? "px-0 py-0"
     : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isAccessible ? "lg:px-10" : ""}`
+  const appBackgroundClass = isHighContrast
+    ? "bg-black text-white"
+    : isAccessible
+      ? "bg-[#F3F4F6] text-slate-950"
+      : isPedidosPage
+        ? "bg-slate-50 text-slate-950"
+        : "bg-[radial-gradient(circle_at_top_left,#fff3bf_0%,#f8fafc_38%,#ffffff_100%)] text-slate-950"
 
   useEffect(() => {
     setIsSidebarOpen(false)
@@ -55,15 +63,7 @@ function AppLayout() {
   }, [isSidebarOpen])
 
   return (
-    <div
-      className={`min-h-screen ${
-        isHighContrast
-          ? "bg-black text-white"
-          : isAccessible
-            ? "bg-[#F3F4F6] text-slate-950"
-            : "bg-[radial-gradient(circle_at_top_left,#fff3bf_0%,#f8fafc_38%,#ffffff_100%)] text-slate-950"
-      }`}
-    >
+    <div className={`min-h-screen ${appBackgroundClass}`}>
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
       </a>

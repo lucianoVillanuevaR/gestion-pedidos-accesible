@@ -25,32 +25,34 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
 
   const navigationItems = getSidebarNavigation(user.role)
   const isPdvPage = location.pathname === "/pdv"
+  const isPedidosPage = location.pathname === "/pedidos"
+  const hasYellowHeader = isPdvPage || isPedidosPage
   const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[86vw] max-w-[320px] lg:w-[320px]"
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"
     : isAccessible
       ? "border-slate-300 bg-slate-50 text-slate-950"
-      : isPdvPage
+      : hasYellowHeader
         ? "border-amber-200 bg-[#FECE00] text-slate-950"
         : "border-slate-200 bg-white text-slate-950"
   const brandBadgeClass = isHighContrast
     ? "bg-white/10 border border-white/20"
     : isAccessible
       ? "bg-slate-950 border border-slate-950 text-white"
-      : isPdvPage
+      : hasYellowHeader
         ? "bg-[#FFF8DC] border border-amber-300"
         : "bg-slate-100 border border-slate-300"
   const brandTitleClass = isHighContrast ? "text-white" : "text-slate-950"
-  const brandSubtitleClass = isHighContrast ? "text-yellow-200/80" : isAccessible ? "text-slate-700" : isPdvPage ? "text-slate-700" : "text-slate-500"
+  const brandSubtitleClass = isHighContrast ? "text-yellow-200/80" : isAccessible ? "text-slate-700" : hasYellowHeader ? "text-slate-700" : "text-slate-500"
   const brandCloseButtonClass = isHighContrast
     ? "contrast-button-secondary"
     : isAccessible
       ? "border-slate-950 bg-slate-950 text-white hover:bg-slate-800"
-      : isPdvPage
+      : hasYellowHeader
         ? "border-amber-300 bg-[#FFF8DC] text-slate-950 hover:bg-[#FFF4BF]"
         : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200"
-  const brandHeaderSpacingClass = isPdvPage
-    ? `min-h-[64px] px-4 ${isAccessible ? "py-4" : ""}`
+  const brandHeaderSpacingClass = hasYellowHeader
+    ? `${isAccessible ? "h-[84px] min-h-[84px]" : "h-[64px] min-h-[64px]"} px-4`
     : `px-4 ${isAccessible ? "py-5" : "py-4"}`
   const navigationSpacingClass = isAccessible ? "space-y-3" : "space-y-2"
   const footerSpacingClass = isAccessible ? "mt-auto border-t px-4 py-5" : "mt-auto border-t px-3 py-4"

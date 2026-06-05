@@ -3,6 +3,7 @@ import AppLayout from "../components/AppLayout"
 import { getDefaultRouteForRole } from "../constants/auth"
 import { useAuthContext } from "../contexts/AuthContext"
 import HomePage from "../pages/HomePage"
+import PedidosPage from "../pages/PedidosPage"
 import PdvPage from "../pages/PdvPage"
 import PortalPage from "../pages/PortalPage"
 import type { UserRole } from "../types"
@@ -48,7 +49,7 @@ function AppRoutes() {
 
           <Route path="/pdv" element={<PdvPage />} />
 
-          <Route path="/pedidos" element={<EmptyRoute />} />
+          <Route path="/pedidos" element={<PedidosPage />} />
 
           <Route path="/productos" element={<EmptyRoute />} />
         </Route>
