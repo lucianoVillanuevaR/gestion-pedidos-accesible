@@ -1,7 +1,7 @@
 import { Accessibility, LogOut, ShieldCheck, X } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 import logoRiq from "../assets/logoRiq.png"
-import { getSidebarNavigation, isPdvRoute, isPedidosRoute } from "../config/navigation"
+import { getSidebarNavigation, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
 import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 import { useAuthContext } from "../contexts/AuthContext"
 import { getDefaultRouteForRole } from "../constants/auth"
@@ -25,7 +25,8 @@ function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   const navigationItems = getSidebarNavigation(user.role)
   const isPdvPage = isPdvRoute(location.pathname)
   const isPedidosPage = isPedidosRoute(location.pathname)
-  const hasYellowHeader = isPdvPage || isPedidosPage
+  const isProductosPage = isProductosRoute(location.pathname)
+  const hasYellowHeader = isPdvPage || isPedidosPage || isProductosPage
   const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[86vw] max-w-[320px] lg:w-[320px]"
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"

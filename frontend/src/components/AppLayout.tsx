@@ -1,7 +1,7 @@
 import { Menu } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Outlet, useLocation, useNavigate } from "react-router-dom"
-import { getRouteMeta, isPdvRoute, isPedidosRoute } from "../config/navigation"
+import { getRouteMeta, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
 import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 import AppSidebar from "./AppSidebar"
 
@@ -16,17 +16,19 @@ function AppLayout() {
   const isPdvFacilPage = location.pathname === "/pdv/facil"
   const isPedidosPage = isPedidosRoute(location.pathname)
   const isPedidosFacilPage = location.pathname === "/pedidos/facil"
+  const isProductosPage = isProductosRoute(location.pathname)
+  const isFullWidthPage = isPdvPage || isPedidosPage || isProductosPage
   const hideSidebar = (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[360px]" : "lg:pl-[320px]"
-  const pageShellClass = isPdvPage || isPedidosPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
-  const mainContentClass = isPdvPage || isPedidosPage
+  const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
+  const mainContentClass = isFullWidthPage
     ? "px-0 py-0"
     : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isAccessible ? "lg:px-10" : ""}`
   const appBackgroundClass = isHighContrast
     ? "bg-black text-white"
     : isAccessible
       ? "bg-[#F3F4F6] text-slate-950"
-      : isPedidosPage
+      : isPedidosPage || isProductosPage
         ? "bg-slate-50 text-slate-950"
         : "bg-[radial-gradient(circle_at_top_left,#fff3bf_0%,#f8fafc_38%,#ffffff_100%)] text-slate-950"
 

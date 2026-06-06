@@ -5,8 +5,20 @@ export interface Producto {
   descripcion?: string;
   imagen?: string;
   altText?: string;
+  disponible?: boolean;
   destacado?: boolean;
 }
+
+export interface CreateProductoPayload {
+  categoria?: string;
+  descripcion?: string;
+  destacado?: boolean;
+  disponible?: boolean;
+  nombre: string;
+  precio: number;
+}
+
+export type UpdateProductoPayload = Partial<CreateProductoPayload>;
 
 export type UserRole = "cajero" | "cocina" | "admin";
 

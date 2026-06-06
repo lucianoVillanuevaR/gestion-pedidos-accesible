@@ -6,6 +6,7 @@ import HomePage from "../pages/HomePage"
 import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
 import PedidosPage from "../pages/pedidos/PedidosNormalPage"
 import PdvBasePage from "../pages/pdv/PdvBasePage"
+import ProductosPage from "../pages/productos/ProductosPage"
 import PortalPage from "../pages/PortalPage"
 import type { UserRole } from "../types"
 
@@ -54,7 +55,7 @@ function AppRoutes() {
           <Route path="/pedidos" element={<PedidosPage />} />
           <Route path="/pedidos/facil" element={<PedidosFacilPage />} />
 
-          <Route path="/productos" element={<EmptyRoute />} />
+          <Route path="/productos" element={<ProductosPage />} />
         </Route>
 
         <Route element={<RequireRole allowedRoles={["cocina", "admin"]} />}>
