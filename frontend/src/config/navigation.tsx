@@ -109,3 +109,11 @@ export function getRouteMeta(pathname: string) {
     .sort((left, right) => right.path.length - left.path.length)
     .find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`))
 }
+
+export function isPdvRoute(pathname: string) {
+  return pathname === "/pdv" || pathname === "/pdv/facil"
+}
+
+export function isPedidosRoute(pathname: string) {
+  return pathname === "/pedidos" || pathname === "/pedidos/facil"
+}

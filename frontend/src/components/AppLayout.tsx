@@ -1,19 +1,22 @@
 import { Menu } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Outlet, useLocation } from "react-router-dom"
-import { getRouteMeta } from "../config/navigation"
+import { Outlet, useLocation, useNavigate } from "react-router-dom"
+import { getRouteMeta, isPdvRoute, isPedidosRoute } from "../config/navigation"
 import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 import AppSidebar from "./AppSidebar"
 
 function AppLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const { isAccessible, isHighContrast } = useAccessibilityContext()
 
   const currentRoute = getRouteMeta(location.pathname)
-  const isPdvPage = location.pathname === "/pdv"
-  const isPedidosPage = location.pathname === "/pedidos"
-  const hideSidebar = (isPdvPage || isPedidosPage) && isAccessible
+  const isPdvPage = isPdvRoute(location.pathname)
+  const isPdvFacilPage = location.pathname === "/pdv/facil"
+  const isPedidosPage = isPedidosRoute(location.pathname)
+  const isPedidosFacilPage = location.pathname === "/pedidos/facil"
+  const hideSidebar = (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[360px]" : "lg:pl-[320px]"
   const pageShellClass = isPdvPage || isPedidosPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
   const mainContentClass = isPdvPage || isPedidosPage
@@ -30,6 +33,28 @@ function AppLayout() {
   useEffect(() => {
     setIsSidebarOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (isAccessible) {
+      if (location.pathname === "/pdv") {
+        navigate("/pdv/facil", { replace: true })
+      }
+
+      if (location.pathname === "/pedidos") {
+        navigate("/pedidos/facil", { replace: true })
+      }
+
+      return
+    }
+
+    if (location.pathname === "/pdv/facil") {
+      navigate("/pdv", { replace: true })
+    }
+
+    if (location.pathname === "/pedidos/facil") {
+      navigate("/pedidos", { replace: true })
+    }
+  }, [isAccessible, location.pathname, navigate])
 
   useEffect(() => {
     if (typeof document === "undefined") {
