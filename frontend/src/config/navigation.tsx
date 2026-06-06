@@ -119,5 +119,5 @@ export function isPedidosRoute(pathname: string) {
 }
 
 export function isProductosRoute(pathname: string) {
-  return pathname === "/productos"
+  return pathname === "/productos" || pathname === "/productos/facil"
 }

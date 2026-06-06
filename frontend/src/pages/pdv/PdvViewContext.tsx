@@ -19,6 +19,7 @@ export type PdvViewContextValue = {
   addProduct: (producto: Producto) => void;
   bgWrapper: string;
   cardBorder: string;
+  clienteNombre: string;
   decreaseProduct: (producto: Producto) => void;
   feedback: FeedbackState | null;
   feedbackRef: RefObject<HTMLDivElement>;
@@ -53,6 +54,7 @@ export type PdvViewContextValue = {
   sending: boolean;
   setAccessibleObservationType: Dispatch<SetStateAction<"cocina" | "cliente">>;
   setAccessibleStep: Dispatch<SetStateAction<number>>;
+  setClienteNombre: Dispatch<SetStateAction<string>>;
   setLoadingError: (value: string | null) => void;
   setObservacion: Dispatch<SetStateAction<string>>;
   setSearchTerm: Dispatch<SetStateAction<string>>;

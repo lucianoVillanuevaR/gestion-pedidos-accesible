@@ -1,80 +1,30 @@
-import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Star, Upload, Utensils, X } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
-import { createProducto, getProductos, updateProducto } from "../../services/productos";
+import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Upload, Utensils, X } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { createProducto, updateProducto } from "../../services/productos";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
-import {
-  detectCategoria,
-  FILTROS,
-  formatCurrency,
-  type ProductoCategoria,
-  type ProductoConCategoria
-} from "../../utils/pdv";
+import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
-
-type CategoriaCatalogo = ProductoCategoria | "Destacados";
-
-const CATEGORIAS_CATALOGO: Array<{ label: string; value: CategoriaCatalogo }> = [
-  { label: "Destacados", value: "Destacados" },
-  ...FILTROS.filter((filtro) => filtro.value !== "Todos" && filtro.value !== "Destacados").map((filtro) => ({
-    label: filtro.label,
-    value: filtro.value as ProductoCategoria
-  })),
-  { label: "Otros", value: "Otros" }
-];
+import { CATEGORIAS_CATALOGO, type CategoriaCatalogo } from "./ProductosShared";
+import { useProductosCatalog } from "./hooks/useProductosCatalog";
 
 function ProductosPage() {
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<CategoriaCatalogo>("Destacados");
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
-
-  const loadProductos = () => {
-    setIsLoading(true);
-    setError(null);
-
-    getProductos({ includeUnavailable: true })
-      .then((list) => setProductos(list))
-      .catch((requestError) => {
-        setError(requestError instanceof Error ? requestError.message : "No fue posible cargar productos");
-      })
-      .finally(() => setIsLoading(false));
-  };
-
-  useEffect(() => {
-    loadProductos();
-  }, []);
-
-  const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
-    return productos.map((producto) => ({
-      ...producto,
-      categoria: detectCategoria(producto)
-    }));
-  }, [productos]);
-
-  const productosFiltrados = useMemo(() => {
-    return filterCatalogoProductos(productosConCategoria, searchTerm);
-  }, [productosConCategoria, searchTerm]);
-
-  const grupos = useMemo(() => {
-    const destacados = productosFiltrados.filter((producto) => producto.destacado);
-    const fallbackDestacados = destacados.length > 0 ? destacados : productosFiltrados.slice(0, 4);
-
-    return CATEGORIAS_CATALOGO.map((categoria) => ({
-      ...categoria,
-      productos:
-        categoria.value === "Destacados"
-          ? fallbackDestacados
-          : productosFiltrados.filter((producto) => producto.categoria === categoria.value)
-    })).filter((grupo) => grupo.productos.length > 0);
-  }, [productosFiltrados]);
-
-  const totalDestacados = productosConCategoria.filter((producto) => producto.destacado).length || Math.min(productosConCategoria.length, 4);
+  const {
+    activeCategory,
+    error,
+    grupos,
+    isLoading,
+    loadProductos,
+    productosFiltrados,
+    searchTerm,
+    setActiveCategory,
+    setError,
+    setProductos,
+    setSearchTerm
+  } = useProductosCatalog({ includeUnavailable: true });
 
   const handleCreateProducto = async (payload: CreateProductoPayload) => {
     try {
@@ -109,67 +59,25 @@ function ProductosPage() {
     }
   };
 
-  useEffect(() => {
-    if (grupos.length === 0) {
-      return;
-    }
-
-    if (!grupos.some((grupo) => grupo.value === activeCategory)) {
-      setActiveCategory(grupos[0].value);
-    }
-  }, [activeCategory, grupos]);
-
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
-      <header className="border-b border-amber-200 bg-[#FECE00] text-slate-950">
-        <div className="flex h-[64px] min-h-[64px] w-full items-center justify-between gap-3 px-3 sm:px-4 lg:px-5 xl:px-6">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-black leading-none tracking-tight sm:text-3xl">Productos</h1>
-            <p className="mt-1 text-xs font-bold text-slate-800">Catálogo del menú</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Link
-              to="/pdv"
-              className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-[#FFF8DC] px-3 text-sm font-black text-slate-950 no-underline transition hover:bg-[#FFF4BF] sm:px-5 ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <Plus className="h-5 w-5" aria-hidden="true" />
-              Usar en pedido
-            </Link>
-            <button
-              type="button"
-              onClick={() => setAddProductCategory(activeCategory)}
-              className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-2xl border border-slate-900 bg-slate-900 px-3 text-sm font-black text-white transition hover:bg-black sm:px-5 ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <Plus className="h-5 w-5" aria-hidden="true" />
-              Producto
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="w-full space-y-4 px-3 py-3 sm:px-4 lg:px-5 xl:px-6">
+      <main className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
         <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
-                <Star className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-500">Categoría destacada</p>
-                <p className="truncate text-base font-black text-slate-950">Destacados</p>
-              </div>
-              <span className="rounded-lg bg-teal-400 px-2 py-1 text-xs font-black text-slate-950">Nuevo</span>
-            </div>
-
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 lg:flex-row lg:items-center lg:justify-end">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-              <span className="text-sm font-bold text-slate-600">
-                {totalDestacados} / {productosConCategoria.length}
-              </span>
+              <button
+                type="button"
+                onClick={() => setAddProductCategory(activeCategory)}
+                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Plus className="h-5 w-5" aria-hidden="true" />
+                Producto
+              </button>
               <button
                 type="button"
                 onClick={loadProductos}
                 disabled={isLoading}
-                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-blue-600 bg-white px-4 text-sm font-black text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-amber-300 bg-[#FFF8DC] px-4 text-sm font-black text-slate-950 transition hover:bg-[#FFF4BF] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
               >
                 <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
                 Actualizar
@@ -203,7 +111,7 @@ function ProductosPage() {
                     role="tab"
                     className={`inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-black transition ${
                       isActive
-                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                        ? "border-[#FECE00] bg-amber-50 text-slate-950"
                         : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                     } ${FOCUS_VISIBLE_CLASS}`}
                   >
@@ -317,7 +225,7 @@ function CategoriaBlock({
               event.stopPropagation();
               onAddProduct();
             }}
-            className={`hidden min-h-[36px] items-center justify-center gap-1 rounded-lg border border-blue-600 bg-white px-3 text-sm font-black text-blue-700 transition hover:bg-blue-50 sm:inline-flex ${FOCUS_VISIBLE_CLASS}`}
+            className={`hidden min-h-[36px] items-center justify-center gap-1 rounded-lg border border-[#FECE00] bg-white px-3 text-sm font-black text-slate-950 transition hover:bg-amber-50 sm:inline-flex ${FOCUS_VISIBLE_CLASS}`}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Producto
@@ -408,17 +316,6 @@ function ProductoFormModal({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setDestacado((current) => !current)}
-              aria-pressed={destacado}
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition ${
-                destacado ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-              } ${FOCUS_VISIBLE_CLASS}`}
-              aria-label="Marcar como destacado"
-            >
-              <Star className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
               onClick={onClose}
               className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-950 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
               aria-label="Cerrar"
@@ -431,7 +328,7 @@ function ProductoFormModal({
         <div className="grid gap-4 p-4 sm:grid-cols-[112px_minmax(0,1fr)]">
           <button
             type="button"
-            className={`flex min-h-[100px] flex-col items-center justify-center gap-2 rounded-lg bg-blue-700 px-3 text-sm font-black text-white transition hover:bg-blue-800 ${FOCUS_VISIBLE_CLASS}`}
+            className={`flex min-h-[100px] flex-col items-center justify-center gap-2 rounded-lg border border-amber-300 bg-[#FECE00] px-3 text-sm font-black text-slate-950 transition hover:bg-[#FFD633] ${FOCUS_VISIBLE_CLASS}`}
           >
             <span>Subir fotos</span>
             <Upload className="h-6 w-6" aria-hidden="true" />
@@ -444,7 +341,7 @@ function ProductoFormModal({
                 value={nombre}
                 onChange={(event) => setNombre(event.target.value)}
                 placeholder={producto ? "Nombre del producto" : "Producto nuevo"}
-                className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-blue-600 ${FOCUS_VISIBLE_CLASS}`}
+                className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
               />
             </label>
             <label className="block">
@@ -454,7 +351,7 @@ function ProductoFormModal({
                 onChange={(event) => setDescripcion(event.target.value)}
                 placeholder="Descripción"
                 rows={3}
-                className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2 font-bold text-slate-950 outline-none focus:border-blue-600 ${FOCUS_VISIBLE_CLASS}`}
+                className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
               />
             </label>
           </div>
@@ -464,7 +361,7 @@ function ProductoFormModal({
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-base font-black text-slate-950">Precio(s)</h3>
             <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-slate-300 text-sm font-bold">
-              <span className="bg-blue-50 px-6 py-2 text-center text-blue-700">Simple</span>
+              <span className="bg-amber-50 px-6 py-2 text-center text-slate-950">Simple</span>
               <span className="px-6 py-2 text-center text-slate-700">Variantes</span>
             </div>
           </div>
@@ -478,7 +375,7 @@ function ProductoFormModal({
               value={precio}
               onChange={(event) => setPrecio(event.target.value)}
               placeholder="CLP 0"
-              className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-blue-600 ${FOCUS_VISIBLE_CLASS}`}
+              className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
             />
           </label>
 
@@ -494,8 +391,6 @@ function ProductoFormModal({
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
             </button>
             <FakeChip label="Descuento" />
-            <FakeChip label="Costo" />
-            <FakeChip label="SKU" />
           </div>
         </div>
 
@@ -523,7 +418,7 @@ function ProductoFormModal({
           </div>
           <button
             type="button"
-            className={`inline-flex min-h-[40px] items-center justify-center rounded-lg border border-blue-600 bg-white text-blue-700 transition hover:bg-blue-50 ${FOCUS_VISIBLE_CLASS}`}
+            className={`inline-flex min-h-[40px] items-center justify-center rounded-lg border border-[#FECE00] bg-white text-amber-700 transition hover:bg-amber-50 ${FOCUS_VISIBLE_CLASS}`}
           >
             <Plus className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -541,7 +436,7 @@ function ProductoFormModal({
               setCategoria(value);
               setDestacado(value === "Destacados" || destacado);
             }}
-            className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-blue-600 ${FOCUS_VISIBLE_CLASS}`}
+            className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
           >
             {CATEGORIAS_CATALOGO.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -633,7 +528,7 @@ function ProductoRow({
           disabled={isUpdating}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-60 ${
             isAvailable
-              ? "border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100"
+              ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
               : "border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
           } ${FOCUS_VISIBLE_CLASS}`}
           aria-label={isAvailable ? `Ocultar ${producto.nombre}` : `Mostrar ${producto.nombre}`}
@@ -663,27 +558,6 @@ function EmptyProductos() {
       <p className="mt-3 font-bold text-slate-600">Prueba con otra búsqueda o actualiza el catálogo.</p>
     </div>
   );
-}
-
-function filterCatalogoProductos(productos: ProductoConCategoria[], searchTerm: string) {
-  const search = searchTerm.trim().toLowerCase();
-
-  if (!search) {
-    return productos;
-  }
-
-  return productos.filter((producto) => {
-    const searchableText = [
-      producto.nombre,
-      producto.descripcion ?? "",
-      producto.categoria,
-      producto.destacado ? "destacado" : "",
-      String(producto.precio),
-      formatCurrency(producto.precio)
-    ].join(" ");
-
-    return searchableText.toLowerCase().includes(search);
-  });
 }
 
 export default ProductosPage;

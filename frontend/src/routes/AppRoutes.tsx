@@ -2,10 +2,12 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import { getDefaultRouteForRole } from "../constants/auth"
 import { useAuthContext } from "../contexts/AuthContext"
+import CocinaPage from "../pages/cocina/CocinaPage"
 import HomePage from "../pages/HomePage"
 import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
 import PedidosPage from "../pages/pedidos/PedidosNormalPage"
 import PdvBasePage from "../pages/pdv/PdvBasePage"
+import ProductosFacilPage from "../pages/productos/ProductosFacilPage"
 import ProductosPage from "../pages/productos/ProductosPage"
 import PortalPage from "../pages/PortalPage"
 import type { UserRole } from "../types"
@@ -56,44 +58,11 @@ function AppRoutes() {
           <Route path="/pedidos/facil" element={<PedidosFacilPage />} />
 
           <Route path="/productos" element={<ProductosPage />} />
+          <Route path="/productos/facil" element={<ProductosFacilPage />} />
         </Route>
 
         <Route element={<RequireRole allowedRoles={["cocina", "admin"]} />}>
-          <Route
-            path="/cocina"
-            element={
-              <PortalPage
-                accent="orange"
-                title="Cocina"
-                description="Visualiza el flujo general de preparación con una interfaz simple y fácil de seguir."
-                badge="Producción"
-                stats={[
-                  { label: "Pendientes", value: "8" },
-                  { label: "En preparación", value: "4" },
-                  { label: "Listos", value: "5" }
-                ]}
-                actions={[
-                  {
-                    title: "Pedidos pendientes",
-                    description: "Revisa primero lo que aún no empieza para ordenar mejor la preparación.",
-                    button: "Abrir pendientes"
-                  },
-                  {
-                    title: "Pedidos listos",
-                    description: "Confirma lo que ya está preparado y listo para entrega o retiro.",
-                    button: "Ver listos"
-                  },
-                  {
-                    title: "Ritmo del turno",
-                    description: "Mantén una visión clara del trabajo actual sin sobrecargar la pantalla.",
-                    button: "Ver estado"
-                  }
-                ]}
-                noteTitle="Cocina sin ruido visual"
-                note="La vista de cocina debe mostrar pocas decisiones por pantalla, con estados grandes y tiempos fáciles de reconocer."
-              />
-            }
-          />
+          <Route path="/cocina" element={<CocinaPage />} />
 
           <Route
             path="/cocina/pendientes"

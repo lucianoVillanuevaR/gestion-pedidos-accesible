@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, LoaderCircle } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { createPedido } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
@@ -25,6 +25,7 @@ import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
 
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: true });
@@ -44,6 +45,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const [items, setItems] = useState<Record<number, number>>({});
   const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
+  const [clienteNombre, setClienteNombre] = useState("");
   const [observacion, setObservacion] = useState("");
   const [accessibleObservationType, setAccessibleObservationType] = useState<"cocina" | "cliente">("cocina");
   const [sending, setSending] = useState(false);
@@ -52,6 +54,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
+  const initialProductHandledRef = useRef(false);
   const ticketRef = useRef<HTMLDivElement | null>(null);
   const playSoundCue = usePdvSoundCue(isSoundEnabled);
 
@@ -93,13 +96,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const puedeRegistrar = pedidoDetalles.length > 0 && metodoPago !== "" && !sending;
 
-  const announce = (message: string, options = {}) => {
+  const announce = useCallback((message: string, options = {}) => {
     if (isVoiceEnabled) {
       speak(message, options);
     }
-  };
+  }, [isVoiceEnabled, speak]);
 
-  const handleReadPedidoSummary = () => {
+  const handleReadPedidoSummary = useCallback(() => {
     if (pedidoDetalles.length === 0) {
       speakOnDemand("No hay productos seleccionados.", {
         priority: "high",
@@ -130,6 +133,10 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       parts.push(`Observación: ${observacion.trim()}.`);
     }
 
+    if (clienteNombre.trim()) {
+      parts.push(`Cliente: ${clienteNombre.trim()}.`);
+    }
+
     speakOnDemand(parts.join(" "), {
       priority: "high",
       dedupeKey: "read-summary",
@@ -137,7 +144,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       interrupt: true,
       rate: isAccessible ? 0.8 : 0.86
     });
-  };
+  }, [clienteNombre, isAccessible, metodoPago, observacion, pedidoDetalles, speakOnDemand, total, totalItems]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -152,7 +159,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     return () => window.removeEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
   }, [handleReadPedidoSummary]);
 
-  const setItemQuantity = (producto: Producto, nextQuantity: number) => {
+  const setItemQuantity = useCallback((producto: Producto, nextQuantity: number) => {
     setItems((currentItems) => {
       if (nextQuantity <= 0) {
         const nextItems = { ...currentItems };
@@ -165,18 +172,21 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         [producto.id]: nextQuantity
       };
     });
-  };
+  }, []);
 
   const clearPedidoForm = () => {
     setItems({});
     setMetodoPago("");
+    setClienteNombre("");
     setObservacion("");
     setAccessibleObservationType("cocina");
   };
 
-  const addProduct = (producto: Producto) => {
-    const nextQuantity = (items[producto.id] || 0) + 1;
-    setItemQuantity(producto, nextQuantity);
+  const addProduct = useCallback((producto: Producto) => {
+    setItems((currentItems) => ({
+      ...currentItems,
+      [producto.id]: (currentItems[producto.id] || 0) + 1
+    }));
     const msg = "Producto agregado";
     setFeedback({ type: "success", message: msg });
     playSoundCue("add");
@@ -185,7 +195,31 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       dedupeKey: "product-added",
       cooldownMs: 1800
     });
-  };
+  }, [announce, playSoundCue]);
+
+  useEffect(() => {
+    if (!isAccessible || initialProductHandledRef.current || loadingProductos) {
+      return;
+    }
+
+    const state = location.state as { productoId?: number } | null;
+    const productoId = state?.productoId;
+
+    if (!productoId) {
+      return;
+    }
+
+    const producto = productos.find((item) => item.id === productoId);
+
+    if (!producto) {
+      return;
+    }
+
+    initialProductHandledRef.current = true;
+    addProduct(producto);
+    setAccessibleStep(3);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [addProduct, isAccessible, loadingProductos, location.pathname, location.state, navigate, productos]);
 
   const increaseProduct = (producto: Producto) => {
     const nextQuantity = (items[producto.id] || 0) + 1;
@@ -298,6 +332,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const payload: CreatePedidoPayload = {
+      clienteNombre: clienteNombre.trim() || undefined,
       detalles: pedidoDetalles.map((item) => ({
         productoId: item.productoId,
         cantidad: item.cantidad
@@ -479,6 +514,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     addProduct,
     bgWrapper,
     cardBorder,
+    clienteNombre,
     decreaseProduct,
     feedback,
     feedbackRef,
@@ -514,6 +550,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     sending,
     setAccessibleObservationType,
     setAccessibleStep,
+    setClienteNombre,
     setLoadingError,
     setObservacion,
     setSearchTerm,
@@ -526,70 +563,71 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   return (
     <PdvViewProvider value={viewContext}>
-    <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
-	      <div className={`${headerBg} no-print`}>
-	        <div className={`mx-auto flex w-full max-w-[1520px] items-center px-3 sm:px-4 lg:px-5 xl:px-6 ${isAccessible ? "min-h-[84px] py-4" : "min-h-[64px] py-3"}`}>
-            <h1 className={`font-black leading-none tracking-tight contrast-important ${isAccessible ? "text-3xl" : "text-xl"}`}>
-              Punto de Venta
-            </h1>
-	        </div>
-	      </div>
-
-      <div className={`mx-auto w-full max-w-[1520px] px-3 sm:px-4 lg:px-5 xl:px-6 print:px-0 print:py-0 ${isAccessible ? "py-6" : "py-2 sm:py-3"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
-        {loadingProductos && (
-          <div
-            role="status"
-            aria-live="polite"
-            className={`mb-6 flex items-center gap-4 rounded-2xl p-6 ${
-              isAccessible ? "bg-white border-2 border-slate-900" : "bg-[#FFF8DC] border border-[#FFF4BF]"
-            }`}
-          >
-            <LoaderCircle className="h-10 w-10 animate-spin" aria-hidden="true" />
-            <p className={`font-bold ${isAccessible ? "text-xl" : "text-lg"}`}>Cargando productos...</p>
-          </div>
-        )}
-
-        {loadingError && (
-          <div
-            role="alert"
-            className={`mb-6 flex items-start gap-4 rounded-2xl p-6 ${
-              isAccessible ? "bg-white border-4 border-slate-900" : "bg-red-50 border border-red-300"
-            }`}
-          >
-            <AlertTriangle className="h-10 w-10 shrink-0" aria-hidden="true" />
-            <div className="flex-1">
-              <p className={`font-black ${isAccessible ? "text-xl" : "text-lg"}`}>{loadingError}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoadingError(null);
-                  loadProductos();
-                }}
-                className={`mt-3 font-bold rounded-lg px-4 py-2 transition ${
-                  isAccessible
-                    ? "bg-slate-900 text-white border-2 border-slate-900 hover:bg-black min-h-[48px]"
-                    : "bg-[#D94C45] text-white border border-[#C73F38] hover:bg-[#C73F38]"
-                }`}
-              >
-                Reintentar
-              </button>
+      <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
+        {isAccessible && (
+          <div className={`${headerBg} no-print`}>
+            <div className={`mx-auto flex w-full max-w-[1520px] items-center px-3 sm:px-4 lg:px-5 xl:px-6 ${isAccessible ? "min-h-[84px] py-4" : "min-h-[64px] py-3"}`}>
+              <h1 className={`font-black leading-none tracking-tight contrast-important ${isAccessible ? "text-3xl" : "text-xl"}`}>
+                Punto de Venta
+              </h1>
             </div>
           </div>
         )}
 
-        {isAccessible ? <AccessibleFlow /> : <PdvNormalView />}
+        <div className={`w-full print:px-0 print:py-0 ${isAccessible ? "mx-auto max-w-[1520px] px-3 py-6 sm:px-4 lg:px-5 xl:px-6" : "px-0 py-0"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
+          {loadingProductos && (
+            <div
+              role="status"
+              aria-live="polite"
+              className={`mb-6 flex items-center gap-4 rounded-2xl p-6 ${
+                isAccessible ? "bg-white border-2 border-slate-900" : "bg-[#FFF8DC] border border-[#FFF4BF]"
+              }`}
+            >
+              <LoaderCircle className="h-10 w-10 animate-spin" aria-hidden="true" />
+              <p className={`font-bold ${isAccessible ? "text-xl" : "text-lg"}`}>Cargando productos...</p>
+            </div>
+          )}
 
-        <div className="hidden print:block" ref={ticketRef}>
-          <TicketComanda
-            pedidoDetalles={pedidoDetalles}
-            total={total}
-            metodoPago={metodoPago}
-            observacion={observacion}
-            numeroPedido={undefined}
-          />
+          {loadingError && (
+            <div
+              role="alert"
+              className={`mb-6 flex items-start gap-4 rounded-2xl p-6 ${
+                isAccessible ? "bg-white border-4 border-slate-900" : "bg-red-50 border border-red-300"
+              }`}
+            >
+              <AlertTriangle className="h-10 w-10 shrink-0" aria-hidden="true" />
+              <div className="flex-1">
+                <p className={`font-black ${isAccessible ? "text-xl" : "text-lg"}`}>{loadingError}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoadingError(null);
+                    loadProductos();
+                  }}
+                  className={`mt-3 font-bold rounded-lg px-4 py-2 transition ${
+                    isAccessible
+                      ? "bg-slate-900 text-white border-2 border-slate-900 hover:bg-black min-h-[48px]"
+                      : "bg-[#D94C45] text-white border border-[#C73F38] hover:bg-[#C73F38]"
+                  }`}
+                >
+                  Reintentar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isAccessible ? <AccessibleFlow /> : <PdvNormalView />}
+
+          <div className="hidden print:block" ref={ticketRef}>
+            <TicketComanda
+              pedidoDetalles={pedidoDetalles}
+              total={total}
+              metodoPago={metodoPago}
+              observacion={observacion}
+              numeroPedido={undefined}
+            />
+          </div>
         </div>
-      </div>
-
       </main>
     </PdvViewProvider>
   );
