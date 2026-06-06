@@ -3,7 +3,9 @@ import AppLayout from "../components/AppLayout"
 import { getDefaultRouteForRole } from "../constants/auth"
 import { useAuthContext } from "../contexts/AuthContext"
 import HomePage from "../pages/HomePage"
-import PdvPage from "../pages/PdvPage"
+import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
+import PedidosPage from "../pages/pedidos/PedidosNormalPage"
+import PdvBasePage from "../pages/pdv/PdvBasePage"
 import PortalPage from "../pages/PortalPage"
 import type { UserRole } from "../types"
 
@@ -46,9 +48,11 @@ function AppRoutes() {
         <Route element={<RequireRole allowedRoles={["cajero", "admin"]} />}>
           <Route path="/inicio" element={<EmptyRoute />} />
 
-          <Route path="/pdv" element={<PdvPage />} />
+          <Route path="/pdv" element={<PdvBasePage isAccessible={false} />} />
+          <Route path="/pdv/facil" element={<PdvBasePage isAccessible />} />
 
-          <Route path="/pedidos" element={<EmptyRoute />} />
+          <Route path="/pedidos" element={<PedidosPage />} />
+          <Route path="/pedidos/facil" element={<PedidosFacilPage />} />
 
           <Route path="/productos" element={<EmptyRoute />} />
         </Route>

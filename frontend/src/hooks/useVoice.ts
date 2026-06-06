@@ -90,7 +90,10 @@ function cancelGlobalSpeech(speechSynthesis: SpeechSynthesis) {
     resolvePendingSpeak(false);
   }
 
-  speechSynthesis.cancel();
+  if (speechSynthesis.speaking || speechSynthesis.pending) {
+    speechSynthesis.cancel();
+  }
+
   resolveActiveSpeak(false);
 }
 
@@ -253,12 +256,22 @@ function useVoice({ enabled = false }: { enabled?: boolean } = {}) {
             resolve(false);
           };
 
-          speechSynthesis.cancel();
+          if (speechSynthesis.paused) {
+            speechSynthesis.resume();
+          }
+
           speechSynthesis.speak(utterance);
         };
 
         pendingResolve = resolve;
-        pendingSpeakTimer = window.setTimeout(startSpeech, options.delayMs ?? DEFAULT_DELAY_MS);
+        const delayMs = options.delayMs ?? (force || interrupt ? 0 : DEFAULT_DELAY_MS);
+
+        if (delayMs <= 0) {
+          startSpeech();
+          return;
+        }
+
+        pendingSpeakTimer = window.setTimeout(startSpeech, delayMs);
       });
     },
     [enabled]

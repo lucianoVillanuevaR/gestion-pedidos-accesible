@@ -6,20 +6,23 @@ type SidebarNavItemProps = {
   isHighContrast: boolean
   item: AppNavigationItem
   onNavigate: () => void
+  pathOverride?: string
 }
 
 function SidebarNavItem({
   isAccessible,
   isHighContrast,
   item,
-  onNavigate
+  onNavigate,
+  pathOverride
 }: SidebarNavItemProps) {
   const Icon = item.icon
   const showDescription = !isAccessible
+  const path = pathOverride ?? item.path
 
   return (
     <NavLink
-      to={item.path}
+      to={path}
       onClick={onNavigate}
       className={({ isActive }) => {
         const baseClass = `group flex w-full items-center rounded-2xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${

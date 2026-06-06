@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { AccessibilityTextSize } from "../constants/accessibility";
+import useVoice from "../hooks/useVoice";
 
 type AccessibilityPanelProps = {
   isOpen: boolean;
@@ -30,6 +31,8 @@ function AccessibilityPanel({
   onToggleVoice,
   onToggleSound
 }: AccessibilityPanelProps) {
+  const { speak } = useVoice({ enabled: true });
+
   useEffect(() => {
     if (!isOpen) {
       return undefined;
@@ -78,6 +81,19 @@ function AccessibilityPanel({
   const spacingClass = isAccessible ? "space-y-6" : "space-y-5";
   const headerPaddingClass = isAccessible ? "px-6 py-5" : "px-5 py-4";
   const contentPaddingClass = isAccessible ? "px-6 py-6" : "px-5 py-5";
+  const handleToggleVoice = () => {
+    if (!isVoiceEnabled) {
+      speak("Ayuda por voz activada.", {
+        priority: "high",
+        dedupeKey: "voice-enabled-confirmation",
+        force: true,
+        interrupt: true,
+        delayMs: 0
+      });
+    }
+
+    onToggleVoice();
+  };
 
   const sizeOptions: Array<{ value: AccessibilityTextSize; label: string; name: string }> = [
     {
@@ -293,7 +309,7 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={onToggleVoice}
+                  onClick={handleToggleVoice}
                   aria-label={isVoiceEnabled ? "Desactivar ayuda por voz" : "Activar ayuda por voz"}
                   aria-pressed={isVoiceEnabled}
                   className={getButtonClass(isVoiceEnabled)}
