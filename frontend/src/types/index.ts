@@ -5,8 +5,20 @@ export interface Producto {
   descripcion?: string;
   imagen?: string;
   altText?: string;
+  disponible?: boolean;
   destacado?: boolean;
 }
+
+export interface CreateProductoPayload {
+  categoria?: string;
+  descripcion?: string;
+  destacado?: boolean;
+  disponible?: boolean;
+  nombre: string;
+  precio: number;
+}
+
+export type UpdateProductoPayload = Partial<CreateProductoPayload>;
 
 export type UserRole = "cajero" | "cocina" | "admin";
 
@@ -31,6 +43,7 @@ export type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
 export type EstadoPedido = "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
 
 export interface CreatePedidoPayload {
+  clienteNombre?: string;
   detalles: PedidoItem[];
   metodoPago: MetodoPago;
   observacion?: string;
@@ -51,11 +64,27 @@ export interface PedidoResponse {
   total: string;
   estado: EstadoPedido;
   metodoPago: MetodoPago;
+  clienteNombre?: string | null;
   observacion?: string | null;
   createdAt?: string;
   updatedAt?: string;
   detalles?: PedidoDetalleResponse[];
 }
+
+export type CierreTurno = {
+  id: string;
+  fechaInicio?: string;
+  fechaCierre: string;
+  usuarioId?: string;
+  totalPedidos: number;
+  pedidosEntregados: number;
+  pedidosCancelados: number;
+  pedidosPendientes: number;
+  totalVendido: number;
+  totalEfectivo: number;
+  totalTarjeta: number;
+  totalTransferencia: number;
+};
 
 export interface ApiError {
   message?: string;

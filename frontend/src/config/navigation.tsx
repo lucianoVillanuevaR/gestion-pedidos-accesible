@@ -117,3 +117,7 @@ export function isPdvRoute(pathname: string) {
 export function isPedidosRoute(pathname: string) {
   return pathname === "/pedidos" || pathname === "/pedidos/facil"
 }
+
+export function isProductosRoute(pathname: string) {
+  return pathname === "/productos" || pathname === "/productos/facil"
+}

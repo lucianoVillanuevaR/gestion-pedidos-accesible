@@ -1,12 +1,12 @@
-import { Printer, Search, Volume2 } from "lucide-react";
-import { FILTROS, formatCurrency } from "../../utils/pdv";
-import { CategoryButton, PAYMENT_OPTIONS, ProductCard, Toast } from "./PdvShared";
+import { CalendarDays, Check, Info, Printer, Search, Trash2, User, Volume2, X } from "lucide-react";
+import type { Producto } from "../../types";
+import { FILTROS, formatCurrency, getPaymentLabel } from "../../utils/pdv";
+import { PAYMENT_OPTIONS, Toast } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvNormalView() {
   const {
     addProduct,
-    cardBorder,
     decreaseProduct,
     feedback,
     feedbackRef,
@@ -14,15 +14,13 @@ function PdvNormalView() {
     handleReadPedidoSummary,
     handleSubmit,
     increaseProduct,
-    isAccessible,
     isHighContrast,
     items,
+    clienteNombre,
     loadingError,
     loadingProductos,
     metodoPago,
-    observacion,
     openResetConfirm,
-    panelBg,
     pedidoDetalles,
     puedeRegistrar,
     productosFiltrados,
@@ -34,64 +32,101 @@ function PdvNormalView() {
     selectedCategory,
     selectMetodoPago,
     sending,
-    setObservacion,
     setSearchTerm,
     setSelectedCategory,
+    setClienteNombre,
     setShowResetConfirm,
     showResetConfirm,
     total
   } = usePdvViewContext();
 
+  const selectedCategoryLabel = FILTROS.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
+  const orderDate = new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date());
+
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
-      <section className={`rounded-[22px] ${cardBorder} p-5 ${panelBg} print:hidden no-print`}>
-        <div className="mb-5">
-          <h2 className="font-black mb-3 text-lg">Filtrar por categoría</h2>
-          <div className="flex flex-wrap gap-2">
+    <div className="grid h-[calc(100dvh-48px)] min-h-0 overflow-hidden bg-slate-100 print:block md:grid-cols-[162px_minmax(0,1fr)] xl:grid-cols-[162px_minmax(0,1fr)_400px] 2xl:grid-cols-[162px_minmax(0,1fr)_430px]">
+      <nav className="hidden min-h-0 border-r border-slate-200 bg-slate-50 print:hidden md:block" aria-label="Categorías de productos">
+        <div className="sticky top-0">
+          <div className="border-b border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black uppercase text-slate-950">
+            Categorías
+          </div>
+          <div className="divide-y divide-slate-200">
             {FILTROS.map((filtro) => (
-              <CategoryButton
+              <button
                 key={filtro.value}
-                filtro={filtro}
-                active={selectedCategory === filtro.value}
-                isAccessible={isAccessible}
-                isHighContrast={isHighContrast}
+                type="button"
                 onClick={() => setSelectedCategory(filtro.value)}
-              />
+                className={`flex min-h-[44px] w-full items-center justify-between px-3 text-left text-sm font-bold uppercase transition ${
+                  selectedCategory === filtro.value
+                    ? "bg-amber-50 text-slate-950"
+                    : "bg-slate-50 text-slate-800 hover:bg-white"
+                } ${isHighContrast ? "contrast-button-secondary" : ""}`}
+                aria-current={selectedCategory === filtro.value ? "page" : undefined}
+              >
+                <span className="truncate">{filtro.label}</span>
+                {selectedCategory === filtro.value && <span className="text-lg leading-none">›</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      <section className="flex min-h-0 min-w-0 flex-col bg-slate-100 print:hidden no-print">
+        <div className="shrink-0 border-b border-slate-200 bg-slate-100 px-3 py-1.5">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+              <label htmlFor="searchProducto" className="relative block w-full sm:max-w-[250px]">
+                <span className="sr-only">Buscar producto</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-700" aria-hidden="true" />
+                <input
+                  id="searchProducto"
+                  type="text"
+                  placeholder="Buscar producto"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  className="h-11 w-full rounded-md border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200 contrast-input"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 md:hidden">
+            {FILTROS.map((filtro) => (
+              <button
+                key={filtro.value}
+                type="button"
+                onClick={() => setSelectedCategory(filtro.value)}
+                className={`h-9 shrink-0 rounded-full border px-3 text-xs font-black uppercase ${
+                  selectedCategory === filtro.value
+                    ? "border-[#FECE00] bg-[#FECE00] text-slate-950"
+                    : "border-slate-300 bg-white text-slate-700"
+                }`}
+              >
+                {filtro.label}
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="mb-5">
-          <label htmlFor="searchProducto" className="block font-bold mb-2 text-sm">
-            <span className="inline-flex items-center gap-2 contrast-important">
-              <Search className={`h-4 w-4 ${isHighContrast ? "text-current" : "text-black"}`} aria-hidden="true" />
-              <span>Buscar producto</span>
-            </span>
-          </label>
-          <input
-            id="searchProducto"
-            type="text"
-            placeholder="Buscar..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-4 py-2 outline-none transition focus:ring-2 focus:ring-blue-400 contrast-input"
-          />
-        </div>
-
-        <div className="space-y-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          <h2 className="mb-2 text-xl font-black uppercase text-slate-800">{selectedCategoryLabel}</h2>
           {!loadingProductos && productosFiltrados.length === 0 && !loadingError ? (
-            <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+            <div className="rounded-md border-2 border-dashed border-slate-300 bg-white p-8 text-center">
               <p className="font-bold text-base">No hay productos en esta categoría</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:[grid-template-columns:repeat(auto-fit,minmax(210px,1fr))]">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
               {productosFiltrados.map((producto) => (
-                <ProductCard
+                <PdvProductTile
                   key={producto.id}
                   producto={producto}
                   cantidad={items[producto.id] || 0}
-                  isAccessible={isAccessible}
-                  isHighContrast={isHighContrast}
                   onIncrease={() => increaseProduct(producto)}
                   onDecrease={() => decreaseProduct(producto)}
                   onAdd={() => addProduct(producto)}
@@ -102,10 +137,55 @@ function PdvNormalView() {
         </div>
       </section>
 
-      <aside className={`rounded-[22px] ${cardBorder} p-6 ${panelBg} h-fit sticky top-6 print:static print:p-0 print:border-0 print:rounded-none print:bg-transparent`}>
-        <div className="mb-5 flex flex-col gap-3">
-          <h2 className="font-black text-lg">Resumen del pedido</h2>
-          <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_48px] items-center gap-3 no-print print:hidden">
+      <aside className="flex h-full min-h-0 flex-col border-l border-slate-200 bg-white print:static print:block print:min-h-0 print:border-0 print:bg-transparent">
+        <div className="bg-[#FECE00] text-slate-950 no-print print:hidden">
+          <div className="flex min-h-[36px] items-center justify-between px-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="text-2xl font-light leading-none">#1</span>
+              <span className="rounded-full border border-white/70 px-2 py-0.5 text-xs font-bold">En el local</span>
+              <span className="text-sm font-bold">{getPaymentLabel(metodoPago)}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t border-amber-300 bg-amber-50 px-4 py-1 text-xs font-bold text-slate-700">
+            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] text-slate-700">PDV</span>
+            <span className="inline-flex items-center gap-1">
+              <CalendarDays className="h-4 w-4" aria-hidden="true" />
+              {orderDate}
+            </span>
+          </div>
+        </div>
+
+        <div className="border-b border-slate-200 no-print print:hidden">
+          <div className="grid grid-cols-[52px_minmax(0,1fr)] border-t border-slate-200">
+            <div className="flex items-center justify-center gap-1 text-slate-700">
+              <User className="h-4 w-4" aria-hidden="true" />
+              <span className="text-xs">⌄</span>
+            </div>
+            <input
+              type="text"
+              value={clienteNombre}
+              onChange={(event) => setClienteNombre(event.target.value)}
+              placeholder="Agregar un nombre de cliente"
+              className="h-14 border-0 border-l border-[#FECE00] bg-amber-50 px-3 text-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-amber-300"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 border-b border-slate-200 text-sm font-bold no-print print:hidden">
+          <div className="bg-slate-400 px-3 py-3 text-white">+ Productos</div>
+          <button
+            type="button"
+            onClick={handlePrint}
+            disabled={pedidoDetalles.length === 0}
+            className="inline-flex items-center justify-center gap-2 bg-slate-100 px-3 py-3 text-slate-500 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <Printer className="h-4 w-4" aria-hidden="true" />
+            Cocina
+          </button>
+        </div>
+
+        <div className="px-3 pt-3 no-print print:hidden">
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-2">
             <button
               type="button"
               onClick={handlePrint}
@@ -135,13 +215,13 @@ function PdvNormalView() {
               title="Vaciar pedido"
               aria-label="Vaciar pedido"
             >
-              🗑
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
 
         {showResetConfirm && (
-          <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 no-print print:hidden ${isHighContrast ? "contrast-panel-soft" : "border-red-200 bg-red-50"}`}>
+          <div className={`mx-3 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 no-print print:hidden ${isHighContrast ? "contrast-panel-soft" : "border-red-200 bg-red-50"}`}>
             <p className="font-bold text-sm">¿Está seguro de borrar el pedido?</p>
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -172,45 +252,45 @@ function PdvNormalView() {
             tabIndex={-1}
             role={feedback.type === "success" ? "status" : "alert"}
             aria-live="polite"
-            className="mb-6 min-w-0 outline-none"
+            className="mx-3 mt-3 min-w-0 outline-none"
           >
             <Toast
               feedback={feedback}
-              isAccessible={isAccessible}
+              isAccessible={false}
               isHighContrast={isHighContrast}
               className="w-full"
             />
           </div>
         )}
 
-        <div className="mb-5 max-h-96 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <div className="min-h-[260px] flex-1 overflow-y-auto border-b border-dashed border-slate-300 bg-white p-3">
           {pedidoDetalles.length === 0 ? (
-            <p className="text-center font-bold text-slate-500 text-base">
-              Sin productos seleccionados
-            </p>
+            <div className="flex h-full min-h-[360px] items-center justify-center text-center text-sm text-slate-500">
+              Agrega productos antes de aceptar el pedido
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {pedidoDetalles.map((item) => (
                 <div
                   key={item.productoId}
-                  className="rounded-xl p-4 flex items-start justify-between gap-3 bg-white border border-slate-200"
+                  className="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-100 py-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-slate-950 text-sm">
+                    <p className="truncate text-sm font-bold text-slate-950">
                       {item.producto.nombre}
                     </p>
-                    <p className="text-slate-600 text-xs">
+                    <p className="text-xs text-slate-600">
                       {item.cantidad} x {formatCurrency(item.producto.precio)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <p className="font-bold text-sm">
+                  <div className="flex shrink-0 items-center gap-2">
+                    <p className="text-sm font-bold">
                       {formatCurrency(item.subtotal)}
                     </p>
                     <button
                       type="button"
                       onClick={() => removeProduct(item.productoId)}
-                      className="text-lg p-1 rounded transition hover:opacity-70 hover:bg-red-50"
+                      className="rounded p-1 text-lg transition hover:bg-red-50 hover:opacity-70"
                       title={`Eliminar ${item.producto.nombre}`}
                       aria-label={`Eliminar ${item.producto.nombre} del pedido`}
                     >
@@ -223,16 +303,24 @@ function PdvNormalView() {
           )}
         </div>
 
-        <div className="mb-5 rounded-xl bg-[#FFF8DC] border border-[#FFF4BF] p-5">
-          <p className={`text-slate-600 font-semibold text-xs uppercase ${isHighContrast ? "contrast-secondary-text" : ""}`}>Total a pagar</p>
-          <p className={`mt-2 font-black text-3xl text-amber-700 ${isHighContrast ? "contrast-important" : ""}`}>
-            {formatCurrency(total)}
-          </p>
+        <div className="border-b border-dashed border-slate-300 px-3 py-3 no-print print:hidden">
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span>Subtotal Productos ({pedidoDetalles.length})</span>
+            <span>{formatCurrency(total)}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className="rounded bg-[#FECE00] px-2 py-1 text-xs font-bold text-slate-950">% Descuento</button>
+          </div>
         </div>
 
-        <div className="mb-5 space-y-3">
-          <h3 className="font-bold text-base">Método de pago</h3>
-          <div className="grid grid-cols-3 gap-3">
+        <div className="border-b border-slate-200 px-3 py-3 no-print print:hidden">
+          <div className="mb-3 flex items-center justify-end">
+            <div className="text-right">
+              <span className="mr-2 text-xs font-black text-slate-900">Total</span>
+              <span className="text-2xl font-black text-slate-950">{formatCurrency(total)}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
             {PAYMENT_OPTIONS.map((option) => {
               const active = metodoPago === option.value;
               return (
@@ -240,14 +328,14 @@ function PdvNormalView() {
                   key={option.value}
                   type="button"
                   onClick={() => selectMetodoPago(option.value)}
-                  className={`flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl px-2 py-3 font-bold transition focus:outline-none focus:ring-4 focus:ring-slate-900 focus:ring-offset-2 ${
+                  className={`flex min-h-[42px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-amber-300 ${
                     active
-                      ? "bg-slate-600 text-white border-2 border-slate-600"
-                      : "bg-white text-slate-900 border border-slate-300 hover:bg-slate-50"
+                      ? "border-[#FECE00] bg-[#FECE00] text-slate-950"
+                      : "border-slate-300 bg-white text-amber-700 hover:bg-amber-50"
                   }`}
                   aria-pressed={active}
                 >
-                  <option.Icon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                  <option.Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span className="text-xs">{option.label}</span>
                 </button>
               );
@@ -255,36 +343,86 @@ function PdvNormalView() {
           </div>
         </div>
 
-        <div className="mb-5">
-          <label htmlFor="observacion" className="block font-bold mb-2 text-sm">
-            <span className="contrast-important">Observación</span>
-          </label>
-          <textarea
-            id="observacion"
-            rows={3}
-            value={observacion}
-            onChange={(event) => setObservacion(event.target.value)}
-            placeholder="Ej: sin cebolla, extra salsa..."
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:ring-2 focus:ring-[#2F5FE3] contrast-input min-h-[72px]"
-          />
-        </div>
-
-        <div className="space-y-2 mb-4">
+        <div className="grid grid-cols-[1fr_1.1fr] gap-1.5 p-3 no-print print:hidden">
+          <button
+            type="button"
+            onClick={openResetConfirm}
+            disabled={pedidoDetalles.length === 0}
+            className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-md border border-red-500 bg-white px-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+            Cancelar
+          </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!puedeRegistrar}
-            className={`w-full rounded-lg border-2 font-bold transition py-3 ${
+            className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-md border font-bold transition ${
               puedeRegistrar
-                ? "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800 min-h-[56px]"
-                : "border-slate-300 bg-slate-300 text-slate-500 cursor-not-allowed min-h-[56px]"
+                ? "border-slate-700 bg-slate-700 text-white hover:bg-slate-800"
+                : "cursor-not-allowed border-slate-300 bg-slate-300 text-white"
             } ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`}
           >
-            {sending ? "Registrando..." : "Registrar pedido"}
+            <Check className="h-4 w-4" aria-hidden="true" />
+            {sending ? "Aceptando..." : "Aceptar"}
           </button>
         </div>
       </aside>
     </div>
+  );
+}
+
+function PdvProductTile({
+  producto,
+  cantidad,
+  onIncrease,
+  onDecrease,
+  onAdd
+}: {
+  producto: Producto;
+  cantidad: number;
+  onIncrease: () => void;
+  onDecrease: () => void;
+  onAdd: () => void;
+}) {
+  return (
+    <article className="group overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition hover:border-amber-400 hover:shadow-md">
+      <button type="button" onClick={onAdd} className="block w-full text-left" aria-label={`Agregar ${producto.nombre}`}>
+        <div className="relative h-[120px] overflow-hidden bg-slate-300">
+          {producto.imagen ? (
+            <img src={producto.imagen} alt={producto.altText || producto.nombre} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-slate-300 text-center text-xs font-bold uppercase text-slate-600">
+              Producto
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pb-1.5 pt-8">
+            <h3 className="line-clamp-2 min-h-[34px] text-sm font-black uppercase leading-tight text-white">{producto.nombre}</h3>
+          </div>
+          {cantidad > 0 && (
+            <span className="absolute right-2 top-2 rounded-full bg-[#FECE00] px-2 py-0.5 text-xs font-black text-slate-950">
+              {cantidad}
+            </span>
+          )}
+        </div>
+      </button>
+      <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-2 py-1.5">
+        <p className="truncate text-base font-black text-slate-800">{formatCurrency(producto.precio)}</p>
+        <button type="button" onClick={onAdd} className="rounded-full p-1 text-slate-700 transition hover:bg-slate-100" aria-label={`Agregar ${producto.nombre}`}>
+          <Info className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+      {cantidad > 0 && (
+        <div className="grid grid-cols-2 border-t border-slate-200">
+          <button type="button" onClick={onDecrease} className="min-h-[32px] bg-slate-50 text-lg font-black text-slate-700 transition hover:bg-slate-100" aria-label={`Disminuir ${producto.nombre}`}>
+            -
+          </button>
+          <button type="button" onClick={onIncrease} className="min-h-[32px] bg-[#FECE00] text-lg font-black text-slate-950 transition hover:bg-[#FFD633]" aria-label={`Aumentar ${producto.nombre}`}>
+            +
+          </button>
+        </div>
+      )}
+    </article>
   );
 }
 

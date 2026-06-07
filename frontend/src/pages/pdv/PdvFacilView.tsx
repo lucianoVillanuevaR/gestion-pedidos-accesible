@@ -161,7 +161,7 @@ function PdvFacilView() {
 
               <button
                 type="button"
-                onClick={() => navigate("/productos")}
+                onClick={() => navigate("/productos/facil")}
                 className={`min-h-[56px] rounded-xl border-2 px-4 py-3 text-lg font-bold transition ${
                   isHighContrast
                     ? "contrast-button-secondary"

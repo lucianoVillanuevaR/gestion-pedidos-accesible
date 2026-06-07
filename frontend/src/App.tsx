@@ -1,5 +1,6 @@
 import AppRoutes from "./routes/AppRoutes";
 import AccessibilityPanel from "./components/AccessibilityPanel";
+import AccessibleRouteAnnouncer from "./components/AccessibleRouteAnnouncer";
 import { AccessibilityProvider, useAccessibilityContext } from "./contexts/AccessibilityContext";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -21,6 +22,7 @@ function AppShell() {
 
   return (
     <>
+      <AccessibleRouteAnnouncer />
       <AppRoutes />
 
       <AccessibilityPanel

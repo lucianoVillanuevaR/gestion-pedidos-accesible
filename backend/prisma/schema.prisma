@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 model Producto {
@@ -63,14 +64,15 @@ model Inventario {
 }
 
 model Pedido {
-  id          Int             @id @default(autoincrement())
-  total       Decimal         @db.Decimal(10, 2)
-  estado      String          @default("pendiente")
-  metodoPago  String
-  observacion String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  detalles    DetallePedido[]
+  id            Int             @id @default(autoincrement())
+  total         Decimal         @db.Decimal(10, 2)
+  estado        String          @default("pendiente")
+  metodoPago    String
+  clienteNombre String?
+  observacion   String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  detalles      DetallePedido[]
 }
 
 model DetallePedido {

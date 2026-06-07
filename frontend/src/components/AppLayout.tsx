@@ -1,7 +1,8 @@
 import { Menu } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Outlet, useLocation, useNavigate } from "react-router-dom"
-import { getRouteMeta, isPdvRoute, isPedidosRoute } from "../config/navigation"
+import logoRiq from "../assets/logoRiq.png"
+import { getRouteMeta, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
 import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 import AppSidebar from "./AppSidebar"
 
@@ -13,20 +14,25 @@ function AppLayout() {
 
   const currentRoute = getRouteMeta(location.pathname)
   const isPdvPage = isPdvRoute(location.pathname)
+  const isPdvNormalPage = location.pathname === "/pdv" && !isAccessible
   const isPdvFacilPage = location.pathname === "/pdv/facil"
   const isPedidosPage = isPedidosRoute(location.pathname)
   const isPedidosFacilPage = location.pathname === "/pedidos/facil"
-  const hideSidebar = (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage
-  const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[360px]" : "lg:pl-[320px]"
-  const pageShellClass = isPdvPage || isPedidosPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
-  const mainContentClass = isPdvPage || isPedidosPage
-    ? "px-0 py-0"
+  const isProductosPage = isProductosRoute(location.pathname)
+  const isProductosFacilPage = location.pathname === "/productos/facil"
+  const isFullWidthPage = isPdvPage || isPedidosPage || isProductosPage
+  const showBrandTopBar = !isAccessible && (isPdvPage || isPedidosPage || isProductosPage)
+  const hideSidebar = (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage || isProductosFacilPage
+  const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[368px]" : "lg:pl-[240px]"
+  const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
+  const mainContentClass = isFullWidthPage
+    ? `px-0 py-0 ${isPdvNormalPage ? "h-[calc(100dvh-48px)] overflow-hidden" : ""}`
     : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isAccessible ? "lg:px-10" : ""}`
   const appBackgroundClass = isHighContrast
     ? "bg-black text-white"
     : isAccessible
       ? "bg-[#F3F4F6] text-slate-950"
-      : isPedidosPage
+      : isPedidosPage || isProductosPage
         ? "bg-slate-50 text-slate-950"
         : "bg-[radial-gradient(circle_at_top_left,#fff3bf_0%,#f8fafc_38%,#ffffff_100%)] text-slate-950"
 
@@ -44,6 +50,10 @@ function AppLayout() {
         navigate("/pedidos/facil", { replace: true })
       }
 
+      if (location.pathname === "/productos") {
+        navigate("/productos/facil", { replace: true })
+      }
+
       return
     }
 
@@ -53,6 +63,10 @@ function AppLayout() {
 
     if (location.pathname === "/pedidos/facil") {
       navigate("/pedidos", { replace: true })
+    }
+
+    if (location.pathname === "/productos/facil") {
+      navigate("/productos", { replace: true })
     }
   }, [isAccessible, location.pathname, navigate])
 
@@ -88,14 +102,28 @@ function AppLayout() {
   }, [isSidebarOpen])
 
   return (
-    <div className={`min-h-screen ${appBackgroundClass}`}>
+    <div className={`${isPdvNormalPage ? "h-dvh overflow-hidden" : "min-h-screen"} ${appBackgroundClass}`}>
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
       </a>
 
-      {!hideSidebar && <AppSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
+      {showBrandTopBar && (
+        <header className="fixed inset-x-0 top-0 z-[60] hidden h-12 items-center border-b border-amber-300 bg-[#FECE00] px-4 text-slate-950 shadow-sm lg:flex">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-300 bg-[#FFF8DC] p-1">
+              <img src={logoRiq} alt="Logo de Riquísimo" className="h-full w-full object-contain" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black leading-tight">Riquísimo</p>
+              <p className="truncate text-[10px] font-medium leading-tight text-slate-700">Sistema de Pedidos</p>
+            </div>
+          </div>
+        </header>
+      )}
 
-      <div className={sidebarOffsetClass}>
+      {!hideSidebar && <AppSidebar hasTopBrandBar={showBrandTopBar} isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />}
+
+      <div className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-12" : ""} ${isPdvNormalPage ? "h-dvh overflow-hidden" : ""}`}>
         {!hideSidebar && (
           <header
             className={`sticky top-0 z-30 border-b backdrop-blur lg:hidden ${
@@ -113,7 +141,7 @@ function AppLayout() {
                     ? "contrast-button-secondary"
                     : isAccessible
                       ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-900"
-                      : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200 focus-visible:ring-blue-500"
+                      : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200 focus-visible:ring-amber-400"
                 }`}
                 aria-label="Abrir navegación"
                 aria-expanded={isSidebarOpen}
@@ -135,7 +163,7 @@ function AppLayout() {
         )}
 
         <main id="main-content" className={mainContentClass}>
-          <div className={pageShellClass}>
+          <div className={`${pageShellClass} ${isPdvNormalPage ? "h-full" : ""}`}>
             <Outlet />
           </div>
         </main>

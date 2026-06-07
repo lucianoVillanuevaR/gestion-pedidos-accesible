@@ -18,6 +18,7 @@ interface CrearPedidoBody {
     cantidad: number;
   }>;
   metodoPago: string;
+  clienteNombre?: string;
   observacion?: string;
 }
 
@@ -27,7 +28,7 @@ interface ActualizarEstadoBody {
 
 export const crearPedido = async (req: Request, res: Response) => {
   try {
-    const { detalles, metodoPago, observacion } = req.body as CrearPedidoBody;
+    const { clienteNombre, detalles, metodoPago, observacion } = req.body as CrearPedidoBody;
 
     // Validar método de pago
     if (!METODOS_PAGO_VALIDOS.includes(metodoPago)) {
@@ -84,6 +85,7 @@ export const crearPedido = async (req: Request, res: Response) => {
         total,
         estado: "pendiente",
         metodoPago,
+        clienteNombre: clienteNombre?.trim() || null,
         observacion: observacion || null,
         detalles: {
           create: productosData.map((item) => ({

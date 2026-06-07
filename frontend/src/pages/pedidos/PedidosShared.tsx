@@ -3,7 +3,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { getPedidos, updatePedidoEstado } from "../../services/pedidos";
-import type { EstadoPedido, PedidoDetalleResponse, PedidoResponse } from "../../types";
+import type { EstadoPedido, MetodoPago, PedidoDetalleResponse, PedidoResponse } from "../../types";
 
 export type EstadoFilter = EstadoPedido | "todos";
 export type ModalAction = "detail" | "state" | "finish" | "cancel" | "history";
@@ -53,7 +53,7 @@ export const ESTADO_META: Record<EstadoPedido, EstadoMeta> = {
   },
   entregado: {
     label: "Entregado",
-    className: "border-blue-200 bg-blue-100 text-blue-900"
+    className: "border-emerald-200 bg-emerald-100 text-emerald-900"
   },
   cancelado: {
     label: "Cancelado",
@@ -95,11 +95,36 @@ export function getPedidoCounts(pedidos: PedidoResponse[]) {
 }
 
 export function getNormalSummary(pedidos: PedidoResponse[]) {
+  const turnoSummary = getTurnoSummary(pedidos);
+
   return {
     ...getPedidoCounts(pedidos),
-    totalVendido: pedidos
-      .filter((pedido) => pedido.estado === "entregado")
-      .reduce((total, pedido) => total + Number(pedido.total), 0)
+    totalVendido: turnoSummary.totalVendido
+  };
+}
+
+export function getTurnoSummary(pedidos: PedidoResponse[]) {
+  const pedidosEntregados = pedidos.filter((pedido) => pedido.estado === "entregado");
+  const pedidosPendientes = pedidos.filter((pedido) => ["pendiente", "en_preparacion", "listo"].includes(pedido.estado)).length;
+  const totalPorMetodo: Record<MetodoPago, number> = {
+    efectivo: 0,
+    tarjeta: 0,
+    transferencia: 0
+  };
+
+  pedidosEntregados.forEach((pedido) => {
+    totalPorMetodo[pedido.metodoPago] += Number(pedido.total);
+  });
+
+  return {
+    pedidosCancelados: pedidos.filter((pedido) => pedido.estado === "cancelado").length,
+    pedidosEntregados: pedidosEntregados.length,
+    pedidosPendientes,
+    totalEfectivo: totalPorMetodo.efectivo,
+    totalPedidos: pedidos.length,
+    totalTarjeta: totalPorMetodo.tarjeta,
+    totalTransferencia: totalPorMetodo.transferencia,
+    totalVendido: totalPorMetodo.efectivo + totalPorMetodo.tarjeta + totalPorMetodo.transferencia
   };
 }
 
@@ -173,16 +198,6 @@ export function isPedidoDelayed(pedido: PedidoResponse) {
   return elapsedMinutes !== null && elapsedMinutes > 20;
 }
 
-export function getPedidoDelayMessage(pedido: PedidoResponse) {
-  if (!isPedidoDelayed(pedido)) {
-    return null;
-  }
-
-  return pedido.estado === "en_preparacion"
-    ? "Pedido con demora: más de 20 min en preparación"
-    : "Pedido con demora: más de 20 min pendiente";
-}
-
 export function formatMetodoPago(value: PedidoResponse["metodoPago"]) {
   const labels: Record<PedidoResponse["metodoPago"], string> = {
     efectivo: "Efectivo",
@@ -232,6 +247,7 @@ function pedidoMatchesSearch(pedido: PedidoResponse, searchTerm: string) {
   const searchableText = [
     `pedido ${pedido.id}`,
     String(pedido.id),
+    pedido.clienteNombre ?? "",
     getPedidoSummary(pedido),
     formatMetodoPago(pedido.metodoPago),
     ESTADO_META[pedido.estado].label,
@@ -350,6 +366,7 @@ export function usePedidosController({
     loadPedidos,
     normalSummary,
     pedidoCounts,
+    pedidos,
     setActiveModal,
     setEstadoFilter,
     updatingPedidoId
@@ -446,6 +463,12 @@ export function PedidoModal({
             <span className="font-bold text-slate-600">{formatTime(pedido.createdAt)}</span>
             <span className="font-bold text-slate-600">{formatMetodoPago(pedido.metodoPago)}</span>
           </div>
+          {pedido.clienteNombre && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-xs font-black uppercase text-slate-500">Cliente</p>
+              <p className="mt-1 text-lg font-black text-slate-950">{pedido.clienteNombre}</p>
+            </div>
+          )}
           <div className="rounded-2xl border border-slate-200">
             {(pedido.detalles ?? []).map((detalle) => (
               <div key={detalle.id} className="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0">

@@ -23,10 +23,10 @@ function SidebarNavItem({
   return (
     <NavLink
       to={path}
-      onClick={onNavigate}
+      onClick={() => onNavigate()}
       className={({ isActive }) => {
         const baseClass = `group flex w-full items-center rounded-2xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-          isAccessible ? "min-h-[68px] gap-4 px-4 py-3" : "min-h-[52px] gap-3 px-3 py-2.5"
+          isAccessible ? "min-h-[68px] gap-4 px-4 py-3" : "min-h-[48px] gap-2.5 px-2.5 py-2"
         }`
 
         return `${baseClass} ${
@@ -52,16 +52,16 @@ function SidebarNavItem({
             }`}
             aria-hidden="true"
           >
-            <Icon className={isAccessible ? "h-6 w-6" : "h-4 w-4"} />
+            <Icon className={isAccessible ? "h-6 w-6" : "h-3.5 w-3.5"} />
           </span>
 
           <span className="min-w-0 flex-1">
-            <span className={`block font-semibold leading-tight ${isAccessible ? "text-lg" : "text-sm"}`}>
+            <span className={`block font-semibold leading-tight ${isAccessible ? "text-lg" : "text-[13px]"}`}>
               {item.label}
             </span>
             {showDescription && (
               <span
-                className={`mt-0.5 block text-xs leading-snug ${
+                className={`mt-0.5 block text-[11px] leading-snug ${
                   isHighContrast
                     ? "contrast-secondary-text"
                     : isActive

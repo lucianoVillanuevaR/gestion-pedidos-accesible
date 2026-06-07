@@ -1,9 +1,11 @@
 import { Accessibility, AlertTriangle, Clock3, ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import useVoice from "../../hooks/useVoice";
 import type { PedidoResponse } from "../../types";
 import {
   EmptyPedidosMessage,
+  ESTADO_META,
   ESTADO_OPTIONS,
   FOCUS_VISIBLE_CLASS,
   formatCurrency,
@@ -19,7 +21,8 @@ import {
 } from "./PedidosShared";
 
 function PedidosFacilPage() {
-  const { isHighContrast, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext();
+  const { isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext();
+  const { speak } = useVoice({ enabled: isVoiceEnabled });
   const {
     activeModal,
     error,
@@ -39,6 +42,25 @@ function PedidosFacilPage() {
     : "bg-slate-900 text-white border-b border-slate-700";
   const pageBg = isHighContrast ? "bg-black" : "bg-white";
   const panelClass = isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white";
+
+  const handleAccessibleEstadoChange = async (pedido: PedidoResponse, estado: PedidoResponse["estado"]) => {
+    await handleEstadoChange(pedido, estado);
+    speak(`Pedido ${pedido.id} actualizado a ${ESTADO_META[estado].label}.`, {
+      priority: "high",
+      dedupeKey: `pedido-estado:${pedido.id}:${estado}`,
+      cooldownMs: 1800,
+      interrupt: true
+    });
+  };
+
+  const handleRefreshPedidos = () => {
+    speak("Actualizando pedidos.", {
+      priority: "normal",
+      dedupeKey: "pedidos-facil-refresh",
+      cooldownMs: 1200
+    });
+    loadPedidos();
+  };
 
   return (
     <div className={`min-h-screen ${pageBg}`}>
@@ -71,7 +93,7 @@ function PedidosFacilPage() {
             </button>
             <button
               type="button"
-              onClick={() => loadPedidos()}
+              onClick={handleRefreshPedidos}
               className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
                 isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
               } ${FOCUS_VISIBLE_CLASS}`}
@@ -141,7 +163,7 @@ function PedidosFacilPage() {
             activeModal={activeModal}
             isUpdating={updatingPedidoId === activeModal.pedido.id}
             onClose={() => setActiveModal(null)}
-            onEstadoChange={handleEstadoChange}
+            onEstadoChange={handleAccessibleEstadoChange}
             onOpenModal={setActiveModal}
           />
         )}

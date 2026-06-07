@@ -3,8 +3,7 @@ import type { Producto } from "../../types";
 import {
   detectCategoria,
   formatCurrency,
-  getCategoriaLabel,
-  type FiltroCategoria
+  getCategoriaLabel
 } from "../../utils/pdv";
 
 export type FeedbackState = {
@@ -93,53 +92,6 @@ export function Toast({
         </div>
       </div>
     </div>
-  );
-}
-
-export function CategoryButton({
-  filtro,
-  active,
-  isAccessible,
-  isHighContrast,
-  onClick
-}: {
-  filtro: { value: FiltroCategoria; label: string };
-  active: boolean;
-  isAccessible: boolean;
-  isHighContrast: boolean;
-  onClick: () => void;
-}) {
-  const baseClass = "inline-flex items-center justify-center rounded-xl border px-4 py-2 font-bold transition min-h-[48px] text-center";
-
-  if (active) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`${baseClass} ${
-          isAccessible
-            ? "bg-slate-900 text-white border-slate-900"
-            : "bg-[#FECE00] text-[#1F2937] border-[#FECE00] shadow-md hover:shadow-lg hover:bg-[#FFD633]"
-        } ${isHighContrast ? "contrast-button-primary" : ""}`}
-        aria-current="page"
-      >
-        {filtro.label}
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`${baseClass} ${
-        isAccessible
-          ? "bg-white text-slate-900 border-2 border-slate-300 hover:border-slate-900"
-          : "bg-white text-[#1F2937] border-slate-200 hover:border-[#FECE00] hover:bg-[#FFFBF0]"
-      } ${isHighContrast ? "contrast-button-secondary" : ""}`}
-    >
-      {filtro.label}
-    </button>
   );
 }
 
