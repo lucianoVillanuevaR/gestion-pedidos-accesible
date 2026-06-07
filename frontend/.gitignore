@@ -6,6 +6,7 @@ dist/
 build/
 .vite/
 .cache/
+.npm/
 coverage/
 .next/
 out/
@@ -32,6 +33,8 @@ secrets/
 # Logs
 logs/
 *.log
+*.pid
+*.pid.lock
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
