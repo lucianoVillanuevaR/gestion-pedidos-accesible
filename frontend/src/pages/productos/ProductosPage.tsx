@@ -1,5 +1,7 @@
 import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Upload, Utensils, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import useActionVoice from "../../hooks/useActionVoice";
 import { createProducto, updateProducto } from "../../services/productos";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
@@ -7,7 +9,15 @@ import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { CATEGORIAS_CATALOGO, type CategoriaCatalogo } from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
 
+type CategoriaGrupo = {
+  label: string;
+  productos: ProductoConCategoria[];
+  value: CategoriaCatalogo;
+};
+
 function ProductosPage() {
+  const { isVoiceEnabled } = useAccessibilityContext();
+  const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -34,14 +44,26 @@ function ProductosPage() {
       setProductos((currentProductos) => [...currentProductos, producto].sort((left, right) => left.nombre.localeCompare(right.nombre, "es")));
       setActiveCategory(payload.destacado ? "Destacados" : (payload.categoria as CategoriaCatalogo) || "Otros");
       setAddProductCategory(null);
+      speakAction(`Producto agregado. ${producto.nombre}.`, `producto-created:${producto.id}`, { cooldownMs: 2500 });
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No fue posible crear el producto");
+      const message = requestError instanceof Error ? requestError.message : "No fue posible crear el producto";
+      setError(message);
+      speak(`No fue posible crear el producto. ${message}`, {
+        priority: "high",
+        dedupeKey: "producto-create-error",
+        cooldownMs: 3000,
+        interrupt: true
+      });
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleUpdateProducto = async (producto: Producto, payload: UpdateProductoPayload) => {
+  const handleUpdateProducto = async (
+    producto: Producto,
+    payload: UpdateProductoPayload,
+    voiceMessage?: (productoActualizado: Producto) => string
+  ) => {
     try {
       setUpdatingProductoId(producto.id);
       setError(null);
@@ -52,11 +74,76 @@ function ProductosPage() {
           .sort((left, right) => left.nombre.localeCompare(right.nombre, "es"))
       );
       setEditingProducto(null);
+      speakAction(
+        voiceMessage?.(productoActualizado) ?? `Producto editado. ${productoActualizado.nombre}.`,
+        `producto-updated:${productoActualizado.id}:${productoActualizado.disponible}`,
+        { cooldownMs: 2200 }
+      );
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No fue posible actualizar el producto");
+      const message = requestError instanceof Error ? requestError.message : "No fue posible actualizar el producto";
+      setError(message);
+      speak(`No fue posible actualizar el producto. ${message}`, {
+        priority: "high",
+        dedupeKey: `producto-update-error:${producto.id}`,
+        cooldownMs: 3000,
+        interrupt: true
+      });
     } finally {
       setUpdatingProductoId(null);
     }
+  };
+
+  const handleRefreshProductos = () => {
+    speakAction("Actualizando productos.", "productos-normal-refresh", { cooldownMs: 1200, priority: "normal" });
+    loadProductos();
+  };
+
+  const handleOpenCreateProduct = () => {
+    setAddProductCategory(activeCategory);
+    speakAction(`Boton producto. Agregar producto en categoria ${activeCategory}.`, `producto-open-create:${activeCategory}`, {
+      cooldownMs: 1600,
+      priority: "normal"
+    });
+  };
+
+  const handleOpenEditProduct = (producto: ProductoConCategoria) => {
+    setEditingProducto(producto);
+    speakAction(`Boton editar. Editando ${producto.nombre}. Precio ${formatCurrency(producto.precio)}.`, `producto-open-edit:${producto.id}`, {
+      cooldownMs: 1600,
+      priority: "normal"
+    });
+  };
+
+  const handleToggleAvailability = (producto: ProductoConCategoria) => {
+    const nextAvailability = producto.disponible === false;
+    speakAction(
+      `Boton ${nextAvailability ? "activar" : "desactivar"} producto. ${nextAvailability ? "Activando" : "Desactivando"} ${producto.nombre}.`,
+      `producto-toggle:${producto.id}:${nextAvailability}`,
+      { cooldownMs: 1200, priority: "normal" }
+    );
+    handleUpdateProducto(
+      producto,
+      { disponible: nextAvailability },
+      (productoActualizado) => `Producto ${productoActualizado.disponible === false ? "desactivado" : "activado"}. ${productoActualizado.nombre}.`
+    );
+  };
+
+  const handleSelectCategory = (grupo: CategoriaGrupo) => {
+    setActiveCategory(grupo.value);
+    speakAction(`Categoria ${grupo.label}. ${grupo.productos.length} productos.`, `producto-category-button:${grupo.value}:${grupo.productos.length}`, {
+      cooldownMs: 1200,
+      priority: "normal"
+    });
+  };
+
+  const handleToggleCategoryBlock = (grupo: CategoriaGrupo) => {
+    const isCurrentlyOpen = activeCategory === grupo.value;
+    setActiveCategory(grupo.value);
+    speakAction(
+      `${isCurrentlyOpen ? "Categoria abierta" : "Abriendo categoria"} ${grupo.label}. ${grupo.productos.length} productos.`,
+      `producto-category-toggle:${grupo.value}:${isCurrentlyOpen ? "already-open" : "open"}`,
+      { cooldownMs: 1200, priority: "normal" }
+    );
   };
 
   return (
@@ -67,7 +154,7 @@ function ProductosPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
               <button
                 type="button"
-                onClick={() => setAddProductCategory(activeCategory)}
+                onClick={handleOpenCreateProduct}
                 className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
               >
                 <Plus className="h-5 w-5" aria-hidden="true" />
@@ -75,7 +162,7 @@ function ProductosPage() {
               </button>
               <button
                 type="button"
-                onClick={loadProductos}
+                onClick={handleRefreshProductos}
                 disabled={isLoading}
                 className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-amber-300 bg-[#FFF8DC] px-4 text-sm font-black text-slate-950 transition hover:bg-[#FFF4BF] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
               >
@@ -106,7 +193,7 @@ function ProductosPage() {
                   <button
                     key={grupo.value}
                     type="button"
-                    onClick={() => setActiveCategory(grupo.value)}
+                    onClick={() => handleSelectCategory(grupo)}
                     aria-selected={isActive}
                     role="tab"
                     className={`inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-black transition ${
@@ -146,10 +233,16 @@ function ProductosPage() {
               <CategoriaBlock
                 key={grupo.value}
                 isExpanded={activeCategory === grupo.value}
-                onAddProduct={() => setAddProductCategory(grupo.value)}
-                onEditProduct={setEditingProducto}
-                onToggle={() => setActiveCategory(grupo.value)}
-                onToggleAvailability={(producto) => handleUpdateProducto(producto, { disponible: !producto.disponible })}
+                onAddProduct={() => {
+                  setAddProductCategory(grupo.value);
+                  speakAction(`Boton producto. Agregar producto en categoria ${grupo.label}.`, `producto-open-create:${grupo.value}`, {
+                    cooldownMs: 1600,
+                    priority: "normal"
+                  });
+                }}
+                onEditProduct={handleOpenEditProduct}
+                onToggle={() => handleToggleCategoryBlock(grupo)}
+                onToggleAvailability={handleToggleAvailability}
                 grupo={grupo}
                 updatingProductoId={updatingProductoId}
               />
@@ -189,7 +282,7 @@ function CategoriaBlock({
   onToggleAvailability,
   updatingProductoId
 }: {
-  grupo: { label: string; productos: ProductoConCategoria[]; value: CategoriaCatalogo };
+  grupo: CategoriaGrupo;
   isExpanded: boolean;
   onAddProduct: () => void;
   onEditProduct: (producto: ProductoConCategoria) => void;
@@ -271,6 +364,8 @@ function ProductoFormModal({
   onSubmit: (payload: CreateProductoPayload) => Promise<void>;
   producto?: ProductoConCategoria;
 }) {
+  const { isVoiceEnabled } = useAccessibilityContext();
+  const { speak } = useActionVoice(isVoiceEnabled);
   const [nombre, setNombre] = useState(producto?.nombre ?? "");
   const [descripcion, setDescripcion] = useState(producto?.descripcion ?? "");
   const [precio, setPrecio] = useState(producto ? String(producto.precio) : "");
@@ -284,12 +379,26 @@ function ProductoFormModal({
     const precioNumerico = Number(precio);
 
     if (!nombre.trim()) {
-      setFormError("Ingresa el nombre del producto");
+      const message = "Ingresa el nombre del producto";
+      setFormError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: "producto-form-error-nombre",
+        cooldownMs: 2000,
+        interrupt: true
+      });
       return;
     }
 
     if (!Number.isFinite(precioNumerico) || precioNumerico < 0) {
-      setFormError("Ingresa un precio válido");
+      const message = "Ingresa un precio valido";
+      setFormError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: "producto-form-error-precio",
+        cooldownMs: 2000,
+        interrupt: true
+      });
       return;
     }
 

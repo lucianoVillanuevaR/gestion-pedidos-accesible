@@ -5,6 +5,7 @@ import { getSidebarNavigation, isPdvRoute, isPedidosRoute, isProductosRoute } fr
 import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 import { useAuthContext } from "../contexts/AuthContext"
 import { getDefaultRouteForRole } from "../constants/auth"
+import useActionVoice from "../hooks/useActionVoice"
 import SidebarNavItem from "./SidebarNavItem"
 
 type AppSidebarProps = {
@@ -13,11 +14,14 @@ type AppSidebarProps = {
   onClose: () => void
 }
 
+const VOICED_SIDEBAR_ITEMS = new Set(["Nuevo Pedido", "Pedidos", "Productos"])
+
 function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { isAccessible, isHighContrast, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext()
+  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext()
   const { logout, user } = useAuthContext()
+  const { speakAction } = useActionVoice(isVoiceEnabled)
 
   if (!user) {
     return null
@@ -71,6 +75,16 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
 
   const handleOpenAccessibility = () => {
     openAccessibilityPanel()
+    onClose()
+  }
+
+  const handleSidebarNavigate = (label: string) => {
+    if (!VOICED_SIDEBAR_ITEMS.has(label)) {
+      onClose()
+      return
+    }
+
+    speakAction(label, `sidebar:${label}`)
     onClose()
   }
 
@@ -143,7 +157,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                 }
                 isAccessible={isAccessible}
                 isHighContrast={isHighContrast}
-                onNavigate={onClose}
+                onNavigate={() => handleSidebarNavigate(item.label)}
               />
             ))}
           </nav>

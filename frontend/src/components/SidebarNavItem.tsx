@@ -23,7 +23,7 @@ function SidebarNavItem({
   return (
     <NavLink
       to={path}
-      onClick={onNavigate}
+      onClick={() => onNavigate()}
       className={({ isActive }) => {
         const baseClass = `group flex w-full items-center rounded-2xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
           isAccessible ? "min-h-[68px] gap-4 px-4 py-3" : "min-h-[48px] gap-2.5 px-2.5 py-2"

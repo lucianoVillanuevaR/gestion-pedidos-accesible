@@ -2,6 +2,7 @@ import { Accessibility, AlertTriangle, ClipboardPlus, LoaderCircle, RefreshCw } 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import useActionVoice from "../../hooks/useActionVoice";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { CATEGORIAS_CATALOGO, type CategoriaCatalogo } from "./ProductosShared";
@@ -16,7 +17,8 @@ const CATEGORIAS_FACIL: Array<{ label: string; value: CategoriaFacil }> = [
 
 function ProductosFacilPage() {
   const navigate = useNavigate();
-  const { isHighContrast, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext();
+  const { isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext();
+  const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [selectedCategory, setSelectedCategory] = useState<CategoriaFacil>("Todos");
   const [selectedProducto, setSelectedProducto] = useState<ProductoConCategoria | null>(null);
   const {
@@ -38,11 +40,37 @@ function ProductosFacilPage() {
   const pageBg = isHighContrast ? "bg-black" : "bg-white";
   const panelClass = isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white";
 
+  const handleRefreshProductos = () => {
+    speak("Actualizando productos.", {
+      priority: "normal",
+      dedupeKey: "productos-facil-refresh",
+      cooldownMs: 1200
+    });
+    loadProductos();
+  };
+
+  const handleSelectCategory = (categoria: { label: string; value: CategoriaFacil }) => {
+    setSelectedCategory(categoria.value);
+    speakAction(categoria.label, `productos-facil-categoria:${categoria.value}`);
+  };
+
   const handleUseProduct = (producto: ProductoConCategoria) => {
     if (producto.disponible === false) {
+      speak(`${producto.nombre} no esta disponible.`, {
+        priority: "high",
+        dedupeKey: `producto-no-disponible:${producto.id}`,
+        cooldownMs: 2200,
+        interrupt: true
+      });
       return;
     }
 
+    speak(`${producto.nombre} seleccionado para nuevo pedido.`, {
+      priority: "high",
+      dedupeKey: `producto-usar:${producto.id}`,
+      cooldownMs: 1800,
+      interrupt: true
+    });
     navigate("/pdv/facil", { state: { productoId: producto.id } });
   };
 
@@ -77,7 +105,7 @@ function ProductosFacilPage() {
             </button>
             <button
               type="button"
-              onClick={loadProductos}
+              onClick={handleRefreshProductos}
               className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
                 isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
               } ${FOCUS_VISIBLE_CLASS}`}
@@ -101,7 +129,7 @@ function ProductosFacilPage() {
                 <button
                   key={categoria.value}
                   type="button"
-                  onClick={() => setSelectedCategory(categoria.value)}
+                  onClick={() => handleSelectCategory(categoria)}
                   aria-pressed={isActive}
                   className={`min-h-[66px] rounded-2xl border-2 px-6 text-xl font-black transition ${
                     isHighContrast
@@ -196,9 +224,13 @@ function ProductoFacilCard({
   producto: ProductoConCategoria;
 }) {
   const isAvailable = producto.disponible !== false;
+  const availabilityLabel = isAvailable ? "Disponible" : "No disponible";
 
   return (
-    <article className={`flex h-full flex-col rounded-[26px] p-5 sm:p-6 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
+    <article
+      className={`flex h-full flex-col rounded-[26px] p-5 sm:p-6 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+      aria-label={`${producto.nombre}. ${producto.categoria}. ${formatCurrency(producto.precio)}. ${availabilityLabel}.`}
+    >
       <div className="flex flex-1 flex-col gap-5 sm:flex-row">
         {producto.imagen ? (
           <img
@@ -225,7 +257,7 @@ function ProductoFacilCard({
                 ? "border-emerald-700 bg-emerald-50 text-emerald-800"
                 : "border-red-700 bg-red-50 text-red-800"
             }`}>
-              {isAvailable ? "Disponible" : "No disponible"}
+              {availabilityLabel}
             </p>
           </div>
         </div>

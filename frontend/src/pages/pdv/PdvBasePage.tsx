@@ -183,6 +183,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   };
 
   const addProduct = useCallback((producto: Producto) => {
+    const nextQuantity = (items[producto.id] || 0) + 1;
+
     setItems((currentItems) => ({
       ...currentItems,
       [producto.id]: (currentItems[producto.id] || 0) + 1
@@ -190,12 +192,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     const msg = "Producto agregado";
     setFeedback({ type: "success", message: msg });
     playSoundCue("add");
-    announce(msg, {
+    announce(`${producto.nombre} agregado. Cantidad ${nextQuantity}.`, {
       priority: "normal",
-      dedupeKey: "product-added",
+      dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
       cooldownMs: 1800
     });
-  }, [announce, playSoundCue]);
+  }, [announce, items, playSoundCue]);
 
   useEffect(() => {
     if (!isAccessible || initialProductHandledRef.current || loadingProductos) {
@@ -225,9 +227,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     const nextQuantity = (items[producto.id] || 0) + 1;
     setItemQuantity(producto, nextQuantity);
     playSoundCue("add");
-    announce("Cantidad aumentada", {
+    announce(`${producto.nombre}. Cantidad ${nextQuantity}.`, {
       priority: "low",
-      dedupeKey: "quantity-up",
+      dedupeKey: `quantity-up:${producto.id}:${nextQuantity}`,
       cooldownMs: 1500
     });
   };
@@ -238,18 +240,18 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
     if (currentQuantity <= 1) {
       playSoundCue("remove");
-      announce("Producto quitado", {
+      announce(`${producto.nombre} quitado del pedido.`, {
         priority: "low",
-        dedupeKey: "product-removed",
+        dedupeKey: `product-removed:${producto.id}`,
         cooldownMs: 1500
       });
       return;
     }
 
     playSoundCue("decrease");
-    announce("Cantidad reducida", {
+    announce(`${producto.nombre}. Cantidad ${currentQuantity - 1}.`, {
       priority: "low",
-      dedupeKey: "quantity-down",
+      dedupeKey: `quantity-down:${producto.id}:${currentQuantity - 1}`,
       cooldownMs: 1500
     });
   };
@@ -349,7 +351,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       setFeedback({ type: "success", message: successMsg });
       clearPedidoForm();
       playSoundCue("success");
-      announce("Pedido registrado", {
+      announce(numeroPedido ? `Pedido numero ${numeroPedido} registrado correctamente.` : "Pedido registrado correctamente.", {
         priority: "high",
         dedupeKey: "pedido-registrado",
         cooldownMs: 3000,
@@ -425,59 +427,51 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const accessibleObservationPlaceholder = accessibleObservationType === "cocina"
     ? "Ej: sin cebolla, extra salsa, bien tostado..."
     : "Ej: cliente retira afuera, llamar al llegar, sin apuro...";
-  const goNextAccessibleStep = () => setAccessibleStep((currentStep) => Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1));
-  const goPrevAccessibleStep = () => setAccessibleStep((currentStep) => Math.max(1, currentStep - 1));
-
-  useEffect(() => {
-    if (!isAccessible || !isVoiceEnabled) {
-      return;
-    }
-
-    switch (accessibleStep) {
+  const getAccessibleStepMessage = (step: number) => {
+    switch (step) {
       case 1:
-        speak("Selecciona una categoría", {
-          priority: "normal",
-          dedupeKey: "pdv-step-1",
-          cooldownMs: 4000
-        });
-        break;
+        return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoria.`;
       case 2:
-        speak("Elige un producto", {
-          priority: "normal",
-          dedupeKey: "pdv-step-2",
-          cooldownMs: 4000
-        });
-        break;
+        return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
       case 3:
-        speak("Revisa tu pedido", {
-          priority: "normal",
-          dedupeKey: "pdv-step-3",
-          cooldownMs: 4000
-        });
-        break;
+        return `Paso 3 de ${ACCESSIBLE_STEP_COUNT}. Revisa tu pedido. Total ${formatCurrency(total)}.`;
       case 4:
-        speak("Si quieres, agrega una observación", {
-          priority: "normal",
-          dedupeKey: "pdv-step-4",
-          cooldownMs: 4000
-        });
-        break;
+        return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Agrega comentario.`;
       case 5:
-        speak("Selecciona método de pago", {
-          priority: "normal",
-          dedupeKey: "pdv-step-5",
-          cooldownMs: 4000
-        });
-        break;
+        return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Metodo de pago.`;
       case ACCESSIBLE_STEP_COUNT:
-        speak("Revisa y registra el pedido", {
-          priority: "normal",
-          dedupeKey: "pdv-step-6",
-          cooldownMs: 4000
-        });
-        break;
+        return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta metodo de pago."}`;
+      default:
+        return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
     }
-  }, [accessibleStep, isAccessible, isVoiceEnabled, speak]);
+  };
+
+  const announceAccessibleStep = (step: number) => {
+    announce(getAccessibleStepMessage(step), {
+      priority: "high",
+      dedupeKey: `pdv-step-button:${step}`,
+      cooldownMs: 700,
+      delayMs: 0,
+      force: true,
+      interrupt: true
+    });
+  };
+
+  const goNextAccessibleStep = () => {
+    setAccessibleStep((currentStep) => {
+      const nextStep = Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1);
+      announceAccessibleStep(nextStep);
+      return nextStep;
+    });
+  };
+
+  const goPrevAccessibleStep = () => {
+    setAccessibleStep((currentStep) => {
+      const nextStep = Math.max(1, currentStep - 1);
+      announceAccessibleStep(nextStep);
+      return nextStep;
+    });
+  };
 
   useEffect(() => {
     if (!isAccessible) {

@@ -133,6 +133,14 @@ function getPreferredVoice(speechSynthesis: SpeechSynthesis) {
   );
 }
 
+function wakeSpeechSynthesis(speechSynthesis: SpeechSynthesis) {
+  speechSynthesis.getVoices();
+
+  if (speechSynthesis.paused) {
+    speechSynthesis.resume();
+  }
+}
+
 /**
  * Gestiona retroalimentación de voz breve y poco invasiva.
  * La voz se usa como guía simple, no como lector de pantalla completo.
@@ -177,6 +185,8 @@ function useVoice({ enabled = false }: { enabled?: boolean } = {}) {
         console.warn("SpeechSynthesis no disponible");
         return Promise.reject(new Error("SpeechSynthesis no disponible"));
       }
+
+      wakeSpeechSynthesis(speechSynthesis);
 
       const now = Date.now();
       cleanupRecentMessages(now);

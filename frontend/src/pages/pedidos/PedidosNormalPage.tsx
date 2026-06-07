@@ -2,10 +2,12 @@ import { AlertTriangle, CalendarDays, Check, Clock3, Eye, Filter, LoaderCircle, 
 import { useMemo, useState } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
+import useActionVoice from "../../hooks/useActionVoice";
 import { guardarCierreTurno } from "../../services/cierresTurno";
 import type { AuthUser, CierreTurno, EstadoPedido, PedidoResponse } from "../../types";
 import {
   EmptyPedidosMessage,
+  ESTADO_META,
   ESTADO_OPTIONS,
   FOCUS_VISIBLE_CLASS,
   formatCurrency,
@@ -23,8 +25,9 @@ import {
 } from "./PedidosShared";
 
 function PedidosNormalPage() {
-  const { isHighContrast } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { user } = useAuthContext();
+  const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isSavingCierre, setIsSavingCierre] = useState(false);
@@ -51,13 +54,53 @@ function PedidosNormalPage() {
       setIsSavingCierre(true);
       const cierre = buildCierreTurno(pedidos, user);
       await guardarCierreTurno(cierre);
-      setCierreMessage(`Turno cerrado: ${formatCurrency(String(cierre.totalVendido))} vendidos.`);
+      const message = `Turno cerrado: ${formatCurrency(String(cierre.totalVendido))} vendidos.`;
+      setCierreMessage(message);
       setIsCierreModalOpen(false);
+      speakAction(message, `cierre-turno:${message}`);
     } catch (requestError) {
       setCierreMessage(requestError instanceof Error ? requestError.message : "No fue posible cerrar el turno");
     } finally {
       setIsSavingCierre(false);
     }
+  };
+
+  const handleRefreshPedidos = () => {
+    speak("Actualizando pedidos.", {
+      priority: "normal",
+      dedupeKey: "pedidos-normal-refresh",
+      cooldownMs: 1200
+    });
+    loadPedidos();
+  };
+
+  const handleNormalEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
+    await handleEstadoChange(pedido, estado);
+    speak(`Pedido ${pedido.id} actualizado a ${ESTADO_META[estado].label}.`, {
+      priority: "high",
+      dedupeKey: `pedido-normal-estado:${pedido.id}:${estado}`,
+      cooldownMs: 1800,
+      interrupt: true
+    });
+  };
+
+  const handleOpenCierreModal = () => {
+    setIsCierreModalOpen(true);
+    speak(
+      `Cerrar turno. Total vendido ${formatCurrency(String(turnoSummary.totalVendido))}. Hay ${turnoSummary.pedidosPendientes} pedidos pendientes.`,
+      {
+        priority: "high",
+        dedupeKey: "abrir-cierre-turno",
+        cooldownMs: 2500,
+        interrupt: true
+      }
+    );
+  };
+
+  const handleEstadoFilterChange = (value: EstadoFilter) => {
+    setEstadoFilter(value);
+    const label = value === "todos" ? "Todos" : ESTADO_META[value].label;
+    speakAction(label, `pedido-filtro:${value}`);
   };
 
   const panelClass = isHighContrast
@@ -71,10 +114,10 @@ function PedidosNormalPage() {
           estadoFilter={estadoFilter}
           isHighContrast={isHighContrast}
           isLoading={isLoading}
-          loadPedidos={loadPedidos}
-          onCloseTurno={() => setIsCierreModalOpen(true)}
+          loadPedidos={handleRefreshPedidos}
+          onCloseTurno={handleOpenCierreModal}
           searchTerm={searchTerm}
-          setEstadoFilter={setEstadoFilter}
+          setEstadoFilter={handleEstadoFilterChange}
           setSearchTerm={setSearchTerm}
           summary={normalSummary}
         />
@@ -110,7 +153,7 @@ function PedidosNormalPage() {
             activeModal={activeModal}
             isUpdating={updatingPedidoId === activeModal.pedido.id}
             onClose={() => setActiveModal(null)}
-            onEstadoChange={handleEstadoChange}
+            onEstadoChange={handleNormalEstadoChange}
             onOpenModal={setActiveModal}
           />
         )}
