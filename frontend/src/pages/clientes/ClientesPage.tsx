@@ -27,6 +27,9 @@ const FILTERS: Array<{ label: string; value: SegmentFilter }> = [
   { label: "Sin pedidos", value: "sin_pedidos" }
 ];
 
+const BLACK_ACTION_BUTTON_CLASS = "border border-slate-950 bg-slate-950 text-white hover:bg-black";
+const LOGO_ACTIVE_FILTER_CLASS = "border-amber-400 bg-[#FECE00] text-slate-950";
+
 function ClientesPage() {
   const { isHighContrast } = useAccessibilityContext();
   const { error, isLoading, pedidos } = usePedidosController({});
@@ -69,14 +72,14 @@ function ClientesPage() {
             </label>
             <button
               type="button"
-              className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black shadow-sm transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
+              className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 text-sm font-black shadow-sm transition ${isHighContrast ? "contrast-button-secondary" : BLACK_ACTION_BUTTON_CLASS} ${FOCUS_VISIBLE_CLASS}`}
             >
-              <FileSpreadsheet className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+              <FileSpreadsheet className="h-5 w-5" aria-hidden="true" />
               Importar / Exportar
             </button>
             <button
               type="button"
-              className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 text-sm font-black shadow-sm transition ${isHighContrast ? "contrast-button-primary" : "bg-[#0072FF] text-white hover:bg-blue-700"} ${FOCUS_VISIBLE_CLASS}`}
+              className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 text-sm font-black shadow-sm transition ${isHighContrast ? "contrast-button-primary" : BLACK_ACTION_BUTTON_CLASS} ${FOCUS_VISIBLE_CLASS}`}
             >
               <Plus className="h-5 w-5" aria-hidden="true" />
               Nuevo cliente
@@ -102,8 +105,8 @@ function ClientesPage() {
                     aria-pressed={isActive}
                     className={`min-h-[30px] rounded-full border px-3 text-xs font-black transition ${
                       isActive
-                        ? "border-[#0072FF] bg-blue-50 text-[#0072FF]"
-                        : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+                        ? LOGO_ACTIVE_FILTER_CLASS
+                        : "border-amber-300 bg-white text-slate-600 hover:border-amber-400 hover:bg-[#FFF8DC]"
                     } ${FOCUS_VISIBLE_CLASS}`}
                   >
                     {filter.label}
@@ -189,7 +192,7 @@ function SegmentBadge({ segment }: { segment: SegmentFilter }) {
 
   return (
     <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
-      isEmpty ? "border-slate-200 bg-slate-50 text-slate-600" : "border-cyan-200 bg-cyan-50 text-cyan-700"
+      isEmpty ? "border-slate-200 bg-slate-50 text-slate-600" : "border-amber-300 bg-[#FFF8DC] text-amber-800"
     }`}>
       {label}
     </span>

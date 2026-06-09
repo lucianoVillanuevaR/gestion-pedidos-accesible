@@ -1,4 +1,4 @@
-import { Accessibility, CheckCircle2, XCircle } from "lucide-react";
+import { Accessibility, CheckCircle2, LockKeyhole, UnlockKeyhole, XCircle } from "lucide-react";
 import { formatCurrency, type FiltroCategoria } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
@@ -25,9 +25,11 @@ function PdvFacilView() {
     goPrevAccessibleStep,
     handlePrint,
     handleSubmit,
+    handleToggleTurno,
     increaseProduct,
     isHighContrast,
     isPanelOpen,
+    isTurnoOpen,
     items,
     metodoPago,
     navigate,
@@ -91,6 +93,24 @@ function PdvFacilView() {
           </div>
 
           <div className="flex flex-col items-stretch gap-3">
+            <button
+              type="button"
+              onClick={handleToggleTurno}
+              className={`inline-flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border px-4 py-3 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
+                isHighContrast
+                  ? isTurnoOpen
+                    ? "contrast-button-danger"
+                    : "contrast-button-primary"
+                  : isTurnoOpen
+                    ? "border-red-700 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
+                    : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-700"
+              }`}
+              aria-pressed={isTurnoOpen}
+            >
+              {isTurnoOpen ? <LockKeyhole aria-hidden="true" className="h-6 w-6" /> : <UnlockKeyhole aria-hidden="true" className="h-6 w-6" />}
+              <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
+            </button>
+
             <div className={`inline-flex min-h-[56px] items-center rounded-2xl border px-4 py-3 ${isHighContrast ? "contrast-panel-soft border-yellow-400" : "border-slate-900 bg-slate-900 text-white"}`}>
               <p className="font-black">
                 Paso {accessibleStep} de {ACCESSIBLE_STEP_COUNT}
@@ -127,6 +147,12 @@ function PdvFacilView() {
             </span>
             <p className="font-bold text-lg">{feedback.message}</p>
           </div>
+        </div>
+      )}
+
+      {!isTurnoOpen && (
+        <div className={`rounded-2xl ${cardBorder} p-4 ${isHighContrast ? "contrast-panel-soft" : "border-red-300 bg-red-50 text-red-800"}`} role="alert">
+          <p className="text-center text-lg font-black">Turno cerrado. Abre turno para registrar pedidos.</p>
         </div>
       )}
 

@@ -13,10 +13,17 @@ import {
   getPaymentLabel,
   type FiltroCategoria
 } from "../../utils/pdv";
+import { validatePedidoSubmit } from "../../validations/pedido.validation";
 import {
   ACCESSIBLE_STEP_COUNT,
   type FeedbackState
 } from "./PdvShared";
+import {
+  readTurnoAbierto,
+  setTurnoAbierto,
+  setTurnoFechaInicio,
+  TURNO_ABIERTO_STORAGE_KEY
+} from "../pedidos/PedidosShared";
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
 import PdvFacilView from "./PdvFacilView";
@@ -52,6 +59,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const initialProductHandledRef = useRef(false);
@@ -94,7 +102,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
   }, [pedidoDetalles.length]);
 
-  const puedeRegistrar = pedidoDetalles.length > 0 && metodoPago !== "" && !sending;
+  const submitValidationError = validatePedidoSubmit({
+    isTurnoOpen,
+    metodoPago,
+    totalProductos: pedidoDetalles.length
+  });
+  const puedeRegistrar = !submitValidationError && !sending;
 
   const announce = useCallback((message: string, options = {}) => {
     if (isVoiceEnabled) {
@@ -285,6 +298,50 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === TURNO_ABIERTO_STORAGE_KEY) {
+        setIsTurnoOpen(readTurnoAbierto());
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const handleToggleTurno = () => {
+    if (isTurnoOpen) {
+      setTurnoAbierto(false);
+      setIsTurnoOpen(false);
+      const message = "Turno cerrado. Debes abrir turno para registrar pedidos.";
+      setFeedback({ type: "error", message });
+      playSoundCue("error");
+      announce(message, {
+        priority: "high",
+        dedupeKey: "pdv-turno-cerrado",
+        cooldownMs: 2200,
+        interrupt: true
+      });
+      return;
+    }
+
+    setTurnoAbierto(true);
+    setTurnoFechaInicio(new Date().toISOString());
+    setIsTurnoOpen(true);
+    const message = "Turno abierto. Ya puedes registrar pedidos.";
+    setFeedback({ type: "success", message });
+    announce(message, {
+      priority: "high",
+      dedupeKey: "pdv-turno-abierto",
+      cooldownMs: 2200,
+      interrupt: true
+    });
+  };
+
   const openResetConfirm = () => {
     setShowResetConfirm(true);
     announce("¿Seguro que quieres borrar?", {
@@ -316,12 +373,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setFeedback(null);
     let shouldResetAccessibleFlow = false;
 
-    if (!puedeRegistrar) {
-      const message =
-        pedidoDetalles.length === 0
-          ? "No hay productos seleccionados"
-          : "Selecciona método de pago";
-
+    if (submitValidationError) {
+      const message = submitValidationError;
       setFeedback({ type: "error", message });
       playSoundCue("error");
       announce(message, {
@@ -517,10 +570,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     handlePrint,
     handleReadPedidoSummary,
     handleSubmit,
+    handleToggleTurno,
     increaseProduct,
     isAccessible,
     isHighContrast,
     isPanelOpen,
+    isTurnoOpen,
     items,
     loadingError,
     loadingProductos,

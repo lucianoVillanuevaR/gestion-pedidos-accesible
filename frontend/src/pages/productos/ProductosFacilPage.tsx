@@ -107,7 +107,7 @@ function ProductosFacilPage() {
               type="button"
               onClick={handleRefreshProductos}
               className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
+                isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white hover:bg-black"
               } ${FOCUS_VISIBLE_CLASS}`}
             >
               <RefreshCw className="h-6 w-6" aria-hidden="true" />
@@ -246,7 +246,7 @@ function ProductoFacilCard({
         <div className="min-w-0 flex-1">
           <p className="text-lg font-black text-slate-600">{producto.categoria}</p>
           <h3 className="mt-1 text-3xl font-black leading-tight text-slate-950">{producto.nombre}</h3>
-          {producto.destacado && <p className="mt-3 text-xl font-black text-blue-700">Destacado</p>}
+          {producto.destacado && <p className="mt-3 text-xl font-black text-amber-700">Destacado</p>}
           <p className="mt-3 overflow-hidden text-lg font-semibold leading-relaxed text-slate-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
             {producto.descripcion || "Producto disponible en el menú."}
           </p>
@@ -323,7 +323,7 @@ function ProductoDetailModal({
         )}
         <div className="mt-5 rounded-2xl border-2 border-slate-300 bg-slate-50 p-5">
           <p className="text-xl font-black text-slate-700">Categoría: {producto.categoria}</p>
-          {producto.destacado && <p className="mt-2 text-xl font-black text-blue-700">Producto destacado</p>}
+          {producto.destacado && <p className="mt-2 text-xl font-black text-amber-700">Producto destacado</p>}
           <p className="mt-3 text-xl font-semibold leading-relaxed text-slate-700">
             {producto.descripcion || "Sin descripción adicional."}
           </p>

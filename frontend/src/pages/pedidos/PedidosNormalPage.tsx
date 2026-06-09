@@ -462,7 +462,7 @@ function NormalPedidosToolbar({
             isHighContrast
               ? "contrast-button-secondary"
               : isTurnoOpen
-                ? "border-slate-900 bg-slate-900 text-white hover:bg-black"
+                ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
                 : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
           } ${FOCUS_VISIBLE_CLASS}`}
         >
@@ -477,7 +477,7 @@ function NormalPedidosToolbar({
           className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
             isHighContrast
               ? "contrast-button-secondary"
-              : "border-amber-300 bg-[#FFF8DC] text-slate-950 hover:bg-[#FFF4BF]"
+              : "border-slate-900 bg-slate-900 text-white hover:bg-black"
           } ${FOCUS_VISIBLE_CLASS}`}
         >
           <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />

@@ -28,10 +28,12 @@ export type PdvViewContextValue = {
   handlePrint: () => void;
   handleReadPedidoSummary: () => void;
   handleSubmit: () => void;
+  handleToggleTurno: () => void;
   increaseProduct: (producto: Producto) => void;
   isAccessible: boolean;
   isHighContrast: boolean;
   isPanelOpen: boolean;
+  isTurnoOpen: boolean;
   items: Record<number, number>;
   loadingError: string | null;
   loadingProductos: boolean;

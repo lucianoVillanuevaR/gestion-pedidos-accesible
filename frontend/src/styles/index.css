@@ -139,7 +139,6 @@ html[data-contrast="true"] .bg-yellow-50,
 html[data-contrast="true"] .bg-red-50,
 html[data-contrast="true"] .bg-emerald-50,
 html[data-contrast="true"] .bg-orange-100,
-html[data-contrast="true"] .bg-blue-100,
 html[data-contrast="true"] .bg-\[\#F7F7F7\],
 html[data-contrast="true"] .bg-\[\#FFF8DC\],
 html[data-contrast="true"] .bg-\[\#FFF4BF\],
@@ -151,8 +150,6 @@ html[data-contrast="true"] .bg-\[\#F7F7F7\] {
 
 html[data-contrast="true"] .bg-slate-900,
 html[data-contrast="true"] .bg-slate-600,
-html[data-contrast="true"] .bg-blue-600,
-html[data-contrast="true"] .bg-blue-700,
 html[data-contrast="true"] .bg-green-600,
 html[data-contrast="true"] .bg-green-700,
 html[data-contrast="true"] .bg-\[\#FECE00\] {
@@ -183,8 +180,6 @@ html[data-contrast="true"] .text-red-950 {
   color: var(--contrast-text) !important;
 }
 
-html[data-contrast="true"] .text-blue-700,
-html[data-contrast="true"] .text-blue-800,
 html[data-contrast="true"] .text-orange-800,
 html[data-contrast="true"] .text-amber-700,
 html[data-contrast="true"] .text-emerald-600,
@@ -352,7 +347,7 @@ html[data-accessible="true"] .product-grid {
   }
 
   .accessible-button-base:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-500;
+    @apply outline-2 outline-offset-2 outline-amber-500;
   }
 }
 

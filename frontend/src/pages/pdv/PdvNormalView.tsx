@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Info, Printer, Search, Trash2, User, Volume2, X } from "lucide-react";
+import { CalendarDays, Check, Info, LockKeyhole, Printer, Search, Trash2, UnlockKeyhole, User, Volume2, X } from "lucide-react";
 import type { Producto } from "../../types";
 import { FILTROS, formatCurrency, getPaymentLabel } from "../../utils/pdv";
 import { PAYMENT_OPTIONS, Toast } from "./PdvShared";
@@ -13,8 +13,10 @@ function PdvNormalView() {
     handlePrint,
     handleReadPedidoSummary,
     handleSubmit,
+    handleToggleTurno,
     increaseProduct,
     isHighContrast,
+    isTurnoOpen,
     items,
     clienteNombre,
     loadingError,
@@ -139,12 +141,27 @@ function PdvNormalView() {
 
       <aside className="flex h-full min-h-0 flex-col border-l border-slate-200 bg-white print:static print:block print:min-h-0 print:border-0 print:bg-transparent">
         <div className="bg-[#FECE00] text-slate-950 no-print print:hidden">
-          <div className="flex min-h-[36px] items-center justify-between px-3">
+          <div className="flex min-h-[42px] items-center justify-between gap-2 px-3">
             <div className="flex min-w-0 items-center gap-2">
               <span className="text-2xl font-light leading-none">#1</span>
               <span className="rounded-full border border-white/70 px-2 py-0.5 text-xs font-bold">En el local</span>
               <span className="text-sm font-bold">{getPaymentLabel(metodoPago)}</span>
             </div>
+            <button
+              type="button"
+              onClick={handleToggleTurno}
+              className={`inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border px-3 text-xs font-black transition ${
+                isTurnoOpen
+                  ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
+                  : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+              } ${isHighContrast ? (isTurnoOpen ? "contrast-button-danger" : "contrast-button-primary") : ""}`}
+              aria-pressed={isTurnoOpen}
+              aria-label={isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
+              title={isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
+            >
+              {isTurnoOpen ? <LockKeyhole className="h-4 w-4" aria-hidden="true" /> : <UnlockKeyhole className="h-4 w-4" aria-hidden="true" />}
+              <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
+            </button>
           </div>
           <div className="flex items-center justify-between border-t border-amber-300 bg-amber-50 px-4 py-1 text-xs font-bold text-slate-700">
             <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] text-slate-700">PDV</span>
@@ -260,6 +277,12 @@ function PdvNormalView() {
               isHighContrast={isHighContrast}
               className="w-full"
             />
+          </div>
+        )}
+
+        {!isTurnoOpen && (
+          <div className="mx-3 mt-3 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 no-print print:hidden" role="alert">
+            Turno cerrado. Abre turno para poder registrar pedidos.
           </div>
         )}
 

@@ -88,7 +88,7 @@ export function CocinaHistorialPage() {
             type="button"
             onClick={handleRefresh}
             className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+              isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white shadow-sm hover:bg-black"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             <RefreshCw className="h-5 w-5" aria-hidden="true" />
@@ -271,7 +271,7 @@ function CocinaNormalView({
               onClick={onAdvanceVisible}
               disabled={pedidos.length === 0 || updatingPedidoId !== null}
               className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                isHighContrast ? "contrast-button-primary" : "bg-[#0072FF] text-white shadow-md hover:bg-blue-700"
+                isHighContrast ? "contrast-button-primary" : "border border-amber-400 bg-[#FECE00] text-slate-950 shadow-md hover:bg-[#FFD633]"
               } ${FOCUS_VISIBLE_CLASS}`}
             >
               <Check className="h-5 w-5" aria-hidden="true" />
@@ -291,10 +291,10 @@ function CocinaNormalView({
               isAutoRefreshEnabled
                 ? isHighContrast
                   ? "contrast-button-primary"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "border border-amber-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]"
                 : isHighContrast
                   ? "contrast-button-secondary"
-                  : "bg-[#0072FF] text-white hover:bg-blue-700"
+                  : "border border-amber-300 bg-white text-slate-950 hover:bg-[#FFF8DC]"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             {isAutoRefreshEnabled ? "Actualización automática activa" : "Activar actualización automática"}
@@ -401,7 +401,7 @@ function CocinaFacilView({
               type="button"
               onClick={onRefresh}
               className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
+                isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white hover:bg-black"
               } ${FOCUS_VISIBLE_CLASS}`}
             >
               <RefreshCw className="h-6 w-6" aria-hidden="true" />
@@ -517,10 +517,10 @@ function KitchenTitlePill({
   isHighContrast: boolean;
 }) {
   return (
-    <div className={`inline-flex w-fit min-h-[56px] items-center gap-2 rounded-xl border px-5 text-sm font-black ${isHighContrast ? "contrast-panel border-yellow-400" : "border-[#0072FF] bg-blue-50 text-[#0072FF] shadow-sm"}`}>
+    <div className={`inline-flex w-fit min-h-[56px] items-center gap-2 rounded-xl border px-5 text-sm font-black ${isHighContrast ? "contrast-panel border-yellow-400" : "border-amber-300 bg-[#FFF8DC] text-slate-950 shadow-sm"}`}>
       <ChefHat className="h-5 w-5" aria-hidden="true" />
       Cocina principal
-      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs text-[#0072FF]">
+      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FECE00] px-1.5 text-xs text-slate-950">
         {counts.pendientes + counts.enPreparacion}
       </span>
     </div>

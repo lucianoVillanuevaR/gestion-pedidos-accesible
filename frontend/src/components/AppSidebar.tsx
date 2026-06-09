@@ -66,8 +66,8 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
   const accessibilityButtonClass = isHighContrast
     ? "contrast-button-secondary"
     : isAccessible
-      ? "border-slate-900 bg-white text-slate-950 hover:bg-slate-50 focus-visible:ring-slate-900"
-      : "border-slate-300 bg-slate-50 text-slate-950 hover:bg-slate-100 focus-visible:ring-amber-400"
+      ? "border-amber-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633] focus-visible:ring-amber-400"
+      : "border-amber-300 bg-white text-slate-950 hover:bg-[#FFF8DC] focus-visible:ring-amber-400"
 
   const handleLogout = () => {
     logout()
@@ -176,7 +176,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             className={`mb-2 inline-flex w-full items-center justify-between gap-2 rounded-2xl border px-3 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${accessibilityButtonClass} ${isAccessible ? "min-h-[68px]" : "min-h-[48px]"}`}
           >
             <span className="flex min-w-0 items-center gap-2 text-left">
-              <span className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-9 w-9 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "bg-slate-900 text-white"}`}>
+              <span className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-9 w-9 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "border border-amber-300 bg-[#FECE00] text-slate-950"}`}>
                 <Accessibility className={isAccessible ? "h-6 w-6" : "h-[18px] w-[18px]"} aria-hidden="true" />
               </span>
               <span className="min-w-0">
@@ -208,10 +208,10 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             onClick={handleLogout}
             className={`inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
               isHighContrast
-                ? "contrast-button-secondary"
+                ? "contrast-button-danger"
                 : isAccessible
-                  ? "border-red-800 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
-                  : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:ring-red-500"
+                  ? "border-red-950 bg-red-800 text-white hover:bg-red-900 focus-visible:ring-red-800"
+                  : "border-red-800 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
             } ${isAccessible ? "min-h-[60px] text-base" : "min-h-[40px] text-xs"}`}
           >
             <LogOut className={isAccessible ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />

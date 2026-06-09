@@ -5,6 +5,8 @@ export interface Producto {
   precio: number;
   descripcion?: string;
   imagen?: string;
+  imagenUrl?: string | null;
+  imagenPublicUrl?: string | null;
   altText?: string;
   disponible?: boolean;
   destacado?: boolean;

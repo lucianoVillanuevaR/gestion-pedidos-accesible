@@ -13,8 +13,8 @@ export type SortOption = "recent" | "oldest" | "highest_total" | "state";
 export const FOCUS_VISIBLE_CLASS =
   "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
-const TURNO_ABIERTO_STORAGE_KEY = "riquisimo:turno-abierto";
-const TURNO_FECHA_INICIO_STORAGE_KEY = "riquisimo:turno-fecha-inicio";
+export const TURNO_ABIERTO_STORAGE_KEY = "riquisimo:turno-abierto";
+export const TURNO_FECHA_INICIO_STORAGE_KEY = "riquisimo:turno-fecha-inicio";
 
 export type ActiveModal = {
   action: ModalAction;

@@ -18,6 +18,7 @@ model Producto {
   disponible          Boolean         @default(true)
   destacado           Boolean         @default(false)
   promocion           Boolean         @default(false)
+  imagenUrl           String?         @map("imagen_url") @db.Text
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   categorias          Categoria[]

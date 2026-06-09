@@ -2,20 +2,33 @@ import type { ApiError, CreateProductoPayload, Producto, UpdateProductoPayload }
 import { resolveProductImage } from "../utils/productImages";
 import { buildApiUrl } from "./api";
 
+function normalizeProducto(producto: Producto & { precio: number | string }): Producto {
+  const imagen = producto.imagenPublicUrl || producto.imagenUrl || producto.imagen || resolveProductImage(producto.nombre);
+
+  return {
+    ...producto,
+    precio: typeof producto.precio === "string" ? Number(producto.precio) : producto.precio,
+    imagen: imagen ?? undefined,
+    altText: producto.altText || `Imagen de ${producto.nombre}`
+  };
+}
+
+async function readProductoResponse(res: Response, fallbackMessage: string) {
+  if (!res.ok) {
+    const errorData = (await res.json().catch(() => ({}))) as ApiError;
+    throw new Error(errorData.error || errorData.message || fallbackMessage);
+  }
+
+  const producto = (await res.json()) as Producto & { precio: number | string };
+  return normalizeProducto(producto);
+}
+
 export async function getProductos({ includeUnavailable = false }: { includeUnavailable?: boolean } = {}): Promise<Producto[]> {
   const query = includeUnavailable ? "?includeUnavailable=true" : "";
   const res = await fetch(buildApiUrl(`/api/productos${query}`));
-  if (!res.ok) {
-    throw new Error("Error cargando productos");
-  }
-
+  if (!res.ok) throw new Error("Error cargando productos");
   const data = (await res.json()) as Array<Producto & { precio: number | string }>;
-  return data.map((producto) => ({
-    ...producto,
-    precio: typeof producto.precio === "string" ? Number(producto.precio) : producto.precio,
-    imagen: producto.imagen || resolveProductImage(producto.nombre),
-    altText: producto.altText || producto.nombre
-  }));
+  return data.map(normalizeProducto);
 }
 
 export async function createProducto(payload: CreateProductoPayload): Promise<Producto> {
@@ -27,19 +40,7 @@ export async function createProducto(payload: CreateProductoPayload): Promise<Pr
     method: "POST"
   });
 
-  if (!res.ok) {
-    const errorData = (await res.json().catch(() => ({}))) as ApiError;
-    throw new Error(errorData.error || errorData.message || "Error creando producto");
-  }
-
-  const producto = (await res.json()) as Producto & { precio: number | string };
-
-  return {
-    ...producto,
-    precio: typeof producto.precio === "string" ? Number(producto.precio) : producto.precio,
-    imagen: producto.imagen || resolveProductImage(producto.nombre),
-    altText: producto.altText || producto.nombre
-  };
+  return readProductoResponse(res, "Error creando producto");
 }
 
 export async function updateProducto(id: number, payload: UpdateProductoPayload): Promise<Producto> {
@@ -51,17 +52,25 @@ export async function updateProducto(id: number, payload: UpdateProductoPayload)
     method: "PATCH"
   });
 
-  if (!res.ok) {
-    const errorData = (await res.json().catch(() => ({}))) as ApiError;
-    throw new Error(errorData.error || errorData.message || "Error actualizando producto");
-  }
+  return readProductoResponse(res, "Error actualizando producto");
+}
 
-  const producto = (await res.json()) as Producto & { precio: number | string };
+export async function uploadProductImage(productId: number, file: File): Promise<Producto> {
+  const formData = new FormData();
+  formData.append("imagen", file);
 
-  return {
-    ...producto,
-    precio: typeof producto.precio === "string" ? Number(producto.precio) : producto.precio,
-    imagen: producto.imagen || resolveProductImage(producto.nombre),
-    altText: producto.altText || producto.nombre
-  };
+  const res = await fetch(buildApiUrl(`/api/productos/${productId}/imagen`), {
+    body: formData,
+    method: "POST"
+  });
+
+  return readProductoResponse(res, "No se pudo subir la imagen");
+}
+
+export async function deleteProductImage(productId: number): Promise<Producto> {
+  const res = await fetch(buildApiUrl(`/api/productos/${productId}/imagen`), {
+    method: "DELETE"
+  });
+
+  return readProductoResponse(res, "No se pudo eliminar la imagen");
 }

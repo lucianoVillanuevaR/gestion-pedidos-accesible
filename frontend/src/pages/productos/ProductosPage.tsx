@@ -1,9 +1,10 @@
 import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Upload, Utensils, X } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
-import { createProducto, updateProducto } from "../../services/productos";
+import { createProducto, deleteProductImage, updateProducto, uploadProductImage } from "../../services/productos";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
+import { PRODUCT_IMAGE_ACCEPT, validateProductImageFile } from "../../validations/productImage.validation";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { CATEGORIAS_CATALOGO, type CategoriaCatalogo, type CategoriaCatalogoOption } from "./ProductosShared";
@@ -40,15 +41,53 @@ function ProductosPage() {
     setSearchTerm
   } = useProductosCatalog({ categorias: categoriasCatalogo, includeUnavailable: true });
 
-  const handleCreateProducto = async (payload: CreateProductoPayload) => {
+  const sortProductos = (productos: Producto[]) => {
+    return [...productos].sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
+  };
+
+  const replaceProductoInList = (productoActualizado: Producto) => {
+    setProductos((currentProductos) =>
+      sortProductos(currentProductos.map((currentProducto) => (currentProducto.id === productoActualizado.id ? productoActualizado : currentProducto)))
+    );
+    setEditingProducto((currentProducto) =>
+      currentProducto?.id === productoActualizado.id
+        ? ({ ...currentProducto, ...productoActualizado } as ProductoConCategoria)
+        : currentProducto
+    );
+  };
+
+  const addProductoToList = (producto: Producto) => {
+    setProductos((currentProductos) => sortProductos([...currentProductos, producto]));
+  };
+
+  const handleCreateProducto = async (payload: CreateProductoPayload, imageFile?: File | null) => {
     try {
       setIsCreating(true);
       setError(null);
       const producto = await createProducto(payload);
-      setProductos((currentProductos) => [...currentProductos, producto].sort((left, right) => left.nombre.localeCompare(right.nombre, "es")));
+      let productoFinal = producto;
+
+      if (imageFile) {
+        try {
+          productoFinal = await uploadProductImage(producto.id, imageFile);
+          speakAction("Imagen subida correctamente.", `producto-image-uploaded:${producto.id}`, { cooldownMs: 2200 });
+        } catch (imageError) {
+          const message = imageError instanceof Error ? imageError.message : "No se pudo subir la imagen.";
+          setError(`Producto creado, pero no se pudo subir la imagen. ${message}`);
+          speak(`Producto creado, pero no se pudo subir la imagen. ${message}`, {
+            priority: "high",
+            dedupeKey: `producto-create-image-error:${producto.id}`,
+            cooldownMs: 3000,
+            interrupt: true
+          });
+        }
+      }
+
+      addProductoToList(productoFinal);
       setActiveCategory(payload.destacado ? "Destacados" : (payload.categoria as CategoriaCatalogo) || "Otros");
       setAddProductCategory(null);
-      speakAction(`Producto agregado. ${producto.nombre}.`, `producto-created:${producto.id}`, { cooldownMs: 2500 });
+      speakAction(`Producto agregado. ${productoFinal.nombre}.`, `producto-created:${productoFinal.id}`, { cooldownMs: 2500 });
+      return productoFinal;
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No fue posible crear el producto";
       setError(message);
@@ -58,6 +97,7 @@ function ProductosPage() {
         cooldownMs: 3000,
         interrupt: true
       });
+      return undefined;
     } finally {
       setIsCreating(false);
     }
@@ -72,11 +112,7 @@ function ProductosPage() {
       setUpdatingProductoId(producto.id);
       setError(null);
       const productoActualizado = await updateProducto(producto.id, payload);
-      setProductos((currentProductos) =>
-        currentProductos
-          .map((currentProducto) => (currentProducto.id === producto.id ? productoActualizado : currentProducto))
-          .sort((left, right) => left.nombre.localeCompare(right.nombre, "es"))
-      );
+      replaceProductoInList(productoActualizado);
       setEditingProducto(null);
       speakAction(
         voiceMessage?.(productoActualizado) ?? `Producto editado. ${productoActualizado.nombre}.`,
@@ -92,6 +128,52 @@ function ProductosPage() {
         cooldownMs: 3000,
         interrupt: true
       });
+    } finally {
+      setUpdatingProductoId(null);
+    }
+  };
+
+  const handleUploadProductoImage = async (producto: Producto, file: File) => {
+    setUpdatingProductoId(producto.id);
+    setError(null);
+
+    try {
+      const productoActualizado = await uploadProductImage(producto.id, file);
+      replaceProductoInList(productoActualizado);
+      speakAction("Imagen subida correctamente.", `producto-image-uploaded:${producto.id}`, { cooldownMs: 2200 });
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "No se pudo subir la imagen.";
+      setError(message);
+      speak(`No se pudo subir la imagen. ${message}`, {
+        priority: "high",
+        dedupeKey: `producto-image-upload-error:${producto.id}`,
+        cooldownMs: 3000,
+        interrupt: true
+      });
+      throw requestError;
+    } finally {
+      setUpdatingProductoId(null);
+    }
+  };
+
+  const handleDeleteProductoImage = async (producto: Producto) => {
+    setUpdatingProductoId(producto.id);
+    setError(null);
+
+    try {
+      const productoActualizado = await deleteProductImage(producto.id);
+      replaceProductoInList(productoActualizado);
+      speakAction("Imagen eliminada correctamente.", `producto-image-deleted:${producto.id}`, { cooldownMs: 2200 });
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "No se pudo eliminar la imagen.";
+      setError(message);
+      speak(`No se pudo eliminar la imagen. ${message}`, {
+        priority: "high",
+        dedupeKey: `producto-image-delete-error:${producto.id}`,
+        cooldownMs: 3000,
+        interrupt: true
+      });
+      throw requestError;
     } finally {
       setUpdatingProductoId(null);
     }
@@ -184,7 +266,7 @@ function ProductosPage() {
               <button
                 type="button"
                 onClick={() => setIsCreatingCategory(true)}
-                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-black text-slate-950 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
               >
                 <Plus className="h-5 w-5" aria-hidden="true" />
                 Crear categoría
@@ -193,7 +275,7 @@ function ProductosPage() {
                 type="button"
                 onClick={handleRefreshProductos}
                 disabled={isLoading}
-                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-amber-300 bg-[#FFF8DC] px-4 text-sm font-black text-slate-950 transition hover:bg-[#FFF4BF] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
               >
                 <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
                 Actualizar
@@ -295,6 +377,8 @@ function ProductosPage() {
             defaultCategory={editingProducto.categoria}
             isSaving={updatingProductoId === editingProducto.id}
             onClose={() => setEditingProducto(null)}
+            onDeleteImage={handleDeleteProductoImage}
+            onUploadImage={handleUploadProductoImage}
             onSubmit={(payload) => handleUpdateProducto(editingProducto, payload)}
             producto={editingProducto}
           />
@@ -396,7 +480,7 @@ function CategoriaBlock({
               event.stopPropagation();
               onAddProduct();
             }}
-            className={`hidden min-h-[36px] items-center justify-center gap-1 rounded-lg border border-[#FECE00] bg-white px-3 text-sm font-black text-slate-950 transition hover:bg-amber-50 sm:inline-flex ${FOCUS_VISIBLE_CLASS}`}
+            className={`hidden min-h-[36px] items-center justify-center gap-1 rounded-lg border border-slate-900 bg-slate-900 px-3 text-sm font-black text-white transition hover:bg-black sm:inline-flex ${FOCUS_VISIBLE_CLASS}`}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Producto
@@ -438,6 +522,8 @@ function ProductoFormModal({
   defaultCategory,
   isSaving,
   onClose,
+  onDeleteImage,
+  onUploadImage,
   onSubmit,
   producto
 }: {
@@ -445,7 +531,9 @@ function ProductoFormModal({
   defaultCategory: CategoriaCatalogo;
   isSaving: boolean;
   onClose: () => void;
-  onSubmit: (payload: CreateProductoPayload) => Promise<void>;
+  onDeleteImage?: (producto: Producto) => Promise<void>;
+  onUploadImage?: (producto: Producto, file: File) => Promise<void>;
+  onSubmit: (payload: CreateProductoPayload, imageFile?: File | null) => Promise<Producto | void>;
   producto?: ProductoConCategoria;
 }) {
   const { isVoiceEnabled } = useAccessibilityContext();
@@ -457,6 +545,79 @@ function ProductoFormModal({
   const [disponible, setDisponible] = useState(producto?.disponible ?? true);
   const [destacado, setDestacado] = useState(producto?.destacado ?? defaultCategory === "Destacados");
   const [formError, setFormError] = useState<string | null>(null);
+  const [imageMessage, setImageMessage] = useState<string | null>(null);
+  const [isImageSaving, setIsImageSaving] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const currentImageUrl = previewUrl || producto?.imagen || producto?.imagenPublicUrl || null;
+
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const validationError = validateProductImageFile(file);
+
+    if (validationError) {
+      setImageMessage(validationError);
+      speak(validationError, {
+        priority: "high",
+        dedupeKey: `producto-image-validation:${producto?.id ?? "nuevo"}`,
+        cooldownMs: 2000,
+        interrupt: true
+      });
+      return;
+    }
+
+    setPreviewUrl(URL.createObjectURL(file));
+    setImageMessage(null);
+
+    if (!producto) {
+      setPendingImageFile(file);
+      setImageMessage("Imagen lista. Se subirá al guardar el producto.");
+      return;
+    }
+
+    if (!onUploadImage) {
+      return;
+    }
+
+    setIsImageSaving(true);
+
+    try {
+      await onUploadImage(producto, file);
+      setImageMessage("Imagen subida correctamente.");
+    } catch {
+      setImageMessage("No se pudo subir la imagen.");
+      setPreviewUrl(null);
+    } finally {
+      setIsImageSaving(false);
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!producto || !onDeleteImage) {
+      return;
+    }
+
+    setImageMessage(null);
+    setIsImageSaving(true);
+
+    try {
+      await onDeleteImage(producto);
+      setPreviewUrl(null);
+      setImageMessage("Imagen eliminada correctamente.");
+    } catch {
+      setImageMessage("No se pudo eliminar la imagen.");
+    } finally {
+      setIsImageSaving(false);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -494,7 +655,7 @@ function ProductoFormModal({
       disponible,
       nombre: nombre.trim(),
       precio: precioNumerico
-    });
+    }, pendingImageFile);
   };
 
   return (
@@ -518,14 +679,58 @@ function ProductoFormModal({
           </div>
         </div>
 
-        <div className="grid gap-4 p-4 sm:grid-cols-[112px_minmax(0,1fr)]">
-          <button
-            type="button"
-            className={`flex min-h-[100px] flex-col items-center justify-center gap-2 rounded-lg border border-amber-300 bg-[#FECE00] px-3 text-sm font-black text-slate-950 transition hover:bg-[#FFD633] ${FOCUS_VISIBLE_CLASS}`}
-          >
-            <span>Subir fotos</span>
-            <Upload className="h-6 w-6" aria-hidden="true" />
-          </button>
+        <div className="grid gap-4 p-4 sm:grid-cols-[136px_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <div className="flex min-h-[112px] items-center justify-center overflow-hidden rounded-lg border border-amber-300 bg-[#FFF8DC]">
+              {currentImageUrl ? (
+                <img
+                  src={currentImageUrl}
+                  alt={`Imagen de ${producto?.nombre || "producto"}`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="flex flex-col items-center gap-2 px-3 text-center text-sm font-black text-slate-700">
+                  <Upload className="h-6 w-6" aria-hidden="true" />
+                  Sin imagen
+                </span>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={PRODUCT_IMAGE_ACCEPT}
+                onChange={handleImageChange}
+                className="sr-only"
+                aria-label="Seleccionar imagen del producto"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImageSaving}
+                className={`min-h-[40px] rounded-lg border border-amber-300 bg-[#FECE00] px-3 text-sm font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+              >
+                {currentImageUrl ? "Cambiar imagen" : "Subir imagen"}
+              </button>
+              {producto?.imagenUrl && (
+                <button
+                  type="button"
+                  onClick={handleDeleteImage}
+                  disabled={isImageSaving}
+                  className={`min-h-[40px] rounded-lg border border-red-300 bg-red-50 px-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+                >
+                  Eliminar imagen
+                </button>
+              )}
+            </div>
+
+            {imageMessage && (
+              <p className={`rounded-lg border px-2 py-1 text-xs font-bold ${imageMessage.includes("correctamente") ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`} role="status">
+                {imageMessage}
+              </p>
+            )}
+          </div>
 
           <div className="space-y-3">
             <label className="block">

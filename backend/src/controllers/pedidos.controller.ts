@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
+import { withProductImageUrl } from "../services/productImageService";
+import {
+  validateEstadoPedido,
+  validateMetodoPago,
+  validatePedidoDetalles
+} from "../validations/pedidos.validation";
 
-const ESTADOS_VALIDOS = ["pendiente", "en_preparacion", "listo", "entregado", "cancelado"];
-const METODOS_PAGO_VALIDOS = ["efectivo", "tarjeta", "transferencia"];
 const PEDIDO_WITH_DETALLES_INCLUDE = {
   detalles: {
     include: {
@@ -26,33 +30,36 @@ interface ActualizarEstadoBody {
   estado: string;
 }
 
+function withPedidoProductImageUrls<T extends { detalles?: Array<{ producto?: { imagenUrl?: string | null } | null }> }>(pedido: T) {
+  return {
+    ...pedido,
+    detalles: pedido.detalles?.map((detalle) => ({
+      ...detalle,
+      producto: detalle.producto ? withProductImageUrl(detalle.producto) : detalle.producto
+    }))
+  };
+}
+
 export const crearPedido = async (req: Request, res: Response) => {
   try {
     const { clienteNombre, detalles, metodoPago, observacion } = req.body as CrearPedidoBody;
 
-    // Validar método de pago
-    if (!METODOS_PAGO_VALIDOS.includes(metodoPago)) {
-      return res.status(400).json({
-        error: `Método de pago inválido. Debe ser uno de: ${METODOS_PAGO_VALIDOS.join(", ")}`
-      });
+    const metodoPagoError = validateMetodoPago(metodoPago);
+
+    if (metodoPagoError) {
+      return res.status(400).json({ error: metodoPagoError });
     }
 
-    // Validar detalles
-    if (!detalles || detalles.length === 0) {
-      return res.status(400).json({ error: "El pedido debe tener al menos un detalle" });
+    const detallesError = validatePedidoDetalles(detalles);
+
+    if (detallesError) {
+      return res.status(400).json({ error: detallesError });
     }
 
-    // Validar cantidades y disponibilidad
     const productosData = [];
     let total = new Decimal(0);
 
     for (const detalle of detalles) {
-      if (!detalle.productoId || detalle.cantidad <= 0) {
-        return res.status(400).json({
-          error: `Detalle inválido: productoId y cantidad (>0) son requeridos`
-        });
-      }
-
       const producto = await prisma.producto.findUnique({
         where: { id: detalle.productoId }
       });
@@ -79,7 +86,6 @@ export const crearPedido = async (req: Request, res: Response) => {
       });
     }
 
-    // Crear pedido con detalles
     const pedido = await prisma.pedido.create({
       data: {
         total,
@@ -99,7 +105,7 @@ export const crearPedido = async (req: Request, res: Response) => {
       include: PEDIDO_WITH_DETALLES_INCLUDE
     });
 
-    res.status(201).json(pedido);
+    res.status(201).json(withPedidoProductImageUrls(pedido));
   } catch (error) {
     console.error("Error al crear pedido:", error);
     res.status(500).json({ error: "Error al crear pedido" });
@@ -112,7 +118,7 @@ export const getPedidos = async (_req: Request, res: Response) => {
       include: PEDIDO_WITH_DETALLES_INCLUDE,
       orderBy: { createdAt: "desc" }
     });
-    res.json(pedidos);
+    res.json(pedidos.map(withPedidoProductImageUrls));
   } catch (error) {
     console.error("Error al obtener pedidos:", error);
     res.status(500).json({ error: "Error al obtener pedidos" });
@@ -131,7 +137,7 @@ export const getPedidoById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
 
-    res.json(pedido);
+    res.json(withPedidoProductImageUrls(pedido));
   } catch (error) {
     console.error("Error al obtener pedido:", error);
     res.status(500).json({ error: "Error al obtener pedido" });
@@ -143,11 +149,10 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { estado } = req.body as ActualizarEstadoBody;
 
-    // Validar estado
-    if (!ESTADOS_VALIDOS.includes(estado)) {
-      return res.status(400).json({
-        error: `Estado inválido. Debe ser uno de: ${ESTADOS_VALIDOS.join(", ")}`
-      });
+    const estadoError = validateEstadoPedido(estado);
+
+    if (estadoError) {
+      return res.status(400).json({ error: estadoError });
     }
 
     const pedido = await prisma.pedido.findUnique({
@@ -164,7 +169,7 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
       include: PEDIDO_WITH_DETALLES_INCLUDE
     });
 
-    res.json(pedidoActualizado);
+    res.json(withPedidoProductImageUrls(pedidoActualizado));
   } catch (error) {
     console.error("Error al actualizar estado del pedido:", error);
     res.status(500).json({ error: "Error al actualizar estado del pedido" });

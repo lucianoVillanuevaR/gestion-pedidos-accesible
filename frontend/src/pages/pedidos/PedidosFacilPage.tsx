@@ -34,6 +34,9 @@ const FILTROS_FACILES: Array<{ label: string; value: EstadoFilter }> = [
 ];
 
 const ESTADOS_ACTIVOS: EstadoPedido[] = ["pendiente", "en_preparacion", "listo"];
+const EASY_PRIMARY_BUTTON_CLASS = "border-slate-900 bg-slate-900 text-white hover:bg-black";
+const EASY_SECONDARY_BUTTON_CLASS = "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50";
+const EASY_SOFT_PANEL_CLASS = "border-slate-200 bg-slate-50";
 
 function PedidosFacilPage() {
   const { isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext();
@@ -68,7 +71,7 @@ function PedidosFacilPage() {
   }, [estadoFilter, filteredPedidos]);
   const pedidosActivos = normalSummary.pendientes + normalSummary.enPreparacion + normalSummary.listos;
 
-  const pageBg = isHighContrast ? "bg-black text-white" : "bg-[#F7F7F7] text-slate-950";
+  const pageBg = isHighContrast ? "bg-black text-white" : "bg-white text-slate-950";
   const panelClass = isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white";
   const hasPedidosActivos = turnoSummary.pedidosPendientes > 0;
 
@@ -169,18 +172,18 @@ function PedidosFacilPage() {
 
   return (
     <div className={`min-h-screen ${pageBg}`}>
-      <div className={isHighContrast ? "border-b-2 border-yellow-400 bg-black text-white" : "border-b border-slate-200 bg-white"}>
-        <div className="mx-auto flex min-h-[92px] w-full max-w-[1520px] flex-wrap items-center justify-between gap-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
+      <div className={isHighContrast ? "border-b-2 border-yellow-400 bg-black text-white" : "border-b border-slate-700 bg-slate-900 text-white"}>
+        <div className="mx-auto flex min-h-[84px] w-full max-w-[1520px] flex-wrap items-center justify-between gap-4 px-3 py-3 sm:px-4 lg:px-5 xl:px-6">
           <div>
-            <p className={`text-sm font-black uppercase ${isHighContrast ? "text-yellow-300" : "text-slate-600"}`}>Modo fácil</p>
-            <h1 className="mt-1 text-4xl font-black leading-tight tracking-tight">Pedidos activos</h1>
+            <p className={`text-sm font-black uppercase ${isHighContrast ? "text-yellow-300" : "text-slate-300"}`}>Modo fácil</p>
+            <h1 className="mt-1 text-3xl font-black leading-none tracking-tight contrast-important">Pedidos activos</h1>
           </div>
 
           <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
             <Link
               to="/pdv/facil"
               className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-5 text-lg font-black no-underline transition ${
-                isHighContrast ? "contrast-button-primary" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                isHighContrast ? "contrast-button-primary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
               } ${FOCUS_VISIBLE_CLASS}`}
             >
               <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
@@ -192,7 +195,7 @@ function PedidosFacilPage() {
               aria-haspopup="dialog"
               aria-expanded={isPanelOpen}
               className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-5 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-50"
+                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
               } ${FOCUS_VISIBLE_CLASS}`}
             >
               <Accessibility className="h-6 w-6" aria-hidden="true" />
@@ -212,7 +215,7 @@ function PedidosFacilPage() {
             <SummaryCard isHighContrast={isHighContrast} label="Ventas pendientes" value={formatCurrency(String(normalSummary.totalPendiente))} />
           </div>
           <p className={`mt-4 rounded-2xl border px-4 py-3 text-lg font-black ${
-            isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-800"
+            isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-200 bg-slate-50 text-slate-900"
           }`}>
             Las ventas entregadas consideran solo pedidos finalizados.
           </p>
@@ -221,13 +224,13 @@ function PedidosFacilPage() {
         <section className={`grid gap-4 rounded-[28px] p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] ${panelClass}`} aria-label="Herramientas de pedidos">
           <label className="relative block">
             <span className="sr-only">Buscar pedido</span>
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-slate-600" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-slate-700" aria-hidden="true" />
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Buscar por número de pedido, producto o método de pago"
-              className={`min-h-[56px] w-full rounded-2xl border-2 border-slate-400 bg-white py-3 pl-12 pr-4 text-lg font-black text-slate-950 outline-none placeholder:text-slate-600 focus:border-slate-950 ${FOCUS_VISIBLE_CLASS}`}
+              className={`min-h-[56px] w-full rounded-2xl border-2 border-slate-300 bg-white py-3 pl-12 pr-4 text-lg font-black text-slate-950 outline-none placeholder:text-slate-600 focus:border-slate-900 ${FOCUS_VISIBLE_CLASS}`}
             />
           </label>
 
@@ -238,7 +241,7 @@ function PedidosFacilPage() {
               isHighContrast
                 ? "contrast-button-secondary"
                 : isTurnoOpen
-                  ? "border-slate-900 bg-slate-900 text-white hover:bg-black"
+                  ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
                   : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
             } ${FOCUS_VISIBLE_CLASS}`}
             aria-label={isTurnoOpen && hasPedidosActivos ? "Cerrar turno. Aún hay pedidos activos." : isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
@@ -252,7 +255,7 @@ function PedidosFacilPage() {
             onClick={handleRefreshPedidos}
             disabled={isLoading}
             className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-5 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-50"
+              isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             <RefreshCw className={`h-6 w-6 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
@@ -262,7 +265,7 @@ function PedidosFacilPage() {
 
         {hasPedidosActivos && (
           <div className={`flex items-start gap-3 rounded-3xl border-2 p-5 text-lg font-black ${
-            isHighContrast ? "border-yellow-400 bg-black text-yellow-200" : "border-amber-300 bg-[#FFF8DC] text-amber-950"
+            isHighContrast ? "border-yellow-400 bg-black text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-950"
           }`} role="status">
             <AlertTriangle className="mt-1 h-6 w-6 shrink-0" aria-hidden="true" />
             <p>Aún hay pedidos activos. Revisa antes de cerrar el turno.</p>
@@ -286,8 +289,8 @@ function PedidosFacilPage() {
                         ? "contrast-button-primary"
                         : "contrast-button-secondary"
                       : isActive
-                        ? "border-slate-950 bg-slate-950 text-white"
-                        : "border-slate-400 bg-white text-slate-950 hover:border-slate-950"
+                        ? EASY_PRIMARY_BUTTON_CLASS
+                        : EASY_SECONDARY_BUTTON_CLASS
                   } ${FOCUS_VISIBLE_CLASS}`}
                 >
                   {option.label}
@@ -354,7 +357,7 @@ function SummaryCard({
   value: string;
 }) {
   return (
-    <article className={`rounded-3xl p-5 ${isHighContrast ? "contrast-panel-soft border-2 border-yellow-400" : "border-2 border-slate-300 bg-slate-50"}`}>
+    <article className={`rounded-3xl p-5 ${isHighContrast ? "contrast-panel-soft border-2 border-yellow-400" : `border-2 ${EASY_SOFT_PANEL_CLASS}`}`}>
       <p className="text-xl font-black text-slate-700">{label}</p>
       <p className="mt-3 text-4xl font-black leading-none text-slate-950">{value}</p>
     </article>
@@ -439,7 +442,7 @@ function AccessiblePedidoCard({
             <PedidoInfoBox label="Total" value={formatCurrency(pedido.total)} />
           </div>
 
-          <div className={`mt-5 rounded-3xl border-2 p-5 ${isHighContrast ? "border-yellow-400" : "border-slate-300 bg-slate-50"}`}>
+          <div className={`mt-5 rounded-3xl border-2 p-5 ${isHighContrast ? "border-yellow-400" : EASY_SOFT_PANEL_CLASS}`}>
             <p className="text-sm font-black uppercase text-slate-600">Productos</p>
             <p className="mt-2 text-2xl font-black leading-snug text-slate-950">{getPedidoSummary(pedido)}</p>
             <p className="mt-2 text-lg font-bold text-slate-700">{getProductCount(pedido)} productos en el pedido</p>
@@ -451,7 +454,7 @@ function AccessiblePedidoCard({
             type="button"
             onClick={() => onReadPedido(pedido)}
             className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-50"
+              isHighContrast ? "contrast-button-secondary" : EASY_SECONDARY_BUTTON_CLASS
             } ${FOCUS_VISIBLE_CLASS}`}
             aria-label={`Leer pedido ${pedido.id}`}
           >
@@ -462,7 +465,7 @@ function AccessiblePedidoCard({
             type="button"
             onClick={() => onOpenModal({ action: "detail", pedido })}
             className={`min-h-[56px] rounded-2xl border-2 px-4 text-lg font-black transition ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-50"
+              isHighContrast ? "contrast-button-secondary" : EASY_SECONDARY_BUTTON_CLASS
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             Ver detalle
@@ -472,7 +475,7 @@ function AccessiblePedidoCard({
             onClick={() => onOpenModal({ action: "state", pedido })}
             disabled={isUpdating || pedido.estado === "entregado" || pedido.estado === "cancelado"}
             className={`min-h-[56px] rounded-2xl border-2 px-4 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"
+              isHighContrast ? "contrast-button-primary" : EASY_PRIMARY_BUTTON_CLASS
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             Cambiar estado
@@ -485,7 +488,7 @@ function AccessiblePedidoCard({
 
 function PedidoInfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border-2 border-slate-300 bg-white px-4 py-3">
+    <div className="rounded-2xl border-2 border-slate-200 bg-white px-4 py-3">
       <p className="text-sm font-black uppercase text-slate-600">{label}</p>
       <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
     </div>
@@ -524,7 +527,7 @@ function CierreFacilModal({
 
         {hasPedidosActivos && (
           <div className={`mt-5 flex items-start gap-3 rounded-3xl border-2 p-5 text-lg font-black ${
-            isHighContrast ? "border-yellow-400 text-yellow-200" : "border-amber-300 bg-[#FFF8DC] text-amber-950"
+            isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-950"
           }`} role="alert">
             <AlertTriangle className="mt-1 h-6 w-6 shrink-0" aria-hidden="true" />
             <p>Aún hay pedidos activos. Revisa antes de cerrar el turno.</p>
@@ -542,7 +545,7 @@ function CierreFacilModal({
             type="button"
             onClick={onClose}
             className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-50"
+              isHighContrast ? "contrast-button-secondary" : EASY_SECONDARY_BUTTON_CLASS
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             Volver
@@ -552,7 +555,7 @@ function CierreFacilModal({
             onClick={onConfirm}
             disabled={isSaving}
             className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"
+              isHighContrast ? "contrast-button-primary" : "border-red-700 bg-red-700 text-white hover:bg-red-800"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             {isSaving ? "Guardando..." : "Sí, cerrar turno"}
