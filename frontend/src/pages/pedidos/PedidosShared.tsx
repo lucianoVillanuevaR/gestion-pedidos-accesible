@@ -2,6 +2,7 @@ import { ClipboardPlus } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
 import { getPedidos, updatePedidoEstado } from "../../services/pedidos";
 import type { EstadoPedido, MetodoPago, PedidoDetalleResponse, PedidoResponse } from "../../types";
 
@@ -99,13 +100,15 @@ export function getNormalSummary(pedidos: PedidoResponse[]) {
 
   return {
     ...getPedidoCounts(pedidos),
+    totalPendiente: turnoSummary.totalPendiente,
     totalVendido: turnoSummary.totalVendido
   };
 }
 
 export function getTurnoSummary(pedidos: PedidoResponse[]) {
   const pedidosEntregados = pedidos.filter((pedido) => pedido.estado === "entregado");
-  const pedidosPendientes = pedidos.filter((pedido) => ["pendiente", "en_preparacion", "listo"].includes(pedido.estado)).length;
+  const pedidosPendientesTurno = pedidos.filter((pedido) => ["pendiente", "en_preparacion", "listo"].includes(pedido.estado));
+  const totalPendiente = pedidosPendientesTurno.reduce((total, pedido) => total + Number(pedido.total), 0);
   const totalPorMetodo: Record<MetodoPago, number> = {
     efectivo: 0,
     tarjeta: 0,
@@ -119,7 +122,8 @@ export function getTurnoSummary(pedidos: PedidoResponse[]) {
   return {
     pedidosCancelados: pedidos.filter((pedido) => pedido.estado === "cancelado").length,
     pedidosEntregados: pedidosEntregados.length,
-    pedidosPendientes,
+    pedidosPendientes: pedidosPendientesTurno.length,
+    totalPendiente: Number.isNaN(totalPendiente) ? 0 : totalPendiente,
     totalEfectivo: totalPorMetodo.efectivo,
     totalPedidos: pedidos.length,
     totalTarjeta: totalPorMetodo.tarjeta,
@@ -307,7 +311,8 @@ export function usePedidosController({
       setIsLoading(true);
       setError(null);
       const pedidosResponse = await getPedidos(signal);
-      setPedidos(pedidosResponse);
+      const pedidoIdsCerrados = obtenerPedidoIdsCerrados();
+      setPedidos(pedidosResponse.filter((pedido) => !pedidoIdsCerrados.has(pedido.id)));
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === "AbortError") {
         return;

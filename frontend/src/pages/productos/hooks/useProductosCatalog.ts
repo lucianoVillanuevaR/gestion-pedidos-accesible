@@ -5,13 +5,17 @@ import {
   filterCatalogoProductos,
   groupProductosByCategoria,
   withProductoCategoria,
+  CATEGORIAS_CATALOGO,
+  type CategoriaCatalogoOption,
   type CategoriaCatalogo
 } from "../ProductosShared";
 
 export function useProductosCatalog({
+  categorias = CATEGORIAS_CATALOGO,
   includeUnavailable = false,
   initialCategory = "Destacados"
 }: {
+  categorias?: CategoriaCatalogoOption[];
   includeUnavailable?: boolean;
   initialCategory?: CategoriaCatalogo;
 } = {}) {
@@ -43,7 +47,7 @@ export function useProductosCatalog({
     return filterCatalogoProductos(productosConCategoria, searchTerm);
   }, [productosConCategoria, searchTerm]);
 
-  const grupos = useMemo(() => groupProductosByCategoria(productosFiltrados), [productosFiltrados]);
+  const grupos = useMemo(() => groupProductosByCategoria(productosFiltrados, categorias), [categorias, productosFiltrados]);
 
   useEffect(() => {
     if (grupos.length === 0) {

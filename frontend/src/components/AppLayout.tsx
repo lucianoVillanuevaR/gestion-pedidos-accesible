@@ -2,7 +2,7 @@ import { Menu } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Outlet, useLocation, useNavigate } from "react-router-dom"
 import logoRiq from "../assets/logoRiq.png"
-import { getRouteMeta, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
+import { getRouteMeta, isClientesRoute, isCocinaRoute, isHistorialPedidosRoute, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
 import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 import AppSidebar from "./AppSidebar"
 
@@ -20,9 +20,13 @@ function AppLayout() {
   const isPedidosFacilPage = location.pathname === "/pedidos/facil"
   const isProductosPage = isProductosRoute(location.pathname)
   const isProductosFacilPage = location.pathname === "/productos/facil"
-  const isFullWidthPage = isPdvPage || isPedidosPage || isProductosPage
-  const showBrandTopBar = !isAccessible && (isPdvPage || isPedidosPage || isProductosPage)
-  const hideSidebar = (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage || isProductosFacilPage
+  const isCocinaPage = isCocinaRoute(location.pathname)
+  const isCocinaFacilPage = location.pathname === "/cocina/facil"
+  const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname)
+  const isClientesPage = isClientesRoute(location.pathname)
+  const isFullWidthPage = isPdvPage || isPedidosPage || isProductosPage || isCocinaPage || isHistorialPedidosPage || isClientesPage
+  const showBrandTopBar = !isAccessible && (isPdvPage || isPedidosPage || isProductosPage || isCocinaPage || isHistorialPedidosPage || isClientesPage)
+  const hideSidebar = (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage || isProductosFacilPage || isCocinaFacilPage
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[368px]" : "lg:pl-[240px]"
   const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
   const mainContentClass = isFullWidthPage
@@ -32,7 +36,7 @@ function AppLayout() {
     ? "bg-black text-white"
     : isAccessible
       ? "bg-[#F3F4F6] text-slate-950"
-      : isPedidosPage || isProductosPage
+      : isPedidosPage || isProductosPage || isCocinaPage || isHistorialPedidosPage || isClientesPage
         ? "bg-slate-50 text-slate-950"
         : "bg-[radial-gradient(circle_at_top_left,#fff3bf_0%,#f8fafc_38%,#ffffff_100%)] text-slate-950"
 
@@ -54,6 +58,10 @@ function AppLayout() {
         navigate("/productos/facil", { replace: true })
       }
 
+      if (location.pathname === "/cocina") {
+        navigate("/cocina/facil", { replace: true })
+      }
+
       return
     }
 
@@ -67,6 +75,10 @@ function AppLayout() {
 
     if (location.pathname === "/productos/facil") {
       navigate("/productos", { replace: true })
+    }
+
+    if (location.pathname === "/cocina/facil") {
+      navigate("/cocina", { replace: true })
     }
   }, [isAccessible, location.pathname, navigate])
 

@@ -20,6 +20,14 @@ function readStoredCierresTurno(): CierreTurno[] {
   }
 }
 
+export function obtenerCierresTurno() {
+  return readStoredCierresTurno();
+}
+
+export function obtenerPedidoIdsCerrados() {
+  return new Set(readStoredCierresTurno().flatMap((cierre) => (cierre.pedidos ?? []).map((pedido) => pedido.id)));
+}
+
 export async function guardarCierreTurno(cierre: CierreTurno) {
   if (typeof window === "undefined") {
     return cierre;

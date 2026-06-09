@@ -1,13 +1,15 @@
 import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Upload, Utensils, X } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { createProducto, updateProducto } from "../../services/productos";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
-import { CATEGORIAS_CATALOGO, type CategoriaCatalogo } from "./ProductosShared";
+import { CATEGORIAS_CATALOGO, type CategoriaCatalogo, type CategoriaCatalogoOption } from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
+
+const CUSTOM_CATEGORIES_STORAGE_KEY = "riquisimo-custom-product-categories";
 
 type CategoriaGrupo = {
   label: string;
@@ -19,22 +21,24 @@ function ProductosPage() {
   const { isVoiceEnabled } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
+  const [customCategorias, setCustomCategorias] = useState<CategoriaCatalogoOption[]>(loadCustomCategorias);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
+  const categoriasCatalogo = useMemo(() => mergeCategorias(customCategorias), [customCategorias]);
   const {
     activeCategory,
     error,
     grupos,
     isLoading,
     loadProductos,
-    productosFiltrados,
     searchTerm,
     setActiveCategory,
     setError,
     setProductos,
     setSearchTerm
-  } = useProductosCatalog({ includeUnavailable: true });
+  } = useProductosCatalog({ categorias: categoriasCatalogo, includeUnavailable: true });
 
   const handleCreateProducto = async (payload: CreateProductoPayload) => {
     try {
@@ -106,6 +110,23 @@ function ProductosPage() {
     });
   };
 
+  const handleCreateCategory = (nombreCategoria: string) => {
+    const label = nombreCategoria.trim();
+    const value = label as CategoriaCatalogo;
+    const nextCategorias = mergeCategorias([...customCategorias, { label, value }]).filter(
+      (categoria) => !CATEGORIAS_CATALOGO.some((baseCategoria) => baseCategoria.value === categoria.value)
+    );
+
+    setCustomCategorias(nextCategorias);
+    saveCustomCategorias(nextCategorias);
+    setActiveCategory(value);
+    setIsCreatingCategory(false);
+    speakAction(`Categoria creada. ${label}.`, `producto-category-created:${label}`, {
+      cooldownMs: 1800,
+      priority: "normal"
+    });
+  };
+
   const handleOpenEditProduct = (producto: ProductoConCategoria) => {
     setEditingProducto(producto);
     speakAction(`Boton editar. Editando ${producto.nombre}. Precio ${formatCurrency(producto.precio)}.`, `producto-open-edit:${producto.id}`, {
@@ -159,6 +180,14 @@ function ProductosPage() {
               >
                 <Plus className="h-5 w-5" aria-hidden="true" />
                 Producto
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsCreatingCategory(true)}
+                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-black text-slate-950 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Plus className="h-5 w-5" aria-hidden="true" />
+                Crear categoría
               </button>
               <button
                 type="button"
@@ -225,7 +254,7 @@ function ProductosPage() {
             <LoaderCircle className="h-8 w-8 animate-spin" aria-hidden="true" />
             <span className="ml-3 font-black">Cargando productos...</span>
           </div>
-        ) : productosFiltrados.length === 0 ? (
+        ) : grupos.length === 0 ? (
           <EmptyProductos />
         ) : (
           <section className="space-y-4">
@@ -252,6 +281,7 @@ function ProductosPage() {
 
         {addProductCategory && (
           <ProductoFormModal
+            categoriasCatalogo={categoriasCatalogo}
             defaultCategory={addProductCategory}
             isSaving={isCreating}
             onClose={() => setAddProductCategory(null)}
@@ -261,6 +291,7 @@ function ProductosPage() {
 
         {editingProducto && (
           <ProductoFormModal
+            categoriasCatalogo={categoriasCatalogo}
             defaultCategory={editingProducto.categoria}
             isSaving={updatingProductoId === editingProducto.id}
             onClose={() => setEditingProducto(null)}
@@ -268,9 +299,56 @@ function ProductosPage() {
             producto={editingProducto}
           />
         )}
+
+        {isCreatingCategory && (
+          <CategoriaFormModal
+            categoriasCatalogo={categoriasCatalogo}
+            onClose={() => setIsCreatingCategory(false)}
+            onSubmit={handleCreateCategory}
+          />
+        )}
       </main>
     </div>
   );
+}
+
+function loadCustomCategorias(): CategoriaCatalogoOption[] {
+  try {
+    const storedCategorias = window.localStorage.getItem(CUSTOM_CATEGORIES_STORAGE_KEY);
+
+    if (!storedCategorias) {
+      return [];
+    }
+
+    const parsedCategorias = JSON.parse(storedCategorias) as CategoriaCatalogoOption[];
+
+    if (!Array.isArray(parsedCategorias)) {
+      return [];
+    }
+
+    return parsedCategorias.filter((categoria) => typeof categoria?.label === "string" && typeof categoria?.value === "string");
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomCategorias(categorias: CategoriaCatalogoOption[]) {
+  window.localStorage.setItem(CUSTOM_CATEGORIES_STORAGE_KEY, JSON.stringify(categorias));
+}
+
+function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
+  const categoriaMap = new Map<CategoriaCatalogo, CategoriaCatalogoOption>();
+
+  [...CATEGORIAS_CATALOGO, ...customCategorias].forEach((categoria) => {
+    const label = categoria.label.trim();
+    const value = String(categoria.value).trim() as CategoriaCatalogo;
+
+    if (label && value && !categoriaMap.has(value)) {
+      categoriaMap.set(value, { label, value });
+    }
+  });
+
+  return [...categoriaMap.values()];
 }
 
 function CategoriaBlock({
@@ -336,7 +414,11 @@ function CategoriaBlock({
 
       {isExpanded && (
         <div className="divide-y divide-slate-100">
-          {grupo.productos.map((producto) => (
+          {grupo.productos.length === 0 ? (
+            <div className="px-4 py-6 text-sm font-bold text-slate-500">
+              Esta categoría aún no tiene productos.
+            </div>
+          ) : grupo.productos.map((producto) => (
             <ProductoRow
               key={producto.id}
               isUpdating={updatingProductoId === producto.id}
@@ -352,12 +434,14 @@ function CategoriaBlock({
 }
 
 function ProductoFormModal({
+  categoriasCatalogo,
   defaultCategory,
   isSaving,
   onClose,
   onSubmit,
   producto
 }: {
+  categoriasCatalogo: CategoriaCatalogoOption[];
   defaultCategory: CategoriaCatalogo;
   isSaving: boolean;
   onClose: () => void;
@@ -547,7 +631,7 @@ function ProductoFormModal({
             }}
             className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
           >
-            {CATEGORIAS_CATALOGO.map((option) => (
+            {categoriasCatalogo.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
@@ -573,6 +657,112 @@ function ProductoFormModal({
             className={`min-h-[44px] flex-1 rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
           >
             {isSaving ? "Guardando..." : producto ? "Guardar cambios" : "Guardar producto"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function CategoriaFormModal({
+  categoriasCatalogo,
+  onClose,
+  onSubmit
+}: {
+  categoriasCatalogo: CategoriaCatalogoOption[];
+  onClose: () => void;
+  onSubmit: (nombreCategoria: string) => void;
+}) {
+  const { isVoiceEnabled } = useAccessibilityContext();
+  const { speak } = useActionVoice(isVoiceEnabled);
+  const [nombre, setNombre] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanName = nombre.trim();
+
+    if (!cleanName) {
+      const message = "Ingresa el nombre de la categoría";
+      setFormError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: "categoria-form-error-nombre",
+        cooldownMs: 2000,
+        interrupt: true
+      });
+      return;
+    }
+
+    const alreadyExists = categoriasCatalogo.some((categoria) => categoria.label.toLowerCase() === cleanName.toLowerCase());
+
+    if (alreadyExists) {
+      const message = "Esa categoría ya existe";
+      setFormError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: "categoria-form-error-duplicada",
+        cooldownMs: 2000,
+        interrupt: true
+      });
+      return;
+    }
+
+    setFormError(null);
+    onSubmit(cleanName);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-3 py-6">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-[420px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-2xl"
+        aria-label="Crear categoría"
+      >
+        <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-slate-200 px-4">
+          <h2 className="text-base font-black text-slate-950">Crear categoría</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-950 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
+            aria-label="Cerrar"
+          >
+            <X className="h-6 w-6" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="space-y-3 p-4">
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">Nombre</span>
+            <input
+              autoFocus
+              value={nombre}
+              onChange={(event) => setNombre(event.target.value)}
+              placeholder="Ej: Promociones"
+              className={`min-h-[44px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
+            />
+          </label>
+
+          {formError && (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800">
+              {formError}
+            </p>
+          )}
+        </div>
+
+        <div className="flex gap-3 border-t border-slate-200 p-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`min-h-[44px] flex-1 rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className={`min-h-[44px] flex-1 rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
+          >
+            Crear
           </button>
         </div>
       </form>

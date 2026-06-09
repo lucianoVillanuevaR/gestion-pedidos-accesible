@@ -1,8 +1,9 @@
 import type { MetodoPago, Producto } from "../types";
 
 export type ProductoCategoria = "Sandwich" | "Completos" | "Bebidas" | "Otros";
+export type ProductoCategoriaCatalogo = ProductoCategoria | (string & {});
 export type FiltroCategoria = ProductoCategoria | "Destacados" | "Todos";
-export type ProductoConCategoria = Producto & { categoria: ProductoCategoria };
+export type ProductoConCategoria = Producto & { categoria: ProductoCategoriaCatalogo };
 
 interface PedidoDetalleCalculado {
   producto: Producto;

@@ -3,13 +3,15 @@ import {
   detectCategoria,
   FILTROS,
   formatCurrency,
+  type ProductoCategoriaCatalogo,
   type ProductoCategoria,
   type ProductoConCategoria
 } from "../../utils/pdv";
 
-export type CategoriaCatalogo = ProductoCategoria | "Destacados";
+export type CategoriaCatalogo = ProductoCategoriaCatalogo | "Destacados";
+export type CategoriaCatalogoOption = { label: string; value: CategoriaCatalogo };
 
-export const CATEGORIAS_CATALOGO: Array<{ label: string; value: CategoriaCatalogo }> = [
+export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { label: "Destacados", value: "Destacados" },
   ...FILTROS.filter((filtro) => filtro.value !== "Todos" && filtro.value !== "Destacados").map((filtro) => ({
     label: filtro.label,
@@ -21,7 +23,7 @@ export const CATEGORIAS_CATALOGO: Array<{ label: string; value: CategoriaCatalog
 export function withProductoCategoria(productos: Producto[]): ProductoConCategoria[] {
   return productos.map((producto) => ({
     ...producto,
-    categoria: detectCategoria(producto)
+    categoria: producto.categoria?.trim() || detectCategoria(producto)
   }));
 }
 
@@ -47,16 +49,16 @@ export function filterCatalogoProductos(productos: ProductoConCategoria[], searc
   });
 }
 
-export function groupProductosByCategoria(productos: ProductoConCategoria[]) {
+export function groupProductosByCategoria(productos: ProductoConCategoria[], categorias = CATEGORIAS_CATALOGO) {
   const destacados = productos.filter((producto) => producto.destacado);
   const fallbackDestacados = destacados.length > 0 ? destacados : productos.slice(0, 4);
+  const categoriasBase = new Set(CATEGORIAS_CATALOGO.map((categoria) => categoria.value));
 
-  return CATEGORIAS_CATALOGO.map((categoria) => ({
+  return categorias.map((categoria) => ({
     ...categoria,
     productos:
       categoria.value === "Destacados"
         ? fallbackDestacados
         : productos.filter((producto) => producto.categoria === categoria.value)
-  })).filter((grupo) => grupo.productos.length > 0);
+  })).filter((grupo) => grupo.productos.length > 0 || !categoriasBase.has(grupo.value));
 }
-

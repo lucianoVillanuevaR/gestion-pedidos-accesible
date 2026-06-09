@@ -35,5 +35,5 @@ export function getDefaultRouteForRole(role: UserRole) {
     return "/pdv"
   }
 
-  return "/inicio"
+  return "/pdv"
 }

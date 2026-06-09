@@ -400,8 +400,9 @@ html[data-accessible="true"] a:focus-visible {
 
 .skip-link {
   position: absolute;
-  top: -40px;
+  top: 0;
   left: 0;
+  transform: translateY(-100%);
   background: #111827;
   color: white;
   padding: 8px;
@@ -411,7 +412,7 @@ html[data-accessible="true"] a:focus-visible {
 }
 
 .skip-link:focus {
-  top: 0;
+  transform: translateY(0);
   outline: none;
 }
 

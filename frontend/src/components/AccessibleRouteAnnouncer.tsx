@@ -3,18 +3,17 @@ import { useLocation } from "react-router-dom";
 import { getRouteMeta } from "../config/navigation";
 
 const ROUTE_MESSAGES: Record<string, string> = {
-  "/inicio": "Inicio. Resumen general del sistema.",
   "/pdv": "Nuevo pedido. Busca productos, arma el pedido, elige pago y registra la venta.",
   "/pdv/facil": "Nuevo pedido en modo facil. Sigue los pasos: categoria, producto, revision, observacion, pago y registro.",
   "/pedidos": "Pedidos. Revisa pedidos activos, cambia estados y consulta detalles.",
   "/pedidos/facil": "Pedidos en modo facil. Usa filtros grandes para revisar pendientes, en preparacion, listos, entregados o cancelados.",
   "/productos": "Productos. Revisa el catalogo, disponibilidad, precios y categorias.",
   "/productos/facil": "Productos en modo facil. Revisa productos con tarjetas grandes y puedes enviarlos a nuevo pedido.",
+  "/clientes": "Clientes. Revisa registro, segmentos y estado de clientes.",
   "/cocina": "Cocina. Vista general para preparar y organizar comandas.",
-  "/cocina/pendientes": "Pedidos pendientes. Comandas que faltan por preparar.",
-  "/cocina/listos": "Pedidos listos. Comandas preparadas para entregar.",
+  "/cocina/facil": "Cocina en modo facil. Revisa comandas grandes, prepara pedidos y marca tickets listos.",
+  "/historial-pedidos": "Historial de pedidos. Revisa pedidos listos y recientes.",
   "/inventario": "Inventario. Control de stock y disponibilidad.",
-  "/ventas": "Ventas. Indicadores y resumen del turno.",
   "/configuracion": "Configuracion. Ajustes del sistema, usuarios y permisos."
 };
 

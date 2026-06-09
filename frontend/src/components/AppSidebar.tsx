@@ -1,7 +1,7 @@
 import { Accessibility, LogOut, ShieldCheck, X } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 import logoRiq from "../assets/logoRiq.png"
-import { getSidebarNavigation, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
+import { getSidebarNavigation, isClientesRoute, isHistorialPedidosRoute, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
 import { useAccessibilityContext } from "../contexts/AccessibilityContext"
 import { useAuthContext } from "../contexts/AuthContext"
 import { getDefaultRouteForRole } from "../constants/auth"
@@ -31,7 +31,9 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
   const isPdvPage = isPdvRoute(location.pathname)
   const isPedidosPage = isPedidosRoute(location.pathname)
   const isProductosPage = isProductosRoute(location.pathname)
-  const hasYellowHeader = isPdvPage || isPedidosPage || isProductosPage
+  const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname)
+  const isClientesPage = isClientesRoute(location.pathname)
+  const hasYellowHeader = isPdvPage || isPedidosPage || isProductosPage || isHistorialPedidosPage || isClientesPage
   const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[82vw] max-w-[280px] lg:w-[240px]"
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"
@@ -151,8 +153,10 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                     ? "/pdv/facil"
                     : isAccessible && item.path === "/pedidos"
                       ? "/pedidos/facil"
-                      : isAccessible && item.path === "/productos"
-                        ? "/productos/facil"
+                    : isAccessible && item.path === "/productos"
+                      ? "/productos/facil"
+                      : isAccessible && item.path === "/cocina"
+                        ? "/cocina/facil"
                         : undefined
                 }
                 isAccessible={isAccessible}

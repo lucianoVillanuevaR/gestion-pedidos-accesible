@@ -1,13 +1,10 @@
 import {
-  ChartColumnIncreasing,
   ChefHat,
-  ClipboardCheck,
   ClipboardList,
   ClipboardPlus,
-  CookingPot,
-  House,
   Package,
   Settings2,
+  UsersRound,
   Warehouse
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -23,13 +20,6 @@ export type AppNavigationItem = {
 }
 
 const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
-  {
-    label: "Inicio",
-    path: "/inicio",
-    description: "Resumen claro del sistema",
-    icon: House,
-    allowedRoles: ["cajero", "admin"]
-  },
   {
     label: "Nuevo Pedido",
     path: "/pdv",
@@ -66,27 +56,18 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
     allowedRoles: ["cocina", "admin"]
   },
   {
-    label: "Pedidos pendientes",
-    path: "/cocina/pendientes",
-    description: "Comandas por preparar",
-    icon: CookingPot,
-    allowedRoles: ["cocina", "admin"],
-    sidebarRoles: ["cocina"]
+    label: "Historial de pedidos",
+    path: "/historial-pedidos",
+    description: "Pedidos listos y recientes",
+    icon: ClipboardList,
+    allowedRoles: ["cajero", "admin"]
   },
   {
-    label: "Pedidos listos",
-    path: "/cocina/listos",
-    description: "Pedidos listos para entregar",
-    icon: ClipboardCheck,
-    allowedRoles: ["cocina", "admin"],
-    sidebarRoles: ["cocina"]
-  },
-  {
-    label: "Ventas",
-    path: "/ventas",
-    description: "Indicadores y reportes",
-    icon: ChartColumnIncreasing,
-    allowedRoles: ["admin"]
+    label: "Clientes",
+    path: "/clientes",
+    description: "Registro y segmentos",
+    icon: UsersRound,
+    allowedRoles: ["cajero", "admin"]
   },
   {
     label: "Configuración",
@@ -120,4 +101,16 @@ export function isPedidosRoute(pathname: string) {
 
 export function isProductosRoute(pathname: string) {
   return pathname === "/productos" || pathname === "/productos/facil"
+}
+
+export function isCocinaRoute(pathname: string) {
+  return pathname === "/cocina" || pathname === "/cocina/facil" || pathname.startsWith("/cocina/")
+}
+
+export function isHistorialPedidosRoute(pathname: string) {
+  return pathname === "/historial-pedidos"
+}
+
+export function isClientesRoute(pathname: string) {
+  return pathname === "/clientes"
 }

@@ -2,7 +2,8 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import { getDefaultRouteForRole } from "../constants/auth"
 import { useAuthContext } from "../contexts/AuthContext"
-import CocinaPage from "../pages/cocina/CocinaPage"
+import ClientesPage from "../pages/clientes/ClientesPage"
+import CocinaPage, { CocinaFacilPage, CocinaHistorialPage } from "../pages/cocina/CocinaPage"
 import HomePage from "../pages/HomePage"
 import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
 import PedidosPage from "../pages/pedidos/PedidosNormalPage"
@@ -11,10 +12,6 @@ import ProductosFacilPage from "../pages/productos/ProductosFacilPage"
 import ProductosPage from "../pages/productos/ProductosPage"
 import PortalPage from "../pages/PortalPage"
 import type { UserRole } from "../types"
-
-function EmptyRoute() {
-  return <div aria-hidden="true" className="min-h-[1px]" />
-}
 
 function RequireAuth() {
   const { isAuthenticated } = useAuthContext()
@@ -46,11 +43,9 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
 
       <Route element={<RequireAuth />}>
-        <Route path="/dashboard" element={<Navigate replace to="/inicio" />} />
+        <Route path="/dashboard" element={<Navigate replace to="/pdv" />} />
 
         <Route element={<RequireRole allowedRoles={["cajero", "admin"]} />}>
-          <Route path="/inicio" element={<EmptyRoute />} />
-
           <Route path="/pdv" element={<PdvBasePage isAccessible={false} />} />
           <Route path="/pdv/facil" element={<PdvBasePage isAccessible />} />
 
@@ -59,72 +54,14 @@ function AppRoutes() {
 
           <Route path="/productos" element={<ProductosPage />} />
           <Route path="/productos/facil" element={<ProductosFacilPage />} />
+
+          <Route path="/historial-pedidos" element={<CocinaHistorialPage />} />
+          <Route path="/clientes" element={<ClientesPage />} />
         </Route>
 
         <Route element={<RequireRole allowedRoles={["cocina", "admin"]} />}>
           <Route path="/cocina" element={<CocinaPage />} />
-
-          <Route
-            path="/cocina/pendientes"
-            element={
-              <PortalPage
-                accent="orange"
-                title="Pedidos pendientes"
-                description="Ordena las comandas que faltan por preparar y ayuda a priorizar el trabajo del turno."
-                badge="Pendientes"
-                actions={[
-                  {
-                    title: "Prioridad alta",
-                    description: "Destina una zona clara a pedidos urgentes o con mayor tiempo de espera.",
-                    button: "Ver urgentes"
-                  },
-                  {
-                    title: "Turno actual",
-                    description: "Mantén agrupadas las comandas activas sin esconder información importante.",
-                    button: "Ver turno"
-                  },
-                  {
-                    title: "Entrega simple",
-                    description: "Prepara esta vista para marcar pedidos listos con un solo toque.",
-                    button: "Configurar flujo"
-                  }
-                ]}
-                noteTitle="Listo para operación"
-                note="Esta pantalla puede evolucionar hacia una cola visual grande, con pocos colores y botones amplios para touch."
-              />
-            }
-          />
-
-          <Route
-            path="/cocina/listos"
-            element={
-              <PortalPage
-                accent="orange"
-                title="Pedidos listos"
-                description="Agrupa pedidos terminados para entrega rápida y sin confusiones en el retiro."
-                badge="Listos"
-                actions={[
-                  {
-                    title: "Entregas del turno",
-                    description: "Muestra claramente qué comandas ya están listas para despacho o retiro.",
-                    button: "Ver entregas"
-                  },
-                  {
-                    title: "Confirmar salida",
-                    description: "Deja preparado un flujo simple para cerrar pedidos sin pasos innecesarios.",
-                    button: "Confirmar"
-                  },
-                  {
-                    title: "Historial reciente",
-                    description: "Conserva una vista breve de lo recién completado para evitar dudas del equipo.",
-                    button: "Ver recientes"
-                  }
-                ]}
-                noteTitle="Entrega más ordenada"
-                note="En un flujo real, esta vista puede ayudar mucho a bajar la carga cognitiva del equipo en horas de mayor demanda."
-              />
-            }
-          />
+          <Route path="/cocina/facil" element={<CocinaFacilPage />} />
         </Route>
 
         <Route element={<RequireRole allowedRoles={["admin"]} />}>
@@ -155,42 +92,6 @@ function AppRoutes() {
                 ]}
                 noteTitle="Base para control diario"
                 note="Aquí conviene crecer con alertas claras, pocos pasos y mensajes muy fáciles de entender para cualquier operador."
-              />
-            }
-          />
-
-          <Route
-            path="/ventas"
-            element={
-              <PortalPage
-                accent="slate"
-                title="Ventas"
-                description="Consulta indicadores y resultados con una vista limpia, profesional y fácil de leer."
-                badge="Resultados"
-                stats={[
-                  { label: "Ventas hoy", value: "$248.900" },
-                  { label: "Pedidos cobrados", value: "57" },
-                  { label: "Ticket promedio", value: "$4.367" }
-                ]}
-                actions={[
-                  {
-                    title: "Resumen diario",
-                    description: "Prepara una lectura rápida del desempeño del local sin saturar con tablas complejas.",
-                    button: "Ver resumen"
-                  },
-                  {
-                    title: "Métodos de pago",
-                    description: "Observa cómo se distribuyen efectivo, tarjeta y transferencia durante el turno.",
-                    button: "Analizar"
-                  },
-                  {
-                    title: "Comparar turnos",
-                    description: "Deja lista una vista simple para comparar días o franjas horarias.",
-                    button: "Comparar"
-                  }
-                ]}
-                noteTitle="Datos con lectura amable"
-                note="Las ventas también pueden ser accesibles: menos ruido visual, cifras grandes y mensajes accionables."
               />
             }
           />

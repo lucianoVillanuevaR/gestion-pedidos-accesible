@@ -24,6 +24,9 @@ import {
   type EstadoFilter
 } from "./PedidosShared";
 
+const TURNO_ABIERTO_STORAGE_KEY = "riquisimo:turno-abierto";
+const TURNO_FECHA_INICIO_STORAGE_KEY = "riquisimo:turno-fecha-inicio";
+
 function PedidosNormalPage() {
   const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { user } = useAuthContext();
@@ -32,6 +35,7 @@ function PedidosNormalPage() {
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isSavingCierre, setIsSavingCierre] = useState(false);
   const [cierreMessage, setCierreMessage] = useState<string | null>(null);
+  const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
 
   const {
     activeModal,
@@ -57,6 +61,9 @@ function PedidosNormalPage() {
       const message = `Turno cerrado: ${formatCurrency(String(cierre.totalVendido))} vendidos.`;
       setCierreMessage(message);
       setIsCierreModalOpen(false);
+      setTurnoAbierto(false);
+      setIsTurnoOpen(false);
+      await loadPedidos();
       speakAction(message, `cierre-turno:${message}`);
     } catch (requestError) {
       setCierreMessage(requestError instanceof Error ? requestError.message : "No fue posible cerrar el turno");
@@ -97,6 +104,16 @@ function PedidosNormalPage() {
     );
   };
 
+  const handleAbrirTurno = () => {
+    const fechaInicio = new Date().toISOString();
+    setTurnoAbierto(true);
+    setIsTurnoOpen(true);
+    setTurnoFechaInicio(fechaInicio);
+    setCierreMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
+    speakAction("Turno abierto.", "abrir-turno");
+    loadPedidos();
+  };
+
   const handleEstadoFilterChange = (value: EstadoFilter) => {
     setEstadoFilter(value);
     const label = value === "todos" ? "Todos" : ESTADO_META[value].label;
@@ -114,7 +131,9 @@ function PedidosNormalPage() {
           estadoFilter={estadoFilter}
           isHighContrast={isHighContrast}
           isLoading={isLoading}
+          isTurnoOpen={isTurnoOpen}
           loadPedidos={handleRefreshPedidos}
+          onOpenTurno={handleAbrirTurno}
           onCloseTurno={handleOpenCierreModal}
           searchTerm={searchTerm}
           setEstadoFilter={handleEstadoFilterChange}
@@ -331,8 +350,10 @@ function NormalPedidosToolbar({
   estadoFilter,
   isHighContrast,
   isLoading,
+  isTurnoOpen,
   loadPedidos,
   onCloseTurno,
+  onOpenTurno,
   searchTerm,
   setEstadoFilter,
   setSearchTerm,
@@ -341,8 +362,10 @@ function NormalPedidosToolbar({
   estadoFilter: EstadoFilter;
   isHighContrast: boolean;
   isLoading: boolean;
+  isTurnoOpen: boolean;
   loadPedidos: () => void;
   onCloseTurno: () => void;
+  onOpenTurno: () => void;
   searchTerm: string;
   setEstadoFilter: (value: EstadoFilter) => void;
   setSearchTerm: (value: string) => void;
@@ -402,10 +425,15 @@ function NormalPedidosToolbar({
           })}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 text-sm font-bold text-slate-600">
-          <span>Vendido:</span>
-          <span className="text-lg font-black text-slate-950">{formatCurrency(String(summary.totalVendido))}</span>
-          <Eye className="h-5 w-5 text-slate-500" aria-hidden="true" />
+        <div className="grid shrink-0 gap-2 text-sm font-bold text-slate-600 sm:grid-cols-2">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+            <p className="text-xs font-black uppercase text-emerald-700">Vendido entregado</p>
+            <p className="text-lg font-black text-slate-950">{formatCurrency(String(summary.totalVendido))}</p>
+          </div>
+          <div className="rounded-xl border border-amber-200 bg-[#FFF8DC] px-3 py-2">
+            <p className="text-xs font-black uppercase text-amber-700">Pendiente</p>
+            <p className="text-lg font-black text-slate-950">{formatCurrency(String(summary.totalPendiente))}</p>
+          </div>
         </div>
       </div>
 
@@ -424,15 +452,17 @@ function NormalPedidosToolbar({
 
         <button
           type="button"
-          onClick={onCloseTurno}
+          onClick={isTurnoOpen ? onCloseTurno : onOpenTurno}
           className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition ${
             isHighContrast
               ? "contrast-button-secondary"
-              : "border-slate-900 bg-slate-900 text-white hover:bg-black"
+              : isTurnoOpen
+                ? "border-slate-900 bg-slate-900 text-white hover:bg-black"
+                : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
           } ${FOCUS_VISIBLE_CLASS}`}
         >
           <Check className="h-5 w-5" aria-hidden="true" />
-          Cerrar turno
+          {isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
         </button>
 
         <button
@@ -471,6 +501,8 @@ function CierreTurnoModal({
   const fechaCierre = new Date();
   const fechaInicio = getFechaInicioTurno(pedidos);
   const hasPedidosActivos = summary.pedidosPendientes > 0;
+  const productosVendidos = useMemo(() => getProductosVendidosResumen(pedidos), [pedidos]);
+  const pedidosDetalle = useMemo(() => getCierrePedidosResumen(pedidos), [pedidos]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
@@ -484,7 +516,7 @@ function CierreTurnoModal({
           <div>
             <h2 id="cierre-turno-title" className="text-2xl font-black text-slate-950">Cerrar turno</h2>
             <p className="mt-2 text-sm font-bold text-slate-600">
-              Al cerrar el turno, se guardará el resumen de ventas y pedidos del período actual.
+              Al cerrar el turno, se guardará el resumen de pedidos del período actual.
             </p>
           </div>
           <button
@@ -511,7 +543,8 @@ function CierreTurnoModal({
           <CierreSummaryItem label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
           <CierreSummaryItem label="Pedidos cancelados" value={String(summary.pedidosCancelados)} />
           <CierreSummaryItem label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
-          <CierreSummaryItem label="Total vendido" value={formatCurrency(String(summary.totalVendido))} isStrong />
+          <CierreSummaryItem label="Vendido entregado" value={formatCurrency(String(summary.totalVendido))} isStrong />
+          <CierreSummaryItem label="Pendiente no vendido" value={formatCurrency(String(summary.totalPendiente))} />
         </div>
 
         <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -520,6 +553,72 @@ function CierreTurnoModal({
             <CierreSummaryItem label="Efectivo" value={formatCurrency(String(summary.totalEfectivo))} />
             <CierreSummaryItem label="Tarjeta" value={formatCurrency(String(summary.totalTarjeta))} />
             <CierreSummaryItem label="Transferencia" value={formatCurrency(String(summary.totalTransferencia))} />
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-black uppercase text-slate-500">Recuento de productos vendidos</p>
+            <p className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+              {productosVendidos.reduce((total, producto) => total + producto.cantidad, 0)} unidades
+            </p>
+          </div>
+          {productosVendidos.length === 0 ? (
+            <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600">
+              No hay productos vendidos en pedidos entregados.
+            </p>
+          ) : (
+            <div className="mt-3 max-h-[220px] overflow-y-auto rounded-xl border border-slate-200">
+              {productosVendidos.map((producto) => (
+                <div key={producto.productoId} className="grid gap-2 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:grid-cols-[1fr_90px_120px] sm:items-center">
+                  <p className="font-black text-slate-950">{producto.productoNombre}</p>
+                  <p className="font-black text-slate-700">{producto.cantidad} un.</p>
+                  <p className="font-black text-slate-950 sm:text-right">{formatCurrency(String(producto.total))}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-black uppercase text-slate-500">Detalle de pedidos guardados</p>
+            <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+              {pedidosDetalle.length} pedidos
+            </p>
+          </div>
+          <div className="mt-3 max-h-[340px] space-y-3 overflow-y-auto pr-1">
+            {pedidosDetalle.map((pedido) => (
+              <article key={pedido.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-lg font-black text-slate-950">Pedido #{pedido.id}</p>
+                    <p className="mt-1 text-sm font-bold text-slate-600">
+                      {pedido.createdAt ? formatDateTime(pedido.createdAt) : "Sin fecha"} · {formatMetodoPago(pedido.metodoPago)}
+                    </p>
+                    {pedido.clienteNombre && <p className="mt-1 text-sm font-black text-slate-800">Cliente: {pedido.clienteNombre}</p>}
+                  </div>
+                  <div className="text-right">
+                    <StatusBadge estado={pedido.estado} />
+                    <p className="mt-2 text-lg font-black text-slate-950">{formatCurrency(String(pedido.total))}</p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-xl border border-slate-200 bg-white">
+                  {pedido.detalles.map((detalle) => (
+                    <div key={`${pedido.id}-${detalle.productoId}-${detalle.productoNombre}`} className="grid gap-2 border-b border-slate-100 px-3 py-2 last:border-b-0 sm:grid-cols-[1fr_80px_110px] sm:items-center">
+                      <p className="font-bold text-slate-900">{detalle.productoNombre}</p>
+                      <p className="font-bold text-slate-600">{detalle.cantidad} un.</p>
+                      <p className="font-black text-slate-950 sm:text-right">{formatCurrency(String(detalle.subtotal))}</p>
+                    </div>
+                  ))}
+                </div>
+                {pedido.observacion && (
+                  <p className="mt-3 rounded-xl border border-yellow-200 bg-[#FFF8DC] px-3 py-2 text-sm font-bold text-slate-800">
+                    {pedido.observacion}
+                  </p>
+                )}
+              </article>
+            ))}
           </div>
         </div>
 
@@ -629,7 +728,46 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function readTurnoAbierto() {
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  const storedValue = window.localStorage.getItem(TURNO_ABIERTO_STORAGE_KEY);
+  return storedValue === null ? true : storedValue === "true";
+}
+
+function setTurnoAbierto(isOpen: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(TURNO_ABIERTO_STORAGE_KEY, String(isOpen));
+}
+
+function readTurnoFechaInicio() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return window.localStorage.getItem(TURNO_FECHA_INICIO_STORAGE_KEY) ?? undefined;
+}
+
+function setTurnoFechaInicio(value: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(TURNO_FECHA_INICIO_STORAGE_KEY, value);
+}
+
 function getFechaInicioTurno(pedidos: PedidoResponse[]) {
+  const storedFechaInicio = readTurnoFechaInicio();
+
+  if (storedFechaInicio) {
+    return storedFechaInicio;
+  }
+
   const timestamps = pedidos
     .map((pedido) => (pedido.createdAt ? new Date(pedido.createdAt).getTime() : null))
     .filter((timestamp): timestamp is number => timestamp !== null && !Number.isNaN(timestamp));
@@ -641,6 +779,62 @@ function getFechaInicioTurno(pedidos: PedidoResponse[]) {
   return new Date(Math.min(...timestamps)).toISOString();
 }
 
+function parseMoneyValue(value: string) {
+  const amount = Number(value);
+  return Number.isNaN(amount) ? 0 : amount;
+}
+
+function getDetalleProductoNombre(detalle: NonNullable<PedidoResponse["detalles"]>[number]) {
+  return detalle.producto?.nombre ?? `Producto #${detalle.productoId}`;
+}
+
+function getCierrePedidosResumen(pedidos: PedidoResponse[]): CierreTurno["pedidos"] {
+  return pedidos.map((pedido) => ({
+    id: pedido.id,
+    clienteNombre: pedido.clienteNombre,
+    createdAt: pedido.createdAt,
+    estado: pedido.estado,
+    metodoPago: pedido.metodoPago,
+    observacion: pedido.observacion,
+    total: parseMoneyValue(pedido.total),
+    detalles: (pedido.detalles ?? []).map((detalle) => ({
+      cantidad: detalle.cantidad,
+      precioUnitario: parseMoneyValue(detalle.precioUnitario),
+      productoId: detalle.productoId,
+      productoNombre: getDetalleProductoNombre(detalle),
+      subtotal: parseMoneyValue(detalle.subtotal)
+    }))
+  }));
+}
+
+function getProductosVendidosResumen(pedidos: PedidoResponse[]): CierreTurno["productosVendidos"] {
+  const productos = new Map<number, CierreTurno["productosVendidos"][number]>();
+
+  pedidos
+    .filter((pedido) => pedido.estado === "entregado")
+    .forEach((pedido) => {
+      (pedido.detalles ?? []).forEach((detalle) => {
+        const currentProducto = productos.get(detalle.productoId);
+        const subtotal = parseMoneyValue(detalle.subtotal);
+
+        if (!currentProducto) {
+          productos.set(detalle.productoId, {
+            cantidad: detalle.cantidad,
+            productoId: detalle.productoId,
+            productoNombre: getDetalleProductoNombre(detalle),
+            total: subtotal
+          });
+          return;
+        }
+
+        currentProducto.cantidad += detalle.cantidad;
+        currentProducto.total += subtotal;
+      });
+    });
+
+  return [...productos.values()].sort((left, right) => right.cantidad - left.cantidad);
+}
+
 function buildCierreTurno(pedidos: PedidoResponse[], user: AuthUser | null): CierreTurno {
   const fechaCierre = new Date().toISOString();
   const summary = getTurnoSummary(pedidos);
@@ -650,12 +844,15 @@ function buildCierreTurno(pedidos: PedidoResponse[], user: AuthUser | null): Cie
     fechaInicio: getFechaInicioTurno(pedidos),
     fechaCierre,
     usuarioId: user?.username,
+    pedidos: getCierrePedidosResumen(pedidos),
+    productosVendidos: getProductosVendidosResumen(pedidos),
     totalPedidos: summary.totalPedidos,
     pedidosEntregados: summary.pedidosEntregados,
     pedidosCancelados: summary.pedidosCancelados,
     pedidosPendientes: summary.pedidosPendientes,
     totalVendido: summary.totalVendido,
     totalEfectivo: summary.totalEfectivo,
+    totalPendiente: summary.totalPendiente,
     totalTarjeta: summary.totalTarjeta,
     totalTransferencia: summary.totalTransferencia
   };

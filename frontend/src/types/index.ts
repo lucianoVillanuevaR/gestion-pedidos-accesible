@@ -1,4 +1,5 @@
 export interface Producto {
+  categoria?: string;
   id: number;
   nombre: string;
   precio: number;
@@ -76,14 +77,43 @@ export type CierreTurno = {
   fechaInicio?: string;
   fechaCierre: string;
   usuarioId?: string;
+  pedidos: CierrePedidoResumen[];
+  productosVendidos: CierreProductoResumen[];
   totalPedidos: number;
   pedidosEntregados: number;
   pedidosCancelados: number;
   pedidosPendientes: number;
   totalVendido: number;
   totalEfectivo: number;
+  totalPendiente: number;
   totalTarjeta: number;
   totalTransferencia: number;
+};
+
+export type CierrePedidoResumen = {
+  id: number;
+  clienteNombre?: string | null;
+  createdAt?: string;
+  estado: EstadoPedido;
+  metodoPago: MetodoPago;
+  observacion?: string | null;
+  total: number;
+  detalles: CierrePedidoDetalle[];
+};
+
+export type CierrePedidoDetalle = {
+  cantidad: number;
+  precioUnitario: number;
+  productoId: number;
+  productoNombre: string;
+  subtotal: number;
+};
+
+export type CierreProductoResumen = {
+  cantidad: number;
+  productoId: number;
+  productoNombre: string;
+  total: number;
 };
 
 export interface ApiError {
