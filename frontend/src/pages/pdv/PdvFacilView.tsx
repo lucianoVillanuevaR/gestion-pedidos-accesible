@@ -1,7 +1,15 @@
 import { Accessibility, CheckCircle2, XCircle } from "lucide-react";
-import { FILTROS, formatCurrency } from "../../utils/pdv";
+import { formatCurrency, type FiltroCategoria } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
+
+const FILTROS_FACILES: Array<{ label: string; value: FiltroCategoria }> = [
+  { label: "Sandwich", value: "Sandwich" },
+  { label: "Completos", value: "Completos" },
+  { label: "Bebidas", value: "Bebidas" },
+  { label: "Destacados", value: "Destacados" },
+  { label: "Ver todos", value: "Todos" }
+];
 
 function PdvFacilView() {
   const {
@@ -126,7 +134,7 @@ function PdvFacilView() {
         <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step1" className="font-black text-2xl mb-4">Paso 1: Elige categoría</h2>
           <div className="grid grid-cols-2 gap-4">
-            {FILTROS.map((filtro) => (
+            {FILTROS_FACILES.map((filtro) => (
               <button
                 key={filtro.value}
                 type="button"
@@ -184,7 +192,7 @@ function PdvFacilView() {
             {accessibleProductos.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed p-8 text-center col-span-2">
                 <p className="font-bold text-lg">No hay productos en esta categoría.</p>
-                <p className="mt-2">Prueba otra categoría o selecciona "Todos".</p>
+                <p className="mt-2">Prueba otra categoría o selecciona "Ver todos".</p>
                 <div className="mt-4 flex justify-center">
                   <button type="button" onClick={() => setAccessibleStep(1)} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Volver a categorías</button>
                 </div>

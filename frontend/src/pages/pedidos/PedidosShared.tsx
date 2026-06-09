@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
 import { getPedidos, updatePedidoEstado } from "../../services/pedidos";
-import type { EstadoPedido, MetodoPago, PedidoDetalleResponse, PedidoResponse } from "../../types";
+import type { AuthUser, CierreTurno, EstadoPedido, MetodoPago, PedidoDetalleResponse, PedidoResponse } from "../../types";
 
 export type EstadoFilter = EstadoPedido | "todos";
 export type ModalAction = "detail" | "state" | "finish" | "cancel" | "history";
@@ -12,6 +12,9 @@ export type SortOption = "recent" | "oldest" | "highest_total" | "state";
 
 export const FOCUS_VISIBLE_CLASS =
   "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+
+const TURNO_ABIERTO_STORAGE_KEY = "riquisimo:turno-abierto";
+const TURNO_FECHA_INICIO_STORAGE_KEY = "riquisimo:turno-fecha-inicio";
 
 export type ActiveModal = {
   action: ModalAction;
@@ -232,6 +235,142 @@ export function getPedidoSummary(pedido: PedidoResponse) {
     .map((detalle) => `${detalle.cantidad}x ${getItemName(detalle)}`)
     .join(", ")
     .concat(detalles.length > 2 ? ` y ${detalles.length - 2} más` : "");
+}
+
+export function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("es-CL", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
+export function readTurnoAbierto() {
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  const storedValue = window.localStorage.getItem(TURNO_ABIERTO_STORAGE_KEY);
+  return storedValue === null ? true : storedValue === "true";
+}
+
+export function setTurnoAbierto(isOpen: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(TURNO_ABIERTO_STORAGE_KEY, String(isOpen));
+}
+
+export function readTurnoFechaInicio() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return window.localStorage.getItem(TURNO_FECHA_INICIO_STORAGE_KEY) ?? undefined;
+}
+
+export function setTurnoFechaInicio(value: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(TURNO_FECHA_INICIO_STORAGE_KEY, value);
+}
+
+export function getFechaInicioTurno(pedidos: PedidoResponse[]) {
+  const storedFechaInicio = readTurnoFechaInicio();
+
+  if (storedFechaInicio) {
+    return storedFechaInicio;
+  }
+
+  const timestamps = pedidos
+    .map((pedido) => (pedido.createdAt ? new Date(pedido.createdAt).getTime() : null))
+    .filter((timestamp): timestamp is number => timestamp !== null && !Number.isNaN(timestamp));
+
+  if (timestamps.length === 0) {
+    return undefined;
+  }
+
+  return new Date(Math.min(...timestamps)).toISOString();
+}
+
+function parseMoneyValue(value: string) {
+  const amount = Number(value);
+  return Number.isNaN(amount) ? 0 : amount;
+}
+
+export function getDetalleProductoNombre(detalle: NonNullable<PedidoResponse["detalles"]>[number]) {
+  return detalle.producto?.nombre ?? `Producto #${detalle.productoId}`;
+}
+
+export function getCierrePedidosResumen(pedidos: PedidoResponse[]): CierreTurno["pedidos"] {
+  return pedidos.map((pedido) => ({
+    id: pedido.id,
+    clienteNombre: pedido.clienteNombre,
+    createdAt: pedido.createdAt,
+    estado: pedido.estado,
+    metodoPago: pedido.metodoPago,
+    observacion: pedido.observacion,
+    total: parseMoneyValue(pedido.total),
+    detalles: (pedido.detalles ?? []).map((detalle) => ({
+      cantidad: detalle.cantidad,
+      precioUnitario: parseMoneyValue(detalle.precioUnitario),
+      productoId: detalle.productoId,
+      productoNombre: getDetalleProductoNombre(detalle),
+      subtotal: parseMoneyValue(detalle.subtotal)
+    }))
+  }));
+}
+
+export function getProductosVendidosResumen(pedidos: PedidoResponse[]): CierreTurno["productosVendidos"] {
+  const productos = new Map<number, CierreTurno["productosVendidos"][number]>();
+
+  pedidos
+    .filter((pedido) => pedido.estado === "entregado")
+    .forEach((pedido) => {
+      (pedido.detalles ?? []).forEach((detalle) => {
+        const currentProducto = productos.get(detalle.productoId);
+        const subtotal = parseMoneyValue(detalle.subtotal);
+
+        if (!currentProducto) {
+          productos.set(detalle.productoId, {
+            cantidad: detalle.cantidad,
+            productoId: detalle.productoId,
+            productoNombre: getDetalleProductoNombre(detalle),
+            total: subtotal
+          });
+          return;
+        }
+
+        currentProducto.cantidad += detalle.cantidad;
+        currentProducto.total += subtotal;
+      });
+    });
+
+  return [...productos.values()].sort((left, right) => right.cantidad - left.cantidad);
+}
+
+export function buildCierreTurno(pedidos: PedidoResponse[], user: AuthUser | null): CierreTurno {
+  const summary = getTurnoSummary(pedidos);
+
+  return {
+    id: `turno-${Date.now()}`,
+    fechaInicio: getFechaInicioTurno(pedidos),
+    fechaCierre: new Date().toISOString(),
+    usuarioId: user?.username,
+    pedidos: getCierrePedidosResumen(pedidos),
+    productosVendidos: getProductosVendidosResumen(pedidos),
+    totalPedidos: summary.totalPedidos,
+    pedidosEntregados: summary.pedidosEntregados,
+    pedidosCancelados: summary.pedidosCancelados,
+    pedidosPendientes: summary.pedidosPendientes,
+    totalVendido: summary.totalVendido,
+    totalEfectivo: summary.totalEfectivo,
+    totalPendiente: summary.totalPendiente,
+    totalTarjeta: summary.totalTarjeta,
+    totalTransferencia: summary.totalTransferencia
+  };
 }
 
 function normalizeText(value: string) {

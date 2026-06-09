@@ -4,28 +4,33 @@ import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { guardarCierreTurno } from "../../services/cierresTurno";
-import type { AuthUser, CierreTurno, EstadoPedido, PedidoResponse } from "../../types";
+import type { AuthUser, EstadoPedido, PedidoResponse } from "../../types";
 import {
+  buildCierreTurno,
   EmptyPedidosMessage,
   ESTADO_META,
   ESTADO_OPTIONS,
   FOCUS_VISIBLE_CLASS,
   formatCurrency,
+  formatDateTime,
   formatElapsedTime,
   formatMetodoPago,
+  getCierrePedidosResumen,
+  getFechaInicioTurno,
   getPedidoSummary,
+  getProductosVendidosResumen,
   getProductCount,
   getTurnoSummary,
   isPedidoDelayed,
   PedidoModal,
+  readTurnoAbierto,
+  setTurnoAbierto,
+  setTurnoFechaInicio,
   StatusBadge,
   usePedidosController,
   type ActiveModal,
   type EstadoFilter
 } from "./PedidosShared";
-
-const TURNO_ABIERTO_STORAGE_KEY = "riquisimo:turno-abierto";
-const TURNO_FECHA_INICIO_STORAGE_KEY = "riquisimo:turno-fecha-inicio";
 
 function PedidosNormalPage() {
   const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
@@ -719,143 +724,6 @@ function getCreatedDateLabel(value?: string) {
     month: "2-digit",
     year: "2-digit"
   }).format(new Date(value));
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "short",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
-
-function readTurnoAbierto() {
-  if (typeof window === "undefined") {
-    return true;
-  }
-
-  const storedValue = window.localStorage.getItem(TURNO_ABIERTO_STORAGE_KEY);
-  return storedValue === null ? true : storedValue === "true";
-}
-
-function setTurnoAbierto(isOpen: boolean) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(TURNO_ABIERTO_STORAGE_KEY, String(isOpen));
-}
-
-function readTurnoFechaInicio() {
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-
-  return window.localStorage.getItem(TURNO_FECHA_INICIO_STORAGE_KEY) ?? undefined;
-}
-
-function setTurnoFechaInicio(value: string) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(TURNO_FECHA_INICIO_STORAGE_KEY, value);
-}
-
-function getFechaInicioTurno(pedidos: PedidoResponse[]) {
-  const storedFechaInicio = readTurnoFechaInicio();
-
-  if (storedFechaInicio) {
-    return storedFechaInicio;
-  }
-
-  const timestamps = pedidos
-    .map((pedido) => (pedido.createdAt ? new Date(pedido.createdAt).getTime() : null))
-    .filter((timestamp): timestamp is number => timestamp !== null && !Number.isNaN(timestamp));
-
-  if (timestamps.length === 0) {
-    return undefined;
-  }
-
-  return new Date(Math.min(...timestamps)).toISOString();
-}
-
-function parseMoneyValue(value: string) {
-  const amount = Number(value);
-  return Number.isNaN(amount) ? 0 : amount;
-}
-
-function getDetalleProductoNombre(detalle: NonNullable<PedidoResponse["detalles"]>[number]) {
-  return detalle.producto?.nombre ?? `Producto #${detalle.productoId}`;
-}
-
-function getCierrePedidosResumen(pedidos: PedidoResponse[]): CierreTurno["pedidos"] {
-  return pedidos.map((pedido) => ({
-    id: pedido.id,
-    clienteNombre: pedido.clienteNombre,
-    createdAt: pedido.createdAt,
-    estado: pedido.estado,
-    metodoPago: pedido.metodoPago,
-    observacion: pedido.observacion,
-    total: parseMoneyValue(pedido.total),
-    detalles: (pedido.detalles ?? []).map((detalle) => ({
-      cantidad: detalle.cantidad,
-      precioUnitario: parseMoneyValue(detalle.precioUnitario),
-      productoId: detalle.productoId,
-      productoNombre: getDetalleProductoNombre(detalle),
-      subtotal: parseMoneyValue(detalle.subtotal)
-    }))
-  }));
-}
-
-function getProductosVendidosResumen(pedidos: PedidoResponse[]): CierreTurno["productosVendidos"] {
-  const productos = new Map<number, CierreTurno["productosVendidos"][number]>();
-
-  pedidos
-    .filter((pedido) => pedido.estado === "entregado")
-    .forEach((pedido) => {
-      (pedido.detalles ?? []).forEach((detalle) => {
-        const currentProducto = productos.get(detalle.productoId);
-        const subtotal = parseMoneyValue(detalle.subtotal);
-
-        if (!currentProducto) {
-          productos.set(detalle.productoId, {
-            cantidad: detalle.cantidad,
-            productoId: detalle.productoId,
-            productoNombre: getDetalleProductoNombre(detalle),
-            total: subtotal
-          });
-          return;
-        }
-
-        currentProducto.cantidad += detalle.cantidad;
-        currentProducto.total += subtotal;
-      });
-    });
-
-  return [...productos.values()].sort((left, right) => right.cantidad - left.cantidad);
-}
-
-function buildCierreTurno(pedidos: PedidoResponse[], user: AuthUser | null): CierreTurno {
-  const fechaCierre = new Date().toISOString();
-  const summary = getTurnoSummary(pedidos);
-
-  return {
-    id: `turno-${Date.now()}`,
-    fechaInicio: getFechaInicioTurno(pedidos),
-    fechaCierre,
-    usuarioId: user?.username,
-    pedidos: getCierrePedidosResumen(pedidos),
-    productosVendidos: getProductosVendidosResumen(pedidos),
-    totalPedidos: summary.totalPedidos,
-    pedidosEntregados: summary.pedidosEntregados,
-    pedidosCancelados: summary.pedidosCancelados,
-    pedidosPendientes: summary.pedidosPendientes,
-    totalVendido: summary.totalVendido,
-    totalEfectivo: summary.totalEfectivo,
-    totalPendiente: summary.totalPendiente,
-    totalTarjeta: summary.totalTarjeta,
-    totalTransferencia: summary.totalTransferencia
-  };
 }
 
 function getPedidoActionState(estado: EstadoPedido) {
