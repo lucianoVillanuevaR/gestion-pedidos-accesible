@@ -141,7 +141,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   } = usePedidosController({});
 
   const cocinaPedidos = useMemo(
-    () => pedidos.filter((pedido) => pedido.estado === "pendiente" || pedido.estado === "en_preparacion"),
+    () => pedidos.filter((pedido) => pedido.estado === "pendiente" || pedido.estado === "en_preparacion" || pedido.estado === "listo"),
     [pedidos]
   );
   const counts = useMemo(() => getPedidoCounts(pedidos), [pedidos]);
@@ -565,6 +565,7 @@ function KitchenTicket({
   const delayed = isPedidoDelayed(pedido);
   const isPending = pedido.estado === "pendiente";
   const isPreparing = pedido.estado === "en_preparacion";
+  const isReady = pedido.estado === "listo";
 
   return (
     <article
@@ -647,6 +648,23 @@ function KitchenTicket({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
+            if (isReady) {
+              onEstadoChange(pedido, "entregado");
+            }
+          }}
+          disabled={!isReady || isUpdating}
+          className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
+            isReady
+              ? "border-slate-900 bg-slate-900 text-white hover:bg-black"
+              : "border-slate-200 bg-slate-100 text-slate-400"
+          } ${FOCUS_VISIBLE_CLASS}`}
+        >
+          {isUpdating && isReady ? "Guardando..." : "Entregar"}
+        </button>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
             onOpenModal({ action: "detail", pedido });
           }}
           className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
@@ -668,6 +686,7 @@ function AccessibleKitchenTicket({
   const delayed = isPedidoDelayed(pedido);
   const isPending = pedido.estado === "pendiente";
   const isPreparing = pedido.estado === "en_preparacion";
+  const isReady = pedido.estado === "listo";
 
   return (
     <article
@@ -746,6 +765,23 @@ function AccessibleKitchenTicket({
             {isUpdating && isPreparing ? "Guardando..." : "Listo"}
           </button>
         </div>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            if (isReady) {
+              onEstadoChange(pedido, "entregado");
+            }
+          }}
+          disabled={!isReady || isUpdating}
+          className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
+            isReady
+              ? "border-slate-950 bg-slate-950 text-white hover:bg-black"
+              : "border-slate-300 bg-slate-100 text-slate-400"
+          } ${FOCUS_VISIBLE_CLASS}`}
+        >
+          {isUpdating && isReady ? "Guardando..." : "Entregar"}
+        </button>
         <button
           type="button"
           onClick={(event) => {
@@ -1034,6 +1070,10 @@ function getNextCocinaEstado(estado: EstadoPedido) {
 
   if (estado === "en_preparacion") {
     return "listo";
+  }
+
+  if (estado === "listo") {
+    return "entregado";
   }
 
   return null;

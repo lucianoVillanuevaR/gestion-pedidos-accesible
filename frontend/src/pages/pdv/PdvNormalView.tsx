@@ -1,10 +1,17 @@
 import { CalendarDays, Check, Info, LockKeyhole, Printer, Search, Trash2, UnlockKeyhole, User, Volume2, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { useAuthContext } from "../../contexts/AuthContext";
 import type { Producto } from "../../types";
+import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH } from "../../validations/pedido.validation";
 import { FILTROS, formatCurrency, getPaymentLabel } from "../../utils/pdv";
+import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { PAYMENT_OPTIONS, Toast } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvNormalView() {
+  const { user } = useAuthContext();
+  const [showOpenTurnoConfirm, setShowOpenTurnoConfirm] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const {
     addProduct,
     decreaseProduct,
@@ -50,6 +57,38 @@ function PdvNormalView() {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date());
+  const fullDate = new Intl.DateTimeFormat("es-CL", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date());
+  const canPrint = isTurnoOpen && pedidoDetalles.length > 0;
+
+  const handleTurnoButtonClick = () => {
+    if (isTurnoOpen) {
+      handleToggleTurno();
+      return;
+    }
+
+    setShowOpenTurnoConfirm(true);
+  };
+
+  const handleConfirmOpenTurno = () => {
+    setShowOpenTurnoConfirm(false);
+    handleToggleTurno();
+  };
+
+  const handleAcceptClick = () => {
+    if (!puedeRegistrar) {
+      return;
+    }
+
+    setShowSubmitConfirm(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    setShowSubmitConfirm(false);
+    handleSubmit();
+  };
 
   return (
     <div className="grid h-[calc(100dvh-48px)] min-h-0 overflow-hidden bg-slate-100 print:block md:grid-cols-[162px_minmax(0,1fr)] xl:grid-cols-[162px_minmax(0,1fr)_400px] 2xl:grid-cols-[162px_minmax(0,1fr)_430px]">
@@ -129,6 +168,7 @@ function PdvNormalView() {
                   key={producto.id}
                   producto={producto}
                   cantidad={items[producto.id] || 0}
+                  disabled={!isTurnoOpen}
                   onIncrease={() => increaseProduct(producto)}
                   onDecrease={() => decreaseProduct(producto)}
                   onAdd={() => addProduct(producto)}
@@ -149,7 +189,7 @@ function PdvNormalView() {
             </div>
             <button
               type="button"
-              onClick={handleToggleTurno}
+              onClick={handleTurnoButtonClick}
               className={`inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border px-3 text-xs font-black transition ${
                 isTurnoOpen
                   ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
@@ -173,6 +213,16 @@ function PdvNormalView() {
         </div>
 
         <div className="border-b border-slate-200 no-print print:hidden">
+          <div className="grid gap-2 border-t border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-600">
+            <div className="flex items-center justify-between gap-3">
+              <span>Origen</span>
+              <span className="font-black text-slate-950">PDV</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Estado</span>
+              <span className="font-black text-slate-950">Pendiente</span>
+            </div>
+          </div>
           <div className="grid grid-cols-[52px_minmax(0,1fr)] border-t border-slate-200">
             <div className="flex items-center justify-center gap-1 text-slate-700">
               <User className="h-4 w-4" aria-hidden="true" />
@@ -181,6 +231,7 @@ function PdvNormalView() {
             <input
               type="text"
               value={clienteNombre}
+              maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
               onChange={(event) => setClienteNombre(event.target.value)}
               placeholder="Agregar un nombre de cliente"
               className="h-14 border-0 border-l border-[#FECE00] bg-amber-50 px-3 text-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-amber-300"
@@ -188,17 +239,8 @@ function PdvNormalView() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 border-b border-slate-200 text-sm font-bold no-print print:hidden">
-          <div className="bg-slate-400 px-3 py-3 text-white">+ Productos</div>
-          <button
-            type="button"
-            onClick={handlePrint}
-            disabled={pedidoDetalles.length === 0}
-            className="inline-flex items-center justify-center gap-2 bg-slate-100 px-3 py-3 text-slate-500 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            <Printer className="h-4 w-4" aria-hidden="true" />
-            Cocina
-          </button>
+        <div className="border-b border-slate-200 bg-slate-400 px-3 py-3 text-sm font-bold text-white no-print print:hidden">
+          Productos del pedido
         </div>
 
         <div className="px-3 pt-3 no-print print:hidden">
@@ -206,8 +248,8 @@ function PdvNormalView() {
             <button
               type="button"
               onClick={handlePrint}
-              disabled={pedidoDetalles.length === 0}
-              className={`w-full min-w-0 ${quickActionButtonClass} ${pedidoDetalles.length === 0 ? "cursor-not-allowed opacity-40" : ""}`}
+              disabled={!canPrint}
+              className={`w-full min-w-0 ${quickActionButtonClass} ${!canPrint ? "cursor-not-allowed opacity-40" : ""}`}
             >
               <Printer className={`h-4 w-4 shrink-0 ${isHighContrast ? "text-current" : "text-slate-700"}`} aria-hidden="true" />
               <span>Imprimir</span>
@@ -281,8 +323,9 @@ function PdvNormalView() {
         )}
 
         {!isTurnoOpen && (
-          <div className="mx-3 mt-3 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 no-print print:hidden" role="alert">
-            Turno cerrado. Abre turno para poder registrar pedidos.
+          <div className="mx-3 mt-3 rounded-xl border border-red-300 bg-red-50 px-3 py-3 text-sm font-bold text-red-800 no-print print:hidden" role="alert">
+            <p>Turno cerrado. Abre turno para poder registrar pedidos.</p>
+            <p className="mt-1 text-red-700">Para comenzar a vender, abre un turno.</p>
           </div>
         )}
 
@@ -331,8 +374,9 @@ function PdvNormalView() {
             <span>Subtotal Productos ({pedidoDetalles.length})</span>
             <span>{formatCurrency(total)}</span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className="rounded bg-[#FECE00] px-2 py-1 text-xs font-bold text-slate-950">% Descuento</button>
+          <div className="flex items-center justify-between text-sm text-slate-500">
+            <span>Descuento</span>
+            <span>{formatCurrency(0)}</span>
           </div>
         </div>
 
@@ -378,7 +422,7 @@ function PdvNormalView() {
           </button>
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={handleAcceptClick}
             disabled={!puedeRegistrar}
             className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-md border font-bold transition ${
               puedeRegistrar
@@ -391,6 +435,43 @@ function PdvNormalView() {
           </button>
         </div>
       </aside>
+
+      {showOpenTurnoConfirm && (
+        <ConfirmDialog
+          title="Abrir turno"
+          description="Al abrir el turno podrás comenzar a registrar pedidos."
+          primaryLabel="Abrir turno"
+          onCancel={() => setShowOpenTurnoConfirm(false)}
+          onConfirm={handleConfirmOpenTurno}
+        >
+          <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
+            <div className="flex items-center justify-between gap-3">
+              <span>Cajero actual</span>
+              <span className="font-black text-slate-950">{user?.label ?? "Sin usuario"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Fecha y hora</span>
+              <span className="font-black text-slate-950">{fullDate}</span>
+            </div>
+          </div>
+        </ConfirmDialog>
+      )}
+
+      {showSubmitConfirm && (
+        <ConfirmDialog
+          title="Registrar pedido"
+          description="¿Deseas registrar este pedido?"
+          primaryLabel={sending ? "Registrando..." : "Aceptar pedido"}
+          onCancel={() => setShowSubmitConfirm(false)}
+          onConfirm={handleConfirmSubmit}
+        >
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
+            <p>{pedidoDetalles.length} productos</p>
+            <p className="mt-1 text-xl font-black text-slate-950">{formatCurrency(total)}</p>
+            <p className="mt-1">Pago: {getPaymentLabel(metodoPago)}</p>
+          </div>
+        </ConfirmDialog>
+      )}
     </div>
   );
 }
@@ -398,22 +479,24 @@ function PdvNormalView() {
 function PdvProductTile({
   producto,
   cantidad,
+  disabled,
   onIncrease,
   onDecrease,
   onAdd
 }: {
   producto: Producto;
   cantidad: number;
+  disabled: boolean;
   onIncrease: () => void;
   onDecrease: () => void;
   onAdd: () => void;
 }) {
   return (
-    <article className="group overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition hover:border-amber-400 hover:shadow-md">
-      <button type="button" onClick={onAdd} className="block w-full text-left" aria-label={`Agregar ${producto.nombre}`}>
+    <article className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-amber-400 hover:shadow-md"}`}>
+      <button type="button" onClick={onAdd} disabled={disabled} className="block w-full text-left disabled:cursor-not-allowed" aria-label={`Agregar ${producto.nombre}`}>
         <div className="relative h-[120px] overflow-hidden bg-slate-300">
           {producto.imagen ? (
-            <img src={producto.imagen} alt={producto.altText || producto.nombre} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+            <img src={producto.imagen} alt={`Imagen de ${producto.nombre}`} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-slate-300 text-center text-xs font-bold uppercase text-slate-600">
               Producto
@@ -431,21 +514,64 @@ function PdvProductTile({
       </button>
       <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-2 py-1.5">
         <p className="truncate text-base font-black text-slate-800">{formatCurrency(producto.precio)}</p>
-        <button type="button" onClick={onAdd} className="rounded-full p-1 text-slate-700 transition hover:bg-slate-100" aria-label={`Agregar ${producto.nombre}`}>
+        <button type="button" onClick={onAdd} disabled={disabled} className="rounded-full p-1 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed" aria-label={`Agregar ${producto.nombre}`}>
           <Info className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
       {cantidad > 0 && (
         <div className="grid grid-cols-2 border-t border-slate-200">
-          <button type="button" onClick={onDecrease} className="min-h-[32px] bg-slate-50 text-lg font-black text-slate-700 transition hover:bg-slate-100" aria-label={`Disminuir ${producto.nombre}`}>
+          <button type="button" onClick={onDecrease} disabled={disabled} className="min-h-[32px] bg-slate-50 text-lg font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed" aria-label={`Disminuir ${producto.nombre}`}>
             -
           </button>
-          <button type="button" onClick={onIncrease} className="min-h-[32px] bg-[#FECE00] text-lg font-black text-slate-950 transition hover:bg-[#FFD633]" aria-label={`Aumentar ${producto.nombre}`}>
+          <button type="button" onClick={onIncrease} disabled={disabled} className="min-h-[32px] bg-[#FECE00] text-lg font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed" aria-label={`Aumentar ${producto.nombre}`}>
             +
           </button>
         </div>
       )}
+      {disabled && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/45 px-2 text-center text-xs font-black text-slate-700">
+          Abrir turno
+        </div>
+      )}
     </article>
+  );
+}
+
+function ConfirmDialog({
+  children,
+  description,
+  onCancel,
+  onConfirm,
+  primaryLabel,
+  title
+}: {
+  children?: ReactNode;
+  description: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  primaryLabel: string;
+  title: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 no-print" role="dialog" aria-modal="true" aria-labelledby="pdv-confirm-title">
+      <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white shadow-2xl">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 id="pdv-confirm-title" className="text-xl font-black text-slate-950">{title}</h2>
+          <p className="mt-2 text-sm font-bold text-slate-600">{description}</p>
+        </div>
+        <div className="space-y-4 p-5">
+          {children}
+        </div>
+        <div className="grid grid-cols-2 gap-3 border-t border-slate-200 p-4">
+          <button type="button" onClick={onCancel} className={`min-h-[46px] rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}>
+            Cancelar
+          </button>
+          <button type="button" onClick={onConfirm} className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}>
+            {primaryLabel}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

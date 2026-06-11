@@ -741,48 +741,6 @@ export function PedidoModal({
   );
 }
 
-export function LargeActionButton({
-  disabled = false,
-  label,
-  onClick,
-  tone = "default"
-}: {
-  disabled?: boolean;
-  label: string;
-  onClick: () => void;
-  tone?: "default" | "success";
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-        tone === "success"
-          ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-          : "border-slate-900 bg-slate-900 text-white hover:bg-black"
-      } ${FOCUS_VISIBLE_CLASS}`}
-    >
-      {label}
-    </button>
-  );
-}
-
-export function LargeStatusLabel({ label, tone = "default" }: { label: string; tone?: "danger" | "default" }) {
-  return (
-    <div
-      aria-disabled="true"
-      className={`flex min-h-[72px] items-center justify-center rounded-2xl border-2 px-5 text-center text-xl font-black ${
-        tone === "danger"
-          ? "border-red-700 bg-red-50 text-red-800"
-          : "border-slate-400 bg-slate-100 text-slate-700"
-      }`}
-    >
-      {label}
-    </div>
-  );
-}
-
 export function EmptyPedidosMessage({ isAccessible = false }: { isAccessible?: boolean }) {
   return (
     <div className={`rounded-[26px] bg-white p-8 sm:p-10 ${

@@ -1,80 +1,50 @@
 # Sistema de Gestion de Pedidos - Riquisimo
 
-## Docker
+Aplicacion web interna para una pyme gastronomica. Permite registrar pedidos presenciales, seguir su preparacion, administrar productos, controlar stock basico, subir imagenes de productos a MinIO y cerrar turnos sin depender de comandas en papel.
 
-Clonar el repositorio:
+## Arquitectura
 
-```bash
-git clone https://github.com/lucianoVillanuevaR/gestion-pedidos-accesible.git
-cd gestion-pedidos-accesible
-```
+- Frontend: React, TypeScript, Vite y Tailwind.
+- Backend: Node.js, Express y TypeScript.
+- Base de datos: PostgreSQL con Prisma.
+- Archivos: MinIO para imagenes de productos.
+- Infraestructura: Docker Compose.
 
-Crear el archivo de variables de entorno:
+Servicios principales:
 
-```bash
-cp .env.example .env
-```
+- `frontend`: sirve la aplicacion en Nginx y proxy `/api`.
+- `backend`: API REST, Prisma, MinIO y healthcheck.
+- `postgres`: base persistente.
+- `minio`: almacenamiento persistente de imagenes.
 
-Levantar el proyecto:
-
-```bash
-docker compose up -d --build
-```
-
-URLs:
+## Puertos
 
 ```text
 Frontend: http://localhost
 Backend health: http://localhost:3000/api/health
+Proxy health: http://localhost/api/health
 PostgreSQL: localhost:5433
 MinIO API: http://localhost:9000
 MinIO consola: http://localhost:9001
 ```
 
-Ver estado y logs:
+## Variables De Entorno
+
+Copia el ejemplo:
 
 ```bash
-docker compose ps
-docker compose logs backend
-docker compose logs postgres
-docker compose logs frontend
+cp .env.example .env
 ```
 
-El backend ejecuta automáticamente `prisma migrate deploy`, `seed` y luego inicia el servidor. PostgreSQL tiene healthcheck con `pg_isready`, y el backend espera a que PostgreSQL esté healthy antes de ejecutar Prisma.
-
-Importante: no ejecutes `docker compose down -v` salvo que quieras borrar la base de datos y los archivos guardados en volúmenes. Para detener sin borrar datos usa:
-
-```bash
-docker compose down
-```
-
-## Almacenamiento de archivos con MinIO
-
-El proyecto usa MinIO como almacenamiento de objetos compatible con S3. Se usa para guardar imágenes de productos y queda preparado para archivos futuros. PostgreSQL guarda solo la referencia del objeto, por ejemplo:
-
-```text
-productos/producto-5-1712345678.webp
-```
-
-El archivo real queda en MinIO, dentro del bucket `productos`.
-
-Puertos locales:
-
-```text
-9000: API S3 compatible
-9001: consola web
-```
-
-Credenciales demo de desarrollo:
-
-```text
-Usuario: admin
-Clave: admin123456
-```
-
-Variables de entorno usadas por el backend:
+Variables relevantes:
 
 ```env
+PORT=3000
+CLIENT_URL=http://localhost
+DATABASE_URL=postgresql://admin:admin123@postgres:5432/sistema_pedidos
+POSTGRES_DB=sistema_pedidos
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin123
 MINIO_ENDPOINT=minio
 MINIO_PORT=9000
 MINIO_ACCESS_KEY=admin
@@ -84,53 +54,188 @@ MINIO_USE_SSL=false
 MINIO_PUBLIC_URL=http://localhost:9000
 ```
 
-Con Docker, el backend debe usar `MINIO_ENDPOINT=minio`, porque se conecta al servicio de Docker Compose. Sin Docker, usa `MINIO_ENDPOINT=localhost`.
+Con Docker, el backend usa `MINIO_ENDPOINT=minio` y `DATABASE_URL` apuntando a `postgres:5432`. Sin Docker, usa `localhost`.
 
-Para probar la subida de imagen:
+## Levantar Con Docker
 
-1. Levantar el proyecto con `docker compose up --build`.
-2. Entrar al sistema como administrador.
-3. Ir a Productos en modo normal.
-4. Editar un producto.
-5. Usar “Subir imagen” o “Cambiar imagen”.
-6. Confirmar que la imagen se muestra en el catálogo.
-7. Revisar la consola MinIO en `http://localhost:9001`.
-8. Confirmar que PostgreSQL guarda solo `imagen_url`, no el archivo binario.
+```bash
+docker compose config
+docker compose up -d --build
+docker compose ps
+```
 
-En producción se deben cambiar las credenciales demo de MinIO y no usar `admin/admin123456`.
+Ver logs:
 
-## Sin Docker
+```bash
+docker compose logs backend
+docker compose logs frontend
+docker compose logs postgres
+docker compose logs minio
+```
 
-Requisitos:
+Detener sin borrar datos:
+
+```bash
+docker compose down
+```
+
+Importante: `docker compose down -v` borra los volumenes `postgres_data` y `minio_data`. No usarlo salvo que se quiera eliminar la base de datos y los archivos guardados.
+
+## Persistencia
+
+PostgreSQL usa el volumen `postgres_data`.
+MinIO usa el volumen `minio_data`.
+
+Esto permite detener y volver a levantar el proyecto sin perder pedidos, productos ni imagenes.
+
+## Healthchecks
+
+```bash
+curl http://localhost
+curl http://localhost:3000/api/health
+curl http://localhost/api/health
+```
+
+Resultado esperado del backend:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+## MinIO
+
+Consola:
 
 ```text
-Node.js
-npm
-PostgreSQL
+http://localhost:9001
 ```
 
-Crear usuario y base de datos en PostgreSQL:
+Credenciales de desarrollo:
 
-```sql
-CREATE USER admin WITH PASSWORD 'admin123';
-CREATE DATABASE sistema_pedidos OWNER admin;
+```text
+Usuario: admin
+Clave: admin123456
 ```
 
-Crear o editar `backend/.env`:
+Las imagenes se suben al backend. El frontend no sube directo a MinIO. PostgreSQL guarda solo la referencia, por ejemplo:
 
-```env
-DATABASE_URL=postgresql://admin:admin123@localhost:5432/sistema_pedidos
-PORT=3001
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=admin
-MINIO_SECRET_KEY=admin123456
-MINIO_BUCKET_PRODUCTOS=productos
-MINIO_USE_SSL=false
-MINIO_PUBLIC_URL=http://localhost:9000
+```text
+productos/producto-5-1712345678.webp
 ```
 
-Levantar el backend:
+El archivo real queda en el bucket `productos`.
+
+## PostgreSQL Desde pgAdmin O DBeaver
+
+```text
+Host: localhost
+Puerto: 5433
+Base de datos: sistema_pedidos
+Usuario: admin
+Clave: admin123
+```
+
+## Flujo Principal Del Sistema
+
+1. Crear pedido desde Punto de Venta.
+2. Agregar productos y metodo de pago.
+3. Enviar pedido a preparacion.
+4. Marcar pedido en preparacion.
+5. Marcar pedido listo.
+6. Entregar pedido.
+7. Revisar historial.
+8. Cerrar turno.
+
+El total vendido del cierre considera solo pedidos entregados. Los pedidos pendientes no se borran al cerrar turno.
+
+## Modos De Uso
+
+Modo normal/admin:
+
+- Crear y editar productos.
+- Cambiar disponibilidad.
+- Subir, cambiar y eliminar imagenes.
+- Actualizar stock y stock minimo.
+- Revisar pedidos, preparacion, historial y cierre de turno.
+
+Modo facil/accesible:
+
+- Flujo guiado para nuevo pedido.
+- Botones grandes.
+- Mensajes claros.
+- Pedidos activos simplificados.
+- Preparacion simplificada.
+- Stock basico con estados simples: Disponible, Queda poco, Sin stock.
+- Productos solo de consulta, sin creacion ni edicion.
+
+## Modulos
+
+- Nuevo Pedido: registro de pedidos presenciales.
+- Pedidos: pedidos activos, filtros y cambios de estado.
+- Cocina/Preparacion: cola operativa de pedidos pendientes, en preparacion y listos.
+- Historial de pedidos: turnos cerrados y pedidos guardados.
+- Productos: catalogo, disponibilidad e imagenes.
+- Inventario: stock actual, stock minimo y estado por producto.
+- Clientes: resumen derivado de pedidos.
+
+## Validaciones Principales
+
+Pedidos:
+
+- No permite pedido vacio.
+- No permite cantidades menores o iguales a cero.
+- Valida metodo de pago.
+- Valida producto existente y disponible.
+- Valida textos de cliente y observacion.
+
+Estados:
+
+- Solo acepta estados validos.
+- Permite transiciones logicas:
+  - `pendiente -> en_preparacion`
+  - `pendiente -> cancelado`
+  - `en_preparacion -> listo`
+  - `en_preparacion -> cancelado`
+  - `listo -> entregado`
+
+Productos:
+
+- Nombre requerido.
+- Precio entre 0 y el maximo permitido.
+- Categoria valida.
+- Evita nombres duplicados.
+
+Imagenes:
+
+- Permite JPG, JPEG, PNG y WEBP.
+- Limite de tamano configurado en backend.
+- Mensajes claros si falla formato, tamano o subida.
+
+Inventario:
+
+- No permite stock negativo.
+- No permite stock minimo negativo.
+- Estados:
+  - `stock_actual <= 0`: Sin stock.
+  - `stock_actual <= stock_minimo`: Bajo stock.
+  - `stock_actual > stock_minimo`: Disponible.
+
+## Prisma
+
+Comandos utiles dentro del contenedor:
+
+```bash
+docker compose exec backend npx prisma validate
+docker compose exec backend npx prisma migrate status
+```
+
+No borrar migraciones ni resetear la base sin confirmacion.
+
+## Desarrollo Sin Docker
+
+Backend:
 
 ```bash
 cd backend
@@ -141,16 +246,7 @@ npm run seed
 npm run dev
 ```
 
-Comandos útiles del backend:
-
-```bash
-npx prisma generate
-npx prisma migrate dev
-npm run seed
-npm run build
-```
-
-En otra terminal, levantar el frontend:
+Frontend:
 
 ```bash
 cd frontend
@@ -164,16 +260,27 @@ Abrir:
 http://localhost:5173
 ```
 
-Si el frontend en desarrollo no encuentra el backend, define el proxy de Vite:
+## Prueba Rapida Para Demostracion
 
-```env
-VITE_API_PROXY_TARGET=http://localhost:3001
+1. `docker compose up -d --build`.
+2. Iniciar sesion con un usuario demo.
+3. Crear un pedido en Nuevo Pedido.
+4. Verlo en Pedidos.
+5. Cambiar estado a En preparacion.
+6. Abrir Cocina/Preparacion.
+7. Marcar Listo y luego Entregado.
+8. Ver historial.
+9. Cerrar turno.
+10. Crear o editar producto.
+11. Subir imagen.
+12. Ver imagen en modo facil.
+13. Confirmar archivo en MinIO.
+14. Confirmar datos persistentes en PostgreSQL.
+
+## Usuarios Demo
+
+```text
+cajero / 123456
+cocina / 123456
+admin / 123456
 ```
-
-Si Docker falla:
-
-1. Revisa `docker compose ps`.
-2. Revisa `docker compose logs backend`.
-3. Confirma que `DATABASE_URL` dentro de Docker use `postgres:5432`, no `localhost`.
-4. Confirma que PostgreSQL esté healthy.
-5. Confirma que MinIO esté disponible en `http://localhost:9001`.

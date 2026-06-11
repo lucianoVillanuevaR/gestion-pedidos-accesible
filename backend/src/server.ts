@@ -1,5 +1,5 @@
 import cors from "cors";
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { env } from "./config/env";
 import { ensureProductBucket } from "./config/minio";
 import routes from "./routes";
@@ -11,9 +11,21 @@ app.use(
     origin: env.clientUrl
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
 app.use("/api", routes);
+
+app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+  if (error instanceof SyntaxError && "body" in error) {
+    return res.status(400).json({ error: "JSON inválido" });
+  }
+
+  if (error instanceof Error && "type" in error && error.type === "entity.too.large") {
+    return res.status(413).json({ error: "Payload demasiado grande" });
+  }
+
+  next(error);
+});
 
 async function startServer() {
   try {

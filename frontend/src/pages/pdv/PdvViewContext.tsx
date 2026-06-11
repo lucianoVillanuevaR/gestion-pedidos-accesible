@@ -16,6 +16,7 @@ export type PdvViewContextValue = {
   accessibleObservationType: "cocina" | "cliente";
   accessibleProductos: Producto[];
   accessibleStep: number;
+  accessibleStepValidation: string | null;
   addProduct: (producto: Producto) => void;
   bgWrapper: string;
   cardBorder: string;

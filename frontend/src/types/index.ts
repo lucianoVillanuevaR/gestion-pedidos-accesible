@@ -122,3 +122,19 @@ export interface ApiError {
   message?: string;
   error?: string;
 }
+
+export type InventarioEstado = "disponible" | "bajo_stock" | "sin_stock";
+
+export interface InventarioItem {
+  estado: InventarioEstado;
+  productoDisponible: boolean;
+  productoId: number;
+  productoNombre: string;
+  stockActual: number;
+  stockMinimo: number;
+}
+
+export type UpdateInventarioPayload = {
+  stockActual?: number;
+  stockMinimo?: number;
+};

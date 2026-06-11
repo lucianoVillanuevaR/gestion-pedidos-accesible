@@ -5,6 +5,13 @@ import useActionVoice from "../../hooks/useActionVoice";
 import { createProducto, deleteProductImage, updateProducto, uploadProductImage } from "../../services/productos";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
 import { PRODUCT_IMAGE_ACCEPT, validateProductImageFile } from "../../validations/productImage.validation";
+import {
+  PRODUCTO_DESCRIPCION_MAX_LENGTH,
+  PRODUCTO_NOMBRE_MAX_LENGTH,
+  PRODUCTO_PRECIO_MAX,
+  buildProductoPayload,
+  validateProductoForm
+} from "../../validations/producto.validation";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { CATEGORIAS_CATALOGO, type CategoriaCatalogo, type CategoriaCatalogoOption } from "./ProductosShared";
@@ -622,25 +629,13 @@ function ProductoFormModal({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const precioNumerico = Number(precio);
+    const validationError = validateProductoForm({ descripcion, nombre, precio });
 
-    if (!nombre.trim()) {
-      const message = "Ingresa el nombre del producto";
-      setFormError(message);
-      speak(message, {
+    if (validationError) {
+      setFormError(validationError);
+      speak(validationError, {
         priority: "high",
-        dedupeKey: "producto-form-error-nombre",
-        cooldownMs: 2000,
-        interrupt: true
-      });
-      return;
-    }
-
-    if (!Number.isFinite(precioNumerico) || precioNumerico < 0) {
-      const message = "Ingresa un precio valido";
-      setFormError(message);
-      speak(message, {
-        priority: "high",
-        dedupeKey: "producto-form-error-precio",
+        dedupeKey: `producto-form-error:${validationError}`,
         cooldownMs: 2000,
         interrupt: true
       });
@@ -648,14 +643,14 @@ function ProductoFormModal({
     }
 
     setFormError(null);
-    await onSubmit({
+    await onSubmit(buildProductoPayload({
       categoria,
-      descripcion: descripcion.trim() || undefined,
+      descripcion,
       destacado,
       disponible,
-      nombre: nombre.trim(),
+      nombre,
       precio: precioNumerico
-    }, pendingImageFile);
+    }), pendingImageFile);
   };
 
   return (
@@ -737,6 +732,7 @@ function ProductoFormModal({
               <span className="mb-1 block text-xs font-bold text-slate-500">Nombre</span>
               <input
                 value={nombre}
+                maxLength={PRODUCTO_NOMBRE_MAX_LENGTH}
                 onChange={(event) => setNombre(event.target.value)}
                 placeholder={producto ? "Nombre del producto" : "Producto nuevo"}
                 className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
@@ -746,6 +742,7 @@ function ProductoFormModal({
               <span className="sr-only">Descripción</span>
               <textarea
                 value={descripcion}
+                maxLength={PRODUCTO_DESCRIPCION_MAX_LENGTH}
                 onChange={(event) => setDescripcion(event.target.value)}
                 placeholder="Descripción"
                 rows={3}
@@ -769,7 +766,8 @@ function ProductoFormModal({
             <input
               type="number"
               min="0"
-              step="1"
+              max={PRODUCTO_PRECIO_MAX}
+              step="0.01"
               value={precio}
               onChange={(event) => setPrecio(event.target.value)}
               placeholder="CLP 0"

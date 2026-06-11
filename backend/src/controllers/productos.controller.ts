@@ -2,12 +2,8 @@ import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { getUploadErrorMessage, uploadProductImageMiddleware } from "../middlewares/uploadImage";
 import { deleteProductImage, uploadProductImage, withProductImageUrl } from "../services/productImageService";
-
-const CATEGORIAS_VALIDAS = ["Sandwich", "Completos", "Bebidas", "Otros", "Destacados"];
-
-function parseBoolean(value: unknown, defaultValue: boolean) {
-  return typeof value === "boolean" ? value : defaultValue;
-}
+import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
+import { validateProductoCreate, validateProductoUpdate } from "../validations/productos.validation";
 
 export const getProductos = async (req: Request, res: Response) => {
   try {
@@ -26,8 +22,15 @@ export const getProductos = async (req: Request, res: Response) => {
 export const getProductoById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const idError = validatePositiveIntegerId(id, "ID de producto");
+
+    if (idError) {
+      return res.status(400).json({ error: idError });
+    }
+
+    const productoId = parsePositiveIntegerId(id);
     const producto = await prisma.producto.findUnique({
-      where: { id: Number(id) }
+      where: { id: productoId }
     });
 
     if (!producto) {
@@ -43,54 +46,33 @@ export const getProductoById = async (req: Request, res: Response) => {
 
 export const createProducto = async (req: Request, res: Response) => {
   try {
-    const {
-      categoria = "Otros",
-      descripcion,
-      destacado,
-      disponible,
-      nombre,
-      precio
-    } = req.body as {
-      categoria?: string;
-      descripcion?: string;
-      destacado?: boolean;
-      disponible?: boolean;
-      nombre?: string;
-      precio?: number | string;
-    };
+    const validation = validateProductoCreate(req.body);
 
-    const nombreLimpio = nombre?.trim();
-    const descripcionLimpia = descripcion?.trim();
-    const precioNumerico = Number(precio);
-    const categoriaLimpia = categoria.trim();
-
-    if (!nombreLimpio) {
-      return res.status(400).json({ error: "El nombre del producto es obligatorio" });
+    if (validation.error || !validation.data) {
+      return res.status(400).json({ error: validation.error });
     }
 
-    if (!Number.isFinite(precioNumerico) || precioNumerico < 0) {
-      return res.status(400).json({ error: "El precio debe ser un número válido mayor o igual a 0" });
-    }
-
-    if (!CATEGORIAS_VALIDAS.includes(categoriaLimpia)) {
-      return res.status(400).json({ error: "Categoría inválida" });
-    }
-
-    const categoriaNombre = categoriaLimpia === "Destacados" ? "Destacados" : categoriaLimpia;
+    const { categoria, descripcion, destacado, disponible, nombre, precio } = validation.data;
     const producto = await prisma.producto.create({
       data: {
-        descripcion: descripcionLimpia || null,
-        destacado: parseBoolean(destacado, categoriaLimpia === "Destacados"),
-        disponible: parseBoolean(disponible, true),
-        nombre: nombreLimpio,
-        precio: precioNumerico,
+        descripcion,
+        destacado,
+        disponible,
+        nombre,
+        precio,
+        inventario: {
+          create: {
+            stockActual: 0,
+            stockMinimo: 0
+          }
+        },
         categorias: {
           connectOrCreate: {
             create: {
-              descripcion: `Productos de ${categoriaNombre}`,
-              nombre: categoriaNombre
+              descripcion: `Productos de ${categoria}`,
+              nombre: categoria
             },
-            where: { nombre: categoriaNombre }
+            where: { nombre: categoria }
           }
         }
       }
@@ -110,79 +92,37 @@ export const createProducto = async (req: Request, res: Response) => {
 export const updateProducto = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const {
-      categoria,
-      descripcion,
-      destacado,
-      disponible,
-      nombre,
-      precio
-    } = req.body as {
-      categoria?: string;
-      descripcion?: string;
-      destacado?: boolean;
-      disponible?: boolean;
-      nombre?: string;
-      precio?: number | string;
-    };
+    const idError = validatePositiveIntegerId(id, "ID de producto");
 
-    const data: Parameters<typeof prisma.producto.update>[0]["data"] = {};
-
-    if (nombre !== undefined) {
-      const nombreLimpio = nombre.trim();
-
-      if (!nombreLimpio) {
-        return res.status(400).json({ error: "El nombre del producto es obligatorio" });
-      }
-
-      data.nombre = nombreLimpio;
+    if (idError) {
+      return res.status(400).json({ error: idError });
     }
 
-    if (descripcion !== undefined) {
-      data.descripcion = descripcion.trim() || null;
+    const validation = validateProductoUpdate(req.body);
+
+    if (validation.error || !validation.data) {
+      return res.status(400).json({ error: validation.error });
     }
 
-    if (precio !== undefined) {
-      const precioNumerico = Number(precio);
-
-      if (!Number.isFinite(precioNumerico) || precioNumerico < 0) {
-        return res.status(400).json({ error: "El precio debe ser un número válido mayor o igual a 0" });
-      }
-
-      data.precio = precioNumerico;
-    }
-
-    if (destacado !== undefined) {
-      data.destacado = destacado;
-    }
-
-    if (disponible !== undefined) {
-      data.disponible = disponible;
-    }
+    const { categoria, ...productoData } = validation.data;
+    const data: Parameters<typeof prisma.producto.update>[0]["data"] = { ...productoData };
 
     if (categoria !== undefined) {
-      const categoriaLimpia = categoria.trim();
-
-      if (!CATEGORIAS_VALIDAS.includes(categoriaLimpia)) {
-        return res.status(400).json({ error: "Categoría inválida" });
-      }
-
-      const categoriaNombre = categoriaLimpia === "Destacados" ? "Destacados" : categoriaLimpia;
       data.categorias = {
         set: [],
         connectOrCreate: {
           create: {
-            descripcion: `Productos de ${categoriaNombre}`,
-            nombre: categoriaNombre
+            descripcion: `Productos de ${categoria}`,
+            nombre: categoria
           },
-          where: { nombre: categoriaNombre }
+          where: { nombre: categoria }
         }
       };
     }
 
     const producto = await prisma.producto.update({
       data,
-      where: { id: Number(id) }
+      where: { id: parsePositiveIntegerId(id) }
     });
 
     res.json(withProductImageUrl(producto));
@@ -201,6 +141,12 @@ export const updateProducto = async (req: Request, res: Response) => {
 };
 
 export const uploadProductoImagen = (req: Request, res: Response) => {
+  const idError = validatePositiveIntegerId(req.params.id, "ID de producto");
+
+  if (idError) {
+    return res.status(400).json({ error: idError });
+  }
+
   uploadProductImageMiddleware(req, res, async (uploadError) => {
     if (uploadError) {
       return res.status(400).json({ error: getUploadErrorMessage(uploadError) });
@@ -211,7 +157,7 @@ export const uploadProductoImagen = (req: Request, res: Response) => {
     }
 
     try {
-      const producto = await uploadProductImage(Number(req.params.id), req.file);
+      const producto = await uploadProductImage(parsePositiveIntegerId(req.params.id), req.file);
       res.json(producto);
     } catch (error) {
       if (error instanceof Error && error.message === "Producto no encontrado") {
@@ -226,7 +172,13 @@ export const uploadProductoImagen = (req: Request, res: Response) => {
 
 export const deleteProductoImagen = async (req: Request, res: Response) => {
   try {
-    const producto = await deleteProductImage(Number(req.params.id));
+    const idError = validatePositiveIntegerId(req.params.id, "ID de producto");
+
+    if (idError) {
+      return res.status(400).json({ error: idError });
+    }
+
+    const producto = await deleteProductImage(parsePositiveIntegerId(req.params.id));
     res.json(producto);
   } catch (error) {
     if (error instanceof Error && error.message === "Producto no encontrado") {

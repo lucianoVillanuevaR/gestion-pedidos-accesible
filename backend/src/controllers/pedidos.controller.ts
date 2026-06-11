@@ -2,10 +2,13 @@ import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
 import { withProductImageUrl } from "../services/productImageService";
+import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import {
   validateEstadoPedido,
   validateMetodoPago,
-  validatePedidoDetalles
+  validatePedidoDetalles,
+  validatePedidoTextFields,
+  validateTransicionEstadoPedido
 } from "../validations/pedidos.validation";
 
 const PEDIDO_WITH_DETALLES_INCLUDE = {
@@ -50,16 +53,27 @@ export const crearPedido = async (req: Request, res: Response) => {
       return res.status(400).json({ error: metodoPagoError });
     }
 
+    const textFieldsError = validatePedidoTextFields(clienteNombre, observacion);
+
+    if (textFieldsError) {
+      return res.status(400).json({ error: textFieldsError });
+    }
+
     const detallesError = validatePedidoDetalles(detalles);
 
     if (detallesError) {
       return res.status(400).json({ error: detallesError });
     }
 
+    const detallesNormalizados = detalles.map((detalle) => ({
+      cantidad: Number(detalle.cantidad),
+      productoId: Number(detalle.productoId)
+    }));
+
     const productosData = [];
     let total = new Decimal(0);
 
-    for (const detalle of detalles) {
+    for (const detalle of detallesNormalizados) {
       const producto = await prisma.producto.findUnique({
         where: { id: detalle.productoId }
       });
@@ -92,7 +106,7 @@ export const crearPedido = async (req: Request, res: Response) => {
         estado: "pendiente",
         metodoPago,
         clienteNombre: clienteNombre?.trim() || null,
-        observacion: observacion || null,
+        observacion: observacion?.trim() || null,
         detalles: {
           create: productosData.map((item) => ({
             productoId: item.producto.id,
@@ -128,8 +142,15 @@ export const getPedidos = async (_req: Request, res: Response) => {
 export const getPedidoById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const idError = validatePositiveIntegerId(id, "ID de pedido");
+
+    if (idError) {
+      return res.status(400).json({ error: idError });
+    }
+
+    const pedidoId = parsePositiveIntegerId(id);
     const pedido = await prisma.pedido.findUnique({
-      where: { id: Number(id) },
+      where: { id: pedidoId },
       include: PEDIDO_WITH_DETALLES_INCLUDE
     });
 
@@ -148,6 +169,11 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { estado } = req.body as ActualizarEstadoBody;
+    const idError = validatePositiveIntegerId(id, "ID de pedido");
+
+    if (idError) {
+      return res.status(400).json({ error: idError });
+    }
 
     const estadoError = validateEstadoPedido(estado);
 
@@ -155,16 +181,23 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
       return res.status(400).json({ error: estadoError });
     }
 
+    const pedidoId = parsePositiveIntegerId(id);
     const pedido = await prisma.pedido.findUnique({
-      where: { id: Number(id) }
+      where: { id: pedidoId }
     });
 
     if (!pedido) {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
 
+    const transicionError = validateTransicionEstadoPedido(pedido.estado, estado);
+
+    if (transicionError) {
+      return res.status(400).json({ error: transicionError });
+    }
+
     const pedidoActualizado = await prisma.pedido.update({
-      where: { id: Number(id) },
+      where: { id: pedidoId },
       data: { estado },
       include: PEDIDO_WITH_DETALLES_INCLUDE
     });

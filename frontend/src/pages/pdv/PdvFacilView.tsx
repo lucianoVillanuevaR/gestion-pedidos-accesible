@@ -1,4 +1,5 @@
-import { Accessibility, CheckCircle2, LockKeyhole, UnlockKeyhole, XCircle } from "lucide-react";
+import { Accessibility, AlertTriangle, CheckCircle2, LockKeyhole, UnlockKeyhole, XCircle } from "lucide-react";
+import { PEDIDO_OBSERVACION_MAX_LENGTH } from "../../validations/pedido.validation";
 import { formatCurrency, type FiltroCategoria } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
@@ -17,6 +18,7 @@ function PdvFacilView() {
     accessibleObservationType,
     accessibleProductos,
     accessibleStep,
+    accessibleStepValidation,
     addProduct,
     cardBorder,
     decreaseProduct,
@@ -156,6 +158,20 @@ function PdvFacilView() {
         </div>
       )}
 
+      {accessibleStepValidation && (
+        <div
+          id="facil-step-validation"
+          className={`rounded-2xl ${cardBorder} p-4 ${isHighContrast ? "contrast-panel-soft" : "border-amber-300 bg-amber-50 text-slate-950"}`}
+          role="alert"
+          aria-live="polite"
+        >
+          <div className="flex items-center justify-center gap-3">
+            <AlertTriangle className="h-6 w-6 shrink-0" aria-hidden="true" />
+            <p className="text-center text-lg font-black">{accessibleStepValidation}</p>
+          </div>
+        </div>
+      )}
+
       {accessibleStep === 1 && (
         <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step1" className="font-black text-2xl mb-4">Paso 1: Elige categoría</h2>
@@ -241,7 +257,17 @@ function PdvFacilView() {
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-            <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
+            <button
+              type="button"
+              onClick={goNextAccessibleStep}
+              disabled={Boolean(accessibleStepValidation)}
+              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
+              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
+                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
+              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
+            >
+              Continuar
+            </button>
           </div>
         </section>
       )}
@@ -276,7 +302,17 @@ function PdvFacilView() {
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-            <button type="button" onClick={goNextAccessibleStep} disabled={pedidoDetalles.length === 0} className={`ml-auto rounded-lg py-3 px-4 font-bold ${pedidoDetalles.length === 0 ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && pedidoDetalles.length > 0 ? "contrast-button-primary" : ""}`}>Continuar</button>
+            <button
+              type="button"
+              onClick={goNextAccessibleStep}
+              disabled={Boolean(accessibleStepValidation)}
+              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
+              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
+                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
+              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
+            >
+              Continuar
+            </button>
           </div>
         </section>
       )}
@@ -329,6 +365,7 @@ function PdvFacilView() {
               id="accessibleObservacion"
               rows={4}
               value={observacion}
+              maxLength={PEDIDO_OBSERVACION_MAX_LENGTH}
               onChange={(event) => setObservacion(event.target.value)}
               placeholder={accessibleObservationPlaceholder}
               className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
@@ -346,7 +383,17 @@ function PdvFacilView() {
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-            <button type="button" onClick={goNextAccessibleStep} className={`ml-auto rounded-lg bg-slate-900 py-3 px-4 font-bold text-white ${isHighContrast ? "contrast-button-primary" : ""}`}>Continuar</button>
+            <button
+              type="button"
+              onClick={goNextAccessibleStep}
+              disabled={Boolean(accessibleStepValidation)}
+              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
+              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
+                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
+              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
+            >
+              Continuar
+            </button>
           </div>
         </section>
       )}
@@ -375,7 +422,17 @@ function PdvFacilView() {
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" onClick={goPrevAccessibleStep} className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}>Atrás</button>
-            <button type="button" onClick={goNextAccessibleStep} disabled={metodoPago === ""} className={`ml-auto rounded-lg py-3 px-4 font-bold ${metodoPago === "" ? "bg-slate-300 text-slate-500" : "bg-slate-900 text-white"} ${isHighContrast && metodoPago !== "" ? "contrast-button-primary" : ""}`}>Continuar</button>
+            <button
+              type="button"
+              onClick={goNextAccessibleStep}
+              disabled={Boolean(accessibleStepValidation)}
+              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
+              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
+                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
+              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
+            >
+              Continuar
+            </button>
           </div>
         </section>
       )}
@@ -415,7 +472,14 @@ function PdvFacilView() {
               >
                 🖨 Imprimir comanda
               </button>
-              <button type="button" onClick={handleSubmit} disabled={!puedeRegistrar} className={`rounded-lg border-2 py-4 px-6 font-black text-lg ${puedeRegistrar ? "border-emerald-900 bg-emerald-700 text-white hover:bg-emerald-800" : "border-slate-300 bg-slate-300 text-slate-500"} ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`} style={{ minHeight: 64 }}>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!puedeRegistrar}
+                aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
+                className={`rounded-lg border-2 py-4 px-6 font-black text-lg ${puedeRegistrar ? "border-emerald-900 bg-emerald-700 text-white hover:bg-emerald-800" : "border-slate-300 bg-slate-300 text-slate-500"} ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`}
+                style={{ minHeight: 64 }}
+              >
                 {sending ? "Registrando..." : "Registrar pedido"}
               </button>
             </div>

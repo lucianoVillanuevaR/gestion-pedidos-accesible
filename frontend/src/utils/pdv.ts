@@ -13,11 +13,11 @@ interface PedidoDetalleCalculado {
 }
 
 export const FILTROS: Array<{ value: FiltroCategoria; label: string }> = [
-  { value: "Todos", label: "Todos" },
-  { value: "Sandwich", label: "Sandwich" },
+  { value: "Destacados", label: "Destacados" },
   { value: "Completos", label: "Completos" },
+  { value: "Sandwich", label: "Sandwich" },
   { value: "Bebidas", label: "Bebidas" },
-  { value: "Destacados", label: "Destacados" }
+  { value: "Todos", label: "Todos" }
 ];
 
 function normalizeText(value: string) {

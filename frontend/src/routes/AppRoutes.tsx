@@ -5,6 +5,7 @@ import { useAuthContext } from "../contexts/AuthContext"
 import ClientesPage from "../pages/clientes/ClientesPage"
 import CocinaPage, { CocinaFacilPage, CocinaHistorialPage } from "../pages/cocina/CocinaPage"
 import HomePage from "../pages/HomePage"
+import InventarioPage from "../pages/inventario/InventarioPage"
 import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
 import PedidosPage from "../pages/pedidos/PedidosNormalPage"
 import PdvBasePage from "../pages/pdv/PdvBasePage"
@@ -51,9 +52,17 @@ function AppRoutes() {
 
           <Route path="/pedidos" element={<PedidosPage />} />
           <Route path="/pedidos/facil" element={<PedidosFacilPage />} />
+          <Route path="/cierre-turno" element={<PedidosPage />} />
+          <Route path="/cierre-turno/facil" element={<PedidosFacilPage />} />
+
+          <Route path="/preparacion" element={<CocinaPage />} />
+          <Route path="/preparacion/facil" element={<CocinaFacilPage />} />
 
           <Route path="/productos" element={<ProductosPage />} />
           <Route path="/productos/facil" element={<ProductosFacilPage />} />
+
+          <Route path="/inventario" element={<InventarioPage />} />
+          <Route path="/inventario/facil" element={<InventarioPage isAccessible />} />
 
           <Route path="/historial-pedidos" element={<CocinaHistorialPage />} />
           <Route path="/clientes" element={<ClientesPage />} />
@@ -65,37 +74,6 @@ function AppRoutes() {
         </Route>
 
         <Route element={<RequireRole allowedRoles={["admin"]} />}>
-          <Route
-            path="/inventario"
-            element={
-              <PortalPage
-                accent="slate"
-                title="Inventario"
-                description="Controla stock y disponibilidad con información directa, visible y ordenada."
-                badge="Operación interna"
-                actions={[
-                  {
-                    title: "Stock crítico",
-                    description: "Destaca rápido los productos o insumos que necesitan reposición pronta.",
-                    button: "Revisar"
-                  },
-                  {
-                    title: "Actualización simple",
-                    description: "Prepara formularios con pocos campos y botones grandes para reducir errores.",
-                    button: "Actualizar"
-                  },
-                  {
-                    title: "Disponibilidad",
-                    description: "Conecta el stock con la venta para evitar pedidos de productos agotados.",
-                    button: "Gestionar"
-                  }
-                ]}
-                noteTitle="Base para control diario"
-                note="Aquí conviene crecer con alertas claras, pocos pasos y mensajes muy fáciles de entender para cualquier operador."
-              />
-            }
-          />
-
           <Route
             path="/configuracion"
             element={

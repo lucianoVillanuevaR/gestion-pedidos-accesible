@@ -13,7 +13,11 @@ import {
   getPaymentLabel,
   type FiltroCategoria
 } from "../../utils/pdv";
-import { validatePedidoSubmit } from "../../validations/pedido.validation";
+import {
+  PEDIDO_MAX_CANTIDAD_DETALLE,
+  PEDIDO_OBSERVACION_MAX_LENGTH,
+  validatePedidoSubmit
+} from "../../validations/pedido.validation";
 import {
   ACCESSIBLE_STEP_COUNT,
   type FeedbackState
@@ -103,8 +107,10 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   }, [pedidoDetalles.length]);
 
   const submitValidationError = validatePedidoSubmit({
+    clienteNombre,
     isTurnoOpen,
     metodoPago,
+    observacion,
     totalProductos: pedidoDetalles.length
   });
   const puedeRegistrar = !submitValidationError && !sending;
@@ -115,9 +121,32 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
   }, [isVoiceEnabled, speak]);
 
+  const notifyTurnoClosed = useCallback(() => {
+    const message = "Debe abrir turno antes de registrar pedidos.";
+    setFeedback({ type: "error", message });
+    playSoundCue("error");
+    announce(message, {
+      priority: "high",
+      dedupeKey: "pdv-turno-cerrado-action",
+      cooldownMs: 1800,
+      interrupt: true
+    });
+  }, [announce, playSoundCue]);
+
   const handleReadPedidoSummary = useCallback(() => {
+    if (!isTurnoOpen) {
+      speakOnDemand("Turno cerrado. Abre turno para registrar pedidos.", {
+        priority: "high",
+        dedupeKey: "read-summary-turno-cerrado",
+        force: true,
+        interrupt: true,
+        rate: 0.82
+      });
+      return;
+    }
+
     if (pedidoDetalles.length === 0) {
-      speakOnDemand("No hay productos seleccionados.", {
+      speakOnDemand("Pedido vacío. Agrega productos antes de aceptar.", {
         priority: "high",
         dedupeKey: "read-summary-empty",
         force: true,
@@ -132,14 +161,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
 
     const parts = [
-      "Resumen del pedido.",
-      `Tienes ${totalItems} ${totalItems === 1 ? "producto" : "productos"}.`,
+      "Pedido número 1.",
+      `Contiene ${totalItems} ${totalItems === 1 ? "producto" : "productos"}.`,
       `Detalle: ${itemLines.join(", ")}.`,
       `Total a pagar ${formatCurrency(total)}.`
     ];
 
     if (metodoPago !== "") {
       parts.push(`Método de pago: ${getPaymentLabel(metodoPago)}.`);
+    } else {
+      parts.push("Método de pago pendiente.");
     }
 
     if (observacion.trim()) {
@@ -157,7 +188,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       interrupt: true,
       rate: isAccessible ? 0.8 : 0.86
     });
-  }, [clienteNombre, isAccessible, metodoPago, observacion, pedidoDetalles, speakOnDemand, total, totalItems]);
+  }, [clienteNombre, isAccessible, isTurnoOpen, metodoPago, observacion, pedidoDetalles, speakOnDemand, total, totalItems]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -173,6 +204,24 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   }, [handleReadPedidoSummary]);
 
   const setItemQuantity = useCallback((producto: Producto, nextQuantity: number) => {
+    if (!isTurnoOpen) {
+      notifyTurnoClosed();
+      return;
+    }
+
+    if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) {
+      const message = `La cantidad máxima por producto es ${PEDIDO_MAX_CANTIDAD_DETALLE}.`;
+      setFeedback({ type: "error", message });
+      playSoundCue("error");
+      announce(message, {
+        priority: "high",
+        dedupeKey: `quantity-max:${producto.id}`,
+        cooldownMs: 1800,
+        interrupt: true
+      });
+      return;
+    }
+
     setItems((currentItems) => {
       if (nextQuantity <= 0) {
         const nextItems = { ...currentItems };
@@ -185,7 +234,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         [producto.id]: nextQuantity
       };
     });
-  }, []);
+  }, [announce, isTurnoOpen, notifyTurnoClosed, playSoundCue]);
 
   const clearPedidoForm = () => {
     setItems({});
@@ -196,13 +245,18 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   };
 
   const addProduct = useCallback((producto: Producto) => {
+    if (!isTurnoOpen) {
+      notifyTurnoClosed();
+      return;
+    }
+
     const nextQuantity = (items[producto.id] || 0) + 1;
 
     setItems((currentItems) => ({
       ...currentItems,
       [producto.id]: (currentItems[producto.id] || 0) + 1
     }));
-    const msg = "Producto agregado";
+    const msg = "Producto agregado al pedido.";
     setFeedback({ type: "success", message: msg });
     playSoundCue("add");
     announce(`${producto.nombre} agregado. Cantidad ${nextQuantity}.`, {
@@ -210,7 +264,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
       cooldownMs: 1800
     });
-  }, [announce, items, playSoundCue]);
+  }, [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue]);
 
   useEffect(() => {
     if (!isAccessible || initialProductHandledRef.current || loadingProductos) {
@@ -237,6 +291,11 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   }, [addProduct, isAccessible, loadingProductos, location.pathname, location.state, navigate, productos]);
 
   const increaseProduct = (producto: Producto) => {
+    if (!isTurnoOpen) {
+      notifyTurnoClosed();
+      return;
+    }
+
     const nextQuantity = (items[producto.id] || 0) + 1;
     setItemQuantity(producto, nextQuantity);
     playSoundCue("add");
@@ -248,6 +307,11 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   };
 
   const decreaseProduct = (producto: Producto) => {
+    if (!isTurnoOpen) {
+      notifyTurnoClosed();
+      return;
+    }
+
     const currentQuantity = items[producto.id] || 0;
     setItemQuantity(producto, currentQuantity - 1);
 
@@ -276,9 +340,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       return newItems;
     });
 
-    setFeedback({ type: "success", message: "Producto quitado" });
     playSoundCue("remove");
-    announce("Producto quitado", {
+    setFeedback({ type: "success", message: "Producto eliminado del pedido." });
+    announce("Producto eliminado del pedido.", {
       priority: "normal",
       dedupeKey: "product-removed",
       cooldownMs: 1500
@@ -290,7 +354,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setFeedback(null);
     setShowResetConfirm(false);
     playSoundCue("clear");
-    announce("Pedido borrado", {
+    announce("Pedido cancelado.", {
       priority: "high",
       dedupeKey: "pedido-reset",
       cooldownMs: 2000,
@@ -332,7 +396,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setTurnoAbierto(true);
     setTurnoFechaInicio(new Date().toISOString());
     setIsTurnoOpen(true);
-    const message = "Turno abierto. Ya puedes registrar pedidos.";
+    const message = "Turno abierto correctamente.";
     setFeedback({ type: "success", message });
     announce(message, {
       priority: "high",
@@ -499,6 +563,32 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
   };
 
+  const getAccessibleStepValidation = (step: number) => {
+    if (!isAccessible) {
+      return null;
+    }
+
+    if ((step === 2 || step === 3) && pedidoDetalles.length === 0) {
+      return "Agrega al menos un producto para continuar.";
+    }
+
+    if (step === 4 && observacion.trim().length > PEDIDO_OBSERVACION_MAX_LENGTH) {
+      return `La observación no puede superar ${PEDIDO_OBSERVACION_MAX_LENGTH} caracteres.`;
+    }
+
+    if (step === 5 && metodoPago === "") {
+      return "Selecciona un método de pago para continuar.";
+    }
+
+    if (step === ACCESSIBLE_STEP_COUNT) {
+      return submitValidationError;
+    }
+
+    return null;
+  };
+
+  const accessibleStepValidation = getAccessibleStepValidation(accessibleStep);
+
   const announceAccessibleStep = (step: number) => {
     announce(getAccessibleStepMessage(step), {
       priority: "high",
@@ -511,6 +601,20 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   };
 
   const goNextAccessibleStep = () => {
+    const validationMessage = getAccessibleStepValidation(accessibleStep);
+
+    if (validationMessage) {
+      setFeedback({ type: "error", message: validationMessage });
+      playSoundCue("error");
+      announce(validationMessage, {
+        priority: "high",
+        dedupeKey: `pdv-step-validation:${accessibleStep}:${validationMessage}`,
+        cooldownMs: 1800,
+        interrupt: true
+      });
+      return;
+    }
+
     setAccessibleStep((currentStep) => {
       const nextStep = Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1);
       announceAccessibleStep(nextStep);
@@ -537,7 +641,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       }
 
       if (event.key === "ArrowRight") {
-        setAccessibleStep((currentStep) => Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1));
+        goNextAccessibleStep();
       }
 
       if (event.key === "ArrowLeft") {
@@ -547,7 +651,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isAccessible, isVoiceEnabled, speak]);
+  }, [goNextAccessibleStep, isAccessible]);
 
   function AccessibleFlow() {
     return <PdvFacilView />;
@@ -558,6 +662,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     accessibleObservationType,
     accessibleProductos,
     accessibleStep,
+    accessibleStepValidation,
     addProduct,
     bgWrapper,
     cardBorder,

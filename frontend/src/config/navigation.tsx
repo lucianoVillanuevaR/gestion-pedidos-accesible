@@ -2,9 +2,9 @@ import {
   ChefHat,
   ClipboardList,
   ClipboardPlus,
+  FileCheck2,
   Package,
   Settings2,
-  UsersRound,
   Warehouse
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
@@ -28,10 +28,17 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
     allowedRoles: ["cajero", "admin"]
   },
   {
-    label: "Pedidos",
+    label: "Pedidos activos",
     path: "/pedidos",
     description: "Ver pedidos activos",
     icon: ClipboardList,
+    allowedRoles: ["cajero", "admin"]
+  },
+  {
+    label: "Preparación",
+    path: "/preparacion",
+    description: "Gestionar preparación y entrega",
+    icon: ChefHat,
     allowedRoles: ["cajero", "admin"]
   },
   {
@@ -46,27 +53,28 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
     path: "/inventario",
     description: "Control de stock",
     icon: Warehouse,
-    allowedRoles: ["admin"]
+    allowedRoles: ["cajero", "admin"]
   },
   {
-    label: "Cocina",
+    label: "Preparación",
     path: "/cocina",
     description: "Vista general de cocina",
     icon: ChefHat,
-    allowedRoles: ["cocina", "admin"]
+    allowedRoles: ["cocina", "admin"],
+    sidebarRoles: ["cocina"]
   },
   {
-    label: "Historial de pedidos",
+    label: "Historial",
     path: "/historial-pedidos",
     description: "Pedidos listos y recientes",
     icon: ClipboardList,
     allowedRoles: ["cajero", "admin"]
   },
   {
-    label: "Clientes",
-    path: "/clientes",
-    description: "Registro y segmentos",
-    icon: UsersRound,
+    label: "Cierre de turno",
+    path: "/cierre-turno",
+    description: "Resumen y cierre del turno",
+    icon: FileCheck2,
     allowedRoles: ["cajero", "admin"]
   },
   {
@@ -96,7 +104,7 @@ export function isPdvRoute(pathname: string) {
 }
 
 export function isPedidosRoute(pathname: string) {
-  return pathname === "/pedidos" || pathname === "/pedidos/facil"
+  return pathname === "/pedidos" || pathname === "/pedidos/facil" || pathname === "/cierre-turno" || pathname === "/cierre-turno/facil"
 }
 
 export function isProductosRoute(pathname: string) {
@@ -104,7 +112,7 @@ export function isProductosRoute(pathname: string) {
 }
 
 export function isCocinaRoute(pathname: string) {
-  return pathname === "/cocina" || pathname === "/cocina/facil" || pathname.startsWith("/cocina/")
+  return pathname === "/cocina" || pathname === "/cocina/facil" || pathname === "/preparacion" || pathname === "/preparacion/facil" || pathname.startsWith("/cocina/")
 }
 
 export function isHistorialPedidosRoute(pathname: string) {
@@ -113,4 +121,8 @@ export function isHistorialPedidosRoute(pathname: string) {
 
 export function isClientesRoute(pathname: string) {
   return pathname === "/clientes"
+}
+
+export function isInventarioRoute(pathname: string) {
+  return pathname === "/inventario" || pathname === "/inventario/facil"
 }
