@@ -34,9 +34,6 @@ function ProductosFacilPage() {
       ? productosConCategoria.filter((producto) => producto.destacado)
       : productosConCategoria.filter((producto) => producto.categoria === selectedCategory);
 
-  const headerBg = isHighContrast
-    ? "bg-black text-white border-b-2 border-yellow-400"
-    : "bg-slate-900 text-white border-b border-slate-700";
   const pageBg = isHighContrast ? "bg-black" : "bg-white";
   const panelClass = isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white";
 
@@ -76,49 +73,13 @@ function ProductosFacilPage() {
 
   return (
     <div className={`min-h-screen ${pageBg}`}>
-      <div className={headerBg}>
-        <div className="mx-auto flex min-h-[84px] w-full max-w-[1520px] flex-wrap items-center justify-between gap-4 px-3 py-3 sm:px-4 lg:px-5 xl:px-6">
-          <h1 className="text-3xl font-black leading-none tracking-tight contrast-important">
-            Productos
-          </h1>
-          <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-            <Link
-              to="/pdv/facil"
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black no-underline transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
-              Ir a Nuevo Pedido
-            </Link>
-            <button
-              type="button"
-              onClick={openAccessibilityPanel}
-              aria-haspopup="dialog"
-              aria-expanded={isPanelOpen}
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <Accessibility className="h-6 w-6" aria-hidden="true" />
-              Accesibilidad
-            </button>
-            <button
-              type="button"
-              onClick={handleRefreshProductos}
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white hover:bg-black"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <RefreshCw className="h-6 w-6" aria-hidden="true" />
-              Actualizar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-6 sm:px-4 lg:px-5 xl:px-6">
-        <AccessibleIntroCard isHighContrast={isHighContrast} />
+      <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
+        <AccessibleIntroCard
+          handleRefreshProductos={handleRefreshProductos}
+          isHighContrast={isHighContrast}
+          isPanelOpen={isPanelOpen}
+          onOpenAccessibilityPanel={openAccessibilityPanel}
+        />
 
         <section className={`rounded-[26px] p-4 sm:p-5 ${panelClass}`} aria-label="Categorías de productos">
           <div className="flex flex-wrap gap-4">
@@ -189,24 +150,64 @@ function ProductosFacilPage() {
   );
 }
 
-function AccessibleIntroCard({ isHighContrast }: { isHighContrast: boolean }) {
+function AccessibleIntroCard({
+  handleRefreshProductos,
+  isHighContrast,
+  isPanelOpen,
+  onOpenAccessibilityPanel
+}: {
+  handleRefreshProductos: () => void;
+  isHighContrast: boolean;
+  isPanelOpen: boolean;
+  onOpenAccessibilityPanel: () => void;
+}) {
   return (
     <header className={`rounded-3xl p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
       <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
         Riquísimo · Modo Fácil
       </p>
-      <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h2 className="text-[2.35rem] font-black leading-tight tracking-tight text-slate-950">
+      <div className="mt-3 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+        <div className="max-w-4xl">
+          <h2 className={`text-[2.35rem] font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
             Productos del menú
           </h2>
           <p className={`mt-3 max-w-3xl text-xl font-semibold leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}>
             Revisa los productos disponibles usando categorías grandes y botones simples.
           </p>
         </div>
-        <p className={`rounded-2xl border-2 px-5 py-4 text-xl font-black ${isHighContrast ? "border-yellow-400 text-white" : "border-slate-900 bg-slate-50 text-slate-950"}`}>
-          Catálogo simple
-        </p>
+        <div className="grid w-full gap-3 md:grid-cols-3 xl:w-auto xl:min-w-[620px]">
+          <Link
+            to="/pdv/facil"
+            className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-4 text-lg font-black no-underline transition ${
+              isHighContrast ? "contrast-button-primary" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
+            Nuevo pedido
+          </Link>
+          <button
+            type="button"
+            onClick={onOpenAccessibilityPanel}
+            aria-haspopup="dialog"
+            aria-expanded={isPanelOpen}
+            className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-4 text-lg font-black transition ${
+              isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            <Accessibility className="h-6 w-6" aria-hidden="true" />
+            Accesibilidad
+          </button>
+          <button
+            type="button"
+            onClick={handleRefreshProductos}
+            className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-4 text-lg font-black transition ${
+              isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white hover:bg-black"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            <RefreshCw className="h-6 w-6" aria-hidden="true" />
+            Actualizar
+          </button>
+        </div>
       </div>
     </header>
   );
