@@ -1,5 +1,4 @@
 import {
-  Accessibility,
   AlertTriangle,
   Check,
   ChefHat,
@@ -19,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { Link } from "react-router-dom";
+import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { obtenerCierresTurno } from "../../services/cierresTurno";
@@ -376,9 +376,10 @@ function HistorialFacilView({
             <div>
               <p className="text-sm font-black uppercase text-slate-600">Modo fácil</p>
               <h1 className="mt-1 text-4xl font-black text-slate-950">Pedidos recientes</h1>
-              <p className="mt-3 text-xl font-bold text-slate-700">Consulta pedidos guardados sin filtros avanzados.</p>
+              <p className="mt-3 text-xl font-bold text-slate-700">Consulta los últimos pedidos registrados.</p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="grid gap-3 xl:min-w-[760px]">
+              <EasyModeActions />
               <button
                 type="button"
                 onClick={onReadHistory}
@@ -434,9 +435,11 @@ function HistorialFacilView({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-3xl font-black text-slate-950">Pedido #{pedido.id}</p>
-                    <p className="mt-2 text-xl font-black text-slate-700">
-                      {ESTADO_META[pedido.estado].label} - {formatKitchenCurrency(String(pedido.total))}
-                    </p>
+                    <p className="mt-3 text-sm font-black uppercase text-slate-600">Estado</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <StatusBadge estado={pedido.estado} isLarge />
+                      <p className="text-xl font-black text-slate-700">Total {formatKitchenCurrency(String(pedido.total))}</p>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -460,7 +463,7 @@ function HistorialFacilView({
 }
 
 function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
-  const { isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true);
   const fullscreenTargetRef = useRef<HTMLDivElement>(null);
@@ -496,7 +499,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   }, [isAutoRefreshEnabled, loadPedidos]);
 
   const handleRefresh = () => {
-    speak("Actualizando comandas de cocina.", {
+    speak("Actualizando pedidos en preparación.", {
       priority: "normal",
       dedupeKey: "cocina-refresh",
       cooldownMs: 1200
@@ -541,12 +544,10 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
       isFullscreen={isFullscreen}
       isHighContrast={isHighContrast}
       isLoading={isLoading}
-      isPanelOpen={isPanelOpen}
       onAdvanceVisible={handleAdvanceVisible}
       onAutoRefreshToggle={() => setIsAutoRefreshEnabled((current) => !current)}
       onEstadoChange={handleCocinaEstadoChange}
       onFullscreenToggle={toggleFullscreen}
-      onOpenAccessibility={openAccessibilityPanel}
       onOpenModal={setActiveModal}
       onRefresh={handleRefresh}
       pedidos={cocinaPedidos}
@@ -702,98 +703,85 @@ function CocinaFacilView({
   isFullscreen,
   isHighContrast,
   isLoading,
-  isPanelOpen,
   onAdvanceVisible,
   onAutoRefreshToggle,
   onEstadoChange,
   onFullscreenToggle,
-  onOpenAccessibility,
   onOpenModal,
   onRefresh,
   pedidos,
   updatingPedidoId,
   urgentCount
-}: CocinaViewProps & {
-  isPanelOpen: boolean;
-  onOpenAccessibility: () => void;
-}) {
-  const headerBg = isHighContrast
-    ? "bg-black text-white border-b-2 border-yellow-400"
-    : "bg-slate-900 text-white border-b border-slate-700";
+}: CocinaViewProps) {
   const pageBg = isHighContrast ? "bg-black" : "bg-white";
+  const panelClass = isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white";
+  const secondaryButtonClass = isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50";
 
   return (
     <div className={`min-h-screen ${pageBg}`}>
-      <div className={headerBg}>
-        <div className="mx-auto flex min-h-[84px] w-full max-w-[1520px] flex-wrap items-center justify-between gap-4 px-3 py-3 sm:px-4 lg:px-5 xl:px-6">
-          <h1 className="text-3xl font-black leading-none tracking-tight contrast-important">Cocina</h1>
-          <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-            <Link
-              to="/cocina"
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black no-underline transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <ChefHat className="h-6 w-6" aria-hidden="true" />
-              Vista normal
-            </Link>
-            <button
-              type="button"
-              onClick={onOpenAccessibility}
-              aria-haspopup="dialog"
-              aria-expanded={isPanelOpen}
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <Accessibility className="h-6 w-6" aria-hidden="true" />
-              Accesibilidad
-            </button>
-            <button
-              type="button"
-              onClick={onFullscreenToggle}
-              aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-              className={`inline-flex min-h-[56px] min-w-[56px] items-center justify-center rounded-2xl border px-4 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              {isFullscreen ? <Minimize2 className="h-6 w-6" aria-hidden="true" /> : <Maximize2 className="h-6 w-6" aria-hidden="true" />}
-            </button>
-            <button
-              type="button"
-              onClick={onRefresh}
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white hover:bg-black"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <RefreshCw className="h-6 w-6" aria-hidden="true" />
-              Actualizar
-            </button>
-          </div>
-        </div>
-      </div>
-
       <section className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-6 sm:px-4 lg:px-5 xl:px-6">
-        <div className={`rounded-[26px] p-5 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
-          <p className="text-3xl font-black text-slate-950">Pedidos para preparar</p>
-          <p className="mt-3 text-xl font-bold text-slate-700">
-            {isAutoRefreshEnabled ? "La cocina se actualiza sola cada pocos segundos." : "La cocina está en actualización manual."}
-          </p>
+        <header className={`rounded-[28px] p-5 sm:p-6 ${panelClass}`}>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(520px,760px)] xl:items-start">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Modo fácil</p>
+              <h1 className="mt-2 text-4xl font-black leading-tight text-slate-950">Preparación</h1>
+              <p className="mt-3 text-xl font-bold text-slate-700">Aquí aparecen los pedidos que deben prepararse.</p>
+            </div>
+            <EasyModeActions />
+          </div>
+
+          <div className="mt-5 grid gap-3 border-t border-slate-200 pt-5 lg:grid-cols-[1fr_auto] lg:items-center">
+            <p className="text-xl font-black text-slate-950">
+              {isAutoRefreshEnabled ? "La preparación se actualiza sola cada pocos segundos." : "La preparación está en actualización manual."}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Link
+                to="/cocina"
+                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black no-underline transition ${secondaryButtonClass} ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <ChefHat className="h-6 w-6" aria-hidden="true" />
+                Modo normal
+              </Link>
+              <button
+                type="button"
+                onClick={onFullscreenToggle}
+                aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${secondaryButtonClass} ${FOCUS_VISIBLE_CLASS}`}
+              >
+                {isFullscreen ? <Minimize2 className="h-6 w-6" aria-hidden="true" /> : <Maximize2 className="h-6 w-6" aria-hidden="true" />}
+                <span className="hidden sm:inline">Pantalla</span>
+              </button>
+              <button
+                type="button"
+                onClick={onRefresh}
+                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${
+                  isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white hover:bg-black"
+                } ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <RefreshCw className="h-6 w-6" aria-hidden="true" />
+                Actualizar
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className={`rounded-[26px] p-5 ${panelClass}`}>
+          <div className="flex min-h-[64px] w-fit items-center gap-3 rounded-2xl border-2 border-slate-900 bg-slate-900 px-5 text-xl font-black text-white">
+            <ChefHat className="h-7 w-7" aria-hidden="true" />
+            Pedidos para preparar
+          </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <LargeMetric label="Pendientes" value={counts.pendientes} />
             <LargeMetric label="En preparación" value={counts.enPreparacion} />
             <LargeMetric label="Listos" value={counts.listos} />
-            <LargeMetric label="Urgentes" value={urgentCount} />
+            <LargeMetric label="Urgentes (más de 20 min)" value={urgentCount} />
           </div>
         </div>
 
-        <div className={`grid gap-4 rounded-[26px] p-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"} md:grid-cols-[1fr_auto] md:items-center`}>
-          <div className="inline-flex min-h-[70px] w-fit items-center gap-3 rounded-2xl border-2 border-slate-900 bg-slate-900 px-5 text-xl font-black text-white">
-            <ChefHat className="h-7 w-7" aria-hidden="true" />
-            Cocina principal
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`grid gap-4 rounded-[26px] p-4 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}>
+          <p className="text-xl font-black text-slate-950">Controles de preparación</p>
+          <div className="grid gap-3 sm:grid-cols-2 md:min-w-[460px]">
             <button
               type="button"
               onClick={onAutoRefreshToggle}
@@ -1134,7 +1122,7 @@ function AccessibleKitchenTicket({
           type="button"
           onClick={(event) => {
             event.stopPropagation();
-            if (isReady) {
+            if (isReady && window.confirm("¿Deseas marcar este pedido como entregado?")) {
               onEstadoChange(pedido, "entregado");
             }
           }}

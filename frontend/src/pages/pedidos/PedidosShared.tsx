@@ -704,10 +704,10 @@ export function PedidoModal({
   const isFinish = action === "finish";
 
   return (
-    <ModalShell onClose={onClose} title={isFinish ? `Finalizar pedido #${pedido.id}` : `Cancelar pedido #${pedido.id}`}>
+    <ModalShell onClose={onClose} title={isFinish ? `Marcar pedido #${pedido.id} como entregado` : `Cancelar pedido #${pedido.id}`}>
       <div className="space-y-5">
         <p className="text-xl font-black text-slate-950">
-          {isFinish ? `¿Seguro que deseas finalizar el pedido #${pedido.id}?` : `¿Seguro que deseas cancelar el pedido #${pedido.id}?`}
+          {isFinish ? "¿Deseas marcar este pedido como entregado?" : "¿Deseas cancelar este pedido?"}
         </p>
         <p className="font-bold text-slate-600">
           {isFinish
@@ -721,7 +721,7 @@ export function PedidoModal({
             onClick={onClose}
             className={`min-h-[62px] rounded-2xl border border-slate-300 bg-white px-5 text-lg font-black text-slate-900 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
           >
-            Volver
+            {isFinish ? "Cancelar" : "No cancelar"}
           </button>
           <button
             type="button"
@@ -733,7 +733,7 @@ export function PedidoModal({
                 : "border-red-700 bg-red-600 text-white hover:bg-red-700"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
-            {isUpdating ? "Guardando..." : isFinish ? "Sí, finalizar" : "Sí, cancelar"}
+            {isUpdating ? "Guardando..." : isFinish ? "Marcar entregado" : "Cancelar pedido"}
           </button>
         </div>
       </div>

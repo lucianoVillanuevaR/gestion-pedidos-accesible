@@ -381,6 +381,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     if (isTurnoOpen) {
       setTurnoAbierto(false);
       setIsTurnoOpen(false);
+      setAccessibleStep(1);
       const message = "Turno cerrado. Debes abrir turno para registrar pedidos.";
       setFeedback(null);
       playSoundCue("error");
@@ -396,6 +397,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setTurnoAbierto(true);
     setTurnoFechaInicio(new Date().toISOString());
     setIsTurnoOpen(true);
+    setAccessibleStep(1);
     const message = "Turno abierto correctamente.";
     setFeedback({ type: "success", message });
     announce(message, {
@@ -544,15 +546,19 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     ? "Ej: sin cebolla, extra salsa, bien tostado..."
     : "Ej: cliente retira afuera, llamar al llegar, sin apuro...";
   const getAccessibleStepMessage = (step: number) => {
+    if (!isTurnoOpen) {
+      return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Abre turno para registrar pedidos.`;
+    }
+
     switch (step) {
       case 1:
-        return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoria.`;
+        return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoria.`;
       case 2:
-        return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
+        return `Paso 3 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
       case 3:
-        return `Paso 3 de ${ACCESSIBLE_STEP_COUNT}. Revisa tu pedido. Total ${formatCurrency(total)}.`;
+        return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Revisa tu pedido. Total ${formatCurrency(total)}.`;
       case 4:
-        return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Agrega comentario.`;
+        return `Comentario opcional.`;
       case 5:
         return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Metodo de pago.`;
       case ACCESSIBLE_STEP_COUNT:
@@ -565,6 +571,10 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const getAccessibleStepValidation = (step: number) => {
     if (!isAccessible) {
       return null;
+    }
+
+    if (!isTurnoOpen) {
+      return "Turno cerrado. Abre turno para registrar pedidos.";
     }
 
     if ((step === 2 || step === 3) && pedidoDetalles.length === 0) {

@@ -6,6 +6,7 @@ import ClientesPage from "../pages/clientes/ClientesPage"
 import CocinaPage, { CocinaFacilPage, CocinaHistorialPage } from "../pages/cocina/CocinaPage"
 import HomePage from "../pages/HomePage"
 import InventarioPage from "../pages/inventario/InventarioPage"
+import ModoFacilPage from "../pages/ModoFacilPage"
 import CierreTurnoPage from "../pages/pedidos/CierreTurnoPage"
 import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
 import PedidosPage from "../pages/pedidos/PedidosNormalPage"
@@ -49,6 +50,7 @@ function AppRoutes() {
 
         <Route element={<RequireRole allowedRoles={["cajero", "admin"]} />}>
           <Route path="/pdv" element={<PdvBasePage isAccessible={false} />} />
+          <Route path="/modo-facil" element={<ModoFacilPage />} />
           <Route path="/pdv/facil" element={<PdvBasePage isAccessible />} />
 
           <Route path="/pedidos" element={<PedidosPage />} />

@@ -13,11 +13,13 @@ function AppLayout() {
   const { isAccessible, isHighContrast } = useAccessibilityContext()
 
   const currentRoute = getRouteMeta(location.pathname)
+  const isModoFacilPage = location.pathname === "/modo-facil"
   const isPdvPage = isPdvRoute(location.pathname)
   const isPdvNormalPage = location.pathname === "/pdv" && !isAccessible
   const isPdvFacilPage = location.pathname === "/pdv/facil"
   const isPedidosPage = isPedidosRoute(location.pathname)
   const isPedidosFacilPage = location.pathname === "/pedidos/facil"
+  const isCierreTurnoFacilPage = location.pathname === "/cierre-turno/facil"
   const isProductosPage = isProductosRoute(location.pathname)
   const isProductosFacilPage = location.pathname === "/productos/facil"
   const isInventarioPage = isInventarioRoute(location.pathname)
@@ -26,9 +28,9 @@ function AppLayout() {
   const isCocinaFacilPage = location.pathname === "/cocina/facil" || location.pathname === "/preparacion/facil"
   const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname)
   const isClientesPage = isClientesRoute(location.pathname)
-  const isFullWidthPage = isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isCocinaPage || isHistorialPedidosPage || isClientesPage
+  const isFullWidthPage = isModoFacilPage || isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isCocinaPage || isHistorialPedidosPage || isClientesPage
   const showBrandTopBar = !isAccessible && (isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isCocinaPage || isHistorialPedidosPage || isClientesPage)
-  const hideSidebar = (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage || isProductosFacilPage || isInventarioFacilPage || isCocinaFacilPage
+  const hideSidebar = isModoFacilPage || (location.pathname === "/pdv" && isAccessible) || isPdvFacilPage || isPedidosFacilPage || isCierreTurnoFacilPage || isProductosFacilPage || isInventarioFacilPage || isCocinaFacilPage || (isAccessible && isHistorialPedidosPage)
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[368px]" : "lg:pl-[240px]"
   const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]"
   const mainContentClass = isFullWidthPage
@@ -49,7 +51,7 @@ function AppLayout() {
   useEffect(() => {
     if (isAccessible) {
       if (location.pathname === "/pdv") {
-        navigate("/pdv/facil", { replace: true })
+        navigate("/modo-facil", { replace: true })
       }
 
       if (location.pathname === "/pedidos") {
@@ -77,6 +79,10 @@ function AppLayout() {
       }
 
       return
+    }
+
+    if (location.pathname === "/modo-facil") {
+      navigate("/pdv", { replace: true })
     }
 
     if (location.pathname === "/pdv/facil") {

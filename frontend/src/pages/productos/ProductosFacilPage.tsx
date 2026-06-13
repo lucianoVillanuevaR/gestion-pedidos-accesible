@@ -1,6 +1,7 @@
-import { Accessibility, AlertTriangle, ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
+import { AlertTriangle, ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
@@ -17,7 +18,7 @@ const CATEGORIAS_FACIL: Array<{ label: string; value: CategoriaFacil }> = [
 
 function ProductosFacilPage() {
   const navigate = useNavigate();
-  const { isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [selectedCategory, setSelectedCategory] = useState<CategoriaFacil>("Todos");
   const [selectedProducto, setSelectedProducto] = useState<ProductoConCategoria | null>(null);
@@ -77,8 +78,6 @@ function ProductosFacilPage() {
         <AccessibleIntroCard
           handleRefreshProductos={handleRefreshProductos}
           isHighContrast={isHighContrast}
-          isPanelOpen={isPanelOpen}
-          onOpenAccessibilityPanel={openAccessibilityPanel}
         />
 
         <section className={`rounded-[26px] p-4 sm:p-5 ${panelClass}`} aria-label="Categorías de productos">
@@ -152,30 +151,27 @@ function ProductosFacilPage() {
 
 function AccessibleIntroCard({
   handleRefreshProductos,
-  isHighContrast,
-  isPanelOpen,
-  onOpenAccessibilityPanel
+  isHighContrast
 }: {
   handleRefreshProductos: () => void;
   isHighContrast: boolean;
-  isPanelOpen: boolean;
-  onOpenAccessibilityPanel: () => void;
 }) {
   return (
     <header className={`rounded-3xl p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
       <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
-        Riquísimo · Modo Fácil
+        Riquísimo · Modo fácil
       </p>
       <div className="mt-3 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-4xl">
           <h2 className={`text-[2.35rem] font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
-            Productos del menú
+            Ver menú
           </h2>
           <p className={`mt-3 max-w-3xl text-xl font-semibold leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}>
             Revisa los productos disponibles usando categorías grandes y botones simples.
           </p>
         </div>
-        <div className="grid w-full gap-3 md:grid-cols-3 xl:w-auto xl:min-w-[620px]">
+        <div className="grid w-full gap-3 xl:w-auto xl:min-w-[760px]">
+          <EasyModeActions />
           <Link
             to="/pdv/facil"
             className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-4 text-lg font-black no-underline transition ${
@@ -185,18 +181,6 @@ function AccessibleIntroCard({
             <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
             Nuevo pedido
           </Link>
-          <button
-            type="button"
-            onClick={onOpenAccessibilityPanel}
-            aria-haspopup="dialog"
-            aria-expanded={isPanelOpen}
-            className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-4 text-lg font-black transition ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            <Accessibility className="h-6 w-6" aria-hidden="true" />
-            Accesibilidad
-          </button>
           <button
             type="button"
             onClick={handleRefreshProductos}

@@ -1,6 +1,7 @@
-import { Accessibility, AlertTriangle, Check, ClipboardPlus, LoaderCircle, RefreshCw, Search, Volume2 } from "lucide-react";
+import { AlertTriangle, Check, ClipboardPlus, LoaderCircle, RefreshCw, Search, Volume2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useVoice from "../../hooks/useVoice";
@@ -39,7 +40,7 @@ const EASY_SECONDARY_BUTTON_CLASS = "border-slate-300 bg-white text-slate-950 ho
 const EASY_SOFT_PANEL_CLASS = "border-slate-200 bg-slate-50";
 
 function PedidosFacilPage() {
-  const { isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { user } = useAuthContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const [searchTerm, setSearchTerm] = useState("");
@@ -123,6 +124,17 @@ function PedidosFacilPage() {
     });
   };
 
+  const handleReadScreen = () => {
+    const message = "Estos son los pedidos activos. Puedes ver detalles o entregar pedidos listos.";
+    setLiveMessage(message);
+    speak(message, {
+      priority: "high",
+      dedupeKey: "pedidos-facil-leer-pantalla",
+      cooldownMs: 2200,
+      interrupt: true
+    });
+  };
+
   const handleOpenCierre = () => {
     setIsCierreModalOpen(true);
     const message = hasPedidosActivos
@@ -182,9 +194,13 @@ function PedidosFacilPage() {
               <h1 className={`mt-1 text-3xl font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
                 Pedidos activos
               </h1>
+              <p className="mt-3 text-xl font-bold text-slate-700">
+                Revisa los pedidos que están pendientes, listos o en preparación.
+              </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[520px]">
+            <div className="grid gap-3 xl:min-w-[760px]">
+              <EasyModeActions />
               <Link
                 to="/pdv/facil"
                 className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black no-underline transition ${
@@ -196,16 +212,14 @@ function PedidosFacilPage() {
               </Link>
               <button
                 type="button"
-                onClick={openAccessibilityPanel}
-                aria-haspopup="dialog"
-                aria-expanded={isPanelOpen}
+                onClick={handleReadScreen}
                 className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black transition ${
                   isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
-                } ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <Accessibility className="h-6 w-6" aria-hidden="true" />
-                Accesibilidad
-              </button>
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              <Volume2 className="h-6 w-6" aria-hidden="true" />
+                Leer ayuda
+            </button>
             </div>
           </div>
 
@@ -433,7 +447,10 @@ function AccessiblePedidoCard({
               <p className="text-3xl font-black text-slate-950">Pedido #{pedido.id}</p>
               <p className="mt-2 text-xl font-black text-slate-700">Hora: {formatTime(pedido.createdAt)}</p>
             </div>
-            <StatusBadge estado={pedido.estado} isLarge />
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              <p className="text-sm font-black uppercase text-slate-600">Estado</p>
+              <StatusBadge estado={pedido.estado} isLarge />
+            </div>
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">

@@ -188,10 +188,10 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
               </span>
               <span className="min-w-0">
                 <span className={`block font-black leading-tight ${isAccessible ? "text-lg" : "text-[13px]"}`}>
-                  Accesibilidad
+                  {isAccessible ? "Opciones de ayuda" : "Accesibilidad"}
                 </span>
                 <span className={`mt-0.5 block ${isAccessible ? "text-sm" : "text-[11px]"} ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
-                  Modo facil, contraste y ayuda
+                  Modo fácil, contraste y ayuda
                 </span>
               </span>
             </span>

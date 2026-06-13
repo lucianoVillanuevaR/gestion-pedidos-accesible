@@ -1,21 +1,21 @@
-# Sistema de Gestion de Pedidos - Riquisimo
+# Sistema de Gestión de Pedidos - Riquísimo
 
-Aplicacion web interna para una pyme gastronomica. Permite registrar pedidos presenciales, seguir su preparacion, administrar productos, controlar stock basico, subir imagenes de productos a MinIO y cerrar turnos sin depender de comandas en papel.
+Aplicación web interna para una pyme gastronómica. Permite registrar pedidos presenciales, seguir su preparación, administrar productos, controlar stock básico, subir imágenes de productos a MinIO, cerrar turnos y revisar pedidos recientes sin depender de comandas en papel.
 
-## Arquitectura
+## Tecnologías
 
 - Frontend: React, TypeScript, Vite y Tailwind.
 - Backend: Node.js, Express y TypeScript.
 - Base de datos: PostgreSQL con Prisma.
-- Archivos: MinIO para imagenes de productos.
+- Archivos: MinIO para imágenes de productos.
 - Infraestructura: Docker Compose.
 
-Servicios principales:
+## Arquitectura
 
-- `frontend`: sirve la aplicacion en Nginx y proxy `/api`.
-- `backend`: API REST, Prisma, MinIO y healthcheck.
-- `postgres`: base persistente.
-- `minio`: almacenamiento persistente de imagenes.
+- `frontend`: sirve la aplicación en Nginx y expone el proxy `/api`.
+- `backend`: API REST, Prisma, conexión a MinIO y healthcheck.
+- `postgres`: base de datos persistente.
+- `minio`: almacenamiento persistente de imágenes.
 
 ## Puertos
 
@@ -23,20 +23,19 @@ Servicios principales:
 Frontend: http://localhost
 Backend health: http://localhost:3000/api/health
 Proxy health: http://localhost/api/health
-PostgreSQL: localhost:5433
+PostgreSQL host: localhost:5433
+PostgreSQL Docker: postgres:5432
 MinIO API: http://localhost:9000
 MinIO consola: http://localhost:9001
 ```
 
 ## Variables De Entorno
 
-Copia el ejemplo:
-
 ```bash
 cp .env.example .env
 ```
 
-Variables relevantes:
+Variables principales:
 
 ```env
 PORT=3000
@@ -54,7 +53,7 @@ MINIO_USE_SSL=false
 MINIO_PUBLIC_URL=http://localhost:9000
 ```
 
-Con Docker, el backend usa `MINIO_ENDPOINT=minio` y `DATABASE_URL` apuntando a `postgres:5432`. Sin Docker, usa `localhost`.
+Con Docker, el backend usa `postgres:5432` y `minio:9000` dentro de la red de Compose. El frontend usa `/api` y Nginx redirige esas llamadas al backend.
 
 ## Levantar Con Docker
 
@@ -64,13 +63,13 @@ docker compose up -d --build
 docker compose ps
 ```
 
-Ver logs:
+Logs útiles:
 
 ```bash
-docker compose logs backend
-docker compose logs frontend
-docker compose logs postgres
-docker compose logs minio
+docker compose logs --tail=80 backend
+docker compose logs --tail=80 frontend
+docker compose logs --tail=80 postgres
+docker compose logs --tail=80 minio
 ```
 
 Detener sin borrar datos:
@@ -79,14 +78,14 @@ Detener sin borrar datos:
 docker compose down
 ```
 
-Importante: `docker compose down -v` borra los volumenes `postgres_data` y `minio_data`. No usarlo salvo que se quiera eliminar la base de datos y los archivos guardados.
+Importante: `docker compose down -v` borra los volúmenes `postgres_data` y `minio_data`. Eso elimina la base de datos y los archivos guardados. No usarlo salvo que se quiera resetear completamente el entorno de desarrollo.
 
 ## Persistencia
 
-PostgreSQL usa el volumen `postgres_data`.
-MinIO usa el volumen `minio_data`.
+- PostgreSQL usa el volumen `postgres_data`.
+- MinIO usa el volumen `minio_data`.
 
-Esto permite detener y volver a levantar el proyecto sin perder pedidos, productos ni imagenes.
+Esto permite detener y volver a levantar el proyecto sin perder pedidos, productos ni imágenes.
 
 ## Healthchecks
 
@@ -96,11 +95,12 @@ curl http://localhost:3000/api/health
 curl http://localhost/api/health
 ```
 
-Resultado esperado del backend:
+Respuesta esperada del backend:
 
 ```json
 {
-  "status": "ok"
+  "status": "ok",
+  "message": "Backend running"
 }
 ```
 
@@ -119,81 +119,68 @@ Usuario: admin
 Clave: admin123456
 ```
 
-Las imagenes se suben al backend. El frontend no sube directo a MinIO. PostgreSQL guarda solo la referencia, por ejemplo:
+Las imágenes se suben al backend. El frontend no sube directo a MinIO. PostgreSQL guarda la referencia del objeto y MinIO conserva el archivo real en el bucket `productos`.
 
-```text
-productos/producto-5-1712345678.webp
-```
+## Flujo Principal
 
-El archivo real queda en el bucket `productos`.
-
-## PostgreSQL Desde pgAdmin O DBeaver
-
-```text
-Host: localhost
-Puerto: 5433
-Base de datos: sistema_pedidos
-Usuario: admin
-Clave: admin123
-```
-
-## Flujo Principal Del Sistema
-
-1. Crear pedido desde Punto de Venta.
-2. Agregar productos y metodo de pago.
-3. Enviar pedido a preparacion.
-4. Marcar pedido en preparacion.
+1. Abrir turno.
+2. Crear pedido.
+3. Revisar pedidos activos.
+4. Enviar a preparación.
 5. Marcar pedido listo.
 6. Entregar pedido.
-7. Revisar historial.
-8. Cerrar turno.
+7. Cerrar turno.
+8. Consultar pedidos recientes o historial.
 
 El total vendido del cierre considera solo pedidos entregados. Los pedidos pendientes no se borran al cerrar turno.
 
 ## Modos De Uso
 
-Modo normal/admin:
+### Modo normal/admin
 
 - Crear y editar productos.
 - Cambiar disponibilidad.
-- Subir, cambiar y eliminar imagenes.
-- Actualizar stock y stock minimo.
-- Revisar pedidos, preparacion, historial y cierre de turno.
+- Subir, cambiar y eliminar imágenes.
+- Actualizar stock y stock mínimo.
+- Revisar pedidos, preparación, historial y cierre de turno.
 
-Modo facil/accesible:
+### Modo fácil/accesible
 
-- Flujo guiado para nuevo pedido.
-- Botones grandes.
-- Mensajes claros.
+El modo fácil se orienta a tareas operativas frecuentes mediante pantallas guiadas, botones grandes y textos directos. Las funciones administrativas se mantienen en el modo normal para evitar sobrecarga visual y reducir errores de configuración.
+
+- Inicio con acciones grandes.
+- Crear pedido guiado por pasos.
 - Pedidos activos simplificados.
-- Preparacion simplificada.
-- Stock basico con estados simples: Disponible, Queda poco, Sin stock.
-- Productos solo de consulta, sin creacion ni edicion.
+- Preparación simplificada.
+- Stock básico con estados simples: Disponible, Queda poco, Sin stock.
+- Cierre de turno resumido.
+- Pedidos recientes.
+- Ver menú solo como consulta, sin edición avanzada.
 
-## Modulos
+## Módulos
 
-- Nuevo Pedido: registro de pedidos presenciales.
-- Pedidos: pedidos activos, filtros y cambios de estado.
-- Cocina/Preparacion: cola operativa de pedidos pendientes, en preparacion y listos.
-- Historial de pedidos: turnos cerrados y pedidos guardados.
-- Productos: catalogo, disponibilidad e imagenes.
-- Inventario: stock actual, stock minimo y estado por producto.
+- Nuevo pedido: registro de pedidos presenciales.
+- Pedidos activos: seguimiento, filtros simples y cambios de estado.
+- Preparación: cola operativa de pedidos pendientes, en preparación y listos.
+- Pedidos recientes / historial: turnos cerrados y pedidos guardados.
+- Productos: catálogo, disponibilidad e imágenes en modo normal.
+- Stock básico / inventario: stock actual, stock mínimo y estado por producto.
 - Clientes: resumen derivado de pedidos.
 
 ## Validaciones Principales
 
 Pedidos:
 
-- No permite pedido vacio.
+- No permite pedido vacío.
 - No permite cantidades menores o iguales a cero.
-- Valida metodo de pago.
+- Valida método de pago.
 - Valida producto existente y disponible.
-- Valida textos de cliente y observacion.
+- Valida textos de cliente y observación.
 
 Estados:
 
-- Solo acepta estados validos.
-- Permite transiciones logicas:
+- Solo acepta estados válidos.
+- Permite transiciones lógicas:
   - `pendiente -> en_preparacion`
   - `pendiente -> cancelado`
   - `en_preparacion -> listo`
@@ -203,35 +190,35 @@ Estados:
 Productos:
 
 - Nombre requerido.
-- Precio entre 0 y el maximo permitido.
-- Categoria valida.
+- Precio entre 0 y el máximo permitido.
+- Categoría válida.
 - Evita nombres duplicados.
 
-Imagenes:
+Imágenes:
 
 - Permite JPG, JPEG, PNG y WEBP.
-- Limite de tamano configurado en backend.
-- Mensajes claros si falla formato, tamano o subida.
+- Límite de tamaño configurado en backend.
+- Mensajes claros si falla formato, tamaño o subida.
 
 Inventario:
 
 - No permite stock negativo.
-- No permite stock minimo negativo.
+- No permite stock mínimo negativo.
 - Estados:
   - `stock_actual <= 0`: Sin stock.
-  - `stock_actual <= stock_minimo`: Bajo stock.
+  - `stock_actual <= stock_minimo`: Bajo stock / Queda poco.
   - `stock_actual > stock_minimo`: Disponible.
 
 ## Prisma
 
-Comandos utiles dentro del contenedor:
+Comandos útiles dentro del contenedor:
 
 ```bash
 docker compose exec backend npx prisma validate
 docker compose exec backend npx prisma migrate status
 ```
 
-No borrar migraciones ni resetear la base sin confirmacion.
+No borrar migraciones ni resetear la base sin confirmación explícita. Consolidar migraciones en una sola migración inicial solo conviene si el proyecto sigue en desarrollo, no hay datos reales importantes, nadie depende del historial actual y se acepta resetear la base de datos.
 
 ## Desarrollo Sin Docker
 
@@ -258,29 +245,4 @@ Abrir:
 
 ```text
 http://localhost:5173
-```
-
-## Prueba Rapida Para Demostracion
-
-1. `docker compose up -d --build`.
-2. Iniciar sesion con un usuario demo.
-3. Crear un pedido en Nuevo Pedido.
-4. Verlo en Pedidos.
-5. Cambiar estado a En preparacion.
-6. Abrir Cocina/Preparacion.
-7. Marcar Listo y luego Entregado.
-8. Ver historial.
-9. Cerrar turno.
-10. Crear o editar producto.
-11. Subir imagen.
-12. Ver imagen en modo facil.
-13. Confirmar archivo en MinIO.
-14. Confirmar datos persistentes en PostgreSQL.
-
-## Usuarios Demo
-
-```text
-cajero / 123456
-cocina / 123456
-admin / 123456
 ```

@@ -11,6 +11,7 @@ import {
   Warehouse
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
@@ -186,17 +187,21 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
         <div className={`rounded-[28px] p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-lg font-black uppercase tracking-[0.18em] text-slate-500">Inventario</p>
+              <p className="text-lg font-black uppercase tracking-[0.18em] text-slate-500">Modo fácil</p>
               <h1 className="mt-2 text-4xl font-black text-slate-950">Stock básico</h1>
+              <p className="mt-3 text-xl font-bold text-slate-700">Revisa qué productos están disponibles o agotados.</p>
             </div>
-            <button
-              type="button"
-              onClick={loadInventario}
-              className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 bg-white px-5 text-xl font-black text-slate-950 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <RefreshCw className={`h-7 w-7 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-              Actualizar
-            </button>
+            <div className="grid gap-3 xl:min-w-[760px]">
+              <EasyModeActions />
+              <button
+                type="button"
+                onClick={loadInventario}
+                className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 bg-white px-5 text-xl font-black text-slate-950 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <RefreshCw className={`h-7 w-7 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
+                Actualizar
+              </button>
+            </div>
           </div>
         </div>
 

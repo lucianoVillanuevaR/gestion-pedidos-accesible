@@ -1,14 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 
-// Crear una instancia única de PrismaClient
-const prisma = new PrismaClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+};
 
-// Manejar desconexión en desarrollo
+const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
 if (process.env.NODE_ENV !== "production") {
-  const globalForPrisma = global as unknown as { prisma: PrismaClient };
-  if (!globalForPrisma.prisma) {
-    globalForPrisma.prisma = prisma;
-  }
+  globalForPrisma.prisma = prisma;
 }
 
 export default prisma;

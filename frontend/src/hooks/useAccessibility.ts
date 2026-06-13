@@ -18,6 +18,7 @@ export type AccessibilityState = {
   isSoundEnabled: boolean;
   prefersReducedMotion: boolean;
   setTextSize: (value: AccessibilityTextSize) => void;
+  setAccessibleMode: (value: boolean) => void;
   openAccessibilityPanel: () => void;
   closeAccessibilityPanel: () => void;
   toggleAccessibility: () => void;
@@ -145,6 +146,10 @@ function useAccessibility(): AccessibilityState {
     setIsAccessible((currentValue) => !currentValue);
   }, []);
 
+  const setAccessibleMode = useCallback((value: boolean) => {
+    setIsAccessible(value);
+  }, []);
+
   const updateTextSize = useCallback((value: AccessibilityTextSize) => {
     if (ACCESSIBILITY_TEXT_SIZES.includes(value)) {
       setTextSizeState(value);
@@ -180,6 +185,7 @@ function useAccessibility(): AccessibilityState {
     isSoundEnabled,
     prefersReducedMotion,
     setTextSize: updateTextSize,
+    setAccessibleMode,
     openAccessibilityPanel,
     closeAccessibilityPanel,
     toggleAccessibility,

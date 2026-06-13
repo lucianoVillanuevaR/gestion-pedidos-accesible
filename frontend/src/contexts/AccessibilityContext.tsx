@@ -11,6 +11,7 @@ type AccessibilityContextValue = {
   isVoiceEnabled: boolean;
   isSoundEnabled: boolean;
   setTextSize: (value: AccessibilityTextSize) => void;
+  setAccessibleMode: (value: boolean) => void;
   openAccessibilityPanel: () => void;
   closeAccessibilityPanel: () => void;
   toggleAccessibility: () => void;
