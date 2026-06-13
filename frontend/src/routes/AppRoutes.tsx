@@ -6,6 +6,7 @@ import ClientesPage from "../pages/clientes/ClientesPage"
 import CocinaPage, { CocinaFacilPage, CocinaHistorialPage } from "../pages/cocina/CocinaPage"
 import HomePage from "../pages/HomePage"
 import InventarioPage from "../pages/inventario/InventarioPage"
+import CierreTurnoPage from "../pages/pedidos/CierreTurnoPage"
 import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
 import PedidosPage from "../pages/pedidos/PedidosNormalPage"
 import PdvBasePage from "../pages/pdv/PdvBasePage"
@@ -52,8 +53,8 @@ function AppRoutes() {
 
           <Route path="/pedidos" element={<PedidosPage />} />
           <Route path="/pedidos/facil" element={<PedidosFacilPage />} />
-          <Route path="/cierre-turno" element={<PedidosPage />} />
-          <Route path="/cierre-turno/facil" element={<PedidosFacilPage />} />
+          <Route path="/cierre-turno" element={<CierreTurnoPage />} />
+          <Route path="/cierre-turno/facil" element={<CierreTurnoPage />} />
 
           <Route path="/preparacion" element={<CocinaPage />} />
           <Route path="/preparacion/facil" element={<CocinaFacilPage />} />

@@ -1,31 +1,20 @@
 import { AlertTriangle, CalendarDays, Check, Clock3, Eye, Filter, LoaderCircle, RefreshCw, Search, Store, User, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
-import { guardarCierreTurno } from "../../services/cierresTurno";
-import type { AuthUser, EstadoPedido, PedidoResponse } from "../../types";
+import type { EstadoPedido, PedidoResponse } from "../../types";
 import {
-  buildCierreTurno,
   EmptyPedidosMessage,
   ESTADO_META,
   ESTADO_OPTIONS,
   FOCUS_VISIBLE_CLASS,
   formatCurrency,
-  formatDateTime,
   formatElapsedTime,
   formatMetodoPago,
-  getCierrePedidosResumen,
-  getFechaInicioTurno,
   getPedidoSummary,
-  getProductosVendidosResumen,
   getProductCount,
-  getTurnoSummary,
   isPedidoDelayed,
   PedidoModal,
-  readTurnoAbierto,
-  setTurnoAbierto,
-  setTurnoFechaInicio,
   StatusBadge,
   usePedidosController,
   type ActiveModal,
@@ -34,13 +23,8 @@ import {
 
 function PedidosNormalPage() {
   const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
-  const { user } = useAuthContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
-  const [isSavingCierre, setIsSavingCierre] = useState(false);
-  const [cierreMessage, setCierreMessage] = useState<string | null>(null);
-  const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
 
   const {
     activeModal,
@@ -56,26 +40,7 @@ function PedidosNormalPage() {
     setEstadoFilter,
     updatingPedidoId
   } = usePedidosController({ searchTerm });
-  const turnoSummary = useMemo(() => getTurnoSummary(pedidos), [pedidos]);
-
-  const handleCerrarTurno = async () => {
-    try {
-      setIsSavingCierre(true);
-      const cierre = buildCierreTurno(pedidos, user);
-      await guardarCierreTurno(cierre);
-      const message = `Turno cerrado: ${formatCurrency(String(cierre.totalVendido))} vendidos.`;
-      setCierreMessage(message);
-      setIsCierreModalOpen(false);
-      setTurnoAbierto(false);
-      setIsTurnoOpen(false);
-      await loadPedidos();
-      speakAction(message, `cierre-turno:${message}`);
-    } catch (requestError) {
-      setCierreMessage(requestError instanceof Error ? requestError.message : "No fue posible cerrar el turno");
-    } finally {
-      setIsSavingCierre(false);
-    }
-  };
+  const entregadosHoy = useMemo(() => getEntregadosHoy(pedidos), [pedidos]);
 
   const handleRefreshPedidos = () => {
     speak("Actualizando pedidos.", {
@@ -96,29 +61,6 @@ function PedidosNormalPage() {
     });
   };
 
-  const handleOpenCierreModal = () => {
-    setIsCierreModalOpen(true);
-    speak(
-      `Cerrar turno. Total vendido ${formatCurrency(String(turnoSummary.totalVendido))}. Hay ${turnoSummary.pedidosPendientes} pedidos pendientes.`,
-      {
-        priority: "high",
-        dedupeKey: "abrir-cierre-turno",
-        cooldownMs: 2500,
-        interrupt: true
-      }
-    );
-  };
-
-  const handleAbrirTurno = () => {
-    const fechaInicio = new Date().toISOString();
-    setTurnoAbierto(true);
-    setIsTurnoOpen(true);
-    setTurnoFechaInicio(fechaInicio);
-    setCierreMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
-    speakAction("Turno abierto.", "abrir-turno");
-    loadPedidos();
-  };
-
   const handleEstadoFilterChange = (value: EstadoFilter) => {
     setEstadoFilter(value);
     const label = value === "todos" ? "Todos" : ESTADO_META[value].label;
@@ -132,25 +74,22 @@ function PedidosNormalPage() {
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <section className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
+        <PedidosActivosHeader
+          entregadosHoy={entregadosHoy}
+          isHighContrast={isHighContrast}
+          summary={normalSummary}
+        />
+
         <NormalPedidosToolbar
           estadoFilter={estadoFilter}
           isHighContrast={isHighContrast}
           isLoading={isLoading}
-          isTurnoOpen={isTurnoOpen}
           loadPedidos={handleRefreshPedidos}
-          onOpenTurno={handleAbrirTurno}
-          onCloseTurno={handleOpenCierreModal}
           searchTerm={searchTerm}
           setEstadoFilter={handleEstadoFilterChange}
           setSearchTerm={setSearchTerm}
           summary={normalSummary}
         />
-
-        {cierreMessage && (
-          <div className={`rounded-2xl border px-4 py-3 text-sm font-black ${isHighContrast ? "contrast-panel" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`} role="status">
-            {cierreMessage}
-          </div>
-        )}
 
         {error && (
           <div className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`} role="alert">
@@ -182,16 +121,6 @@ function PedidosNormalPage() {
           />
         )}
 
-        {isCierreModalOpen && (
-          <CierreTurnoModal
-            isSaving={isSavingCierre}
-            onClose={() => setIsCierreModalOpen(false)}
-            onConfirm={handleCerrarTurno}
-            pedidos={pedidos}
-            summary={turnoSummary}
-            user={user}
-          />
-        )}
       </section>
     </div>
   );
@@ -231,6 +160,46 @@ function NormalPedidosList({
         ))}
       </div>
     </div>
+  );
+}
+
+function PedidosActivosHeader({
+  entregadosHoy,
+  isHighContrast,
+  summary
+}: {
+  entregadosHoy: number;
+  isHighContrast: boolean;
+  summary: ReturnType<typeof import("./PedidosShared").getNormalSummary>;
+}) {
+  const cards = [
+    { label: "Pendientes", value: summary.pendientes },
+    { label: "En preparación", value: summary.enPreparacion },
+    { label: "Listos", value: summary.listos },
+    { label: "Entregados hoy", value: entregadosHoy }
+  ];
+
+  return (
+    <header className={`rounded-[10px] border px-4 py-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-sm font-black uppercase text-amber-700">Gestión en tiempo real</p>
+          <h1 className="mt-1 text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
+          <p className="mt-1 max-w-2xl text-sm font-bold text-slate-600">
+            Revisa pedidos pendientes, en preparación, listos y entregados recientemente.
+          </p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-4 lg:min-w-[560px]">
+          {cards.map((card) => (
+            <article key={card.label} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="text-xs font-black uppercase text-slate-500">{card.label}</p>
+              <p className="mt-1 text-2xl font-black text-slate-950">{card.value}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </header>
   );
 }
 
@@ -330,6 +299,16 @@ function NormalPedidoActions({
         />
       )}
 
+      {actions.showState && (
+        <BoardActionButton
+          disabled={isUpdating}
+          icon={<RefreshCw className="h-5 w-5" aria-hidden="true" />}
+          label="Cambiar"
+          onClick={() => onOpenModal({ action: "state", pedido })}
+          tone="info"
+        />
+      )}
+
       {actions.showFinish && (
         <BoardActionButton
           disabled={isUpdating}
@@ -355,10 +334,7 @@ function NormalPedidosToolbar({
   estadoFilter,
   isHighContrast,
   isLoading,
-  isTurnoOpen,
   loadPedidos,
-  onCloseTurno,
-  onOpenTurno,
   searchTerm,
   setEstadoFilter,
   setSearchTerm,
@@ -367,10 +343,7 @@ function NormalPedidosToolbar({
   estadoFilter: EstadoFilter;
   isHighContrast: boolean;
   isLoading: boolean;
-  isTurnoOpen: boolean;
   loadPedidos: () => void;
-  onCloseTurno: () => void;
-  onOpenTurno: () => void;
   searchTerm: string;
   setEstadoFilter: (value: EstadoFilter) => void;
   setSearchTerm: (value: string) => void;
@@ -430,19 +403,10 @@ function NormalPedidosToolbar({
           })}
         </div>
 
-        <div className="grid shrink-0 gap-2 text-sm font-bold text-slate-600 sm:grid-cols-2">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
-            <p className="text-xs font-black uppercase text-emerald-700">Vendido entregado</p>
-            <p className="text-lg font-black text-slate-950">{formatCurrency(String(summary.totalVendido))}</p>
-          </div>
-          <div className="rounded-xl border border-amber-200 bg-[#FFF8DC] px-3 py-2">
-            <p className="text-xs font-black uppercase text-amber-700">Pendiente</p>
-            <p className="text-lg font-black text-slate-950">{formatCurrency(String(summary.totalPendiente))}</p>
-          </div>
-        </div>
+        <p className="shrink-0 text-sm font-black text-slate-600">{summary.total} pedidos visibles</p>
       </div>
 
-      <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
+      <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto]">
         <label className="relative block">
           <span className="sr-only">Buscar pedido</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
@@ -450,25 +414,10 @@ function NormalPedidosToolbar({
             type="search"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Buscar pedido, producto o método de pago"
+            placeholder="Buscar por número de pedido, producto, cliente o método de pago"
             className={`min-h-[44px] w-full rounded-xl border border-slate-300 bg-white py-2 pl-10 pr-4 font-bold text-slate-950 outline-none transition placeholder:text-slate-500 focus:border-slate-900 ${FOCUS_VISIBLE_CLASS}`}
           />
         </label>
-
-        <button
-          type="button"
-          onClick={isTurnoOpen ? onCloseTurno : onOpenTurno}
-          className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition ${
-            isHighContrast
-              ? "contrast-button-secondary"
-              : isTurnoOpen
-                ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
-                : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-          } ${FOCUS_VISIBLE_CLASS}`}
-        >
-          <Check className="h-5 w-5" aria-hidden="true" />
-          {isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
-        </button>
 
         <button
           type="button"
@@ -485,176 +434,6 @@ function NormalPedidosToolbar({
         </button>
       </div>
     </section>
-  );
-}
-
-function CierreTurnoModal({
-  isSaving,
-  onClose,
-  onConfirm,
-  pedidos,
-  summary,
-  user
-}: {
-  isSaving: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  pedidos: PedidoResponse[];
-  summary: ReturnType<typeof getTurnoSummary>;
-  user: AuthUser | null;
-}) {
-  const fechaCierre = new Date();
-  const fechaInicio = getFechaInicioTurno(pedidos);
-  const hasPedidosActivos = summary.pedidosPendientes > 0;
-  const productosVendidos = useMemo(() => getProductosVendidosResumen(pedidos), [pedidos]);
-  const pedidosDetalle = useMemo(() => getCierrePedidosResumen(pedidos), [pedidos]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="cierre-turno-title"
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[24px] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="cierre-turno-title" className="text-2xl font-black text-slate-950">Cerrar turno</h2>
-            <p className="mt-2 text-sm font-bold text-slate-600">
-              Al cerrar el turno, se guardará el resumen de pedidos del período actual.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
-          >
-            Volver
-          </button>
-        </div>
-
-        {hasPedidosActivos && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-[#FFF8DC] p-4 text-amber-950">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-            <p className="font-black">Aún existen pedidos activos. Revisa antes de cerrar el turno.</p>
-          </div>
-        )}
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <CierreSummaryItem label="Fecha actual" value={formatDateTime(fechaCierre.toISOString())} />
-          <CierreSummaryItem label="Inicio del turno" value={fechaInicio ? formatDateTime(fechaInicio) : "Sin datos"} />
-          <CierreSummaryItem label="Usuario/cajero" value={user?.label ?? user?.username ?? "No identificado"} />
-          <CierreSummaryItem label="Total de pedidos" value={String(summary.totalPedidos)} />
-          <CierreSummaryItem label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
-          <CierreSummaryItem label="Pedidos cancelados" value={String(summary.pedidosCancelados)} />
-          <CierreSummaryItem label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
-          <CierreSummaryItem label="Vendido entregado" value={formatCurrency(String(summary.totalVendido))} isStrong />
-          <CierreSummaryItem label="Pendiente no vendido" value={formatCurrency(String(summary.totalPendiente))} />
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm font-black uppercase text-slate-500">Total por método de pago</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <CierreSummaryItem label="Efectivo" value={formatCurrency(String(summary.totalEfectivo))} />
-            <CierreSummaryItem label="Tarjeta" value={formatCurrency(String(summary.totalTarjeta))} />
-            <CierreSummaryItem label="Transferencia" value={formatCurrency(String(summary.totalTransferencia))} />
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-black uppercase text-slate-500">Recuento de productos vendidos</p>
-            <p className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-              {productosVendidos.reduce((total, producto) => total + producto.cantidad, 0)} unidades
-            </p>
-          </div>
-          {productosVendidos.length === 0 ? (
-            <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600">
-              No hay productos vendidos en pedidos entregados.
-            </p>
-          ) : (
-            <div className="mt-3 max-h-[220px] overflow-y-auto rounded-xl border border-slate-200">
-              {productosVendidos.map((producto) => (
-                <div key={producto.productoId} className="grid gap-2 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:grid-cols-[1fr_90px_120px] sm:items-center">
-                  <p className="font-black text-slate-950">{producto.productoNombre}</p>
-                  <p className="font-black text-slate-700">{producto.cantidad} un.</p>
-                  <p className="font-black text-slate-950 sm:text-right">{formatCurrency(String(producto.total))}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-black uppercase text-slate-500">Detalle de pedidos guardados</p>
-            <p className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
-              {pedidosDetalle.length} pedidos
-            </p>
-          </div>
-          <div className="mt-3 max-h-[340px] space-y-3 overflow-y-auto pr-1">
-            {pedidosDetalle.map((pedido) => (
-              <article key={pedido.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-lg font-black text-slate-950">Pedido #{pedido.id}</p>
-                    <p className="mt-1 text-sm font-bold text-slate-600">
-                      {pedido.createdAt ? formatDateTime(pedido.createdAt) : "Sin fecha"} · {formatMetodoPago(pedido.metodoPago)}
-                    </p>
-                    {pedido.clienteNombre && <p className="mt-1 text-sm font-black text-slate-800">Cliente: {pedido.clienteNombre}</p>}
-                  </div>
-                  <div className="text-right">
-                    <StatusBadge estado={pedido.estado} />
-                    <p className="mt-2 text-lg font-black text-slate-950">{formatCurrency(String(pedido.total))}</p>
-                  </div>
-                </div>
-                <div className="mt-3 rounded-xl border border-slate-200 bg-white">
-                  {pedido.detalles.map((detalle) => (
-                    <div key={`${pedido.id}-${detalle.productoId}-${detalle.productoNombre}`} className="grid gap-2 border-b border-slate-100 px-3 py-2 last:border-b-0 sm:grid-cols-[1fr_80px_110px] sm:items-center">
-                      <p className="font-bold text-slate-900">{detalle.productoNombre}</p>
-                      <p className="font-bold text-slate-600">{detalle.cantidad} un.</p>
-                      <p className="font-black text-slate-950 sm:text-right">{formatCurrency(String(detalle.subtotal))}</p>
-                    </div>
-                  ))}
-                </div>
-                {pedido.observacion && (
-                  <p className="mt-3 rounded-xl border border-yellow-200 bg-[#FFF8DC] px-3 py-2 text-sm font-bold text-slate-800">
-                    {pedido.observacion}
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className={`min-h-[50px] rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
-          >
-            Volver
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isSaving}
-            className={`min-h-[50px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
-          >
-            {isSaving ? "Guardando..." : "Sí, cerrar turno"}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function CierreSummaryItem({ isStrong = false, label, value }: { isStrong?: boolean; label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <p className="text-xs font-black uppercase text-slate-500">{label}</p>
-      <p className={`mt-1 text-slate-950 ${isStrong ? "text-2xl font-black" : "text-base font-black"}`}>{value}</p>
-    </div>
   );
 }
 
@@ -732,37 +511,59 @@ function getPedidoActionState(estado: EstadoPedido) {
     {
       showCancel: boolean;
       showFinish: boolean;
+      showState: boolean;
       statusLabel: "Cancelado" | "Finalizado" | null;
     }
   > = {
     cancelado: {
       showCancel: false,
       showFinish: false,
+      showState: false,
       statusLabel: "Cancelado"
     },
     entregado: {
       showCancel: false,
       showFinish: false,
+      showState: false,
       statusLabel: "Finalizado"
     },
     en_preparacion: {
       showCancel: true,
       showFinish: false,
+      showState: true,
       statusLabel: null
     },
     listo: {
       showCancel: false,
       showFinish: true,
+      showState: false,
       statusLabel: null
     },
     pendiente: {
       showCancel: true,
       showFinish: false,
+      showState: true,
       statusLabel: null
     }
   };
 
   return actionStateByEstado[estado];
+}
+
+function getEntregadosHoy(pedidos: PedidoResponse[]) {
+  const today = new Date();
+
+  return pedidos.filter((pedido) => {
+    if (pedido.estado !== "entregado" || !pedido.createdAt) {
+      return false;
+    }
+
+    const createdAt = new Date(pedido.createdAt);
+
+    return createdAt.getFullYear() === today.getFullYear()
+      && createdAt.getMonth() === today.getMonth()
+      && createdAt.getDate() === today.getDate();
+  }).length;
 }
 
 export default PedidosNormalPage;
