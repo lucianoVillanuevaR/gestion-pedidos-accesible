@@ -89,11 +89,16 @@ function CierreTurnoPage() {
     <div className={`min-h-screen ${pageClass}`}>
       <main className="mx-auto w-full max-w-[1480px] space-y-5 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
         <CierreHeader
+          buttonSizeClass={buttonSizeClass}
           cajero={user?.label ?? user?.username ?? "No identificado"}
           fechaInicio={fechaInicio}
+          isAccessible={isAccessible}
           isHighContrast={isHighContrast}
           isTurnoOpen={isTurnoOpen}
           now={now}
+          onAbrirTurno={handleAbrirTurno}
+          onCerrarTurno={() => setIsConfirmOpen(true)}
+          onPrint={() => window.print()}
         />
 
         {message && (
@@ -130,42 +135,6 @@ function CierreTurnoPage() {
             </section>
 
             <PedidosTurnoPanel panelClass={panelClass} pedidos={pedidosDetalle} />
-
-            <section className={`flex flex-col gap-3 rounded-[18px] p-4 sm:flex-row sm:items-center sm:justify-between ${panelClass}`} aria-label="Acciones de cierre">
-              <p className="font-bold text-slate-600">
-                El cierre guarda el resumen del turno actual y no borra pedidos, productos ni datos.
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className={`inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-800 transition hover:bg-slate-100 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
-                >
-                  <Printer className="h-5 w-5" aria-hidden="true" />
-                  Imprimir resumen
-                </button>
-
-                {isTurnoOpen ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsConfirmOpen(true)}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl border border-red-700 bg-red-700 px-5 font-black text-white transition hover:bg-red-800 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
-                  >
-                    <Check className="h-5 w-5" aria-hidden="true" />
-                    Cerrar turno
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleAbrirTurno}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-600 px-5 font-black text-white transition hover:bg-emerald-700 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
-                  >
-                    <Store className="h-5 w-5" aria-hidden="true" />
-                    Abrir turno
-                  </button>
-                )}
-              </div>
-            </section>
           </>
         )}
 
@@ -183,17 +152,27 @@ function CierreTurnoPage() {
 }
 
 function CierreHeader({
+  buttonSizeClass,
   cajero,
   fechaInicio,
+  isAccessible,
   isHighContrast,
   isTurnoOpen,
-  now
+  now,
+  onAbrirTurno,
+  onCerrarTurno,
+  onPrint
 }: {
+  buttonSizeClass: string;
   cajero: string;
   fechaInicio?: string;
+  isAccessible: boolean;
   isHighContrast: boolean;
   isTurnoOpen: boolean;
   now: Date;
+  onAbrirTurno: () => void;
+  onCerrarTurno: () => void;
+  onPrint: () => void;
 }) {
   return (
     <header className={`rounded-[18px] border px-4 py-5 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]"}`}>
@@ -202,6 +181,37 @@ function CierreHeader({
           <p className="text-sm font-black uppercase text-emerald-700">Resumen administrativo</p>
           <h1 className="mt-1 text-3xl font-black leading-tight text-slate-950">Cierre de turno</h1>
           <p className="mt-1 text-base font-bold text-slate-600">Resumen y cierre del turno actual</p>
+
+          <div className={`mt-5 grid gap-3 ${isAccessible ? "sm:grid-cols-2" : "sm:flex sm:flex-wrap"}`} aria-label="Acciones de cierre">
+            <button
+              type="button"
+              onClick={onPrint}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-800 transition hover:bg-slate-100 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
+            >
+              <Printer className="h-5 w-5" aria-hidden="true" />
+              Imprimir resumen
+            </button>
+
+            {isTurnoOpen ? (
+              <button
+                type="button"
+                onClick={onCerrarTurno}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border border-red-700 bg-red-700 px-5 font-black text-white transition hover:bg-red-800 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Check className="h-5 w-5" aria-hidden="true" />
+                Cerrar turno
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onAbrirTurno}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-600 px-5 font-black text-white transition hover:bg-emerald-700 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Store className="h-5 w-5" aria-hidden="true" />
+                Abrir turno
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[620px]">

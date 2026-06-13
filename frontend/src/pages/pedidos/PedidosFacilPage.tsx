@@ -172,43 +172,43 @@ function PedidosFacilPage() {
 
   return (
     <div className={`min-h-screen ${pageBg}`}>
-      <div className={isHighContrast ? "border-b-2 border-yellow-400 bg-black text-white" : "border-b border-slate-700 bg-slate-900 text-white"}>
-        <div className="mx-auto flex min-h-[84px] w-full max-w-[1520px] flex-wrap items-center justify-between gap-4 px-3 py-3 sm:px-4 lg:px-5 xl:px-6">
-          <div>
-            <p className={`text-sm font-black uppercase ${isHighContrast ? "text-yellow-300" : "text-slate-300"}`}>Modo fácil</p>
-            <h1 className="mt-1 text-3xl font-black leading-none tracking-tight contrast-important">Pedidos activos</h1>
-          </div>
-
-          <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-            <Link
-              to="/pdv/facil"
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-5 text-lg font-black no-underline transition ${
-                isHighContrast ? "contrast-button-primary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
-              Crear nuevo pedido
-            </Link>
-            <button
-              type="button"
-              onClick={openAccessibilityPanel}
-              aria-haspopup="dialog"
-              aria-expanded={isPanelOpen}
-              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-5 text-lg font-black transition ${
-                isHighContrast ? "contrast-button-secondary" : "border-white bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <Accessibility className="h-6 w-6" aria-hidden="true" />
-              Accesibilidad
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-5 sm:px-4 lg:px-5 xl:px-6">
+      <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
         <p className="sr-only" aria-live="polite">{liveMessage}</p>
 
         <section className={`rounded-[28px] p-5 sm:p-6 ${panelClass}`} aria-label="Resumen de pedidos activos">
+          <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "text-yellow-300" : "text-slate-500"}`}>Modo fácil</p>
+              <h1 className={`mt-1 text-3xl font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
+                Pedidos activos
+              </h1>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[520px]">
+              <Link
+                to="/pdv/facil"
+                className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black no-underline transition ${
+                  isHighContrast ? "contrast-button-primary" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                } ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
+                Crear nuevo pedido
+              </Link>
+              <button
+                type="button"
+                onClick={openAccessibilityPanel}
+                aria-haspopup="dialog"
+                aria-expanded={isPanelOpen}
+                className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black transition ${
+                  isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
+                } ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Accessibility className="h-6 w-6" aria-hidden="true" />
+                Accesibilidad
+              </button>
+            </div>
+          </div>
+
           <div className="grid gap-4 lg:grid-cols-3">
             <SummaryCard isHighContrast={isHighContrast} label="Pedidos activos" value={String(pedidosActivos)} />
             <SummaryCard isHighContrast={isHighContrast} label="Ventas entregadas" value={formatCurrency(String(normalSummary.totalVendido))} />
