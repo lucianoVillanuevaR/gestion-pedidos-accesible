@@ -14,7 +14,7 @@ const ROUTE_MESSAGES: Record<string, string> = {
   "/clientes": "Clientes. Revisa registro, segmentos y estado de clientes.",
   "/cocina": "Cocina. Vista general para preparar y organizar comandas.",
   "/cocina/facil": "Cocina en modo facil. Revisa comandas grandes, prepara pedidos y marca tickets listos.",
-  "/historial-pedidos": "Historial de pedidos. Revisa pedidos listos y recientes.",
+  "/historial-pedidos": "Historial de turnos. Consulta turnos cerrados, ventas confirmadas y pedidos registrados.",
   "/inventario": "Inventario. Control de stock y disponibilidad.",
   "/configuracion": "Configuracion. Ajustes del sistema, usuarios y permisos."
 };

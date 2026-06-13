@@ -66,7 +66,7 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
   {
     label: "Historial",
     path: "/historial-pedidos",
-    description: "Pedidos listos y recientes",
+    description: "Turnos cerrados y ventas pasadas",
     icon: ClipboardList,
     allowedRoles: ["cajero", "admin"]
   },

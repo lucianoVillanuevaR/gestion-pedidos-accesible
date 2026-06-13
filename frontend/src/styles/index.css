@@ -46,6 +46,10 @@ input {
   font: inherit;
 }
 
+.historial-print-only {
+  display: none;
+}
+
 /* ============================================
    MODO NORMAL - Compacto y Moderno
    ============================================ */
@@ -576,9 +580,83 @@ html[data-contrast="true"] button {
     background: #ffffff !important;
   }
 
+  .no-print {
+    display: none !important;
+  }
+
   .ticket-print {
     width: 100%;
     margin: 0;
     padding: 4mm;
+  }
+
+  body:has(.historial-print-target) * {
+    visibility: hidden !important;
+  }
+
+  body:has(.historial-print-target) .historial-print-target,
+  body:has(.historial-print-target) .historial-print-target * {
+    visibility: visible !important;
+  }
+
+  .historial-print-turno:not(.historial-print-target) {
+    display: none !important;
+  }
+
+  .historial-print-target {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .historial-print-target > :not(.historial-print-only) {
+    display: none !important;
+  }
+
+  .historial-print-target .historial-print-only {
+    display: block !important;
+    padding: 8mm;
+    font-family: Arial, sans-serif;
+    color: #111827 !important;
+  }
+
+  .historial-print-only h1 {
+    margin: 0;
+    font-size: 24px;
+  }
+
+  .historial-print-only h2 {
+    margin: 18px 0 8px;
+    font-size: 16px;
+  }
+
+  .historial-print-only p {
+    margin: 4px 0;
+    font-size: 12px;
+  }
+
+  .historial-print-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 16px;
+    margin-top: 12px;
+  }
+
+  .historial-print-only table {
+    width: 100%;
+    margin-top: 8px;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .historial-print-only th,
+  .historial-print-only td {
+    border: 1px solid #cbd5e1;
+    padding: 6px;
+    text-align: left;
   }
 }

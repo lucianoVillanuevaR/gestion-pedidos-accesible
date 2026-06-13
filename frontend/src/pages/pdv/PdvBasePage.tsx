@@ -382,7 +382,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       setTurnoAbierto(false);
       setIsTurnoOpen(false);
       const message = "Turno cerrado. Debes abrir turno para registrar pedidos.";
-      setFeedback({ type: "error", message });
+      setFeedback(null);
       playSoundCue("error");
       announce(message, {
         priority: "high",

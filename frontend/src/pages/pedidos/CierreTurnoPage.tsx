@@ -4,10 +4,9 @@ import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { guardarCierreTurno } from "../../services/cierresTurno";
-import type { CierreProductoResumen, EstadoPedido, PedidoResponse } from "../../types";
+import type { CierreProductoResumen } from "../../types";
 import {
   buildCierreTurno,
-  ESTADO_META,
   FOCUS_VISIBLE_CLASS,
   formatCurrency,
   formatDateTime,
@@ -359,7 +358,7 @@ function PedidosTurnoPanel({
             {pedidos.map((pedido) => (
               <article key={pedido.id} className="grid gap-3 px-4 py-3 md:grid-cols-[120px_170px_160px_130px_100px] md:items-center">
                 <p className="font-black text-slate-950">#{pedido.id}</p>
-                <StatusBadge estado={pedido.estado as EstadoPedido} />
+                <StatusBadge estado={pedido.estado} />
                 <p className="font-bold text-slate-700">{formatMetodoPago(pedido.metodoPago)}</p>
                 <p className="font-black text-slate-950">{formatCurrency(String(pedido.total))}</p>
                 <p className="font-bold text-slate-600">{formatTime(pedido.createdAt)}</p>

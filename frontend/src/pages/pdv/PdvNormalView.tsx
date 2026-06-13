@@ -398,7 +398,7 @@ function PdvNormalView() {
                   className={`flex min-h-[42px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-amber-300 ${
                     active
                       ? "border-[#FECE00] bg-[#FECE00] text-slate-950"
-                      : "border-slate-300 bg-white text-amber-700 hover:bg-amber-50"
+                      : "border-slate-300 bg-white text-slate-950 hover:bg-amber-50"
                   }`}
                   aria-pressed={active}
                 >
