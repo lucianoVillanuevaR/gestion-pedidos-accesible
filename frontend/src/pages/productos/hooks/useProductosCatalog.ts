@@ -41,7 +41,7 @@ export function useProductosCatalog({
     loadProductos();
   }, [loadProductos]);
 
-  const productosConCategoria = useMemo(() => withProductoCategoria(productos), [productos]);
+  const productosConCategoria = useMemo(() => withProductoCategoria(productos, categorias), [categorias, productos]);
 
   const productosFiltrados = useMemo(() => {
     return filterCatalogoProductos(productosConCategoria, searchTerm);

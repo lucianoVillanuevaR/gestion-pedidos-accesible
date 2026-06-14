@@ -9,13 +9,20 @@ const EXTENSION_BY_MIME: Record<string, string> = {
   "image/webp": "webp"
 };
 
-type ProductoWithImageUrl = Awaited<ReturnType<typeof prisma.producto.findUnique>>;
 type ProductImageFile = {
   buffer: Buffer;
   mimetype: string;
   originalname: string;
   size: number;
 };
+
+const PRODUCTO_IMAGE_INCLUDE = {
+  categorias: {
+    orderBy: {
+      nombre: "asc"
+    }
+  }
+} as const;
 
 export function buildProductImageUrl(objectName: string | null | undefined) {
   if (!objectName) {
@@ -29,9 +36,10 @@ export function buildProductImageUrl(objectName: string | null | undefined) {
   return `${minioPublicUrl}/${productBucket}/${objectName}`;
 }
 
-export function withProductImageUrl<T extends { imagenUrl?: string | null }>(producto: T) {
+export function withProductImageUrl<T extends { categorias?: Array<{ nombre: string }>; imagenUrl?: string | null }>(producto: T) {
   return {
     ...producto,
+    categoria: producto.categorias?.[0]?.nombre,
     imagenPublicUrl: buildProductImageUrl(producto.imagenUrl)
   };
 }
@@ -63,7 +71,7 @@ async function deleteObjectIfNeeded(imagenUrl: string | null | undefined) {
   }
 }
 
-function ensureProducto(producto: ProductoWithImageUrl) {
+function ensureProducto<T>(producto: T | null) {
   if (!producto) {
     throw new Error("Producto no encontrado");
   }
@@ -72,7 +80,7 @@ function ensureProducto(producto: ProductoWithImageUrl) {
 }
 
 export async function uploadProductImage(productId: number, file: ProductImageFile) {
-  const producto = ensureProducto(await prisma.producto.findUnique({ where: { id: productId } }));
+  const producto = ensureProducto(await prisma.producto.findUnique({ include: PRODUCTO_IMAGE_INCLUDE, where: { id: productId } }));
   const extension = getExtension(file);
   const objectName = `producto-${productId}-${Date.now()}.${extension}`;
 
@@ -84,6 +92,7 @@ export async function uploadProductImage(productId: number, file: ProductImageFi
     data: {
       imagenUrl: objectName
     },
+    include: PRODUCTO_IMAGE_INCLUDE,
     where: {
       id: productId
     }
@@ -95,7 +104,7 @@ export async function uploadProductImage(productId: number, file: ProductImageFi
 }
 
 export async function deleteProductImage(productId: number) {
-  const producto = ensureProducto(await prisma.producto.findUnique({ where: { id: productId } }));
+  const producto = ensureProducto(await prisma.producto.findUnique({ include: PRODUCTO_IMAGE_INCLUDE, where: { id: productId } }));
 
   await deleteObjectIfNeeded(producto.imagenUrl);
 
@@ -103,6 +112,7 @@ export async function deleteProductImage(productId: number) {
     data: {
       imagenUrl: null
     },
+    include: PRODUCTO_IMAGE_INCLUDE,
     where: {
       id: productId
     }

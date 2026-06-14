@@ -5,10 +5,19 @@ import { deleteProductImage, uploadProductImage, withProductImageUrl } from "../
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateProductoCreate, validateProductoUpdate } from "../validations/productos.validation";
 
+const PRODUCTO_WITH_CATEGORIAS_INCLUDE = {
+  categorias: {
+    orderBy: {
+      nombre: "asc"
+    }
+  }
+} as const;
+
 export const getProductos = async (req: Request, res: Response) => {
   try {
     const includeUnavailable = req.query.includeUnavailable === "true";
     const productos = await prisma.producto.findMany({
+      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
       where: includeUnavailable ? undefined : { disponible: true },
       orderBy: { nombre: "asc" }
     });
@@ -30,6 +39,7 @@ export const getProductoById = async (req: Request, res: Response) => {
 
     const productoId = parsePositiveIntegerId(id);
     const producto = await prisma.producto.findUnique({
+      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
       where: { id: productoId }
     });
 
@@ -75,7 +85,8 @@ export const createProducto = async (req: Request, res: Response) => {
             where: { nombre: categoria }
           }
         }
-      }
+      },
+      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE
     });
 
     res.status(201).json(withProductImageUrl(producto));
@@ -122,6 +133,7 @@ export const updateProducto = async (req: Request, res: Response) => {
 
     const producto = await prisma.producto.update({
       data,
+      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
       where: { id: parsePositiveIntegerId(id) }
     });
 

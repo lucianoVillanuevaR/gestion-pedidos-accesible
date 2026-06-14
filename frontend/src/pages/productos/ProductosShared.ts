@@ -20,10 +20,14 @@ export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { label: "Otros", value: "Otros" }
 ];
 
-export function withProductoCategoria(productos: Producto[]): ProductoConCategoria[] {
+export function withProductoCategoria(productos: Producto[], categorias = CATEGORIAS_CATALOGO): ProductoConCategoria[] {
+  const categoriasDisponibles = new Set(categorias.map((categoria) => categoria.value));
+
   return productos.map((producto) => ({
     ...producto,
-    categoria: producto.categoria?.trim() || detectCategoria(producto)
+    categoria: producto.categoria?.trim() && categoriasDisponibles.has(producto.categoria.trim() as CategoriaCatalogo)
+      ? (producto.categoria.trim() as CategoriaCatalogo)
+      : detectCategoria(producto)
   }));
 }
 
