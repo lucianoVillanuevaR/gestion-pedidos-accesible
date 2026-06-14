@@ -61,6 +61,15 @@ export function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
   return [...categoriaMap.values()];
 }
 
+export function buildCategoriasCatalogo(productos: Producto[], customCategorias: CategoriaCatalogoOption[] = []) {
+  const categoriasProductos = productos
+    .map((producto) => producto.categoria?.trim())
+    .filter((categoria): categoria is string => Boolean(categoria))
+    .map((categoria) => ({ label: categoria, value: categoria as CategoriaCatalogo }));
+
+  return mergeCategorias([...customCategorias, ...categoriasProductos]);
+}
+
 export function withProductoCategoria(productos: Producto[], categorias = CATEGORIAS_CATALOGO): ProductoConCategoria[] {
   const categoriasDisponibles = new Set(categorias.map((categoria) => categoria.value));
 

@@ -388,7 +388,7 @@ function InventarioRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-black text-slate-950">{item.productoNombre}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">
-            Stock actual {item.stockActual} · Stock mínimo {item.stockMinimo}
+            Stock {item.stockActual} · Stock mínimo {item.stockMinimo}
           </p>
         </div>
       </div>
@@ -398,7 +398,7 @@ function InventarioRow({
       </span>
 
       <label className="block">
-        <span className="sr-only">Stock actual de {item.productoNombre}</span>
+        <span className="mb-1 block text-[11px] font-black uppercase text-slate-500">Stock</span>
         <input
           type="number"
           min="0"
@@ -410,7 +410,7 @@ function InventarioRow({
       </label>
 
       <label className="block">
-        <span className="sr-only">Stock mínimo de {item.productoNombre}</span>
+        <span className="mb-1 block text-[11px] font-black uppercase text-slate-500">Stock mínimo</span>
         <input
           type="number"
           min="0"

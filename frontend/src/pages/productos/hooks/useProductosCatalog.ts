@@ -3,6 +3,7 @@ import { getProductos } from "../../../services/productos";
 import type { Producto } from "../../../types";
 import {
   filterCatalogoProductos,
+  buildCategoriasCatalogo,
   groupProductosByCategoria,
   withProductoCategoria,
   CATEGORIAS_CATALOGO,
@@ -41,13 +42,15 @@ export function useProductosCatalog({
     loadProductos();
   }, [loadProductos]);
 
-  const productosConCategoria = useMemo(() => withProductoCategoria(productos, categorias), [categorias, productos]);
+  const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, categorias), [categorias, productos]);
+
+  const productosConCategoria = useMemo(() => withProductoCategoria(productos, categoriasCatalogo), [categoriasCatalogo, productos]);
 
   const productosFiltrados = useMemo(() => {
     return filterCatalogoProductos(productosConCategoria, searchTerm);
   }, [productosConCategoria, searchTerm]);
 
-  const grupos = useMemo(() => groupProductosByCategoria(productosFiltrados, categorias), [categorias, productosFiltrados]);
+  const grupos = useMemo(() => groupProductosByCategoria(productosFiltrados, categoriasCatalogo), [categoriasCatalogo, productosFiltrados]);
 
   useEffect(() => {
     if (grupos.length === 0) {
@@ -63,6 +66,7 @@ export function useProductosCatalog({
 
   return {
     activeCategory,
+    categoriasCatalogo,
     error,
     grupos,
     isLoading,

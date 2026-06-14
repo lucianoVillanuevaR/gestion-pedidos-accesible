@@ -44,7 +44,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: true });
 
-  const [selectedCategory, setSelectedCategory] = useState<FiltroCategoria>("Todos");
+  const [selectedCategory, setSelectedCategory] = useState<FiltroCategoria>("Destacados");
 
   const [searchTerm, setSearchTerm] = useState("");
   const {
@@ -511,7 +511,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       setSending(false);
 
       if (shouldResetAccessibleFlow) {
-        setSelectedCategory("Todos");
+        setSelectedCategory("Destacados");
         setSearchTerm("");
         setAccessibleStep(1);
 

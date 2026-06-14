@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  buildCategoriasCatalogo,
+  groupProductosByCategoria,
   loadCustomCategorias,
-  mergeCategorias,
   withProductoCategoria,
-  type CategoriaCatalogoOption
 } from "../../productos/ProductosShared";
 import { getProductos } from "../../../services/productos";
 import type { Producto } from "../../../types";
@@ -29,7 +29,7 @@ export function usePdvProducts({
     setLoadingProductos(true);
     setLoadingError(null);
 
-    getProductos()
+    getProductos({ includeUnavailable: true })
       .then((list) => {
         setProductos(list || []);
       })
@@ -47,7 +47,7 @@ export function usePdvProducts({
     setLoadingProductos(true);
     setLoadingError(null);
 
-    getProductos()
+    getProductos({ includeUnavailable: true })
       .then((list) => {
         if (isMounted) {
           setProductos(list || []);
@@ -69,27 +69,20 @@ export function usePdvProducts({
     };
   }, []);
 
-  const categoriasCatalogo = useMemo<CategoriaCatalogoOption[]>(() => {
-    const categoriasProductos = productos
-      .map((producto) => producto.categoria?.trim())
-      .filter((categoria): categoria is string => Boolean(categoria))
-      .map((categoria) => ({ label: categoria, value: categoria }));
+  const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, loadCustomCategorias()), [productos]);
 
-    return mergeCategorias([...loadCustomCategorias(), ...categoriasProductos]);
-  }, [productos]);
-
-  const categoryFilters = useMemo<Array<{ label: string; value: FiltroCategoria }>>(() => {
-    return [
-      ...categoriasCatalogo.map((categoria) => ({
-        label: categoria.value === "Destacados" ? "Destacados" : categoria.label,
-        value: categoria.value as FiltroCategoria
-      })),
-      { label: "Todos", value: "Todos" }
-    ];
-  }, [categoriasCatalogo]);
+  const productosDisponibles = useMemo(() => productos.filter((producto) => producto.disponible !== false), [productos]);
 
   const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
-    return withProductoCategoria(productos, categoriasCatalogo);
+    return withProductoCategoria(productosDisponibles, categoriasCatalogo);
+  }, [categoriasCatalogo, productosDisponibles]);
+
+  const categoryFilters = useMemo<Array<{ label: string; value: FiltroCategoria }>>(() => {
+    const productosCatalogo = withProductoCategoria(productos, categoriasCatalogo);
+    return groupProductosByCategoria(productosCatalogo, categoriasCatalogo).map((grupo) => ({
+      label: grupo.label,
+      value: grupo.value as FiltroCategoria
+    }));
   }, [categoriasCatalogo, productos]);
 
   const productosFiltrados = useMemo(() => {
