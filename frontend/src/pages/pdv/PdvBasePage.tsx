@@ -665,6 +665,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const onKey = (event: KeyboardEvent) => {
+      const target = event.target;
+      const isEditingText =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable);
+
+      if (isEditingText) {
+        return;
+      }
+
       if (event.key === "Escape") {
         setAccessibleStep(1);
       }
@@ -674,17 +685,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       }
 
       if (event.key === "ArrowLeft") {
-        setAccessibleStep((currentStep) => Math.max(1, currentStep - 1));
+        goPrevAccessibleStep();
       }
     };
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [goNextAccessibleStep, isAccessible]);
-
-  function AccessibleFlow() {
-    return <PdvFacilView />;
-  }
+  }, [goNextAccessibleStep, goPrevAccessibleStep, isAccessible]);
 
   const viewContext = {
     accessibleObservationPlaceholder,
@@ -791,7 +798,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
             </div>
           )}
 
-          {isAccessible ? <AccessibleFlow /> : <PdvNormalView />}
+          {isAccessible ? <PdvFacilView /> : <PdvNormalView />}
 
           <div className="hidden print:block" ref={ticketRef}>
             <TicketComanda
