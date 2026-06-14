@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  loadCustomCategorias,
+  mergeCategorias,
+  withProductoCategoria,
+  type CategoriaCatalogoOption
+} from "../../productos/ProductosShared";
 import { getProductos } from "../../../services/productos";
 import type { Producto } from "../../../types";
 import {
-  detectCategoria,
   filterProductosByCategory,
   filterProductosBySearch,
   type FiltroCategoria,
@@ -64,12 +69,28 @@ export function usePdvProducts({
     };
   }, []);
 
-  const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
-    return productos.map((producto) => ({
-      ...producto,
-      categoria: detectCategoria(producto)
-    }));
+  const categoriasCatalogo = useMemo<CategoriaCatalogoOption[]>(() => {
+    const categoriasProductos = productos
+      .map((producto) => producto.categoria?.trim())
+      .filter((categoria): categoria is string => Boolean(categoria))
+      .map((categoria) => ({ label: categoria, value: categoria }));
+
+    return mergeCategorias([...loadCustomCategorias(), ...categoriasProductos]);
   }, [productos]);
+
+  const categoryFilters = useMemo<Array<{ label: string; value: FiltroCategoria }>>(() => {
+    return [
+      ...categoriasCatalogo.map((categoria) => ({
+        label: categoria.value === "Destacados" ? "Destacados" : categoria.label,
+        value: categoria.value as FiltroCategoria
+      })),
+      { label: "Todos", value: "Todos" }
+    ];
+  }, [categoriasCatalogo]);
+
+  const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
+    return withProductoCategoria(productos, categoriasCatalogo);
+  }, [categoriasCatalogo, productos]);
 
   const productosFiltrados = useMemo(() => {
     const filtradosPorCategoria = filterProductosByCategory(
@@ -86,6 +107,7 @@ export function usePdvProducts({
 
   return {
     accessibleProductos,
+    categoryFilters,
     loadingError,
     loadingProductos,
     loadProductos,

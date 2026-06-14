@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { useAuthContext } from "../../contexts/AuthContext";
 import type { Producto } from "../../types";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH } from "../../validations/pedido.validation";
-import { FILTROS, formatCurrency, getPaymentLabel } from "../../utils/pdv";
+import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { PAYMENT_OPTIONS, Toast } from "./PdvShared";
@@ -15,6 +15,7 @@ function PdvNormalView() {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const {
     addProduct,
+    categoryFilters,
     decreaseProduct,
     feedback,
     feedbackRef,
@@ -51,7 +52,7 @@ function PdvNormalView() {
     totalItems
   } = usePdvViewContext();
 
-  const selectedCategoryLabel = FILTROS.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
+  const selectedCategoryLabel = categoryFilters.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
   const orderDate = new Intl.DateTimeFormat("es-CL", {
     day: "2-digit",
     month: "2-digit",
@@ -100,7 +101,7 @@ function PdvNormalView() {
             Categorías
           </div>
           <div className="divide-y divide-slate-200">
-            {FILTROS.map((filtro) => (
+            {categoryFilters.map((filtro) => (
               <button
                 key={filtro.value}
                 type="button"
@@ -140,7 +141,7 @@ function PdvNormalView() {
           </div>
 
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1 md:hidden">
-            {FILTROS.map((filtro) => (
+            {categoryFilters.map((filtro) => (
               <button
                 key={filtro.value}
                 type="button"

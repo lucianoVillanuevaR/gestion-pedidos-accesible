@@ -11,6 +11,8 @@ import {
 export type CategoriaCatalogo = ProductoCategoriaCatalogo | "Destacados";
 export type CategoriaCatalogoOption = { label: string; value: CategoriaCatalogo };
 
+export const CUSTOM_CATEGORIES_STORAGE_KEY = "riquisimo-custom-product-categories";
+
 export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { label: "Destacados", value: "Destacados" },
   ...FILTROS.filter((filtro) => filtro.value !== "Todos" && filtro.value !== "Destacados").map((filtro) => ({
@@ -19,6 +21,45 @@ export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   })),
   { label: "Otros", value: "Otros" }
 ];
+
+export function loadCustomCategorias(): CategoriaCatalogoOption[] {
+  try {
+    const storedCategorias = window.localStorage.getItem(CUSTOM_CATEGORIES_STORAGE_KEY);
+
+    if (!storedCategorias) {
+      return [];
+    }
+
+    const parsedCategorias = JSON.parse(storedCategorias) as CategoriaCatalogoOption[];
+
+    if (!Array.isArray(parsedCategorias)) {
+      return [];
+    }
+
+    return parsedCategorias.filter((categoria) => typeof categoria?.label === "string" && typeof categoria?.value === "string");
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomCategorias(categorias: CategoriaCatalogoOption[]) {
+  window.localStorage.setItem(CUSTOM_CATEGORIES_STORAGE_KEY, JSON.stringify(categorias));
+}
+
+export function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
+  const categoriaMap = new Map<CategoriaCatalogo, CategoriaCatalogoOption>();
+
+  [...CATEGORIAS_CATALOGO, ...customCategorias].forEach((categoria) => {
+    const label = categoria.label.trim();
+    const value = String(categoria.value).trim() as CategoriaCatalogo;
+
+    if (label && value && !categoriaMap.has(value)) {
+      categoriaMap.set(value, { label, value });
+    }
+  });
+
+  return [...categoriaMap.values()];
+}
 
 export function withProductoCategoria(productos: Producto[], categorias = CATEGORIAS_CATALOGO): ProductoConCategoria[] {
   const categoriasDisponibles = new Set(categorias.map((categoria) => categoria.value));

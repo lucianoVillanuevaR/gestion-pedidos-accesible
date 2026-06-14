@@ -49,6 +49,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [searchTerm, setSearchTerm] = useState("");
   const {
     accessibleProductos,
+    categoryFilters,
     loadingError,
     loadingProductos,
     loadProductos,
@@ -694,6 +695,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     addProduct,
     bgWrapper,
     cardBorder,
+    categoryFilters,
     clienteNombre,
     decreaseProduct,
     feedback,

@@ -15,10 +15,15 @@ import {
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImage } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
-import { CATEGORIAS_CATALOGO, type CategoriaCatalogo, type CategoriaCatalogoOption } from "./ProductosShared";
+import {
+  CATEGORIAS_CATALOGO,
+  loadCustomCategorias,
+  mergeCategorias,
+  saveCustomCategorias,
+  type CategoriaCatalogo,
+  type CategoriaCatalogoOption
+} from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
-
-const CUSTOM_CATEGORIES_STORAGE_KEY = "riquisimo-custom-product-categories";
 
 type CategoriaGrupo = {
   label: string;
@@ -505,45 +510,6 @@ function ProductosPage() {
       </main>
     </div>
   );
-}
-
-function loadCustomCategorias(): CategoriaCatalogoOption[] {
-  try {
-    const storedCategorias = window.localStorage.getItem(CUSTOM_CATEGORIES_STORAGE_KEY);
-
-    if (!storedCategorias) {
-      return [];
-    }
-
-    const parsedCategorias = JSON.parse(storedCategorias) as CategoriaCatalogoOption[];
-
-    if (!Array.isArray(parsedCategorias)) {
-      return [];
-    }
-
-    return parsedCategorias.filter((categoria) => typeof categoria?.label === "string" && typeof categoria?.value === "string");
-  } catch {
-    return [];
-  }
-}
-
-function saveCustomCategorias(categorias: CategoriaCatalogoOption[]) {
-  window.localStorage.setItem(CUSTOM_CATEGORIES_STORAGE_KEY, JSON.stringify(categorias));
-}
-
-function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
-  const categoriaMap = new Map<CategoriaCatalogo, CategoriaCatalogoOption>();
-
-  [...CATEGORIAS_CATALOGO, ...customCategorias].forEach((categoria) => {
-    const label = categoria.label.trim();
-    const value = String(categoria.value).trim() as CategoriaCatalogo;
-
-    if (label && value && !categoriaMap.has(value)) {
-      categoriaMap.set(value, { label, value });
-    }
-  });
-
-  return [...categoriaMap.values()];
 }
 
 function CategoriaBlock({

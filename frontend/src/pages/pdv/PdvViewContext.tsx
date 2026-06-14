@@ -20,6 +20,7 @@ export type PdvViewContextValue = {
   addProduct: (producto: Producto) => void;
   bgWrapper: string;
   cardBorder: string;
+  categoryFilters: Array<{ label: string; value: FiltroCategoria }>;
   clienteNombre: string;
   decreaseProduct: (producto: Producto) => void;
   feedback: FeedbackState | null;

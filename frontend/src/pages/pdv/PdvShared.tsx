@@ -3,7 +3,8 @@ import type { Producto } from "../../types";
 import {
   detectCategoria,
   formatCurrency,
-  getCategoriaLabel
+  getCategoriaLabel,
+  type ProductoCategoriaCatalogo
 } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 
@@ -113,7 +114,7 @@ export function ProductCard({
   onDecrease: () => void;
   onAdd: () => void;
 }) {
-  const categoria = detectCategoria(producto);
+  const categoria = (producto.categoria?.trim() || detectCategoria(producto)) as ProductoCategoriaCatalogo;
 
   return (
     <article

@@ -2,17 +2,9 @@ import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, LockKeyhole, Unloc
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import { PEDIDO_OBSERVACION_MAX_LENGTH } from "../../validations/pedido.validation";
-import { formatCurrency, type FiltroCategoria } from "../../utils/pdv";
+import { formatCurrency } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
-
-const FILTROS_FACILES: Array<{ label: string; value: FiltroCategoria }> = [
-  { label: "Sandwich", value: "Sandwich" },
-  { label: "Completos", value: "Completos" },
-  { label: "Bebidas", value: "Bebidas" },
-  { label: "Destacados", value: "Destacados" },
-  { label: "Ver todos", value: "Todos" }
-];
 
 function PdvFacilView() {
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
@@ -24,6 +16,7 @@ function PdvFacilView() {
     accessibleStepValidation,
     addProduct,
     cardBorder,
+    categoryFilters,
     decreaseProduct,
     feedback,
     goNextAccessibleStep,
@@ -197,7 +190,7 @@ function PdvFacilView() {
         <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step1" className="font-black text-2xl mb-4">Paso 2: Elige categoría</h2>
           <div className="grid grid-cols-2 gap-4">
-            {FILTROS_FACILES.map((filtro) => (
+            {categoryFilters.map((filtro) => (
               <button
                 key={filtro.value}
                 type="button"
