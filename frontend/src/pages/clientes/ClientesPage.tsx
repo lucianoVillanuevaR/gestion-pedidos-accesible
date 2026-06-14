@@ -28,7 +28,7 @@ const FILTERS: Array<{ label: string; value: SegmentFilter }> = [
 ];
 
 const BLACK_ACTION_BUTTON_CLASS = "border border-slate-950 bg-slate-950 text-white hover:bg-black";
-const LOGO_ACTIVE_FILTER_CLASS = "border-amber-400 bg-[#FECE00] text-slate-950";
+const LOGO_ACTIVE_FILTER_CLASS = "border-yellow-400 bg-[#FECE00] text-slate-950";
 
 function ClientesPage() {
   const { isHighContrast } = useAccessibilityContext();
@@ -106,7 +106,7 @@ function ClientesPage() {
                     className={`min-h-[30px] rounded-full border px-3 text-xs font-black transition ${
                       isActive
                         ? LOGO_ACTIVE_FILTER_CLASS
-                        : "border-amber-300 bg-white text-slate-600 hover:border-amber-400 hover:bg-[#FFF8DC]"
+                        : "border-yellow-300 bg-white text-slate-600 hover:border-yellow-400 hover:bg-[#FFF8DC]"
                     } ${FOCUS_VISIBLE_CLASS}`}
                   >
                     {filter.label}
@@ -192,7 +192,7 @@ function SegmentBadge({ segment }: { segment: SegmentFilter }) {
 
   return (
     <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
-      isEmpty ? "border-slate-200 bg-slate-50 text-slate-600" : "border-amber-300 bg-[#FFF8DC] text-amber-800"
+      isEmpty ? "border-slate-200 bg-slate-50 text-slate-600" : "border-yellow-300 bg-[#FFF8DC] text-yellow-800"
     }`}>
       {label}
     </span>

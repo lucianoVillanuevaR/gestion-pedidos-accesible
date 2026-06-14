@@ -13,7 +13,7 @@ type PortalStat = {
 }
 
 type PortalPageProps = {
-  accent?: "amber" | "orange" | "slate"
+  accent?: "yellow" | "slate"
   actions?: PortalAction[]
   badge?: string
   description: string
@@ -24,13 +24,9 @@ type PortalPageProps = {
 }
 
 const accentStyles = {
-  amber: {
+  yellow: {
     badge: "bg-[#FECE00] text-slate-950 border-yellow-200",
     button: "bg-slate-900 text-white hover:bg-black"
-  },
-  orange: {
-    badge: "bg-orange-100 text-orange-900 border-orange-200",
-    button: "bg-orange-500 text-white hover:bg-orange-600"
   },
   slate: {
     badge: "bg-slate-900 text-white border-slate-700",
@@ -39,7 +35,7 @@ const accentStyles = {
 }
 
 function PortalPage({
-  accent = "amber",
+  accent = "yellow",
   actions = [],
   badge = "Vista lista",
   description,

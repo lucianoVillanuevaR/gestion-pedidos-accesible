@@ -2,7 +2,7 @@ import type { MetodoPago, Producto } from "../types";
 
 export type ProductoCategoria = "Sandwich" | "Completos" | "Bebidas" | "Otros";
 export type ProductoCategoriaCatalogo = ProductoCategoria | (string & {});
-export type FiltroCategoria = ProductoCategoria | "Destacados" | "Todos";
+export type FiltroCategoria = ProductoCategoriaCatalogo | "Destacados" | "Todos";
 export type ProductoConCategoria = Producto & { categoria: ProductoCategoriaCatalogo };
 
 interface PedidoDetalleCalculado {
@@ -55,7 +55,7 @@ export function detectCategoria(producto: Pick<Producto, "nombre">): ProductoCat
   return "Otros";
 }
 
-export function getCategoriaLabel(categoria: ProductoCategoria) {
+export function getCategoriaLabel(categoria: ProductoCategoriaCatalogo) {
   switch (categoria) {
     case "Sandwich":
       return "Sandwich";
@@ -63,8 +63,10 @@ export function getCategoriaLabel(categoria: ProductoCategoria) {
       return "Completos";
     case "Bebidas":
       return "Bebidas";
-    default:
+    case "Otros":
       return "Otros";
+    default:
+      return categoria;
   }
 }
 

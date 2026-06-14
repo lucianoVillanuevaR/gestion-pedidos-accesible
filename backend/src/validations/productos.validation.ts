@@ -1,9 +1,10 @@
 const CATEGORIAS_VALIDAS = ["Sandwich", "Completos", "Bebidas", "Otros", "Destacados"] as const;
 const PRODUCTO_NOMBRE_MAX_LENGTH = 80;
 const PRODUCTO_DESCRIPCION_MAX_LENGTH = 300;
+const PRODUCTO_CATEGORIA_MAX_LENGTH = 60;
 const PRODUCTO_PRECIO_MAX = 99999999.99;
 
-type CategoriaValida = (typeof CATEGORIAS_VALIDAS)[number];
+type CategoriaValida = string;
 
 type ProductoInput = {
   categoria?: unknown;
@@ -34,6 +35,23 @@ function validateStringLength(value: string, fieldName: string, maxLength: numbe
 function validateOptionalBoolean(value: unknown, fieldName: string) {
   if (value !== undefined && typeof value !== "boolean") {
     return `${fieldName} debe ser verdadero o falso`;
+  }
+
+  return null;
+}
+
+function validateCategoria(value: string) {
+  if (!value) {
+    return "La categoría es obligatoria";
+  }
+
+  const lengthError = validateStringLength(value, "La categoría", PRODUCTO_CATEGORIA_MAX_LENGTH);
+  if (lengthError) {
+    return lengthError;
+  }
+
+  if (!/^[\p{L}\p{N}\s_-]+$/u.test(value)) {
+    return "La categoría solo puede incluir letras, números, espacios, guiones y guiones bajos";
   }
 
   return null;
@@ -75,8 +93,9 @@ export function validateProductoCreate(input: ProductoInput): { data?: Required<
     return { error: "El precio debe tener como máximo 2 decimales" };
   }
 
-  if (!CATEGORIAS_VALIDAS.includes(categoria as CategoriaValida)) {
-    return { error: `Categoría inválida. Debe ser una de: ${CATEGORIAS_VALIDAS.join(", ")}` };
+  const categoriaError = validateCategoria(categoria);
+  if (categoriaError) {
+    return { error: categoriaError };
   }
 
   const destacadoError = validateOptionalBoolean(input.destacado, "destacado");
@@ -178,8 +197,9 @@ export function validateProductoUpdate(input: ProductoInput): { data?: ProductoV
 
     const categoria = input.categoria.trim();
 
-    if (!CATEGORIAS_VALIDAS.includes(categoria as CategoriaValida)) {
-      return { error: `Categoría inválida. Debe ser una de: ${CATEGORIAS_VALIDAS.join(", ")}` };
+    const categoriaError = validateCategoria(categoria);
+    if (categoriaError) {
+      return { error: categoriaError };
     }
 
     data.categoria = categoria as CategoriaValida;

@@ -14,6 +14,7 @@ import {
   formatCurrency,
   formatMetodoPago,
   formatTime,
+  getPedidoDisplayNumber,
   getPedidoSummary,
   getProductCount,
   getTurnoSummary,
@@ -78,7 +79,8 @@ function PedidosFacilPage() {
 
   const handleAccessibleEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
     await handleEstadoChange(pedido, estado);
-    const message = `Pedido ${pedido.id} actualizado a ${ESTADO_META[estado].label}.`;
+    const numeroPedido = getPedidoDisplayNumber(pedido);
+    const message = `Pedido ${numeroPedido} actualizado a ${ESTADO_META[estado].label}.`;
     setLiveMessage(message);
     speak(message, {
       priority: "high",
@@ -106,8 +108,9 @@ function PedidosFacilPage() {
 
   const handleReadPedido = (pedido: PedidoResponse) => {
     const cliente = pedido.clienteNombre?.trim() || "Sin nombre";
+    const numeroPedido = getPedidoDisplayNumber(pedido);
     const message = [
-      `Pedido ${pedido.id}`,
+      `Pedido ${numeroPedido}`,
       `estado ${ESTADO_META[pedido.estado].label}`,
       `cliente ${cliente}`,
       `pago ${formatMetodoPago(pedido.metodoPago)}`,
@@ -432,19 +435,20 @@ function AccessiblePedidoCard({
   pedido: PedidoResponse;
 }) {
   const cliente = pedido.clienteNombre?.trim() || "Sin nombre";
+  const numeroPedido = getPedidoDisplayNumber(pedido);
 
   return (
     <article
       className={`rounded-[28px] p-5 sm:p-6 ${
         isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"
       }`}
-      aria-label={`Pedido ${pedido.id}. Estado ${ESTADO_META[pedido.estado].label}. Cliente ${cliente}.`}
+      aria-label={`Pedido ${numeroPedido}. Estado ${ESTADO_META[pedido.estado].label}. Cliente ${cliente}.`}
     >
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_220px] xl:items-start">
         <div className="min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-3xl font-black text-slate-950">Pedido #{pedido.id}</p>
+              <p className="text-3xl font-black text-slate-950">Pedido #{numeroPedido}</p>
               <p className="mt-2 text-xl font-black text-slate-700">Hora: {formatTime(pedido.createdAt)}</p>
             </div>
             <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -473,7 +477,7 @@ function AccessiblePedidoCard({
             className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${
               isHighContrast ? "contrast-button-secondary" : EASY_SECONDARY_BUTTON_CLASS
             } ${FOCUS_VISIBLE_CLASS}`}
-            aria-label={`Leer pedido ${pedido.id}`}
+            aria-label={`Leer pedido ${numeroPedido}`}
           >
             <Volume2 className="h-6 w-6" aria-hidden="true" />
             Leer pedido

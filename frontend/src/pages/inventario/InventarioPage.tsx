@@ -43,7 +43,7 @@ function getEstadoClass(estado: InventarioEstado) {
   }
 
   if (estado === "bajo_stock") {
-    return "border-amber-200 bg-[#FFF8DC] text-amber-800";
+    return "border-yellow-200 bg-[#FFF8DC] text-yellow-800";
   }
 
   return "border-emerald-200 bg-emerald-50 text-emerald-800";
@@ -354,7 +354,7 @@ function FilterChip({ active, count, label, onClick }: { active: boolean; count:
       role="tab"
       className={`inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-black transition ${
         active
-          ? "border-[#FECE00] bg-amber-50 text-slate-950"
+          ? "border-[#FECE00] bg-yellow-50 text-slate-950"
           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
       } ${FOCUS_VISIBLE_CLASS}`}
     >
@@ -388,7 +388,7 @@ function InventarioRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-black text-slate-950">{item.productoNombre}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">
-            Stock actual {item.stockActual} · Stock mínimo {item.stockMinimo}
+            Stock {item.stockActual} · Stock mínimo {item.stockMinimo}
           </p>
         </div>
       </div>
@@ -398,7 +398,7 @@ function InventarioRow({
       </span>
 
       <label className="block">
-        <span className="sr-only">Stock actual de {item.productoNombre}</span>
+        <span className="mb-1 block text-[11px] font-black uppercase text-slate-500">Stock</span>
         <input
           type="number"
           min="0"
@@ -410,7 +410,7 @@ function InventarioRow({
       </label>
 
       <label className="block">
-        <span className="sr-only">Stock mínimo de {item.productoNombre}</span>
+        <span className="mb-1 block text-[11px] font-black uppercase text-slate-500">Stock mínimo</span>
         <input
           type="number"
           min="0"

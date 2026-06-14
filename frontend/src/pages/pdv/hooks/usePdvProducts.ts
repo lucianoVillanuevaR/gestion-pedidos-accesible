@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  buildCategoriasCatalogo,
+  groupProductosByCategoria,
+  loadCustomCategorias,
+  withProductoCategoria,
+} from "../../productos/ProductosShared";
 import { getProductos } from "../../../services/productos";
 import type { Producto } from "../../../types";
 import {
-  detectCategoria,
   filterProductosByCategory,
   filterProductosBySearch,
   type FiltroCategoria,
@@ -24,7 +29,7 @@ export function usePdvProducts({
     setLoadingProductos(true);
     setLoadingError(null);
 
-    getProductos()
+    getProductos({ includeUnavailable: true })
       .then((list) => {
         setProductos(list || []);
       })
@@ -42,7 +47,7 @@ export function usePdvProducts({
     setLoadingProductos(true);
     setLoadingError(null);
 
-    getProductos()
+    getProductos({ includeUnavailable: true })
       .then((list) => {
         if (isMounted) {
           setProductos(list || []);
@@ -64,12 +69,21 @@ export function usePdvProducts({
     };
   }, []);
 
+  const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, loadCustomCategorias()), [productos]);
+
+  const productosDisponibles = useMemo(() => productos.filter((producto) => producto.disponible !== false), [productos]);
+
   const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
-    return productos.map((producto) => ({
-      ...producto,
-      categoria: detectCategoria(producto)
+    return withProductoCategoria(productosDisponibles, categoriasCatalogo);
+  }, [categoriasCatalogo, productosDisponibles]);
+
+  const categoryFilters = useMemo<Array<{ label: string; value: FiltroCategoria }>>(() => {
+    const productosCatalogo = withProductoCategoria(productos, categoriasCatalogo);
+    return groupProductosByCategoria(productosCatalogo, categoriasCatalogo).map((grupo) => ({
+      label: grupo.label,
+      value: grupo.value as FiltroCategoria
     }));
-  }, [productos]);
+  }, [categoriasCatalogo, productos]);
 
   const productosFiltrados = useMemo(() => {
     const filtradosPorCategoria = filterProductosByCategory(
@@ -86,6 +100,7 @@ export function usePdvProducts({
 
   return {
     accessibleProductos,
+    categoryFilters,
     loadingError,
     loadingProductos,
     loadProductos,

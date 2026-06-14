@@ -33,6 +33,15 @@ interface ActualizarEstadoBody {
   estado: string;
 }
 
+class PedidoRequestError extends Error {
+  statusCode: number;
+
+  constructor(statusCode: number, message: string) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
 function withPedidoProductImageUrls<T extends { detalles?: Array<{ producto?: { imagenUrl?: string | null } | null }> }>(pedido: T) {
   return {
     ...pedido,
@@ -70,57 +79,94 @@ export const crearPedido = async (req: Request, res: Response) => {
       productoId: Number(detalle.productoId)
     }));
 
-    const productosData = [];
-    let total = new Decimal(0);
+    const pedido = await prisma.$transaction(async (tx) => {
+      const productosData = [];
+      let total = new Decimal(0);
 
-    for (const detalle of detallesNormalizados) {
-      const producto = await prisma.producto.findUnique({
-        where: { id: detalle.productoId }
-      });
-
-      if (!producto) {
-        return res.status(404).json({
-          error: `Producto con ID ${detalle.productoId} no encontrado`
+      for (const detalle of detallesNormalizados) {
+        const producto = await tx.producto.findUnique({
+          include: {
+            inventario: true
+          },
+          where: { id: detalle.productoId }
         });
-      }
 
-      if (!producto.disponible) {
-        return res.status(400).json({
-          error: `Producto "${producto.nombre}" no está disponible`
-        });
-      }
-
-      const subtotal = producto.precio.mul(new Decimal(detalle.cantidad));
-      total = total.add(subtotal);
-
-      productosData.push({
-        producto,
-        cantidad: detalle.cantidad,
-        subtotal
-      });
-    }
-
-    const pedido = await prisma.pedido.create({
-      data: {
-        total,
-        estado: "pendiente",
-        metodoPago,
-        clienteNombre: clienteNombre?.trim() || null,
-        observacion: observacion?.trim() || null,
-        detalles: {
-          create: productosData.map((item) => ({
-            productoId: item.producto.id,
-            cantidad: item.cantidad,
-            precioUnitario: item.producto.precio,
-            subtotal: item.subtotal
-          }))
+        if (!producto) {
+          throw new PedidoRequestError(404, `Producto con ID ${detalle.productoId} no encontrado`);
         }
-      },
-      include: PEDIDO_WITH_DETALLES_INCLUDE
+
+        if (!producto.disponible) {
+          throw new PedidoRequestError(400, `Producto "${producto.nombre}" no está disponible`);
+        }
+
+        const stockActual = producto.inventario?.stockActual ?? 0;
+
+        if (stockActual < detalle.cantidad) {
+          throw new PedidoRequestError(
+            400,
+            `Stock insuficiente para "${producto.nombre}". Disponible: ${stockActual}, solicitado: ${detalle.cantidad}`
+          );
+        }
+
+        const subtotal = producto.precio.mul(new Decimal(detalle.cantidad));
+        total = total.add(subtotal);
+
+        productosData.push({
+          producto,
+          cantidad: detalle.cantidad,
+          subtotal
+        });
+      }
+
+      for (const item of productosData) {
+        const inventarioActualizado = await tx.inventario.updateMany({
+          data: {
+            stockActual: {
+              decrement: item.cantidad
+            }
+          },
+          where: {
+            productoId: item.producto.id,
+            stockActual: {
+              gte: item.cantidad
+            }
+          }
+        });
+
+        if (inventarioActualizado.count === 0) {
+          throw new PedidoRequestError(
+            409,
+            `Stock insuficiente para "${item.producto.nombre}". Intenta nuevamente con una cantidad menor.`
+          );
+        }
+      }
+
+      return tx.pedido.create({
+        data: {
+          total,
+          estado: "pendiente",
+          metodoPago,
+          clienteNombre: clienteNombre?.trim() || null,
+          observacion: observacion?.trim() || null,
+          detalles: {
+            create: productosData.map((item) => ({
+              productoId: item.producto.id,
+              cantidad: item.cantidad,
+              precioUnitario: item.producto.precio,
+              subtotal: item.subtotal
+            }))
+          }
+        },
+        include: PEDIDO_WITH_DETALLES_INCLUDE
+      });
     });
 
     res.status(201).json(withPedidoProductImageUrls(pedido));
   } catch (error) {
+    if (error instanceof PedidoRequestError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+
     console.error("Error al crear pedido:", error);
     res.status(500).json({ error: "Error al crear pedido" });
   }

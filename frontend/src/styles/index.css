@@ -142,7 +142,7 @@ html[data-contrast="true"] .bg-stone-200,
 html[data-contrast="true"] .bg-yellow-50,
 html[data-contrast="true"] .bg-red-50,
 html[data-contrast="true"] .bg-emerald-50,
-html[data-contrast="true"] .bg-orange-100,
+html[data-contrast="true"] .bg-yellow-100,
 html[data-contrast="true"] .bg-\[\#F7F7F7\],
 html[data-contrast="true"] .bg-\[\#FFF8DC\],
 html[data-contrast="true"] .bg-\[\#FFF4BF\],
@@ -184,8 +184,8 @@ html[data-contrast="true"] .text-red-950 {
   color: var(--contrast-text) !important;
 }
 
-html[data-contrast="true"] .text-orange-800,
-html[data-contrast="true"] .text-amber-700,
+html[data-contrast="true"] .text-yellow-800,
+html[data-contrast="true"] .text-yellow-700,
 html[data-contrast="true"] .text-emerald-600,
 html[data-contrast="true"] .text-red-600 {
   color: var(--contrast-accent) !important;
@@ -351,7 +351,7 @@ html[data-accessible="true"] .product-grid {
   }
 
   .accessible-button-base:focus-visible {
-    @apply outline-2 outline-offset-2 outline-amber-500;
+    @apply outline-2 outline-offset-2 outline-yellow-500;
   }
 }
 

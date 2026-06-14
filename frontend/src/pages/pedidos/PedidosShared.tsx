@@ -45,11 +45,11 @@ export const ESTADO_OPTIONS: EstadoOption[] = [
 export const ESTADO_META: Record<EstadoPedido, EstadoMeta> = {
   pendiente: {
     label: "Pendiente",
-    className: "border-amber-200 bg-amber-100 text-amber-900"
+    className: "border-yellow-200 bg-yellow-100 text-yellow-900"
   },
   en_preparacion: {
     label: "En preparación",
-    className: "border-orange-200 bg-orange-100 text-orange-900"
+    className: "border-yellow-200 bg-yellow-100 text-yellow-900"
   },
   listo: {
     label: "Listo",
@@ -158,6 +158,34 @@ export function formatTime(value?: string) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+export function getPedidoNumeroTurnoMap(pedidos: PedidoResponse[]) {
+  const sortedPedidos = [...pedidos].sort((left, right) => {
+    const leftTime = getCreatedDate(left.createdAt)?.getTime() ?? left.id;
+    const rightTime = getCreatedDate(right.createdAt)?.getTime() ?? right.id;
+
+    if (leftTime === rightTime) {
+      return left.id - right.id;
+    }
+
+    return leftTime - rightTime;
+  });
+
+  return new Map(sortedPedidos.map((pedido, index) => [pedido.id, index + 1]));
+}
+
+export function getPedidoDisplayNumber(pedido: Pick<PedidoResponse, "id" | "numeroTurno">) {
+  return pedido.numeroTurno ?? pedido.id;
+}
+
+export function withPedidoNumerosTurno(pedidos: PedidoResponse[]) {
+  const numeroTurnoByPedidoId = getPedidoNumeroTurnoMap(pedidos);
+
+  return pedidos.map((pedido) => ({
+    ...pedido,
+    numeroTurno: numeroTurnoByPedidoId.get(pedido.id) ?? pedido.numeroTurno
+  }));
 }
 
 function getCreatedDate(value?: string) {
@@ -305,8 +333,11 @@ export function getDetalleProductoNombre(detalle: NonNullable<PedidoResponse["de
 }
 
 export function getCierrePedidosResumen(pedidos: PedidoResponse[]): CierreTurno["pedidos"] {
+  const numeroTurnoByPedidoId = getPedidoNumeroTurnoMap(pedidos);
+
   return pedidos.map((pedido) => ({
     id: pedido.id,
+    numeroTurno: numeroTurnoByPedidoId.get(pedido.id),
     clienteNombre: pedido.clienteNombre,
     createdAt: pedido.createdAt,
     estado: pedido.estado,
@@ -387,9 +418,10 @@ function pedidoMatchesSearch(pedido: PedidoResponse, searchTerm: string) {
     return true;
   }
 
+  const displayNumber = getPedidoDisplayNumber(pedido);
   const searchableText = [
-    `pedido ${pedido.id}`,
-    String(pedido.id),
+    `pedido ${displayNumber}`,
+    String(displayNumber),
     pedido.clienteNombre ?? "",
     getPedidoSummary(pedido),
     formatMetodoPago(pedido.metodoPago),
@@ -451,7 +483,7 @@ export function usePedidosController({
       setError(null);
       const pedidosResponse = await getPedidos(signal);
       const pedidoIdsCerrados = obtenerPedidoIdsCerrados();
-      setPedidos(pedidosResponse.filter((pedido) => !pedidoIdsCerrados.has(pedido.id)));
+      setPedidos(withPedidoNumerosTurno(pedidosResponse.filter((pedido) => !pedidoIdsCerrados.has(pedido.id))));
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === "AbortError") {
         return;
@@ -475,7 +507,11 @@ export function usePedidosController({
       setError(null);
       const pedidoActualizado = await updatePedidoEstado(pedido.id, estado);
       setPedidos((currentPedidos) =>
-        currentPedidos.map((currentPedido) => (currentPedido.id === pedido.id ? pedidoActualizado : currentPedido))
+        currentPedidos.map((currentPedido) =>
+          currentPedido.id === pedido.id
+            ? { ...pedidoActualizado, numeroTurno: currentPedido.numeroTurno }
+            : currentPedido
+        )
       );
       setActiveModal(null);
     } catch (requestError) {
@@ -600,7 +636,7 @@ export function PedidoModal({
 
   if (action === "detail") {
     return (
-      <ModalShell onClose={onClose} title={`Pedido #${pedido.id}`}>
+      <ModalShell onClose={onClose} title={`Pedido #${getPedidoDisplayNumber(pedido)}`}>
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge estado={pedido.estado} />
@@ -608,7 +644,7 @@ export function PedidoModal({
             <span className="font-bold text-slate-600">{formatMetodoPago(pedido.metodoPago)}</span>
           </div>
           {pedido.clienteNombre && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
               <p className="text-xs font-black uppercase text-slate-500">Cliente</p>
               <p className="mt-1 text-lg font-black text-slate-950">{pedido.clienteNombre}</p>
             </div>
@@ -637,7 +673,7 @@ export function PedidoModal({
 
   if (action === "history") {
     return (
-      <ModalShell onClose={onClose} title={`Historial del pedido #${pedido.id}`}>
+      <ModalShell onClose={onClose} title={`Historial del pedido #${getPedidoDisplayNumber(pedido)}`}>
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
           <p className="font-black text-slate-950">Historial no disponible</p>
           <p className="mt-2 text-sm font-bold leading-relaxed text-slate-600">
@@ -658,7 +694,7 @@ export function PedidoModal({
         : "Este pedido no tiene cambios de estado disponibles.";
 
     return (
-      <ModalShell onClose={onClose} title={`Cambiar estado del pedido #${pedido.id}`}>
+      <ModalShell onClose={onClose} title={`Cambiar estado del pedido #${getPedidoDisplayNumber(pedido)}`}>
         <div className="grid gap-3">
           <p className="text-lg font-bold text-slate-700">Elige la siguiente acción disponible.</p>
           {allowedOptions.length === 0 && (
@@ -704,7 +740,7 @@ export function PedidoModal({
   const isFinish = action === "finish";
 
   return (
-    <ModalShell onClose={onClose} title={isFinish ? `Marcar pedido #${pedido.id} como entregado` : `Cancelar pedido #${pedido.id}`}>
+    <ModalShell onClose={onClose} title={isFinish ? `Marcar pedido #${getPedidoDisplayNumber(pedido)} como entregado` : `Cancelar pedido #${getPedidoDisplayNumber(pedido)}`}>
       <div className="space-y-5">
         <p className="text-xl font-black text-slate-950">
           {isFinish ? "¿Deseas marcar este pedido como entregado?" : "¿Deseas cancelar este pedido?"}
@@ -714,7 +750,7 @@ export function PedidoModal({
             ? "Confirma solo si el pedido ya fue entregado al cliente."
             : "Esta acción cambiará el estado del pedido a cancelado."}
         </p>
-        <p className="font-bold text-slate-600">Pedido #{pedido.id} · {formatCurrency(pedido.total)}</p>
+        <p className="font-bold text-slate-600">Pedido #{getPedidoDisplayNumber(pedido)} · {formatCurrency(pedido.total)}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"

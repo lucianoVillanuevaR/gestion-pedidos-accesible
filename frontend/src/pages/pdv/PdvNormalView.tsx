@@ -3,7 +3,8 @@ import { useState, type ReactNode } from "react";
 import { useAuthContext } from "../../contexts/AuthContext";
 import type { Producto } from "../../types";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH } from "../../validations/pedido.validation";
-import { FILTROS, formatCurrency, getPaymentLabel } from "../../utils/pdv";
+import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
+import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { PAYMENT_OPTIONS, Toast } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
@@ -14,6 +15,7 @@ function PdvNormalView() {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const {
     addProduct,
+    categoryFilters,
     decreaseProduct,
     feedback,
     feedbackRef,
@@ -46,10 +48,11 @@ function PdvNormalView() {
     setClienteNombre,
     setShowResetConfirm,
     showResetConfirm,
-    total
+    total,
+    totalItems
   } = usePdvViewContext();
 
-  const selectedCategoryLabel = FILTROS.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
+  const selectedCategoryLabel = categoryFilters.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
   const orderDate = new Intl.DateTimeFormat("es-CL", {
     day: "2-digit",
     month: "2-digit",
@@ -98,14 +101,14 @@ function PdvNormalView() {
             Categorías
           </div>
           <div className="divide-y divide-slate-200">
-            {FILTROS.map((filtro) => (
+            {categoryFilters.map((filtro) => (
               <button
                 key={filtro.value}
                 type="button"
                 onClick={() => setSelectedCategory(filtro.value)}
                 className={`flex min-h-[44px] w-full items-center justify-between px-3 text-left text-sm font-bold uppercase transition ${
                   selectedCategory === filtro.value
-                    ? "bg-amber-50 text-slate-950"
+                    ? "bg-yellow-50 text-slate-950"
                     : "bg-slate-50 text-slate-800 hover:bg-white"
                 } ${isHighContrast ? "contrast-button-secondary" : ""}`}
                 aria-current={selectedCategory === filtro.value ? "page" : undefined}
@@ -131,14 +134,14 @@ function PdvNormalView() {
                   placeholder="Buscar producto"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  className="h-11 w-full rounded-md border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200 contrast-input"
+                  className="h-11 w-full rounded-md border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 contrast-input"
                 />
               </label>
             </div>
           </div>
 
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1 md:hidden">
-            {FILTROS.map((filtro) => (
+            {categoryFilters.map((filtro) => (
               <button
                 key={filtro.value}
                 type="button"
@@ -203,7 +206,7 @@ function PdvNormalView() {
               <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
             </button>
           </div>
-          <div className="flex items-center justify-between border-t border-amber-300 bg-amber-50 px-4 py-1 text-xs font-bold text-slate-700">
+          <div className="flex items-center justify-between border-t border-yellow-300 bg-yellow-50 px-4 py-1 text-xs font-bold text-slate-700">
             <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] text-slate-700">PDV</span>
             <span className="inline-flex items-center gap-1">
               <CalendarDays className="h-4 w-4" aria-hidden="true" />
@@ -234,7 +237,7 @@ function PdvNormalView() {
               maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
               onChange={(event) => setClienteNombre(event.target.value)}
               placeholder="Agregar un nombre de cliente"
-              className="h-14 border-0 border-l border-[#FECE00] bg-amber-50 px-3 text-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-amber-300"
+              className="h-14 border-0 border-l border-[#FECE00] bg-yellow-50 px-3 text-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-yellow-300"
             />
           </div>
         </div>
@@ -371,7 +374,7 @@ function PdvNormalView() {
 
         <div className="border-b border-dashed border-slate-300 px-3 py-3 no-print print:hidden">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span>Subtotal Productos ({pedidoDetalles.length})</span>
+            <span>Subtotal Productos ({totalItems})</span>
             <span>{formatCurrency(total)}</span>
           </div>
           <div className="flex items-center justify-between text-sm text-slate-500">
@@ -395,10 +398,10 @@ function PdvNormalView() {
                   key={option.value}
                   type="button"
                   onClick={() => selectMetodoPago(option.value)}
-                  className={`flex min-h-[42px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-amber-300 ${
+                  className={`flex min-h-[42px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-yellow-300 ${
                     active
                       ? "border-[#FECE00] bg-[#FECE00] text-slate-950"
-                      : "border-slate-300 bg-white text-slate-950 hover:bg-amber-50"
+                      : "border-slate-300 bg-white text-slate-950 hover:bg-yellow-50"
                   }`}
                   aria-pressed={active}
                 >
@@ -466,7 +469,7 @@ function PdvNormalView() {
           onConfirm={handleConfirmSubmit}
         >
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
-            <p>{pedidoDetalles.length} productos</p>
+            <p>{totalItems} {totalItems === 1 ? "producto" : "productos"}</p>
             <p className="mt-1 text-xl font-black text-slate-950">{formatCurrency(total)}</p>
             <p className="mt-1">Pago: {getPaymentLabel(metodoPago)}</p>
           </div>
@@ -492,11 +495,19 @@ function PdvProductTile({
   onAdd: () => void;
 }) {
   return (
-    <article className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-amber-400 hover:shadow-md"}`}>
+    <article className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-yellow-400 hover:shadow-md"}`}>
       <button type="button" onClick={onAdd} disabled={disabled} className="block w-full text-left disabled:cursor-not-allowed" aria-label={`Agregar ${producto.nombre}`}>
         <div className="relative h-[120px] overflow-hidden bg-slate-300">
           {producto.imagen ? (
-            <img src={producto.imagen} alt={`Imagen de ${producto.nombre}`} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+            <img
+              src={producto.imagen}
+              alt={`Imagen de ${producto.nombre}`}
+              onError={(event) => {
+                event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
+              }}
+              className="h-full w-full object-cover transition group-hover:scale-105"
+              loading="lazy"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-slate-300 text-center text-xs font-bold uppercase text-slate-600">
               Producto

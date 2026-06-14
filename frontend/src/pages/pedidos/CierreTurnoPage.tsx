@@ -16,6 +16,7 @@ import {
   formatTime,
   getCierrePedidosResumen,
   getFechaInicioTurno,
+  getPedidoDisplayNumber,
   getProductosVendidosResumen,
   getTurnoSummary,
   readTurnoAbierto,
@@ -160,7 +161,7 @@ function CierreTurnoPage() {
               El total vendido considera solo pedidos entregados.
             </p>
             {hasPedidosPendientes && (
-              <p className="rounded-2xl border-2 border-amber-300 bg-[#FFF8DC] px-5 py-4 text-xl font-black text-amber-950">
+              <p className="rounded-2xl border-2 border-yellow-300 bg-[#FFF8DC] px-5 py-4 text-xl font-black text-yellow-950">
                 Hay pedidos pendientes. Puedes revisarlos antes de cerrar.
               </p>
             )}
@@ -482,7 +483,7 @@ function PedidosTurnoPanel({
           <div className="divide-y divide-slate-100">
             {pedidos.map((pedido) => (
               <article key={pedido.id} className="grid gap-3 px-4 py-3 md:grid-cols-[120px_170px_160px_130px_100px] md:items-center">
-                <p className="font-black text-slate-950">#{pedido.id}</p>
+                <p className="font-black text-slate-950">#{getPedidoDisplayNumber(pedido)}</p>
                 <StatusBadge estado={pedido.estado} />
                 <p className="font-bold text-slate-700">{formatMetodoPago(pedido.metodoPago)}</p>
                 <p className="font-black text-slate-950">{formatCurrency(String(pedido.total))}</p>
@@ -535,7 +536,7 @@ function CerrarTurnoModal({
         </div>
 
         {hasPedidosPendientes && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-[#FFF8DC] p-4 text-amber-950" role="alert">
+          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-yellow-200 bg-[#FFF8DC] p-4 text-yellow-950" role="alert">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
             <p className="font-black">
               Hay pedidos pendientes. Puedes revisarlos antes de cerrar.
