@@ -39,6 +39,7 @@ services:
       MINIO_BUCKET_PRODUCTOS: ${MINIO_BUCKET_PRODUCTOS}
       MINIO_USE_SSL: ${MINIO_USE_SSL}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+      MINIO_PUBLIC_READ: ${MINIO_PUBLIC_READ:-true}
     depends_on:
       postgres:
         condition: service_healthy

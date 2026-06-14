@@ -48,7 +48,7 @@ function SidebarNavItem({
               isHighContrast
                 ? "border-current bg-black/10"
                 : isActive
-                  ? "border-amber-300 bg-[#FFF8DC]"
+                  ? "border-yellow-300 bg-[#FFF8DC]"
                   : "border-slate-200 bg-slate-900/5"
             }`}
             aria-hidden="true"

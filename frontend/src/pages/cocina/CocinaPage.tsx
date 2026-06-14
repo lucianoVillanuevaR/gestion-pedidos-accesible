@@ -196,7 +196,7 @@ export function CocinaHistorialPage() {
           searchTerm={searchTerm}
         />
 
-        <p className="rounded-xl border border-amber-200 bg-[#FFF8DC] px-4 py-3 text-sm font-bold text-slate-700">
+        <p className="rounded-xl border border-yellow-200 bg-[#FFF8DC] px-4 py-3 text-sm font-bold text-slate-700">
           Los filtros ajustan los pedidos visibles. Los totales de cada turno se mantienen como resumen histórico del cierre.
         </p>
 
@@ -616,7 +616,7 @@ function CocinaNormalView({
               onClick={onAdvanceVisible}
               disabled={pedidos.length === 0 || updatingPedidoId !== null}
               className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                isHighContrast ? "contrast-button-primary" : "border border-amber-400 bg-[#FECE00] text-slate-950 shadow-md hover:bg-[#FFD633]"
+                isHighContrast ? "contrast-button-primary" : "border border-yellow-400 bg-[#FECE00] text-slate-950 shadow-md hover:bg-[#FFD633]"
               } ${FOCUS_VISIBLE_CLASS}`}
             >
               <Check className="h-5 w-5" aria-hidden="true" />
@@ -642,10 +642,10 @@ function CocinaNormalView({
               isAutoRefreshEnabled
                 ? isHighContrast
                   ? "contrast-button-primary"
-                  : "border border-amber-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]"
+                  : "border border-yellow-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]"
                 : isHighContrast
                   ? "contrast-button-secondary"
-                  : "border border-amber-300 bg-white text-slate-950 hover:bg-[#FFF8DC]"
+                  : "border border-yellow-300 bg-white text-slate-950 hover:bg-[#FFF8DC]"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             {isAutoRefreshEnabled ? "Actualización automática activa" : "Activar actualización automática"}
@@ -870,7 +870,7 @@ function KitchenTitlePill({
   isHighContrast: boolean;
 }) {
   return (
-    <div className={`inline-flex w-fit min-h-[56px] items-center gap-2 rounded-xl border px-5 text-sm font-black ${isHighContrast ? "contrast-panel border-yellow-400" : "border-amber-300 bg-[#FFF8DC] text-slate-950 shadow-sm"}`}>
+    <div className={`inline-flex w-fit min-h-[56px] items-center gap-2 rounded-xl border px-5 text-sm font-black ${isHighContrast ? "contrast-panel border-yellow-400" : "border-yellow-300 bg-[#FFF8DC] text-slate-950 shadow-sm"}`}>
       <ChefHat className="h-5 w-5" aria-hidden="true" />
       Cocina principal
       <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FECE00] px-1.5 text-xs text-slate-950">
@@ -933,14 +933,14 @@ function KitchenTicket({
       }}
       aria-label={`Ver detalle del pedido ${pedido.id}`}
       className={`flex min-h-[246px] cursor-pointer flex-col justify-between rounded-xl border border-dashed p-4 transition hover:-translate-y-0.5 hover:shadow-lg ${
-        isHighContrast ? "contrast-panel border-yellow-400" : delayed ? "border-orange-300 bg-orange-50" : "border-slate-300 bg-white"
+        isHighContrast ? "contrast-panel border-yellow-400" : delayed ? "border-yellow-300 bg-yellow-50" : "border-slate-300 bg-white"
       } ${FOCUS_VISIBLE_CLASS}`}
     >
       <div>
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xl font-black text-slate-950">Pedido #{pedido.id}</p>
-            <p className={`mt-1 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-orange-700" : "text-slate-600"}`}>
+            <p className={`mt-1 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-700" : "text-slate-600"}`}>
               <Clock3 className="h-4 w-4" aria-hidden="true" />
               {formatElapsedTime(pedido.createdAt)}
             </p>
@@ -971,9 +971,9 @@ function KitchenTicket({
             disabled={!isPending || isUpdating}
             className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
               isPreparing
-                ? "border-orange-300 bg-orange-100 text-orange-900"
+                ? "border-yellow-300 bg-yellow-100 text-yellow-900"
                 : isPending
-                  ? "border-orange-600 bg-orange-500 text-white hover:bg-orange-600"
+                  ? "border-yellow-600 bg-yellow-500 text-white hover:bg-yellow-600"
                   : "border-slate-200 bg-slate-100 text-slate-400"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
@@ -1054,13 +1054,13 @@ function AccessibleKitchenTicket({
       }}
       aria-label={`Ver detalle del pedido ${pedido.id}`}
       className={`cursor-pointer rounded-[26px] p-6 transition hover:-translate-y-0.5 hover:shadow-xl ${
-        isHighContrast ? "contrast-panel border-2 border-yellow-400" : delayed ? "border-2 border-orange-500 bg-orange-50" : "border-2 border-slate-900 bg-white"
+        isHighContrast ? "contrast-panel border-2 border-yellow-400" : delayed ? "border-2 border-yellow-500 bg-yellow-50" : "border-2 border-slate-900 bg-white"
       } ${FOCUS_VISIBLE_CLASS}`}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-3xl font-black text-slate-950">Pedido #{pedido.id}</p>
-          <p className={`mt-3 flex items-center gap-2 text-xl font-bold ${delayed ? "text-orange-700" : "text-slate-700"}`}>
+          <p className={`mt-3 flex items-center gap-2 text-xl font-bold ${delayed ? "text-yellow-700" : "text-slate-700"}`}>
             <Clock3 className="h-6 w-6" aria-hidden="true" />
             {formatElapsedTime(pedido.createdAt)}
           </p>
@@ -1092,9 +1092,9 @@ function AccessibleKitchenTicket({
             disabled={!isPending || isUpdating}
             className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
               isPreparing
-                ? "border-orange-400 bg-orange-100 text-orange-950"
+                ? "border-yellow-400 bg-yellow-100 text-yellow-950"
                 : isPending
-                  ? "border-orange-700 bg-orange-600 text-white hover:bg-orange-700"
+                  ? "border-yellow-700 bg-yellow-600 text-white hover:bg-yellow-700"
                   : "border-slate-300 bg-slate-100 text-slate-400"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
@@ -1189,7 +1189,7 @@ function HistorialTurnoCard({
           <p className="mt-2 flex flex-wrap gap-2 text-sm font-black text-slate-700">
             <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">{turno.pedidos.length} pedidos registrados</span>
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1">{pedidosEntregados} entregados</span>
-            <span className="rounded-full border border-amber-200 bg-[#FFF8DC] px-3 py-1">{pedidosPendientes} pendientes</span>
+            <span className="rounded-full border border-yellow-200 bg-[#FFF8DC] px-3 py-1">{pedidosPendientes} pendientes</span>
             <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1">{pedidosCancelados} cancelados</span>
             <span>{totalProductosVendidos} productos vendidos</span>
           </p>
@@ -1477,7 +1477,7 @@ function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void; pedido
             </div>
           </div>
           {pedido.clienteNombre && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
               <p className="text-xs font-black uppercase text-slate-500">Cliente</p>
               <p className="mt-1 text-lg font-black text-slate-950">{pedido.clienteNombre}</p>
             </div>

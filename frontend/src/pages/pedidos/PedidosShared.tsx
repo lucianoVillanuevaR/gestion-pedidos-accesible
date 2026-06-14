@@ -45,11 +45,11 @@ export const ESTADO_OPTIONS: EstadoOption[] = [
 export const ESTADO_META: Record<EstadoPedido, EstadoMeta> = {
   pendiente: {
     label: "Pendiente",
-    className: "border-amber-200 bg-amber-100 text-amber-900"
+    className: "border-yellow-200 bg-yellow-100 text-yellow-900"
   },
   en_preparacion: {
     label: "En preparación",
-    className: "border-orange-200 bg-orange-100 text-orange-900"
+    className: "border-yellow-200 bg-yellow-100 text-yellow-900"
   },
   listo: {
     label: "Listo",
@@ -608,7 +608,7 @@ export function PedidoModal({
             <span className="font-bold text-slate-600">{formatMetodoPago(pedido.metodoPago)}</span>
           </div>
           {pedido.clienteNombre && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
               <p className="text-xs font-black uppercase text-slate-500">Cliente</p>
               <p className="mt-1 text-lg font-black text-slate-950">{pedido.clienteNombre}</p>
             </div>

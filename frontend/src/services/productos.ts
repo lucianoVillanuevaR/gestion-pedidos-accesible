@@ -3,7 +3,7 @@ import { resolveProductImage } from "../utils/productImages";
 import { buildApiUrl } from "./api";
 
 function normalizeProducto(producto: Producto & { precio: number | string }): Producto {
-  const imagen = producto.imagenPublicUrl || producto.imagenUrl || producto.imagen || resolveProductImage(producto.nombre);
+  const imagen = resolveProductImage(producto);
 
   return {
     ...producto,
@@ -53,6 +53,17 @@ export async function updateProducto(id: number, payload: UpdateProductoPayload)
   });
 
   return readProductoResponse(res, "Error actualizando producto");
+}
+
+export async function deleteProducto(id: number): Promise<void> {
+  const res = await fetch(buildApiUrl(`/api/productos/${id}`), {
+    method: "DELETE"
+  });
+
+  if (!res.ok) {
+    const errorData = (await res.json().catch(() => ({}))) as ApiError;
+    throw new Error(errorData.error || errorData.message || "Error eliminando producto");
+  }
 }
 
 export async function uploadProductImage(productId: number, file: File): Promise<Producto> {

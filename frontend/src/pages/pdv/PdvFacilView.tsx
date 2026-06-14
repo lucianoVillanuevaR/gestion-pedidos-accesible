@@ -182,7 +182,7 @@ function PdvFacilView() {
       {isTurnoOpen && accessibleStepValidation && (
         <div
           id="facil-step-validation"
-          className={`rounded-2xl ${cardBorder} p-4 ${isHighContrast ? "contrast-panel-soft" : "border-amber-300 bg-amber-50 text-slate-950"}`}
+          className={`rounded-2xl ${cardBorder} p-4 ${isHighContrast ? "contrast-panel-soft" : "border-yellow-300 bg-yellow-50 text-slate-950"}`}
           role="alert"
           aria-live="polite"
         >

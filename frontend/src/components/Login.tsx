@@ -75,22 +75,22 @@ function Login() {
     : "block text-sm font-semibold text-slate-700";
 
   const inputClass = isAccessible
-    ? `w-full min-h-[64px] px-4 py-3 text-xl rounded-xl bg-white focus:border-amber-500 focus:outline-none focus:ring-4 focus:ring-amber-200 ${
+    ? `w-full min-h-[64px] px-4 py-3 text-xl rounded-xl bg-white focus:border-yellow-500 focus:outline-none focus:ring-4 focus:ring-yellow-200 ${
         isHighContrast ? "border-2 border-slate-900" : "border border-slate-700"
       }`
-    : "w-full min-h-[56px] px-4 py-3 text-base border border-slate-900/25 rounded-xl focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 bg-white/95 shadow-sm";
+    : "w-full min-h-[56px] px-4 py-3 text-base border border-slate-900/25 rounded-xl focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 bg-white/95 shadow-sm";
 
   const submitButtonClass = isAccessible
-    ? "w-full min-h-[72px] px-6 py-4 text-2xl font-bold bg-[#FECE00] text-slate-950 rounded-xl border border-amber-300 hover:bg-[#FFD633] focus:outline-none focus:ring-4 focus:ring-amber-200 transition"
-    : "w-full min-h-[60px] px-6 py-3 text-lg font-bold bg-[#FECE00] text-slate-950 rounded-lg border border-amber-300 hover:bg-[#FFD633] focus:outline-none focus:ring-2 focus:ring-amber-300 transition";
+    ? "w-full min-h-[72px] px-6 py-4 text-2xl font-bold bg-[#FECE00] text-slate-950 rounded-xl border border-yellow-300 hover:bg-[#FFD633] focus:outline-none focus:ring-4 focus:ring-yellow-200 transition"
+    : "w-full min-h-[60px] px-6 py-3 text-lg font-bold bg-[#FECE00] text-slate-950 rounded-lg border border-yellow-300 hover:bg-[#FFD633] focus:outline-none focus:ring-2 focus:ring-yellow-300 transition";
 
   const passwordInputClass = `${inputClass} pr-24`;
 
   const passwordToggleClass = isAccessible
-    ? `absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-amber-300 ${
+    ? `absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-yellow-300 ${
         isHighContrast ? "border border-slate-900" : "border border-slate-700"
       }`
-    : "absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-slate-900/25 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-amber-200";
+    : "absolute right-2 top-1/2 -translate-y-1/2 rounded-lg border border-slate-900/25 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-yellow-200";
 
   const cardClass = isAccessible
     ? "rounded-2xl border border-slate-900/25 bg-white p-8 shadow-lg shadow-slate-200 sm:p-10"

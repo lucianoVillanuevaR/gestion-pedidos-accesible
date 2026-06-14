@@ -22,6 +22,7 @@ if (!Number.isInteger(port) || port <= 0) {
 
 export const productBucket = readRequiredEnv("MINIO_BUCKET_PRODUCTOS", "productos");
 export const minioPublicUrl = (process.env.MINIO_PUBLIC_URL ?? `http://${endpoint}:${port}`).replace(/\/$/, "");
+const allowPublicProductRead = (process.env.MINIO_PUBLIC_READ ?? "false").toLowerCase() === "true";
 
 export const minioClient = new Client({
   endPoint: endpoint,
@@ -38,7 +39,7 @@ export async function ensureProductBucket() {
     await minioClient.makeBucket(productBucket);
   }
 
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" || allowPublicProductRead) {
     const policy = {
       Version: "2012-10-17",
       Statement: [

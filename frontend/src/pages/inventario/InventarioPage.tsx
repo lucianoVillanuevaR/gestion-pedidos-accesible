@@ -43,7 +43,7 @@ function getEstadoClass(estado: InventarioEstado) {
   }
 
   if (estado === "bajo_stock") {
-    return "border-amber-200 bg-[#FFF8DC] text-amber-800";
+    return "border-yellow-200 bg-[#FFF8DC] text-yellow-800";
   }
 
   return "border-emerald-200 bg-emerald-50 text-emerald-800";
@@ -354,7 +354,7 @@ function FilterChip({ active, count, label, onClick }: { active: boolean; count:
       role="tab"
       className={`inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-black transition ${
         active
-          ? "border-[#FECE00] bg-amber-50 text-slate-950"
+          ? "border-[#FECE00] bg-yellow-50 text-slate-950"
           : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
       } ${FOCUS_VISIBLE_CLASS}`}
     >

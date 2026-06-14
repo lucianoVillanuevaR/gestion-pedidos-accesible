@@ -5,6 +5,7 @@ import {
   formatCurrency,
   getCategoriaLabel
 } from "../../utils/pdv";
+import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 
 export type FeedbackState = {
   type: "success" | "error";
@@ -119,7 +120,7 @@ export function ProductCard({
       className={`flex h-full flex-col rounded-2xl overflow-hidden border transition ${
         isAccessible
           ? "bg-white border-2 border-slate-900"
-          : "bg-white border border-slate-200 hover:shadow-md hover:border-amber-200"
+          : "bg-white border border-slate-200 hover:shadow-md hover:border-yellow-200"
       } ${isHighContrast ? "contrast-panel" : ""}`}
     >
       <div
@@ -133,6 +134,9 @@ export function ProductCard({
           <img
             src={producto.imagen}
             alt={producto.altText || producto.nombre}
+            onError={(event) => {
+              event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
+            }}
             className="h-full w-full object-cover object-center"
             loading="lazy"
           />
@@ -151,7 +155,7 @@ export function ProductCard({
           className={`inline-block px-3 py-1 rounded-full font-bold text-xs uppercase tracking-wide ${
             isAccessible
               ? "bg-slate-100 text-slate-900 border border-slate-300"
-              : "bg-[#FFF4BF] text-[#B8860B] border border-[#FECE00]"
+              : "bg-[#FFF4BF] text-yellow-800 border border-[#FECE00]"
           } ${isHighContrast ? "contrast-badge" : ""}`}
         >
           {getCategoriaLabel(categoria)}
@@ -166,8 +170,8 @@ export function ProductCard({
           )}
         </div>
 
-        <div className={`pt-2 border-t ${isAccessible ? "border-slate-300" : "border-amber-100"}`}>
-          <p className={`font-black ${isAccessible ? "text-2xl" : "text-xl"} ${isAccessible ? "text-slate-900" : "text-amber-700"} ${isHighContrast ? "contrast-important" : ""}`}>
+        <div className={`pt-2 border-t ${isAccessible ? "border-slate-300" : "border-yellow-100"}`}>
+          <p className={`font-black ${isAccessible ? "text-2xl" : "text-xl"} ${isAccessible ? "text-slate-900" : "text-yellow-700"} ${isHighContrast ? "contrast-important" : ""}`}>
             {formatCurrency(producto.precio)}
           </p>
         </div>

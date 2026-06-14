@@ -140,6 +140,59 @@ export const updateProducto = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteProducto = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const idError = validatePositiveIntegerId(id, "ID de producto");
+
+    if (idError) {
+      return res.status(400).json({ error: idError });
+    }
+
+    const productoId = parsePositiveIntegerId(id);
+    const producto = await prisma.producto.findUnique({
+      where: { id: productoId }
+    });
+
+    if (!producto) {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+
+    const pedidosConProducto = await prisma.detallePedido.count({
+      where: { productoId }
+    });
+
+    if (pedidosConProducto > 0) {
+      return res.status(409).json({
+        error: "No se puede eliminar un producto con pedidos registrados. Puedes ocultarlo para que no se venda."
+      });
+    }
+
+    if (producto.imagenUrl) {
+      await deleteProductImage(productoId);
+    }
+
+    await prisma.producto.delete({
+      where: { id: productoId }
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "P2025") {
+      return res.status(404).json({ error: "Producto no encontrado" });
+    }
+
+    if (error instanceof Error && "code" in error && error.code === "P2003") {
+      return res.status(409).json({
+        error: "No se puede eliminar un producto relacionado con otros registros. Puedes ocultarlo para que no se venda."
+      });
+    }
+
+    console.error("Error al eliminar producto:", error);
+    res.status(500).json({ error: "Error al eliminar producto" });
+  }
+};
+
 export const uploadProductoImagen = (req: Request, res: Response) => {
   const idError = validatePositiveIntegerId(req.params.id, "ID de producto");
 

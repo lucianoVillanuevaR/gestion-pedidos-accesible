@@ -74,7 +74,7 @@ function ensureProducto(producto: ProductoWithImageUrl) {
 export async function uploadProductImage(productId: number, file: ProductImageFile) {
   const producto = ensureProducto(await prisma.producto.findUnique({ where: { id: productId } }));
   const extension = getExtension(file);
-  const objectName = `productos/producto-${productId}-${Date.now()}.${extension}`;
+  const objectName = `producto-${productId}-${Date.now()}.${extension}`;
 
   await minioClient.putObject(productBucket, objectName, file.buffer, file.size, {
     "Content-Type": file.mimetype
