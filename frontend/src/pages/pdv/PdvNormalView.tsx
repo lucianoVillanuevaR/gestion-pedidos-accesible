@@ -47,7 +47,8 @@ function PdvNormalView() {
     setClienteNombre,
     setShowResetConfirm,
     showResetConfirm,
-    total
+    total,
+    totalItems
   } = usePdvViewContext();
 
   const selectedCategoryLabel = FILTROS.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
@@ -372,7 +373,7 @@ function PdvNormalView() {
 
         <div className="border-b border-dashed border-slate-300 px-3 py-3 no-print print:hidden">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span>Subtotal Productos ({pedidoDetalles.length})</span>
+            <span>Subtotal Productos ({totalItems})</span>
             <span>{formatCurrency(total)}</span>
           </div>
           <div className="flex items-center justify-between text-sm text-slate-500">
@@ -467,7 +468,7 @@ function PdvNormalView() {
           onConfirm={handleConfirmSubmit}
         >
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
-            <p>{pedidoDetalles.length} productos</p>
+            <p>{totalItems} {totalItems === 1 ? "producto" : "productos"}</p>
             <p className="mt-1 text-xl font-black text-slate-950">{formatCurrency(total)}</p>
             <p className="mt-1">Pago: {getPaymentLabel(metodoPago)}</p>
           </div>

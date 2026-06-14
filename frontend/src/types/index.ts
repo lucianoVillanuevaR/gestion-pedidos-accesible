@@ -64,6 +64,7 @@ export interface PedidoDetalleResponse {
 
 export interface PedidoResponse {
   id: number;
+  numeroTurno?: number;
   total: string;
   estado: EstadoPedido;
   metodoPago: MetodoPago;
@@ -94,6 +95,7 @@ export type CierreTurno = {
 
 export type CierrePedidoResumen = {
   id: number;
+  numeroTurno?: number;
   clienteNombre?: string | null;
   createdAt?: string;
   estado: EstadoPedido;

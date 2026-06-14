@@ -31,6 +31,7 @@ import {
   formatElapsedTime,
   formatTime,
   getPedidoCounts,
+  getPedidoDisplayNumber,
   getPedidoSummary,
   getProductCount,
   isPedidoDelayed,
@@ -123,7 +124,7 @@ export function CocinaHistorialPage() {
       ? "No hay pedidos recientes en el historial."
       : easyPedidos
         .slice(0, 6)
-        .map((pedido) => `Pedido ${pedido.id}, ${ESTADO_META[pedido.estado].label}, total ${formatKitchenCurrency(String(pedido.total))}.`)
+        .map((pedido) => `Pedido ${getPedidoDisplayNumber(pedido)}, ${ESTADO_META[pedido.estado].label}, total ${formatKitchenCurrency(String(pedido.total))}.`)
         .join(" ");
 
     setLiveMessage(message);
@@ -434,7 +435,7 @@ function HistorialFacilView({
               <article key={`${pedido.turnoId}-${pedido.id}`} className={`rounded-[28px] p-5 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-3xl font-black text-slate-950">Pedido #{pedido.id}</p>
+                    <p className="text-3xl font-black text-slate-950">Pedido #{getPedidoDisplayNumber(pedido)}</p>
                     <p className="mt-3 text-sm font-black uppercase text-slate-600">Estado</p>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
                       <StatusBadge estado={pedido.estado} isLarge />
@@ -509,7 +510,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
 
   const handleCocinaEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
     await handleEstadoChange(pedido, estado);
-    speak(`Pedido ${pedido.id} actualizado a ${ESTADO_META[estado].label}.`, {
+    speak(`Pedido ${getPedidoDisplayNumber(pedido)} actualizado a ${ESTADO_META[estado].label}.`, {
       priority: "high",
       dedupeKey: `cocina-estado:${pedido.id}:${estado}`,
       cooldownMs: 1600,
@@ -919,6 +920,7 @@ function KitchenTicket({
   const isPending = pedido.estado === "pendiente";
   const isPreparing = pedido.estado === "en_preparacion";
   const isReady = pedido.estado === "listo";
+  const numeroPedido = getPedidoDisplayNumber(pedido);
 
   return (
     <article
@@ -931,7 +933,7 @@ function KitchenTicket({
           onOpenModal({ action: "detail", pedido });
         }
       }}
-      aria-label={`Ver detalle del pedido ${pedido.id}`}
+      aria-label={`Ver detalle del pedido ${numeroPedido}`}
       className={`flex min-h-[246px] cursor-pointer flex-col justify-between rounded-xl border border-dashed p-4 transition hover:-translate-y-0.5 hover:shadow-lg ${
         isHighContrast ? "contrast-panel border-yellow-400" : delayed ? "border-yellow-300 bg-yellow-50" : "border-slate-300 bg-white"
       } ${FOCUS_VISIBLE_CLASS}`}
@@ -939,7 +941,7 @@ function KitchenTicket({
       <div>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xl font-black text-slate-950">Pedido #{pedido.id}</p>
+            <p className="text-xl font-black text-slate-950">Pedido #{numeroPedido}</p>
             <p className={`mt-1 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-700" : "text-slate-600"}`}>
               <Clock3 className="h-4 w-4" aria-hidden="true" />
               {formatElapsedTime(pedido.createdAt)}
@@ -1040,6 +1042,7 @@ function AccessibleKitchenTicket({
   const isPending = pedido.estado === "pendiente";
   const isPreparing = pedido.estado === "en_preparacion";
   const isReady = pedido.estado === "listo";
+  const numeroPedido = getPedidoDisplayNumber(pedido);
 
   return (
     <article
@@ -1052,14 +1055,14 @@ function AccessibleKitchenTicket({
           onOpenModal({ action: "detail", pedido });
         }
       }}
-      aria-label={`Ver detalle del pedido ${pedido.id}`}
+      aria-label={`Ver detalle del pedido ${numeroPedido}`}
       className={`cursor-pointer rounded-[26px] p-6 transition hover:-translate-y-0.5 hover:shadow-xl ${
         isHighContrast ? "contrast-panel border-2 border-yellow-400" : delayed ? "border-2 border-yellow-500 bg-yellow-50" : "border-2 border-slate-900 bg-white"
       } ${FOCUS_VISIBLE_CLASS}`}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-3xl font-black text-slate-950">Pedido #{pedido.id}</p>
+          <p className="text-3xl font-black text-slate-950">Pedido #{numeroPedido}</p>
           <p className={`mt-3 flex items-center gap-2 text-xl font-bold ${delayed ? "text-yellow-700" : "text-slate-700"}`}>
             <Clock3 className="h-6 w-6" aria-hidden="true" />
             {formatElapsedTime(pedido.createdAt)}
@@ -1309,7 +1312,7 @@ function HistorialTurnoPrintable({
         <tbody>
           {turno.pedidos.map((pedido) => (
             <tr key={`${turno.id}-${pedido.id}`}>
-              <td>#{pedido.id}</td>
+              <td>#{getPedidoDisplayNumber(pedido)}</td>
               <td>{ESTADO_META[pedido.estado].label}</td>
               <td>{formatTime(pedido.createdAt)}</td>
               <td>{formatMetodoPagoLabel(pedido.metodoPago)}</td>
@@ -1415,7 +1418,7 @@ function HistorialPedidosCompactos({
       <div className="divide-y divide-slate-100">
         {pedidos.map((pedido) => (
           <article key={`${pedido.turnoId}-${pedido.id}`} className="grid gap-3 px-4 py-3 md:grid-cols-[120px_150px_100px_1fr_150px_120px] md:items-center">
-            <p className="font-black text-slate-950">#{pedido.id}</p>
+            <p className="font-black text-slate-950">#{getPedidoDisplayNumber(pedido)}</p>
             <StatusBadge estado={pedido.estado} />
             <p className="font-bold text-slate-600">{formatTime(pedido.createdAt)}</p>
             <p className="font-bold text-slate-700">{pedido.clienteNombre || pedido.observacion || "Sin referencia"}</p>
@@ -1448,7 +1451,7 @@ function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void; pedido
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="historial-pedido-title" className="text-2xl font-black text-slate-950">Pedido #{pedido.id}</h2>
+            <h2 id="historial-pedido-title" className="text-2xl font-black text-slate-950">Pedido #{getPedidoDisplayNumber(pedido)}</h2>
             <p className="mt-1 text-sm font-bold text-slate-600">Turno cerrado: {formatKitchenDateTime(pedido.fechaCierre)}</p>
           </div>
           <button
@@ -1712,9 +1715,10 @@ function historialPedidoMatchesSearch(pedido: HistorialPedidoDetalle, turno: His
     return true;
   }
 
+  const displayNumber = getPedidoDisplayNumber(pedido);
   const searchableText = [
-    `pedido ${pedido.id}`,
-    String(pedido.id),
+    `pedido ${displayNumber}`,
+    String(displayNumber),
     pedido.clienteNombre ?? "",
     pedido.observacion ?? "",
     pedido.cajero ?? "",

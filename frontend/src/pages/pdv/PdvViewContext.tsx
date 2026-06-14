@@ -66,6 +66,7 @@ export type PdvViewContextValue = {
   showResetConfirm: boolean;
   textColor: string;
   total: number;
+  totalItems: number;
   productosFiltrados: Producto[];
 };
 

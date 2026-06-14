@@ -11,6 +11,7 @@ import {
   formatCurrency,
   formatElapsedTime,
   formatMetodoPago,
+  getPedidoDisplayNumber,
   getPedidoSummary,
   getProductCount,
   isPedidoDelayed,
@@ -53,7 +54,8 @@ function PedidosNormalPage() {
 
   const handleNormalEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
     await handleEstadoChange(pedido, estado);
-    speak(`Pedido ${pedido.id} actualizado a ${ESTADO_META[estado].label}.`, {
+    const numeroPedido = getPedidoDisplayNumber(pedido);
+    speak(`Pedido ${numeroPedido} actualizado a ${ESTADO_META[estado].label}.`, {
       priority: "high",
       dedupeKey: `pedido-normal-estado:${pedido.id}:${estado}`,
       cooldownMs: 1800,
@@ -214,6 +216,7 @@ function NormalPedidoRow({
   const createdAt = getCreatedDateLabel(pedido.createdAt);
   const delayed = isPedidoDelayed(pedido);
   const isCancelled = pedido.estado === "cancelado";
+  const numeroPedido = getPedidoDisplayNumber(pedido);
 
   return (
     <article className={`grid gap-4 border-l-4 px-4 py-4 transition md:grid-cols-[170px_170px_130px_minmax(0,1fr)_210px] md:items-center xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_240px] ${
@@ -221,7 +224,7 @@ function NormalPedidoRow({
     }`}>
       <div>
         <p className="flex items-center gap-1.5 font-black text-yellow-600">
-          #{pedido.id}
+          #{numeroPedido}
           <Store className="h-4 w-4" aria-hidden="true" />
           En el local
         </p>

@@ -3,7 +3,8 @@ import { AlertTriangle, LoaderCircle } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { createPedido } from "../../services/pedidos";
+import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
+import { createPedido, getPedidos } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
 import TicketComanda from "../../components/TicketComanda";
 import type { CreatePedidoPayload, MetodoPago, PedidoResponse, Producto } from "../../types";
@@ -23,10 +24,12 @@ import {
   type FeedbackState
 } from "./PdvShared";
 import {
+  getPedidoDisplayNumber,
   readTurnoAbierto,
   setTurnoAbierto,
   setTurnoFechaInicio,
-  TURNO_ABIERTO_STORAGE_KEY
+  TURNO_ABIERTO_STORAGE_KEY,
+  withPedidoNumerosTurno
 } from "../pedidos/PedidosShared";
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
@@ -435,6 +438,22 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
   };
 
+  async function getNumeroTurnoPedidoCreado(pedidoCreado: PedidoResponse) {
+    if (!pedidoCreado.id) {
+      return null;
+    }
+
+    try {
+      const pedidoIdsCerrados = obtenerPedidoIdsCerrados();
+      const pedidosActivos = (await getPedidos()).filter((pedido) => !pedidoIdsCerrados.has(pedido.id));
+      const pedidoActivo = withPedidoNumerosTurno(pedidosActivos).find((pedido) => pedido.id === pedidoCreado.id);
+
+      return pedidoActivo ? getPedidoDisplayNumber(pedidoActivo) : pedidoCreado.id;
+    } catch {
+      return pedidoCreado.id;
+    }
+  }
+
   const handleSubmit = async () => {
     setFeedback(null);
     let shouldResetAccessibleFlow = false;
@@ -465,7 +484,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     try {
       setSending(true);
       const pedidoCreado = (await createPedido(payload)) as PedidoResponse;
-      const numeroPedido = pedidoCreado?.id ?? null;
+      const numeroPedido = await getNumeroTurnoPedidoCreado(pedidoCreado);
       const successMsg = numeroPedido ? `Pedido #${numeroPedido} registrado` : "Pedido registrado";
       setFeedback({ type: "success", message: successMsg });
       clearPedidoForm();
@@ -721,7 +740,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setShowResetConfirm,
     showResetConfirm,
     textColor,
-    total
+    total,
+    totalItems
   } satisfies PdvViewContextValue;
 
   return (
