@@ -1,29 +1,21 @@
 import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, LockKeyhole, UnlockKeyhole, XCircle } from "lucide-react";
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
-import { PEDIDO_OBSERVACION_MAX_LENGTH } from "../../validations/pedido.validation";
-import { formatCurrency, type FiltroCategoria } from "../../utils/pdv";
+import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, PEDIDO_OBSERVACION_MAX_LENGTH } from "../../validations/pedido.validation";
+import { formatCurrency } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
-
-const FILTROS_FACILES: Array<{ label: string; value: FiltroCategoria }> = [
-  { label: "Sandwich", value: "Sandwich" },
-  { label: "Completos", value: "Completos" },
-  { label: "Bebidas", value: "Bebidas" },
-  { label: "Destacados", value: "Destacados" },
-  { label: "Ver todos", value: "Todos" }
-];
 
 function PdvFacilView() {
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const {
-    accessibleObservationPlaceholder,
-    accessibleObservationType,
     accessibleProductos,
     accessibleStep,
     accessibleStepValidation,
     addProduct,
     cardBorder,
+    categoryFilters,
+    clienteNombre,
     decreaseProduct,
     feedback,
     goNextAccessibleStep,
@@ -47,6 +39,7 @@ function PdvFacilView() {
     sending,
     setAccessibleObservationType,
     setAccessibleStep,
+    setClienteNombre,
     setObservacion,
     setSelectedCategory,
     total
@@ -71,8 +64,8 @@ function PdvFacilView() {
       description: "Confirma lo que elegiste antes de seguir al siguiente paso."
     },
     {
-      title: "Agrega un comentario",
-      description: "Este paso es opcional. Solo úsalo si realmente necesitas dejar una nota."
+      title: "Datos del comprador",
+      description: "Ingresa el nombre del comprador y, si hace falta, agrega un comentario."
     },
     {
       title: "Selecciona el pago",
@@ -182,7 +175,7 @@ function PdvFacilView() {
       {isTurnoOpen && accessibleStepValidation && (
         <div
           id="facil-step-validation"
-          className={`rounded-2xl ${cardBorder} p-4 ${isHighContrast ? "contrast-panel-soft" : "border-amber-300 bg-amber-50 text-slate-950"}`}
+          className={`rounded-2xl ${cardBorder} p-4 ${isHighContrast ? "contrast-panel-soft" : "border-yellow-300 bg-yellow-50 text-slate-950"}`}
           role="alert"
           aria-live="polite"
         >
@@ -197,7 +190,7 @@ function PdvFacilView() {
         <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step1" className="font-black text-2xl mb-4">Paso 2: Elige categoría</h2>
           <div className="grid grid-cols-2 gap-4">
-            {FILTROS_FACILES.map((filtro) => (
+            {categoryFilters.map((filtro) => (
               <button
                 key={filtro.value}
                 type="button"
@@ -342,55 +335,37 @@ function PdvFacilView() {
 
       {isTurnoOpen && accessibleStep === 4 && (
         <section aria-labelledby="step4" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h2 id="step4" className="font-black text-2xl mb-4">Comentario opcional</h2>
-          <p className="mb-3 text-lg font-semibold">Puedes dejar una nota para cocina o para el cliente.</p>
-          <p className="mb-4 text-base text-slate-600">Este paso es opcional. Si no necesitas comentario, puedes continuar igual.</p>
+          <h2 id="step4" className="font-black text-2xl mb-4">Comprador y comentario</h2>
 
-          <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setAccessibleObservationType("cocina")}
-              className={`rounded-xl border-2 px-4 py-4 text-left font-bold transition ${
-                accessibleObservationType === "cocina"
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
-              }`}
-              aria-pressed={accessibleObservationType === "cocina"}
-            >
-              <span className="block text-lg">Para cocina</span>
-              <span className={`mt-1 block text-sm ${accessibleObservationType === "cocina" ? "text-white/80" : "text-slate-500"}`}>
-                Instrucciones de preparación
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setAccessibleObservationType("cliente")}
-              className={`rounded-xl border-2 px-4 py-4 text-left font-bold transition ${
-                accessibleObservationType === "cliente"
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
-              }`}
-              aria-pressed={accessibleObservationType === "cliente"}
-            >
-              <span className="block text-lg">Para cliente</span>
-              <span className={`mt-1 block text-sm ${accessibleObservationType === "cliente" ? "text-white/80" : "text-slate-500"}`}>
-                Indicaciones de entrega o retiro
-              </span>
-            </button>
+          <div className="mb-5">
+            <label htmlFor="accessibleClienteNombre" className="mb-2 block font-bold text-base">
+              Nombre del comprador
+            </label>
+            <input
+              id="accessibleClienteNombre"
+              type="text"
+              value={clienteNombre}
+              maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
+              onChange={(event) => setClienteNombre(event.target.value)}
+              placeholder="Ej: Juan, mesa 4, retiro..."
+              className="min-h-[58px] w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
+            />
           </div>
 
           <div className="mb-4">
             <label htmlFor="accessibleObservacion" className="mb-2 block font-bold text-base">
-              Comentario
+              Comentario opcional
             </label>
             <textarea
               id="accessibleObservacion"
               rows={4}
               value={observacion}
               maxLength={PEDIDO_OBSERVACION_MAX_LENGTH}
-              onChange={(event) => setObservacion(event.target.value)}
-              placeholder={accessibleObservationPlaceholder}
+              onChange={(event) => {
+                setAccessibleObservationType("cocina");
+                setObservacion(event.target.value);
+              }}
+              placeholder="Ej: sin cebolla, extra salsa, bien tostado..."
               className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
             />
           </div>
@@ -398,7 +373,7 @@ function PdvFacilView() {
           {observacion.trim() && (
             <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                {accessibleObservationType === "cocina" ? "Comentario para cocina" : "Comentario para cliente"}
+                Comentario para cocina
               </p>
               <p className="mt-2 font-medium text-slate-900">{observacion}</p>
             </div>
@@ -473,7 +448,7 @@ function PdvFacilView() {
           {observacion.trim() && (
             <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 mb-4">
               <p className="font-bold text-slate-900">
-                {accessibleObservationType === "cocina" ? "Comentario para cocina" : "Comentario para cliente"}
+                Comentario para cocina
               </p>
               <p className="mt-2 text-slate-700">{observacion}</p>
             </div>

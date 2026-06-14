@@ -113,7 +113,7 @@ function ModoFacilPage() {
           <div className="mb-5 flex items-center gap-3">
             <span
               className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl border-2 ${
-                isHighContrast ? "border-yellow-400 text-yellow-200" : "border-amber-300 bg-[#FECE00] text-slate-950"
+                isHighContrast ? "border-yellow-400 text-yellow-200" : "border-yellow-300 bg-[#FECE00] text-slate-950"
               }`}
               aria-hidden="true"
             >

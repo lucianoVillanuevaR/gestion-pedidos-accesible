@@ -41,14 +41,14 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
     : isAccessible
       ? "border-slate-300 bg-slate-50 text-slate-950"
       : hasYellowHeader
-        ? "border-amber-200 bg-[#FECE00] text-slate-950"
+        ? "border-yellow-200 bg-[#FECE00] text-slate-950"
         : "border-slate-200 bg-white text-slate-950"
   const brandBadgeClass = isHighContrast
     ? "bg-white/10 border border-white/20"
     : isAccessible
       ? "bg-slate-950 border border-slate-950 text-white"
       : hasYellowHeader
-        ? "bg-[#FFF8DC] border border-amber-300"
+        ? "bg-[#FFF8DC] border border-yellow-300"
         : "bg-slate-100 border border-slate-300"
   const brandTitleClass = isHighContrast ? "text-white" : "text-slate-950"
   const brandSubtitleClass = isHighContrast ? "text-yellow-200/80" : isAccessible ? "text-slate-700" : hasYellowHeader ? "text-slate-700" : "text-slate-500"
@@ -57,7 +57,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
     : isAccessible
       ? "border-slate-950 bg-slate-950 text-white hover:bg-slate-800"
       : hasYellowHeader
-        ? "border-amber-300 bg-[#FFF8DC] text-slate-950 hover:bg-[#FFF4BF]"
+        ? "border-yellow-300 bg-[#FFF8DC] text-slate-950 hover:bg-[#FFF4BF]"
         : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200"
   const brandHeaderSpacingClass = hasYellowHeader
     ? `${isAccessible ? "h-[84px] min-h-[84px]" : "h-[56px] min-h-[56px]"} px-3`
@@ -67,8 +67,8 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
   const accessibilityButtonClass = isHighContrast
     ? "contrast-button-secondary"
     : isAccessible
-      ? "border-amber-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633] focus-visible:ring-amber-400"
-      : "border-amber-300 bg-white text-slate-950 hover:bg-[#FFF8DC] focus-visible:ring-amber-400"
+      ? "border-yellow-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633] focus-visible:ring-yellow-400"
+      : "border-yellow-300 bg-white text-slate-950 hover:bg-[#FFF8DC] focus-visible:ring-yellow-400"
 
   const handleLogout = () => {
     logout()
@@ -183,7 +183,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             className={`mb-2 inline-flex w-full items-center justify-between gap-2 rounded-2xl border px-3 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${accessibilityButtonClass} ${isAccessible ? "min-h-[68px]" : "min-h-[48px]"}`}
           >
             <span className="flex min-w-0 items-center gap-2 text-left">
-              <span className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-9 w-9 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "border border-amber-300 bg-[#FECE00] text-slate-950"}`}>
+              <span className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-9 w-9 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "border border-yellow-300 bg-[#FECE00] text-slate-950"}`}>
                 <Accessibility className={isAccessible ? "h-6 w-6" : "h-[18px] w-[18px]"} aria-hidden="true" />
               </span>
               <span className="min-w-0">
@@ -237,7 +237,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                   ? "contrast-button-secondary"
                   : isAccessible
                     ? "border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-900"
-                    : "border-slate-300 bg-transparent text-slate-600 hover:bg-slate-50 focus-visible:ring-amber-400"
+                    : "border-slate-300 bg-transparent text-slate-600 hover:bg-slate-50 focus-visible:ring-yellow-400"
               }`}
             >
               Volver al inicio

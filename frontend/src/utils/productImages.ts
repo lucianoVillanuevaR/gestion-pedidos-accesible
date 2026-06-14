@@ -1,7 +1,14 @@
+import type { Producto } from "../types";
+
 const productImageModules = import.meta.glob("../products/*", {
   eager: true,
   import: "default"
 }) as Record<string, string>;
+
+const MINIO_PUBLIC_URL = (import.meta.env.VITE_MINIO_PUBLIC_URL?.trim() || "http://localhost:9000").replace(/\/$/, "");
+const MINIO_PRODUCT_BUCKET = import.meta.env.VITE_MINIO_BUCKET_PRODUCTOS?.trim() || "productos";
+export const PRODUCT_IMAGE_PLACEHOLDER =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 360'%3E%3Crect width='640' height='360' fill='%23FFF8DC'/%3E%3Cpath d='M213 124h214a28 28 0 0 1 28 28v112a28 28 0 0 1-28 28H213a28 28 0 0 1-28-28V152a28 28 0 0 1 28-28Z' fill='%23ffffff' stroke='%23CBD5E1' stroke-width='8'/%3E%3Cpath d='m225 260 64-70 48 48 34-36 44 58H225Z' fill='%23FECE00'/%3E%3Ccircle cx='391' cy='170' r='24' fill='%23CBD5E1'/%3E%3Ctext x='320' y='327' text-anchor='middle' font-family='Arial, sans-serif' font-size='28' font-weight='700' fill='%23475569'%3ESin imagen%3C/text%3E%3C/svg%3E";
 
 type ProductImageEntry = {
   key: string;
@@ -48,7 +55,7 @@ function countSharedTokens(left: string, right: string) {
   return score;
 }
 
-export function resolveProductImage(nombre: string) {
+export function resolveCatalogProductImage(nombre: string) {
   const normalizedName = normalizeProductKey(nombre);
   const aliasedName = productImageAliases[normalizedName] ?? normalizedName;
 
@@ -77,4 +84,26 @@ export function resolveProductImage(nombre: string) {
   }
 
   return bestScore >= 2 ? bestMatch?.url : undefined;
+}
+
+export function resolveProductImage(producto: Pick<Producto, "imagen" | "imagenPublicUrl" | "imagenUrl" | "nombre">) {
+  if (producto.imagenPublicUrl?.trim()) {
+    return producto.imagenPublicUrl.trim();
+  }
+
+  const storedImageUrl = producto.imagenUrl?.trim();
+
+  if (storedImageUrl) {
+    if (storedImageUrl.startsWith("http") || storedImageUrl.startsWith("/") || storedImageUrl.startsWith("data:")) {
+      return storedImageUrl;
+    }
+
+    return `${MINIO_PUBLIC_URL}/${MINIO_PRODUCT_BUCKET}/${storedImageUrl.replace(/^\/+/, "")}`;
+  }
+
+  if (producto.imagen?.trim()) {
+    return producto.imagen.trim();
+  }
+
+  return resolveCatalogProductImage(producto.nombre);
 }

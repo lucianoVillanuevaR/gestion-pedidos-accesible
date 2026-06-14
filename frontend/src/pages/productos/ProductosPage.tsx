@@ -1,8 +1,8 @@
-import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Upload, Utensils, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trash2, Upload, Utensils, X } from "lucide-react";
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
-import { createProducto, deleteProductImage, updateProducto, uploadProductImage } from "../../services/productos";
+import { createProducto, deleteProductImage, deleteProducto, updateProducto, uploadProductImage } from "../../services/productos";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
 import { PRODUCT_IMAGE_ACCEPT, validateProductImageFile } from "../../validations/productImage.validation";
 import {
@@ -13,11 +13,17 @@ import {
   validateProductoForm
 } from "../../validations/producto.validation";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
+import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImage } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
-import { CATEGORIAS_CATALOGO, type CategoriaCatalogo, type CategoriaCatalogoOption } from "./ProductosShared";
+import {
+  CATEGORIAS_CATALOGO,
+  loadCustomCategorias,
+  mergeCategorias,
+  saveCustomCategorias,
+  type CategoriaCatalogo,
+  type CategoriaCatalogoOption
+} from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
-
-const CUSTOM_CATEGORIES_STORAGE_KEY = "riquisimo-custom-product-categories";
 
 type CategoriaGrupo = {
   label: string;
@@ -72,11 +78,11 @@ function ProductosPage() {
       setIsCreating(true);
       setError(null);
       const producto = await createProducto(payload);
-      let productoFinal = producto;
+      let productoFinal = { ...producto, categoria: payload.categoria };
 
       if (imageFile) {
         try {
-          productoFinal = await uploadProductImage(producto.id, imageFile);
+          productoFinal = { ...(await uploadProductImage(producto.id, imageFile)), categoria: payload.categoria };
           speakAction("Imagen subida correctamente.", `producto-image-uploaded:${producto.id}`, { cooldownMs: 2200 });
         } catch (imageError) {
           const message = imageError instanceof Error ? imageError.message : "No se pudo subir la imagen.";
@@ -118,7 +124,10 @@ function ProductosPage() {
     try {
       setUpdatingProductoId(producto.id);
       setError(null);
-      const productoActualizado = await updateProducto(producto.id, payload);
+      const productoActualizado = {
+        ...(await updateProducto(producto.id, payload)),
+        categoria: payload.categoria ?? producto.categoria
+      };
       replaceProductoInList(productoActualizado);
       setEditingProducto(null);
       speakAction(
@@ -186,6 +195,35 @@ function ProductosPage() {
     }
   };
 
+  const handleDeleteProducto = async (producto: ProductoConCategoria) => {
+    const confirmed = window.confirm(`¿Eliminar el producto "${producto.nombre}"? Esta acción no se puede deshacer.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setUpdatingProductoId(producto.id);
+    setError(null);
+
+    try {
+      await deleteProducto(producto.id);
+      setProductos((currentProductos) => currentProductos.filter((currentProducto) => currentProducto.id !== producto.id));
+      setEditingProducto((currentProducto) => (currentProducto?.id === producto.id ? null : currentProducto));
+      speakAction(`Producto eliminado. ${producto.nombre}.`, `producto-deleted:${producto.id}`, { cooldownMs: 2200 });
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "No fue posible eliminar el producto";
+      setError(message);
+      speak(`No fue posible eliminar el producto. ${message}`, {
+        priority: "high",
+        dedupeKey: `producto-delete-error:${producto.id}`,
+        cooldownMs: 3000,
+        interrupt: true
+      });
+    } finally {
+      setUpdatingProductoId(null);
+    }
+  };
+
   const handleRefreshProductos = () => {
     speakAction("Actualizando productos.", "productos-normal-refresh", { cooldownMs: 1200, priority: "normal" });
     loadProductos();
@@ -216,6 +254,24 @@ function ProductosPage() {
     });
   };
 
+  const handleDeleteActiveCategory = () => {
+    const activeGrupo = grupos.find((grupo) => grupo.value === activeCategory);
+
+    if (!activeGrupo) {
+      const message = "Selecciona una categoría para eliminar.";
+      setError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: "producto-category-delete-no-active",
+        cooldownMs: 2500,
+        interrupt: true
+      });
+      return;
+    }
+
+    handleDeleteCategory(activeGrupo);
+  };
+
   const handleOpenEditProduct = (producto: ProductoConCategoria) => {
     setEditingProducto(producto);
     speakAction(`Boton editar. Editando ${producto.nombre}. Precio ${formatCurrency(producto.precio)}.`, `producto-open-edit:${producto.id}`, {
@@ -242,6 +298,50 @@ function ProductosPage() {
     setActiveCategory(grupo.value);
     speakAction(`Categoria ${grupo.label}. ${grupo.productos.length} productos.`, `producto-category-button:${grupo.value}:${grupo.productos.length}`, {
       cooldownMs: 1200,
+      priority: "normal"
+    });
+  };
+
+  const handleDeleteCategory = (grupo: CategoriaGrupo) => {
+    const isCustomCategory = customCategorias.some((categoria) => categoria.value === grupo.value);
+
+    if (!isCustomCategory) {
+      const message = "Solo puedes eliminar categorías creadas manualmente.";
+      setError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: `producto-category-delete-base:${grupo.value}`,
+        cooldownMs: 2500,
+        interrupt: true
+      });
+      return;
+    }
+
+    if (grupo.productos.length > 0) {
+      const message = "Primero elimina o cambia de categoría los productos antes de borrar esta categoría.";
+      setError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: `producto-category-delete-not-empty:${grupo.value}`,
+        cooldownMs: 2500,
+        interrupt: true
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(`¿Eliminar la categoría "${grupo.label}"?`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    const nextCategorias = customCategorias.filter((categoria) => categoria.value !== grupo.value);
+    setCustomCategorias(nextCategorias);
+    saveCustomCategorias(nextCategorias);
+    setActiveCategory("Destacados");
+    setError(null);
+    speakAction(`Categoria eliminada. ${grupo.label}.`, `producto-category-deleted:${grupo.value}`, {
+      cooldownMs: 1800,
       priority: "normal"
     });
   };
@@ -277,6 +377,14 @@ function ProductosPage() {
               >
                 <Plus className="h-5 w-5" aria-hidden="true" />
                 Crear categoría
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteActiveCategory}
+                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Trash2 className="h-5 w-5" aria-hidden="true" />
+                Eliminar categoría
               </button>
               <button
                 type="button"
@@ -316,7 +424,7 @@ function ProductosPage() {
                     role="tab"
                     className={`inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-black transition ${
                       isActive
-                        ? "border-[#FECE00] bg-amber-50 text-slate-950"
+                        ? "border-[#FECE00] bg-yellow-50 text-slate-950"
                         : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                     } ${FOCUS_VISIBLE_CLASS}`}
                   >
@@ -385,6 +493,7 @@ function ProductosPage() {
             isSaving={updatingProductoId === editingProducto.id}
             onClose={() => setEditingProducto(null)}
             onDeleteImage={handleDeleteProductoImage}
+            onDeleteProduct={handleDeleteProducto}
             onUploadImage={handleUploadProductoImage}
             onSubmit={(payload) => handleUpdateProducto(editingProducto, payload)}
             producto={editingProducto}
@@ -401,45 +510,6 @@ function ProductosPage() {
       </main>
     </div>
   );
-}
-
-function loadCustomCategorias(): CategoriaCatalogoOption[] {
-  try {
-    const storedCategorias = window.localStorage.getItem(CUSTOM_CATEGORIES_STORAGE_KEY);
-
-    if (!storedCategorias) {
-      return [];
-    }
-
-    const parsedCategorias = JSON.parse(storedCategorias) as CategoriaCatalogoOption[];
-
-    if (!Array.isArray(parsedCategorias)) {
-      return [];
-    }
-
-    return parsedCategorias.filter((categoria) => typeof categoria?.label === "string" && typeof categoria?.value === "string");
-  } catch {
-    return [];
-  }
-}
-
-function saveCustomCategorias(categorias: CategoriaCatalogoOption[]) {
-  window.localStorage.setItem(CUSTOM_CATEGORIES_STORAGE_KEY, JSON.stringify(categorias));
-}
-
-function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
-  const categoriaMap = new Map<CategoriaCatalogo, CategoriaCatalogoOption>();
-
-  [...CATEGORIAS_CATALOGO, ...customCategorias].forEach((categoria) => {
-    const label = categoria.label.trim();
-    const value = String(categoria.value).trim() as CategoriaCatalogo;
-
-    if (label && value && !categoriaMap.has(value)) {
-      categoriaMap.set(value, { label, value });
-    }
-  });
-
-  return [...categoriaMap.values()];
 }
 
 function CategoriaBlock({
@@ -530,6 +600,7 @@ function ProductoFormModal({
   isSaving,
   onClose,
   onDeleteImage,
+  onDeleteProduct,
   onUploadImage,
   onSubmit,
   producto
@@ -539,6 +610,7 @@ function ProductoFormModal({
   isSaving: boolean;
   onClose: () => void;
   onDeleteImage?: (producto: Producto) => Promise<void>;
+  onDeleteProduct?: (producto: ProductoConCategoria) => Promise<void> | void;
   onUploadImage?: (producto: Producto, file: File) => Promise<void>;
   onSubmit: (payload: CreateProductoPayload, imageFile?: File | null) => Promise<Producto | void>;
   producto?: ProductoConCategoria;
@@ -558,7 +630,7 @@ function ProductoFormModal({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const currentImageUrl = previewUrl || producto?.imagen || producto?.imagenPublicUrl || null;
+  const currentImageUrl = previewUrl || (producto ? resolveProductImage(producto) : null);
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -676,11 +748,14 @@ function ProductoFormModal({
 
         <div className="grid gap-4 p-4 sm:grid-cols-[136px_minmax(0,1fr)]">
           <div className="space-y-2">
-            <div className="flex min-h-[112px] items-center justify-center overflow-hidden rounded-lg border border-amber-300 bg-[#FFF8DC]">
+            <div className="flex min-h-[112px] items-center justify-center overflow-hidden rounded-lg border border-yellow-300 bg-[#FFF8DC]">
               {currentImageUrl ? (
                 <img
                   src={currentImageUrl}
                   alt={`Imagen de ${producto?.nombre || "producto"}`}
+                  onError={(event) => {
+                    event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
+                  }}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -704,7 +779,7 @@ function ProductoFormModal({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImageSaving}
-                className={`min-h-[40px] rounded-lg border border-amber-300 bg-[#FECE00] px-3 text-sm font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+                className={`min-h-[40px] rounded-lg border border-yellow-300 bg-[#FECE00] px-3 text-sm font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
               >
                 {currentImageUrl ? "Cambiar imagen" : "Subir imagen"}
               </button>
@@ -735,7 +810,7 @@ function ProductoFormModal({
                 maxLength={PRODUCTO_NOMBRE_MAX_LENGTH}
                 onChange={(event) => setNombre(event.target.value)}
                 placeholder={producto ? "Nombre del producto" : "Producto nuevo"}
-                className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
+                className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
               />
             </label>
             <label className="block">
@@ -746,7 +821,7 @@ function ProductoFormModal({
                 onChange={(event) => setDescripcion(event.target.value)}
                 placeholder="Descripción"
                 rows={3}
-                className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
+                className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
               />
             </label>
           </div>
@@ -756,7 +831,7 @@ function ProductoFormModal({
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-base font-black text-slate-950">Precio(s)</h3>
             <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-slate-300 text-sm font-bold">
-              <span className="bg-amber-50 px-6 py-2 text-center text-slate-950">Simple</span>
+              <span className="bg-yellow-50 px-6 py-2 text-center text-slate-950">Simple</span>
               <span className="px-6 py-2 text-center text-slate-700">Variantes</span>
             </div>
           </div>
@@ -771,7 +846,7 @@ function ProductoFormModal({
               value={precio}
               onChange={(event) => setPrecio(event.target.value)}
               placeholder="CLP 0"
-              className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
+              className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
             />
           </label>
 
@@ -814,7 +889,7 @@ function ProductoFormModal({
           </div>
           <button
             type="button"
-            className={`inline-flex min-h-[40px] items-center justify-center rounded-lg border border-[#FECE00] bg-white text-amber-700 transition hover:bg-amber-50 ${FOCUS_VISIBLE_CLASS}`}
+            className={`inline-flex min-h-[40px] items-center justify-center rounded-lg border border-[#FECE00] bg-white text-yellow-700 transition hover:bg-yellow-50 ${FOCUS_VISIBLE_CLASS}`}
           >
             <Plus className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -832,7 +907,7 @@ function ProductoFormModal({
               setCategoria(value);
               setDestacado(value === "Destacados" || destacado);
             }}
-            className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
+            className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
           >
             {categoriasCatalogo.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -846,18 +921,28 @@ function ProductoFormModal({
           </p>
         )}
 
-        <div className="flex gap-3 border-t border-slate-200 p-4">
+        <div className="flex flex-col gap-3 border-t border-slate-200 p-4 sm:flex-row">
+          {producto && onDeleteProduct && (
+            <button
+              type="button"
+              onClick={() => onDeleteProduct(producto)}
+              disabled={isSaving}
+              className={`min-h-[44px] rounded-xl border border-red-200 bg-red-50 px-4 font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-1 ${FOCUS_VISIBLE_CLASS}`}
+            >
+              Eliminar producto
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
-            className={`min-h-[44px] flex-1 rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+            className={`min-h-[44px] rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 sm:flex-1 ${FOCUS_VISIBLE_CLASS}`}
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className={`min-h-[44px] flex-1 rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+            className={`min-h-[44px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 sm:flex-1 ${FOCUS_VISIBLE_CLASS}`}
           >
             {isSaving ? "Guardando..." : producto ? "Guardar cambios" : "Guardar producto"}
           </button>
@@ -942,7 +1027,7 @@ function CategoriaFormModal({
               value={nombre}
               onChange={(event) => setNombre(event.target.value)}
               placeholder="Ej: Promociones"
-              className={`min-h-[44px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-amber-500 ${FOCUS_VISIBLE_CLASS}`}
+              className={`min-h-[44px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
             />
           </label>
 
@@ -1005,6 +1090,9 @@ function ProductoRow({
           <img
             src={producto.imagen}
             alt={producto.altText ?? producto.nombre}
+            onError={(event) => {
+              event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
+            }}
             className="h-11 w-11 shrink-0 rounded-lg border border-slate-200 object-cover"
           />
         ) : (
@@ -1030,7 +1118,7 @@ function ProductoRow({
           disabled={isUpdating}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-60 ${
             isAvailable
-              ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+              ? "border-yellow-200 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
               : "border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
           } ${FOCUS_VISIBLE_CLASS}`}
           aria-label={isAvailable ? `Ocultar ${producto.nombre}` : `Mostrar ${producto.nombre}`}
@@ -1040,7 +1128,7 @@ function ProductoRow({
         <button
           type="button"
           onClick={() => onEditProduct(producto)}
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-amber-200 bg-[#FFF8DC] text-slate-950 transition hover:bg-[#FFF4BF] ${FOCUS_VISIBLE_CLASS}`}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-yellow-200 bg-[#FFF8DC] text-slate-950 transition hover:bg-[#FFF4BF] ${FOCUS_VISIBLE_CLASS}`}
           aria-label={`Editar ${producto.nombre}`}
         >
           <Pencil className="h-5 w-5" aria-hidden="true" />

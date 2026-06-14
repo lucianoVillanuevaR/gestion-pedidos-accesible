@@ -5,6 +5,7 @@ import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
+import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { CATEGORIAS_CATALOGO, type CategoriaCatalogo } from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
@@ -221,6 +222,9 @@ function ProductoFacilCard({
           <img
             src={producto.imagen}
             alt={producto.altText ?? producto.nombre}
+            onError={(event) => {
+              event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
+            }}
             className="h-36 w-full rounded-2xl border-2 border-slate-200 object-cover sm:h-40 sm:w-44"
           />
         ) : (
@@ -231,7 +235,7 @@ function ProductoFacilCard({
         <div className="min-w-0 flex-1">
           <p className="text-lg font-black text-slate-600">{producto.categoria}</p>
           <h3 className="mt-1 text-3xl font-black leading-tight text-slate-950">{producto.nombre}</h3>
-          {producto.destacado && <p className="mt-3 text-xl font-black text-amber-700">Destacado</p>}
+          {producto.destacado && <p className="mt-3 text-xl font-black text-yellow-700">Destacado</p>}
           <p className="mt-3 overflow-hidden text-lg font-semibold leading-relaxed text-slate-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
             {producto.descripcion || "Producto disponible en el menú."}
           </p>
@@ -303,12 +307,15 @@ function ProductoDetailModal({
           <img
             src={producto.imagen}
             alt={producto.altText ?? producto.nombre}
+            onError={(event) => {
+              event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
+            }}
             className="mt-5 h-56 w-full rounded-2xl border-2 border-slate-200 object-cover"
           />
         )}
         <div className="mt-5 rounded-2xl border-2 border-slate-300 bg-slate-50 p-5">
           <p className="text-xl font-black text-slate-700">Categoría: {producto.categoria}</p>
-          {producto.destacado && <p className="mt-2 text-xl font-black text-amber-700">Producto destacado</p>}
+          {producto.destacado && <p className="mt-2 text-xl font-black text-yellow-700">Producto destacado</p>}
           <p className="mt-3 text-xl font-semibold leading-relaxed text-slate-700">
             {producto.descripcion || "Sin descripción adicional."}
           </p>

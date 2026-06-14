@@ -61,15 +61,15 @@ function AccessibilityPanel({
     if (isAccessible) {
       return `${baseClass} text-lg ${
         active
-          ? "border-slate-900 bg-slate-900 text-white focus-visible:outline-amber-400"
-          : "border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-amber-400"
+          ? "border-slate-900 bg-slate-900 text-white focus-visible:outline-yellow-400"
+          : "border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
       }`;
     }
 
     return `${baseClass} text-base ${
       active
-        ? "border-[#FECE00] bg-[#FECE00] text-slate-950 focus-visible:outline-amber-300"
-        : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 focus-visible:outline-amber-300"
+        ? "border-[#FECE00] bg-[#FECE00] text-slate-950 focus-visible:outline-yellow-300"
+        : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 focus-visible:outline-yellow-300"
     }`;
   };
 
@@ -143,7 +143,7 @@ function AccessibilityPanel({
               <p
                 className={`
                   font-bold uppercase tracking-[0.16em]
-                  ${isAccessible ? "text-xl text-slate-900" : "text-sm text-amber-700"}
+                  ${isAccessible ? "text-xl text-slate-900" : "text-sm text-yellow-700"}
                 `}
               >
                 {isAccessible ? "OPCIONES SIMPLES" : "Accesibilidad"}
@@ -176,8 +176,8 @@ function AccessibilityPanel({
                 flex-shrink-0 min-h-[56px] min-w-[56px] rounded-xl border font-bold transition
                 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4
                 ${isAccessible
-                  ? "text-2xl border-2 border-slate-900 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-amber-400"
-                  : "text-lg border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-amber-300"
+                  ? "text-2xl border-2 border-slate-900 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
+                  : "text-lg border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
                 }
               `}
             >
@@ -380,8 +380,8 @@ function AccessibilityPanel({
                 w-full min-h-[56px] rounded-xl border font-bold transition
                 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4
                 ${isAccessible
-                  ? "text-lg border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-amber-400"
-                  : "text-base border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-amber-300"
+                  ? "text-lg border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
+                  : "text-base border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
                 }
               `}
             >

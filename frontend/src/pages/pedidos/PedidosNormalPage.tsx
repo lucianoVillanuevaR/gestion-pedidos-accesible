@@ -11,6 +11,7 @@ import {
   formatCurrency,
   formatElapsedTime,
   formatMetodoPago,
+  getPedidoDisplayNumber,
   getPedidoSummary,
   getProductCount,
   isPedidoDelayed,
@@ -53,7 +54,8 @@ function PedidosNormalPage() {
 
   const handleNormalEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
     await handleEstadoChange(pedido, estado);
-    speak(`Pedido ${pedido.id} actualizado a ${ESTADO_META[estado].label}.`, {
+    const numeroPedido = getPedidoDisplayNumber(pedido);
+    speak(`Pedido ${numeroPedido} actualizado a ${ESTADO_META[estado].label}.`, {
       priority: "high",
       dedupeKey: `pedido-normal-estado:${pedido.id}:${estado}`,
       cooldownMs: 1800,
@@ -183,8 +185,7 @@ function PedidosActivosHeader({
     <header className={`rounded-[10px] border px-4 py-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm font-black uppercase text-amber-700">Gestión en tiempo real</p>
-          <h1 className="mt-1 text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
+          <h1 className="text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
           <p className="mt-1 max-w-2xl text-sm font-bold text-slate-600">
             Revisa pedidos pendientes, en preparación, listos y entregados recientemente.
           </p>
@@ -215,18 +216,19 @@ function NormalPedidoRow({
   const createdAt = getCreatedDateLabel(pedido.createdAt);
   const delayed = isPedidoDelayed(pedido);
   const isCancelled = pedido.estado === "cancelado";
+  const numeroPedido = getPedidoDisplayNumber(pedido);
 
   return (
     <article className={`grid gap-4 border-l-4 px-4 py-4 transition md:grid-cols-[170px_170px_130px_minmax(0,1fr)_210px] md:items-center xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_240px] ${
       isCancelled ? "border-red-300 bg-slate-50 hover:bg-slate-50" : "border-[#FECE00] hover:bg-[#FFFDF3]"
     }`}>
       <div>
-        <p className="flex items-center gap-1.5 font-black text-amber-600">
-          #{pedido.id}
+        <p className="flex items-center gap-1.5 font-black text-yellow-600">
+          #{numeroPedido}
           <Store className="h-4 w-4" aria-hidden="true" />
           En el local
         </p>
-        <p className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-orange-600" : "text-slate-600"}`}>
+        <p className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-600" : "text-slate-600"}`}>
           <Clock3 className="h-4 w-4" aria-hidden="true" />
           {formatElapsedTime(pedido.createdAt)}
         </p>
@@ -250,7 +252,7 @@ function NormalPedidoRow({
 
       <div>
         <p className="text-lg font-black text-slate-950">{formatCurrency(pedido.total)}</p>
-        <p className="mt-2 inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-black text-orange-700">
+        <p className="mt-2 inline-flex rounded-full bg-yellow-100 px-3 py-1 text-xs font-black text-yellow-700">
           {formatMetodoPago(pedido.metodoPago)}
         </p>
       </div>
@@ -381,7 +383,7 @@ function NormalPedidosToolbar({
                       ? "contrast-button-primary"
                       : "contrast-button-secondary"
                     : isActive
-                      ? "border-[#FECE00] bg-amber-50 text-slate-950"
+                      ? "border-[#FECE00] bg-yellow-50 text-slate-950"
                       : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
                 } ${FOCUS_VISIBLE_CLASS}`}
               >
@@ -390,7 +392,7 @@ function NormalPedidosToolbar({
                 {count > 0 && (
                   <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black ${
                     option.value === "pendiente"
-                      ? "bg-orange-500 text-white"
+                      ? "bg-yellow-500 text-white"
                       : option.value === "en_preparacion" || option.value === "listo"
                         ? "bg-emerald-500 text-white"
                         : "bg-slate-100 text-slate-700"
@@ -452,7 +454,7 @@ function BoardActionButton({
 }) {
   const toneClass = {
     danger: "border-red-500 bg-white text-red-600 hover:bg-red-50",
-    info: "border-[#FECE00] bg-white text-amber-700 hover:bg-amber-50",
+    info: "border-[#FECE00] bg-white text-yellow-700 hover:bg-yellow-50",
     success: "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
   }[tone];
 

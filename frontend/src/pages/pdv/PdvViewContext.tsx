@@ -20,6 +20,7 @@ export type PdvViewContextValue = {
   addProduct: (producto: Producto) => void;
   bgWrapper: string;
   cardBorder: string;
+  categoryFilters: Array<{ label: string; value: FiltroCategoria }>;
   clienteNombre: string;
   decreaseProduct: (producto: Producto) => void;
   feedback: FeedbackState | null;
@@ -66,6 +67,7 @@ export type PdvViewContextValue = {
   showResetConfirm: boolean;
   textColor: string;
   total: number;
+  totalItems: number;
   productosFiltrados: Producto[];
 };
 
