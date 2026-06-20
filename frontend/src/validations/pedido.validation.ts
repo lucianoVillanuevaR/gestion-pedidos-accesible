@@ -12,7 +12,13 @@ type ValidatePedidoSubmitParams = {
   totalProductos: number;
 };
 
-export function validatePedidoSubmit({ clienteNombre = "", isTurnoOpen, metodoPago, observacion = "", totalProductos }: ValidatePedidoSubmitParams) {
+export function validatePedidoSubmit({
+  clienteNombre = "",
+  isTurnoOpen,
+  metodoPago,
+  observacion = "",
+  totalProductos
+}: ValidatePedidoSubmitParams) {
   if (!isTurnoOpen) {
     return "Debes abrir turno antes de registrar un pedido.";
   }

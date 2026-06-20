@@ -44,13 +44,19 @@ export function useProductosCatalog({
 
   const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, categorias), [categorias, productos]);
 
-  const productosConCategoria = useMemo(() => withProductoCategoria(productos, categoriasCatalogo), [categoriasCatalogo, productos]);
+  const productosConCategoria = useMemo(
+    () => withProductoCategoria(productos, categoriasCatalogo),
+    [categoriasCatalogo, productos]
+  );
 
   const productosFiltrados = useMemo(() => {
     return filterCatalogoProductos(productosConCategoria, searchTerm);
   }, [productosConCategoria, searchTerm]);
 
-  const grupos = useMemo(() => groupProductosByCategoria(productosFiltrados, categoriasCatalogo), [categoriasCatalogo, productosFiltrados]);
+  const grupos = useMemo(
+    () => groupProductosByCategoria(productosFiltrados, categoriasCatalogo),
+    [categoriasCatalogo, productosFiltrados]
+  );
 
   useEffect(() => {
     if (grupos.length === 0) {
@@ -62,7 +68,8 @@ export function useProductosCatalog({
     }
   }, [activeCategory, grupos]);
 
-  const totalDestacados = productosConCategoria.filter((producto) => producto.destacado).length || Math.min(productosConCategoria.length, 4);
+  const totalDestacados =
+    productosConCategoria.filter((producto) => producto.destacado).length || Math.min(productosConCategoria.length, 4);
 
   return {
     activeCategory,

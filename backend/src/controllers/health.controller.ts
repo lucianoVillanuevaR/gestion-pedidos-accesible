@@ -6,4 +6,3 @@ export function getHealth(_request: Request, response: Response) {
     message: "Backend running"
   });
 }
-

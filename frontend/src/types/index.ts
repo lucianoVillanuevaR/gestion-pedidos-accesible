@@ -105,7 +105,7 @@ export type CierrePedidoResumen = {
   detalles: CierrePedidoDetalle[];
 };
 
-export type CierrePedidoDetalle = {
+type CierrePedidoDetalle = {
   cantidad: number;
   precioUnitario: number;
   productoId: number;

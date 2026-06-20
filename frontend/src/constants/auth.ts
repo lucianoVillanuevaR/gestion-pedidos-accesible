@@ -1,6 +1,6 @@
-import type { DemoUser, UserRole } from "../types"
+import type { DemoUser, UserRole } from "../types";
 
-export const AUTH_STORAGE_KEY = "riquisimo-auth-session"
+export const AUTH_STORAGE_KEY = "riquisimo-auth-session";
 
 export const DEMO_USERS: DemoUser[] = [
   {
@@ -24,16 +24,16 @@ export const DEMO_USERS: DemoUser[] = [
     role: "admin",
     label: "Administrador"
   }
-]
+];
 
 export function getDefaultRouteForRole(role: UserRole) {
   if (role === "cocina") {
-    return "/cocina"
+    return "/cocina";
   }
 
   if (role === "cajero") {
-    return "/pdv"
+    return "/pdv";
   }
 
-  return "/pdv"
+  return "/pdv";
 }

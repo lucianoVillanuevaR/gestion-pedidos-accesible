@@ -4,17 +4,24 @@ import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
 import { getPedidos, updatePedidoEstado } from "../../services/pedidos";
-import type { AuthUser, CierreTurno, EstadoPedido, MetodoPago, PedidoDetalleResponse, PedidoResponse } from "../../types";
+import type {
+  AuthUser,
+  CierreTurno,
+  EstadoPedido,
+  MetodoPago,
+  PedidoDetalleResponse,
+  PedidoResponse
+} from "../../types";
 
 export type EstadoFilter = EstadoPedido | "todos";
-export type ModalAction = "detail" | "state" | "finish" | "cancel" | "history";
+type ModalAction = "detail" | "state" | "finish" | "cancel" | "history";
 export type SortOption = "recent" | "oldest" | "highest_total" | "state";
 
 export const FOCUS_VISIBLE_CLASS =
   "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
 
 export const TURNO_ABIERTO_STORAGE_KEY = "riquisimo:turno-abierto";
-export const TURNO_FECHA_INICIO_STORAGE_KEY = "riquisimo:turno-fecha-inicio";
+const TURNO_FECHA_INICIO_STORAGE_KEY = "riquisimo:turno-fecha-inicio";
 
 export type ActiveModal = {
   action: ModalAction;
@@ -98,7 +105,7 @@ export function getPedidoCounts(pedidos: PedidoResponse[]) {
   };
 }
 
-export function getNormalSummary(pedidos: PedidoResponse[]) {
+function getNormalSummary(pedidos: PedidoResponse[]) {
   const turnoSummary = getTurnoSummary(pedidos);
 
   return {
@@ -108,9 +115,13 @@ export function getNormalSummary(pedidos: PedidoResponse[]) {
   };
 }
 
+export type NormalSummary = ReturnType<typeof getNormalSummary>;
+
 export function getTurnoSummary(pedidos: PedidoResponse[]) {
   const pedidosEntregados = pedidos.filter((pedido) => pedido.estado === "entregado");
-  const pedidosPendientesTurno = pedidos.filter((pedido) => ["pendiente", "en_preparacion", "listo"].includes(pedido.estado));
+  const pedidosPendientesTurno = pedidos.filter((pedido) =>
+    ["pendiente", "en_preparacion", "listo"].includes(pedido.estado)
+  );
   const totalPendiente = pedidosPendientesTurno.reduce((total, pedido) => total + Number(pedido.total), 0);
   const totalPorMetodo: Record<MetodoPago, number> = {
     efectivo: 0,
@@ -160,7 +171,7 @@ export function formatTime(value?: string) {
   }).format(new Date(value));
 }
 
-export function getPedidoNumeroTurnoMap(pedidos: PedidoResponse[]) {
+function getPedidoNumeroTurnoMap(pedidos: PedidoResponse[]) {
   const sortedPedidos = [...pedidos].sort((left, right) => {
     const leftTime = getCreatedDate(left.createdAt)?.getTime() ?? left.id;
     const rightTime = getCreatedDate(right.createdAt)?.getTime() ?? right.id;
@@ -289,7 +300,7 @@ export function setTurnoAbierto(isOpen: boolean) {
   window.localStorage.setItem(TURNO_ABIERTO_STORAGE_KEY, String(isOpen));
 }
 
-export function readTurnoFechaInicio() {
+function readTurnoFechaInicio() {
   if (typeof window === "undefined") {
     return undefined;
   }
@@ -328,7 +339,7 @@ function parseMoneyValue(value: string) {
   return Number.isNaN(amount) ? 0 : amount;
 }
 
-export function getDetalleProductoNombre(detalle: NonNullable<PedidoResponse["detalles"]>[number]) {
+function getDetalleProductoNombre(detalle: NonNullable<PedidoResponse["detalles"]>[number]) {
   return detalle.producto?.nombre ?? `Producto #${detalle.productoId}`;
 }
 
@@ -466,9 +477,8 @@ export function usePedidosController({
   const lastFocusedElementRef = useRef<HTMLElement | null>(null);
 
   const filteredPedidos = useMemo(() => {
-    const pedidosByEstado = estadoFilter === "todos"
-      ? pedidos
-      : pedidos.filter((pedido) => pedido.estado === estadoFilter);
+    const pedidosByEstado =
+      estadoFilter === "todos" ? pedidos : pedidos.filter((pedido) => pedido.estado === estadoFilter);
     const pedidosBySearch = pedidosByEstado.filter((pedido) => pedidoMatchesSearch(pedido, searchTerm));
 
     return sortPedidos(pedidosBySearch, sortOption);
@@ -567,15 +577,7 @@ export function StatusBadge({ estado, isLarge = false }: { estado: EstadoPedido;
   );
 }
 
-function ModalShell({
-  children,
-  onClose,
-  title
-}: {
-  children: ReactNode;
-  onClose: () => void;
-  title: string;
-}) {
+function ModalShell({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
   const { isAccessible, isHighContrast } = useAccessibilityContext();
   const titleId = useId();
   const titleRef = useRef<HTMLHeadingElement | null>(null);
@@ -591,8 +593,12 @@ function ModalShell({
         aria-modal="true"
         aria-labelledby={titleId}
         className={`max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[26px] bg-white p-5 shadow-2xl sm:p-6 ${
-        isHighContrast ? "contrast-panel border-2 border-yellow-400" : isAccessible ? "border-2 border-slate-900" : "border border-slate-200"
-      }`}
+          isHighContrast
+            ? "contrast-panel border-2 border-yellow-400"
+            : isAccessible
+              ? "border-2 border-slate-900"
+              : "border border-slate-200"
+        }`}
       >
         <div className="flex items-start justify-between gap-4">
           <h2
@@ -607,7 +613,9 @@ function ModalShell({
             type="button"
             onClick={onClose}
             className={`inline-flex items-center justify-center rounded-xl border px-4 font-black transition hover:bg-slate-100 ${
-              isAccessible ? "min-h-[56px] border-2 border-slate-900 text-lg text-slate-950" : "min-h-[44px] border-slate-300 text-slate-700"
+              isAccessible
+                ? "min-h-[56px] border-2 border-slate-900 text-lg text-slate-950"
+                : "min-h-[44px] border-slate-300 text-slate-700"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             Volver
@@ -651,9 +659,14 @@ export function PedidoModal({
           )}
           <div className="rounded-2xl border border-slate-200">
             {(pedido.detalles ?? []).map((detalle) => (
-              <div key={detalle.id} className="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0">
+              <div
+                key={detalle.id}
+                className="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0"
+              >
                 <div>
-                  <p className="font-black text-slate-950">{detalle.cantidad}x {getItemName(detalle)}</p>
+                  <p className="font-black text-slate-950">
+                    {detalle.cantidad}x {getItemName(detalle)}
+                  </p>
                   <p className="text-sm font-bold text-slate-500">{formatCurrency(detalle.precioUnitario)} c/u</p>
                 </div>
                 <p className="font-black text-slate-950">{formatCurrency(detalle.subtotal)}</p>
@@ -677,8 +690,8 @@ export function PedidoModal({
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
           <p className="font-black text-slate-950">Historial no disponible</p>
           <p className="mt-2 text-sm font-bold leading-relaxed text-slate-600">
-            Este proyecto todavía no tiene un endpoint o registro real de cambios de estado.
-            Cuando exista, aquí se podrá mostrar estado anterior, estado nuevo, hora del cambio y usuario responsable.
+            Este proyecto todavía no tiene un endpoint o registro real de cambios de estado. Cuando exista, aquí se
+            podrá mostrar estado anterior, estado nuevo, hora del cambio y usuario responsable.
           </p>
         </div>
       </ModalShell>
@@ -687,11 +700,12 @@ export function PedidoModal({
 
   if (action === "state") {
     const allowedOptions = getAllowedEstadoOptions(pedido.estado);
-    const unavailableMessage = pedido.estado === "entregado"
-      ? "Pedido finalizado"
-      : pedido.estado === "cancelado"
-        ? "Pedido cancelado"
-        : "Este pedido no tiene cambios de estado disponibles.";
+    const unavailableMessage =
+      pedido.estado === "entregado"
+        ? "Pedido finalizado"
+        : pedido.estado === "cancelado"
+          ? "Pedido cancelado"
+          : "Este pedido no tiene cambios de estado disponibles.";
 
     return (
       <ModalShell onClose={onClose} title={`Cambiar estado del pedido #${getPedidoDisplayNumber(pedido)}`}>
@@ -740,7 +754,14 @@ export function PedidoModal({
   const isFinish = action === "finish";
 
   return (
-    <ModalShell onClose={onClose} title={isFinish ? `Marcar pedido #${getPedidoDisplayNumber(pedido)} como entregado` : `Cancelar pedido #${getPedidoDisplayNumber(pedido)}`}>
+    <ModalShell
+      onClose={onClose}
+      title={
+        isFinish
+          ? `Marcar pedido #${getPedidoDisplayNumber(pedido)} como entregado`
+          : `Cancelar pedido #${getPedidoDisplayNumber(pedido)}`
+      }
+    >
       <div className="space-y-5">
         <p className="text-xl font-black text-slate-950">
           {isFinish ? "¿Deseas marcar este pedido como entregado?" : "¿Deseas cancelar este pedido?"}
@@ -750,7 +771,9 @@ export function PedidoModal({
             ? "Confirma solo si el pedido ya fue entregado al cliente."
             : "Esta acción cambiará el estado del pedido a cancelado."}
         </p>
-        <p className="font-bold text-slate-600">Pedido #{getPedidoDisplayNumber(pedido)} · {formatCurrency(pedido.total)}</p>
+        <p className="font-bold text-slate-600">
+          Pedido #{getPedidoDisplayNumber(pedido)} · {formatCurrency(pedido.total)}
+        </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"
@@ -779,13 +802,17 @@ export function PedidoModal({
 
 export function EmptyPedidosMessage({ isAccessible = false }: { isAccessible?: boolean }) {
   return (
-    <div className={`rounded-[26px] bg-white p-8 sm:p-10 ${
-      isAccessible ? "border-2 border-slate-900" : "border border-slate-200 shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
-    }`}>
+    <div
+      className={`rounded-[26px] bg-white p-8 sm:p-10 ${
+        isAccessible ? "border-2 border-slate-900" : "border border-slate-200 shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
+      }`}
+    >
       <div className="mx-auto max-w-2xl text-center">
-        <div className={`mx-auto flex items-center justify-center rounded-2xl border text-slate-950 ${
-          isAccessible ? "h-20 w-20 border-2 border-slate-900 bg-white" : "h-14 w-14 border-yellow-200 bg-[#FFF8DC]"
-        }`}>
+        <div
+          className={`mx-auto flex items-center justify-center rounded-2xl border text-slate-950 ${
+            isAccessible ? "h-20 w-20 border-2 border-slate-900 bg-white" : "h-14 w-14 border-yellow-200 bg-[#FFF8DC]"
+          }`}
+        >
           <ClipboardPlus className={isAccessible ? "h-10 w-10" : "h-7 w-7"} aria-hidden="true" />
         </div>
         <p className={`mt-5 font-black text-slate-950 ${isAccessible ? "text-4xl" : "text-2xl"}`}>

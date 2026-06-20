@@ -49,13 +49,15 @@ export const getInventario = async (_req: Request, res: Response) => {
 
     const inventario = await Promise.all(
       productos.map(async (producto) => {
-        const item = producto.inventario ?? (await prisma.inventario.create({
-          data: {
-            productoId: producto.id,
-            stockActual: DEFAULT_STOCK_ACTUAL,
-            stockMinimo: DEFAULT_STOCK_MINIMO
-          }
-        }));
+        const item =
+          producto.inventario ??
+          (await prisma.inventario.create({
+            data: {
+              productoId: producto.id,
+              stockActual: DEFAULT_STOCK_ACTUAL,
+              stockMinimo: DEFAULT_STOCK_MINIMO
+            }
+          }));
 
         return toInventarioResponse({
           producto,
@@ -106,12 +108,14 @@ export const updateInventarioProducto = async (req: Request, res: Response) => {
       where: { productoId }
     });
 
-    res.json(toInventarioResponse({
-      producto,
-      productoId,
-      stockActual: item.stockActual,
-      stockMinimo: item.stockMinimo
-    }));
+    res.json(
+      toInventarioResponse({
+        producto,
+        productoId,
+        stockActual: item.stockActual,
+        stockMinimo: item.stockMinimo
+      })
+    );
   } catch (error) {
     console.error("Error al actualizar inventario:", error);
     res.status(500).json({ error: "Error al actualizar inventario" });

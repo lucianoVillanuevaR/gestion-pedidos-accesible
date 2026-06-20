@@ -74,7 +74,9 @@ function PedidosFacilPage() {
   const pedidosActivos = normalSummary.pendientes + normalSummary.enPreparacion + normalSummary.listos;
 
   const pageBg = isHighContrast ? "bg-black text-white" : "bg-white text-slate-950";
-  const panelClass = isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white";
+  const panelClass = isHighContrast
+    ? "contrast-panel border-2 border-yellow-400"
+    : "border-2 border-slate-900 bg-white";
   const hasPedidosActivos = turnoSummary.pedidosPendientes > 0;
 
   const handleAccessibleEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
@@ -188,13 +190,21 @@ function PedidosFacilPage() {
   return (
     <div className={`min-h-screen ${pageBg}`}>
       <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
-        <p className="sr-only" aria-live="polite">{liveMessage}</p>
+        <p className="sr-only" aria-live="polite">
+          {liveMessage}
+        </p>
 
         <section className={`rounded-[28px] p-5 sm:p-6 ${panelClass}`} aria-label="Resumen de pedidos activos">
           <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "text-yellow-300" : "text-slate-500"}`}>Modo fácil</p>
-              <h1 className={`mt-1 text-3xl font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
+              <p
+                className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "text-yellow-300" : "text-slate-500"}`}
+              >
+                Modo fácil
+              </p>
+              <h1
+                className={`mt-1 text-3xl font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}
+              >
                 Pedidos activos
               </h1>
               <p className="mt-3 text-xl font-bold text-slate-700">
@@ -207,7 +217,9 @@ function PedidosFacilPage() {
               <Link
                 to="/pdv/facil"
                 className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black no-underline transition ${
-                  isHighContrast ? "contrast-button-primary" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                  isHighContrast
+                    ? "contrast-button-primary"
+                    : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
                 } ${FOCUS_VISIBLE_CLASS}`}
               >
                 <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
@@ -217,31 +229,49 @@ function PedidosFacilPage() {
                 type="button"
                 onClick={handleReadScreen}
                 className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black transition ${
-                  isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <Volume2 className="h-6 w-6" aria-hidden="true" />
+                  isHighContrast
+                    ? "contrast-button-secondary"
+                    : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
+                } ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Volume2 className="h-6 w-6" aria-hidden="true" />
                 Leer ayuda
-            </button>
+              </button>
             </div>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
             <SummaryCard isHighContrast={isHighContrast} label="Pedidos activos" value={String(pedidosActivos)} />
-            <SummaryCard isHighContrast={isHighContrast} label="Ventas entregadas" value={formatCurrency(String(normalSummary.totalVendido))} />
-            <SummaryCard isHighContrast={isHighContrast} label="Ventas pendientes" value={formatCurrency(String(normalSummary.totalPendiente))} />
+            <SummaryCard
+              isHighContrast={isHighContrast}
+              label="Ventas entregadas"
+              value={formatCurrency(String(normalSummary.totalVendido))}
+            />
+            <SummaryCard
+              isHighContrast={isHighContrast}
+              label="Ventas pendientes"
+              value={formatCurrency(String(normalSummary.totalPendiente))}
+            />
           </div>
-          <p className={`mt-4 rounded-2xl border px-4 py-3 text-lg font-black ${
-            isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-200 bg-slate-50 text-slate-900"
-          }`}>
+          <p
+            className={`mt-4 rounded-2xl border px-4 py-3 text-lg font-black ${
+              isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-200 bg-slate-50 text-slate-900"
+            }`}
+          >
             Las ventas entregadas consideran solo pedidos finalizados.
           </p>
         </section>
 
-        <section className={`grid gap-4 rounded-[28px] p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] ${panelClass}`} aria-label="Herramientas de pedidos">
+        <section
+          className={`grid gap-4 rounded-[28px] p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] ${panelClass}`}
+          aria-label="Herramientas de pedidos"
+        >
           <label className="relative block">
             <span className="sr-only">Buscar pedido</span>
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-slate-700" aria-hidden="true" />
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-slate-700"
+              aria-hidden="true"
+            />
             <input
               type="search"
               value={searchTerm}
@@ -261,7 +291,13 @@ function PedidosFacilPage() {
                   ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
                   : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
             } ${FOCUS_VISIBLE_CLASS}`}
-            aria-label={isTurnoOpen && hasPedidosActivos ? "Cerrar turno. Aún hay pedidos activos." : isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
+            aria-label={
+              isTurnoOpen && hasPedidosActivos
+                ? "Cerrar turno. Aún hay pedidos activos."
+                : isTurnoOpen
+                  ? "Cerrar turno"
+                  : "Abrir turno"
+            }
           >
             <Check className="h-6 w-6" aria-hidden="true" />
             {isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
@@ -281,9 +317,14 @@ function PedidosFacilPage() {
         </section>
 
         {hasPedidosActivos && (
-          <div className={`flex items-start gap-3 rounded-3xl border-2 p-5 text-lg font-black ${
-            isHighContrast ? "border-yellow-400 bg-black text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-950"
-          }`} role="status">
+          <div
+            className={`flex items-start gap-3 rounded-3xl border-2 p-5 text-lg font-black ${
+              isHighContrast
+                ? "border-yellow-400 bg-black text-yellow-200"
+                : "border-slate-300 bg-slate-50 text-slate-950"
+            }`}
+            role="status"
+          >
             <AlertTriangle className="mt-1 h-6 w-6 shrink-0" aria-hidden="true" />
             <p>Aún hay pedidos activos. Revisa antes de cerrar el turno.</p>
           </div>
@@ -318,7 +359,10 @@ function PedidosFacilPage() {
         </section>
 
         {error && (
-          <div className={`flex items-start gap-3 rounded-2xl border p-5 text-lg font-black ${isHighContrast ? "contrast-panel" : "border-red-300 bg-red-50 text-red-950"}`} role="alert">
+          <div
+            className={`flex items-start gap-3 rounded-2xl border p-5 text-lg font-black ${isHighContrast ? "contrast-panel" : "border-red-300 bg-red-50 text-red-950"}`}
+            role="alert"
+          >
             <AlertTriangle className="mt-1 h-6 w-6" aria-hidden="true" />
             <p>{error}</p>
           </div>
@@ -364,17 +408,11 @@ function PedidosFacilPage() {
   );
 }
 
-function SummaryCard({
-  isHighContrast,
-  label,
-  value
-}: {
-  isHighContrast: boolean;
-  label: string;
-  value: string;
-}) {
+function SummaryCard({ isHighContrast, label, value }: { isHighContrast: boolean; label: string; value: string }) {
   return (
-    <article className={`rounded-3xl p-5 ${isHighContrast ? "contrast-panel-soft border-2 border-yellow-400" : `border-2 ${EASY_SOFT_PANEL_CLASS}`}`}>
+    <article
+      className={`rounded-3xl p-5 ${isHighContrast ? "contrast-panel-soft border-2 border-yellow-400" : `border-2 ${EASY_SOFT_PANEL_CLASS}`}`}
+    >
       <p className="text-xl font-black text-slate-700">{label}</p>
       <p className="mt-3 text-4xl font-black leading-none text-slate-950">{value}</p>
     </article>
@@ -396,7 +434,9 @@ function AccessiblePedidosList({
 }) {
   if (pedidos.length === 0) {
     return (
-      <div className={`rounded-[28px] p-8 text-center ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
+      <div
+        className={`rounded-[28px] p-8 text-center ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+      >
         <p className="text-3xl font-black text-slate-950">No hay pedidos activos</p>
         <p className="mx-auto mt-4 max-w-3xl text-xl font-bold leading-relaxed text-slate-700">
           Cuando registres un pedido, aparecerá aquí para su seguimiento.
@@ -463,7 +503,9 @@ function AccessiblePedidoCard({
             <PedidoInfoBox label="Total" value={formatCurrency(pedido.total)} />
           </div>
 
-          <div className={`mt-5 rounded-3xl border-2 p-5 ${isHighContrast ? "border-yellow-400" : EASY_SOFT_PANEL_CLASS}`}>
+          <div
+            className={`mt-5 rounded-3xl border-2 p-5 ${isHighContrast ? "border-yellow-400" : EASY_SOFT_PANEL_CLASS}`}
+          >
             <p className="text-sm font-black uppercase text-slate-600">Productos</p>
             <p className="mt-2 text-2xl font-black leading-snug text-slate-950">{getPedidoSummary(pedido)}</p>
             <p className="mt-2 text-lg font-bold text-slate-700">{getProductCount(pedido)} productos en el pedido</p>
@@ -541,15 +583,20 @@ function CierreFacilModal({
           isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"
         }`}
       >
-        <h2 id="cierre-facil-title" className="text-3xl font-black text-slate-950">Cerrar turno</h2>
+        <h2 id="cierre-facil-title" className="text-3xl font-black text-slate-950">
+          Cerrar turno
+        </h2>
         <p className="mt-3 text-xl font-bold leading-relaxed text-slate-700">
           Se guardará el resumen del turno para revisar después en historial.
         </p>
 
         {hasPedidosActivos && (
-          <div className={`mt-5 flex items-start gap-3 rounded-3xl border-2 p-5 text-lg font-black ${
-            isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-950"
-          }`} role="alert">
+          <div
+            className={`mt-5 flex items-start gap-3 rounded-3xl border-2 p-5 text-lg font-black ${
+              isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-950"
+            }`}
+            role="alert"
+          >
             <AlertTriangle className="mt-1 h-6 w-6 shrink-0" aria-hidden="true" />
             <p>Aún hay pedidos activos. Revisa antes de cerrar el turno.</p>
           </div>

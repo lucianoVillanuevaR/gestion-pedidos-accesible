@@ -1,4 +1,20 @@
-import { AlertTriangle, Banknote, CalendarDays, Check, ChevronDown, ChevronUp, Clock3, CreditCard, FileText, LoaderCircle, Printer, Store, Volume2, WalletCards, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Banknote,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clock3,
+  CreditCard,
+  FileText,
+  LoaderCircle,
+  Printer,
+  Store,
+  Volume2,
+  WalletCards,
+  X
+} from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
@@ -42,12 +58,7 @@ function CierreTurnoPage() {
     productos: false
   });
 
-  const {
-    error,
-    isLoading,
-    loadPedidos,
-    pedidos
-  } = usePedidosController({});
+  const { error, isLoading, loadPedidos, pedidos } = usePedidosController({});
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(new Date()), 30000);
@@ -103,9 +114,11 @@ function CierreTurnoPage() {
 
   return (
     <div className={`min-h-screen ${pageClass}`}>
-      <main className="mx-auto w-full max-w-[1480px] space-y-5 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
+      <main className="mx-auto w-full max-w-none space-y-5 px-3 py-4 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
         {isAccessible ? (
-          <section className={`rounded-[28px] p-5 sm:p-6 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
+          <section
+            className={`rounded-[28px] p-5 sm:p-6 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+          >
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Modo fácil</p>
@@ -131,13 +144,19 @@ function CierreTurnoPage() {
         )}
 
         {message && (
-          <div className={`rounded-2xl border px-4 py-3 font-black ${isHighContrast ? "contrast-panel" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`} role="status">
+          <div
+            className={`rounded-2xl border px-4 py-3 font-black ${isHighContrast ? "contrast-panel" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}
+            role="status"
+          >
             {message}
           </div>
         )}
 
         {error && (
-          <div className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`} role="alert">
+          <div
+            className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`}
+            role="alert"
+          >
             <AlertTriangle className="mt-1 h-5 w-5" aria-hidden="true" />
             <p className="font-bold">{error}</p>
           </div>
@@ -151,7 +170,12 @@ function CierreTurnoPage() {
         ) : isAccessible ? (
           <>
             <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Resumen esencial de cierre">
-              <MetricCard helpText="Solo pedidos entregados" label="Total vendido confirmado" value={formatCurrency(String(summary.totalVendido))} variant="strong" />
+              <MetricCard
+                helpText="Solo pedidos entregados"
+                label="Total vendido confirmado"
+                value={formatCurrency(String(summary.totalVendido))}
+                variant="strong"
+              />
               <MetricCard label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
               <MetricCard label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
               <MetricCard label="Total pendiente" value={formatCurrency(String(summary.totalPendiente))} />
@@ -209,15 +233,23 @@ function CierreTurnoPage() {
           </>
         ) : (
           <>
-            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5" aria-label="Indicadores principales de cierre">
-              <MetricCard helpText="Solo pedidos entregados" label="Total vendido confirmado" value={formatCurrency(String(summary.totalVendido))} variant="strong" />
+            <section
+              className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
+              aria-label="Indicadores principales de cierre"
+            >
+              <MetricCard
+                helpText="Solo pedidos entregados"
+                label="Total vendido confirmado"
+                value={formatCurrency(String(summary.totalVendido))}
+                variant="strong"
+              />
               <MetricCard label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
               <MetricCard label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
               <MetricCard label="Pedidos cancelados" value={String(summary.pedidosCancelados)} />
               <MetricCard label="Total pendiente" value={formatCurrency(String(summary.totalPendiente))} />
             </section>
 
-            <section className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
+            <section className="grid items-start gap-5 xl:grid-cols-[minmax(360px,0.72fr)_minmax(0,1.7fr)] 2xl:grid-cols-[minmax(390px,0.62fr)_minmax(0,1.85fr)]">
               <PaymentMethodsPanel panelClass={panelClass} summary={summary} />
               <ProductosVendidosPanel panelClass={panelClass} productosVendidos={productosVendidos} />
             </section>
@@ -264,14 +296,19 @@ function CierreHeader({
   onPrint: () => void;
 }) {
   return (
-    <header className={`rounded-[18px] border px-4 py-5 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]"}`}>
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+    <header
+      className={`rounded-[18px] border px-4 py-5 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]"}`}
+    >
+      <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.8fr)_minmax(620px,1fr)] xl:items-start">
         <div>
           <p className="text-sm font-black uppercase text-emerald-700">Resumen administrativo</p>
           <h1 className="mt-1 text-3xl font-black leading-tight text-slate-950">Cierre de turno</h1>
           <p className="mt-1 text-base font-bold text-slate-600">Resumen y cierre del turno actual</p>
 
-          <div className={`mt-5 grid gap-3 ${isAccessible ? "sm:grid-cols-2" : "sm:flex sm:flex-wrap"}`} aria-label="Acciones de cierre">
+          <div
+            className={`mt-5 grid gap-3 ${isAccessible ? "sm:grid-cols-2" : "sm:flex sm:flex-wrap"}`}
+            aria-label="Acciones de cierre"
+          >
             <button
               type="button"
               onClick={onPrint}
@@ -303,12 +340,28 @@ function CierreHeader({
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[620px]">
+        <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
           <HeaderInfo icon={<Store className="h-5 w-5" aria-hidden="true" />} label="Cajero actual" value={cajero} />
-          <HeaderInfo icon={<CalendarDays className="h-5 w-5" aria-hidden="true" />} label="Fecha" value={formatDateOnly(now)} />
-          <HeaderInfo icon={<Clock3 className="h-5 w-5" aria-hidden="true" />} label="Inicio del turno" value={fechaInicio ? formatDateTime(fechaInicio) : "Sin datos"} />
-          <HeaderInfo icon={<Clock3 className="h-5 w-5" aria-hidden="true" />} label="Hora actual" value={formatTime(now.toISOString())} />
-          <HeaderInfo icon={<FileText className="h-5 w-5" aria-hidden="true" />} label="Estado del turno" value={isTurnoOpen ? "Abierto" : "Cerrado"} />
+          <HeaderInfo
+            icon={<CalendarDays className="h-5 w-5" aria-hidden="true" />}
+            label="Fecha"
+            value={formatDateOnly(now)}
+          />
+          <HeaderInfo
+            icon={<Clock3 className="h-5 w-5" aria-hidden="true" />}
+            label="Inicio del turno"
+            value={fechaInicio ? formatDateTime(fechaInicio) : "Sin datos"}
+          />
+          <HeaderInfo
+            icon={<Clock3 className="h-5 w-5" aria-hidden="true" />}
+            label="Hora actual"
+            value={formatTime(now.toISOString())}
+          />
+          <HeaderInfo
+            icon={<FileText className="h-5 w-5" aria-hidden="true" />}
+            label="Estado del turno"
+            value={isTurnoOpen ? "Abierto" : "Cerrado"}
+          />
         </div>
       </div>
     </header>
@@ -353,7 +406,11 @@ function EasyDisclosure({
         className={`flex min-h-[64px] w-full items-center justify-between gap-3 rounded-2xl border-2 border-slate-300 bg-white px-5 text-left text-xl font-black text-slate-950 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
       >
         <span>{title}</span>
-        {isExpanded ? <ChevronUp className="h-6 w-6" aria-hidden="true" /> : <ChevronDown className="h-6 w-6" aria-hidden="true" />}
+        {isExpanded ? (
+          <ChevronUp className="h-6 w-6" aria-hidden="true" />
+        ) : (
+          <ChevronDown className="h-6 w-6" aria-hidden="true" />
+        )}
       </button>
       {isExpanded && <div className="mt-4">{children}</div>}
     </section>
@@ -372,7 +429,9 @@ function MetricCard({
   variant?: "default" | "strong";
 }) {
   return (
-    <article className={`rounded-[18px] border p-4 ${variant === "strong" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+    <article
+      className={`rounded-[18px] border p-4 ${variant === "strong" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}
+    >
       <p className="text-sm font-black uppercase text-slate-500">{label}</p>
       <p className={`mt-2 font-black text-slate-950 ${variant === "strong" ? "text-3xl" : "text-2xl"}`}>{value}</p>
       {helpText && <p className="mt-2 text-sm font-bold text-emerald-800">{helpText}</p>}
@@ -390,16 +449,25 @@ function PaymentMethodsPanel({
   const methods = [
     { icon: <Banknote className="h-5 w-5" aria-hidden="true" />, label: "Efectivo", value: summary.totalEfectivo },
     { icon: <CreditCard className="h-5 w-5" aria-hidden="true" />, label: "Tarjeta", value: summary.totalTarjeta },
-    { icon: <WalletCards className="h-5 w-5" aria-hidden="true" />, label: "Transferencia", value: summary.totalTransferencia }
+    {
+      icon: <WalletCards className="h-5 w-5" aria-hidden="true" />,
+      label: "Transferencia",
+      value: summary.totalTransferencia
+    }
   ];
 
   return (
     <section className={`rounded-[18px] p-4 ${panelClass}`} aria-labelledby="metodos-pago-title">
-      <h2 id="metodos-pago-title" className="text-xl font-black text-slate-950">Métodos de pago</h2>
+      <h2 id="metodos-pago-title" className="text-xl font-black text-slate-950">
+        Métodos de pago
+      </h2>
       <p className="mt-1 text-sm font-bold text-slate-600">Solo considera pedidos entregados.</p>
       <div className="mt-4 grid gap-3">
         {methods.map((method) => (
-          <article key={method.label} className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <article
+            key={method.label}
+            className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
+          >
             <p className="flex items-center gap-2 font-black text-slate-800">
               {method.icon}
               {method.label}
@@ -425,10 +493,14 @@ function ProductosVendidosPanel({
     <section className={`rounded-[18px] p-4 ${panelClass}`} aria-labelledby="productos-vendidos-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="productos-vendidos-title" className="text-xl font-black text-slate-950">Productos vendidos</h2>
+          <h2 id="productos-vendidos-title" className="text-xl font-black text-slate-950">
+            Productos vendidos
+          </h2>
           <p className="mt-1 text-sm font-bold text-slate-600">Resumen por producto entregado.</p>
         </div>
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">{totalUnidades} unidades</span>
+        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+          {totalUnidades} unidades
+        </span>
       </div>
 
       {productosVendidos.length === 0 ? (
@@ -438,7 +510,10 @@ function ProductosVendidosPanel({
       ) : (
         <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
           {productosVendidos.map((producto) => (
-            <article key={producto.productoId} className="grid gap-2 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:grid-cols-[1fr_110px_140px] sm:items-center">
+            <article
+              key={producto.productoId}
+              className="grid gap-2 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:grid-cols-[1fr_110px_140px] sm:items-center"
+            >
               <p className="font-black text-slate-950">{producto.productoNombre}</p>
               <p className="font-bold text-slate-700">{producto.cantidad} vendidos</p>
               <p className="font-black text-slate-950 sm:text-right">{formatCurrency(String(producto.total))}</p>
@@ -461,10 +536,16 @@ function PedidosTurnoPanel({
     <section className={`rounded-[18px] p-4 ${panelClass}`} aria-labelledby="pedidos-turno-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="pedidos-turno-title" className="text-xl font-black text-slate-950">Pedidos del turno</h2>
-          <p className="mt-1 text-sm font-bold text-slate-600">Detalle compacto. Los cambios de estado se realizan en Pedidos activos o Preparación.</p>
+          <h2 id="pedidos-turno-title" className="text-xl font-black text-slate-950">
+            Pedidos del turno
+          </h2>
+          <p className="mt-1 text-sm font-bold text-slate-600">
+            Detalle compacto. Los cambios de estado se realizan en Pedidos activos o Preparación.
+          </p>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{pedidos.length} pedidos</span>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+          {pedidos.length} pedidos
+        </span>
       </div>
 
       {pedidos.length === 0 ? (
@@ -482,7 +563,10 @@ function PedidosTurnoPanel({
           </div>
           <div className="divide-y divide-slate-100">
             {pedidos.map((pedido) => (
-              <article key={pedido.id} className="grid gap-3 px-4 py-3 md:grid-cols-[120px_170px_160px_130px_100px] md:items-center">
+              <article
+                key={pedido.id}
+                className="grid gap-3 px-4 py-3 md:grid-cols-[120px_170px_160px_130px_100px] md:items-center"
+              >
                 <p className="font-black text-slate-950">#{getPedidoDisplayNumber(pedido)}</p>
                 <StatusBadge estado={pedido.estado} />
                 <p className="font-bold text-slate-700">{formatMetodoPago(pedido.metodoPago)}</p>
@@ -520,7 +604,9 @@ function CerrarTurnoModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id="cerrar-turno-title" className="text-2xl font-black text-slate-950">¿Deseas cerrar el turno?</h2>
+            <h2 id="cerrar-turno-title" className="text-2xl font-black text-slate-950">
+              ¿Deseas cerrar el turno?
+            </h2>
             <p className="mt-3 font-bold leading-relaxed text-slate-700">
               El total vendido considera solo pedidos entregados.
             </p>
@@ -536,11 +622,12 @@ function CerrarTurnoModal({
         </div>
 
         {hasPedidosPendientes && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-yellow-200 bg-[#FFF8DC] p-4 text-yellow-950" role="alert">
+          <div
+            className="mt-5 flex items-start gap-3 rounded-2xl border border-yellow-200 bg-[#FFF8DC] p-4 text-yellow-950"
+            role="alert"
+          >
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-            <p className="font-black">
-              Hay pedidos pendientes. Puedes revisarlos antes de cerrar.
-            </p>
+            <p className="font-black">Hay pedidos pendientes. Puedes revisarlos antes de cerrar.</p>
           </div>
         )}
 

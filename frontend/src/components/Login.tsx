@@ -115,7 +115,9 @@ function Login() {
             <header className={isAccessible ? "space-y-5 text-center" : "space-y-4 text-center"}>
               <div
                 className={`mx-auto inline-flex justify-center rounded-2xl ${
-                  isAccessible ? "border border-slate-300 bg-yellow-100 p-3" : "bg-white/70 p-2 shadow-sm ring-1 ring-white/80"
+                  isAccessible
+                    ? "border border-slate-300 bg-yellow-100 p-3"
+                    : "bg-white/70 p-2 shadow-sm ring-1 ring-white/80"
                 }`}
               >
                 <img
@@ -125,7 +127,9 @@ function Login() {
                 />
               </div>
 
-              <h1 className={isAccessible ? "text-[32px] font-bold text-slate-900" : "text-3xl font-bold text-slate-900"}>
+              <h1
+                className={isAccessible ? "text-[32px] font-bold text-slate-900" : "text-3xl font-bold text-slate-900"}
+              >
                 Riquísimo S.P.A
               </h1>
 
@@ -229,9 +233,7 @@ function Login() {
                     <AlertTriangle className="h-5 w-5" />
                   )}
                 </span>
-                <p className={isAccessible ? "text-lg font-semibold" : "text-sm font-semibold"}>
-                  {feedback.message}
-                </p>
+                <p className={isAccessible ? "text-lg font-semibold" : "text-sm font-semibold"}>{feedback.message}</p>
               </div>
             )}
 
@@ -247,14 +249,23 @@ function Login() {
                 aria-expanded={showDemoAccounts}
               >
                 <span>Accesos de prueba</span>
-                <ChevronDown aria-hidden="true" className={`h-4 w-4 transition ${showDemoAccounts ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`h-4 w-4 transition ${showDemoAccounts ? "rotate-180" : ""}`}
+                />
               </button>
 
               {showDemoAccounts && (
-                <div className={`space-y-3 border-t p-4 ${isAccessible ? "border-slate-300 bg-white" : "border-slate-200 bg-white"}`}>
+                <div
+                  className={`space-y-3 border-t p-4 ${isAccessible ? "border-slate-300 bg-white" : "border-slate-200 bg-white"}`}
+                >
                   {DEMO_USERS.map((user) => (
                     <div key={user.email} className="space-y-1 rounded-lg bg-slate-50 p-3">
-                      <p className={isAccessible ? "text-lg font-semibold text-slate-900" : "text-xs font-semibold text-slate-700"}>
+                      <p
+                        className={
+                          isAccessible ? "text-lg font-semibold text-slate-900" : "text-xs font-semibold text-slate-700"
+                        }
+                      >
                         {user.label}
                       </p>
                       <p className={isAccessible ? "text-base text-slate-700" : "text-xs text-slate-600"}>

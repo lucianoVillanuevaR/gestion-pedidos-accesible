@@ -1,10 +1,7 @@
-const CATEGORIAS_VALIDAS = ["Sandwich", "Completos", "Bebidas", "Otros", "Destacados"] as const;
 const PRODUCTO_NOMBRE_MAX_LENGTH = 80;
 const PRODUCTO_DESCRIPCION_MAX_LENGTH = 300;
 const PRODUCTO_CATEGORIA_MAX_LENGTH = 60;
 const PRODUCTO_PRECIO_MAX = 99999999.99;
-
-type CategoriaValida = string;
 
 type ProductoInput = {
   categoria?: unknown;
@@ -16,7 +13,7 @@ type ProductoInput = {
 };
 
 type ProductoValidationResult = {
-  categoria?: CategoriaValida;
+  categoria?: string;
   descripcion?: string | null;
   destacado?: boolean;
   disponible?: boolean;
@@ -61,7 +58,14 @@ function hasMoreThanTwoDecimals(value: number) {
   return Math.abs(value * 100 - Math.round(value * 100)) > Number.EPSILON;
 }
 
-export function validateProductoCreate(input: ProductoInput): { data?: Required<Pick<ProductoValidationResult, "categoria" | "descripcion" | "destacado" | "disponible" | "nombre" | "precio">>; error?: string } {
+type ProductoCreateResult = {
+  data?: Required<
+    Pick<ProductoValidationResult, "categoria" | "descripcion" | "destacado" | "disponible" | "nombre" | "precio">
+  >;
+  error?: string;
+};
+
+export function validateProductoCreate(input: ProductoInput): ProductoCreateResult {
   const nombre = typeof input.nombre === "string" ? input.nombre.trim() : "";
   const descripcion = typeof input.descripcion === "string" ? input.descripcion.trim() : "";
   const categoria = typeof input.categoria === "string" ? input.categoria.trim() : "Otros";
@@ -89,7 +93,7 @@ export function validateProductoCreate(input: ProductoInput): { data?: Required<
     return { error: `El precio debe ser un número válido entre 0 y ${PRODUCTO_PRECIO_MAX}` };
   }
 
-    if (hasMoreThanTwoDecimals(precio)) {
+  if (hasMoreThanTwoDecimals(precio)) {
     return { error: "El precio debe tener como máximo 2 decimales" };
   }
 
@@ -108,13 +112,11 @@ export function validateProductoCreate(input: ProductoInput): { data?: Required<
     return { error: disponibleError };
   }
 
-  const categoriaValida = categoria as CategoriaValida;
-
   return {
     data: {
-      categoria: categoriaValida,
+      categoria,
       descripcion: descripcion || null,
-      destacado: typeof input.destacado === "boolean" ? input.destacado : categoriaValida === "Destacados",
+      destacado: typeof input.destacado === "boolean" ? input.destacado : categoria === "Destacados",
       disponible: typeof input.disponible === "boolean" ? input.disponible : true,
       nombre,
       precio: Math.round(precio * 100) / 100
@@ -165,7 +167,7 @@ export function validateProductoUpdate(input: ProductoInput): { data?: ProductoV
       return { error: `El precio debe ser un número válido entre 0 y ${PRODUCTO_PRECIO_MAX}` };
     }
 
-  if (hasMoreThanTwoDecimals(precio)) {
+    if (hasMoreThanTwoDecimals(precio)) {
       return { error: "El precio debe tener como máximo 2 decimales" };
     }
 
@@ -202,7 +204,7 @@ export function validateProductoUpdate(input: ProductoInput): { data?: ProductoV
       return { error: categoriaError };
     }
 
-    data.categoria = categoria as CategoriaValida;
+    data.categoria = categoria;
   }
 
   if (Object.keys(data).length === 0) {

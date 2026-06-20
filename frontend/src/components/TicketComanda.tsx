@@ -75,9 +75,7 @@ function TicketComanda({ pedidoDetalles, total, metodoPago, observacion, numeroP
                 <span className="ticket-product">{item.producto.nombre}</span>
                 <span className="ticket-price">{formatCurrency(item.subtotal)}</span>
               </div>
-              {item.producto.descripcion && (
-                <div className="ticket-description">{item.producto.descripcion}</div>
-              )}
+              {item.producto.descripcion && <div className="ticket-description">{item.producto.descripcion}</div>}
             </div>
           ))
         )}

@@ -196,7 +196,8 @@ export const deleteProducto = async (req: Request, res: Response) => {
 
     if (error instanceof Error && "code" in error && error.code === "P2003") {
       return res.status(409).json({
-        error: "No se puede eliminar un producto relacionado con otros registros. Puedes ocultarlo para que no se venda."
+        error:
+          "No se puede eliminar un producto relacionado con otros registros. Puedes ocultarlo para que no se venda."
       });
     }
 

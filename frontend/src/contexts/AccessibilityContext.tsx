@@ -25,11 +25,7 @@ const AccessibilityContext = createContext<AccessibilityContextValue | null>(nul
 function AccessibilityProvider({ children }: PropsWithChildren) {
   const accessibility = useAccessibility() as AccessibilityContextValue;
 
-  return (
-    <AccessibilityContext.Provider value={accessibility}>
-      {children}
-    </AccessibilityContext.Provider>
-  );
+  return <AccessibilityContext.Provider value={accessibility}>{children}</AccessibilityContext.Provider>;
 }
 
 function useAccessibilityContext() {

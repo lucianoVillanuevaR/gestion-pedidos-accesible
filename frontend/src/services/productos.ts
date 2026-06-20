@@ -23,7 +23,9 @@ async function readProductoResponse(res: Response, fallbackMessage: string) {
   return normalizeProducto(producto);
 }
 
-export async function getProductos({ includeUnavailable = false }: { includeUnavailable?: boolean } = {}): Promise<Producto[]> {
+export async function getProductos({ includeUnavailable = false }: { includeUnavailable?: boolean } = {}): Promise<
+  Producto[]
+> {
   const query = includeUnavailable ? "?includeUnavailable=true" : "";
   const res = await fetch(buildApiUrl(`/api/productos${query}`));
   if (!res.ok) throw new Error("Error cargando productos");

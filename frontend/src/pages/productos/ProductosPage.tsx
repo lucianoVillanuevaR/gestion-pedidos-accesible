@@ -1,8 +1,28 @@
-import { AlertTriangle, ChevronDown, Eye, EyeOff, LoaderCircle, Pencil, Plus, RefreshCw, Search, Trash2, Upload, Utensils, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  Trash2,
+  Upload,
+  Utensils,
+  X
+} from "lucide-react";
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
-import { createProducto, deleteProductImage, deleteProducto, updateProducto, uploadProductImage } from "../../services/productos";
+import {
+  createProducto,
+  deleteProductImage,
+  deleteProducto,
+  updateProducto,
+  uploadProductImage
+} from "../../services/productos";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
 import { PRODUCT_IMAGE_ACCEPT, validateProductImageFile } from "../../validations/productImage.validation";
 import {
@@ -60,7 +80,11 @@ function ProductosPage() {
 
   const replaceProductoInList = (productoActualizado: Producto) => {
     setProductos((currentProductos) =>
-      sortProductos(currentProductos.map((currentProducto) => (currentProducto.id === productoActualizado.id ? productoActualizado : currentProducto)))
+      sortProductos(
+        currentProductos.map((currentProducto) =>
+          currentProducto.id === productoActualizado.id ? productoActualizado : currentProducto
+        )
+      )
     );
     setEditingProducto((currentProducto) =>
       currentProducto?.id === productoActualizado.id
@@ -99,7 +123,9 @@ function ProductosPage() {
       addProductoToList(productoFinal);
       setActiveCategory(payload.destacado ? "Destacados" : (payload.categoria as CategoriaCatalogo) || "Otros");
       setAddProductCategory(null);
-      speakAction(`Producto agregado. ${productoFinal.nombre}.`, `producto-created:${productoFinal.id}`, { cooldownMs: 2500 });
+      speakAction(`Producto agregado. ${productoFinal.nombre}.`, `producto-created:${productoFinal.id}`, {
+        cooldownMs: 2500
+      });
       return productoFinal;
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No fue posible crear el producto";
@@ -207,7 +233,9 @@ function ProductosPage() {
 
     try {
       await deleteProducto(producto.id);
-      setProductos((currentProductos) => currentProductos.filter((currentProducto) => currentProducto.id !== producto.id));
+      setProductos((currentProductos) =>
+        currentProductos.filter((currentProducto) => currentProducto.id !== producto.id)
+      );
       setEditingProducto((currentProducto) => (currentProducto?.id === producto.id ? null : currentProducto));
       speakAction(`Producto eliminado. ${producto.nombre}.`, `producto-deleted:${producto.id}`, { cooldownMs: 2200 });
     } catch (requestError) {
@@ -231,10 +259,14 @@ function ProductosPage() {
 
   const handleOpenCreateProduct = () => {
     setAddProductCategory(activeCategory);
-    speakAction(`Boton producto. Agregar producto en categoria ${activeCategory}.`, `producto-open-create:${activeCategory}`, {
-      cooldownMs: 1600,
-      priority: "normal"
-    });
+    speakAction(
+      `Boton producto. Agregar producto en categoria ${activeCategory}.`,
+      `producto-open-create:${activeCategory}`,
+      {
+        cooldownMs: 1600,
+        priority: "normal"
+      }
+    );
   };
 
   const handleCreateCategory = (nombreCategoria: string) => {
@@ -274,10 +306,14 @@ function ProductosPage() {
 
   const handleOpenEditProduct = (producto: ProductoConCategoria) => {
     setEditingProducto(producto);
-    speakAction(`Boton editar. Editando ${producto.nombre}. Precio ${formatCurrency(producto.precio)}.`, `producto-open-edit:${producto.id}`, {
-      cooldownMs: 1600,
-      priority: "normal"
-    });
+    speakAction(
+      `Boton editar. Editando ${producto.nombre}. Precio ${formatCurrency(producto.precio)}.`,
+      `producto-open-edit:${producto.id}`,
+      {
+        cooldownMs: 1600,
+        priority: "normal"
+      }
+    );
   };
 
   const handleToggleAvailability = (producto: ProductoConCategoria) => {
@@ -290,16 +326,21 @@ function ProductosPage() {
     handleUpdateProducto(
       producto,
       { disponible: nextAvailability },
-      (productoActualizado) => `Producto ${productoActualizado.disponible === false ? "desactivado" : "activado"}. ${productoActualizado.nombre}.`
+      (productoActualizado) =>
+        `Producto ${productoActualizado.disponible === false ? "desactivado" : "activado"}. ${productoActualizado.nombre}.`
     );
   };
 
   const handleSelectCategory = (grupo: CategoriaGrupo) => {
     setActiveCategory(grupo.value);
-    speakAction(`Categoria ${grupo.label}. ${grupo.productos.length} productos.`, `producto-category-button:${grupo.value}:${grupo.productos.length}`, {
-      cooldownMs: 1200,
-      priority: "normal"
-    });
+    speakAction(
+      `Categoria ${grupo.label}. ${grupo.productos.length} productos.`,
+      `producto-category-button:${grupo.value}:${grupo.productos.length}`,
+      {
+        cooldownMs: 1200,
+        priority: "normal"
+      }
+    );
   };
 
   const handleDeleteCategory = (grupo: CategoriaGrupo) => {
@@ -401,7 +442,10 @@ function ProductosPage() {
           <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto]">
             <label className="relative block">
               <span className="sr-only">Buscar producto</span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
+                aria-hidden="true"
+              />
               <input
                 type="search"
                 value={searchTerm}
@@ -440,7 +484,10 @@ function ProductosPage() {
         </section>
 
         {error && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-950" role="alert">
+          <div
+            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-950"
+            role="alert"
+          >
             <AlertTriangle className="mt-1 h-5 w-5" aria-hidden="true" />
             <p className="font-bold">{error}</p>
           </div>
@@ -461,10 +508,14 @@ function ProductosPage() {
                 isExpanded={activeCategory === grupo.value}
                 onAddProduct={() => {
                   setAddProductCategory(grupo.value);
-                  speakAction(`Boton producto. Agregar producto en categoria ${grupo.label}.`, `producto-open-create:${grupo.value}`, {
-                    cooldownMs: 1600,
-                    priority: "normal"
-                  });
+                  speakAction(
+                    `Boton producto. Agregar producto en categoria ${grupo.label}.`,
+                    `producto-open-create:${grupo.value}`,
+                    {
+                      cooldownMs: 1600,
+                      priority: "normal"
+                    }
+                  );
                 }}
                 onEditProduct={handleOpenEditProduct}
                 onToggle={() => handleToggleCategoryBlock(grupo)}
@@ -576,18 +627,18 @@ function CategoriaBlock({
       {isExpanded && (
         <div className="divide-y divide-slate-100">
           {grupo.productos.length === 0 ? (
-            <div className="px-4 py-6 text-sm font-bold text-slate-500">
-              Esta categoría aún no tiene productos.
-            </div>
-          ) : grupo.productos.map((producto) => (
-            <ProductoRow
-              key={producto.id}
-              isUpdating={updatingProductoId === producto.id}
-              onEditProduct={onEditProduct}
-              onToggleAvailability={onToggleAvailability}
-              producto={producto}
-            />
-          ))}
+            <div className="px-4 py-6 text-sm font-bold text-slate-500">Esta categoría aún no tiene productos.</div>
+          ) : (
+            grupo.productos.map((producto) => (
+              <ProductoRow
+                key={producto.id}
+                isUpdating={updatingProductoId === producto.id}
+                onEditProduct={onEditProduct}
+                onToggleAvailability={onToggleAvailability}
+                producto={producto}
+              />
+            ))
+          )}
         </div>
       )}
     </section>
@@ -715,14 +766,17 @@ function ProductoFormModal({
     }
 
     setFormError(null);
-    await onSubmit(buildProductoPayload({
-      categoria,
-      descripcion,
-      destacado,
-      disponible,
-      nombre,
-      precio: precioNumerico
-    }), pendingImageFile);
+    await onSubmit(
+      buildProductoPayload({
+        categoria,
+        descripcion,
+        destacado,
+        disponible,
+        nombre,
+        precio: precioNumerico
+      }),
+      pendingImageFile
+    );
   };
 
   return (
@@ -768,9 +822,9 @@ function ProductoFormModal({
 
             <div className="grid gap-2">
               <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={PRODUCT_IMAGE_ACCEPT}
+                ref={fileInputRef}
+                type="file"
+                accept={PRODUCT_IMAGE_ACCEPT}
                 onChange={handleImageChange}
                 className="sr-only"
                 aria-label="Seleccionar imagen del producto"
@@ -796,7 +850,10 @@ function ProductoFormModal({
             </div>
 
             {imageMessage && (
-              <p className={`rounded-lg border px-2 py-1 text-xs font-bold ${imageMessage.includes("correctamente") ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`} role="status">
+              <p
+                className={`rounded-lg border px-2 py-1 text-xs font-bold ${imageMessage.includes("correctamente") ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}
+                role="status"
+              >
                 {imageMessage}
               </p>
             )}
@@ -877,14 +934,19 @@ function ProductoFormModal({
               className={`relative h-6 w-11 rounded-full transition ${disponible ? "bg-emerald-500" : "bg-slate-300"} ${FOCUS_VISIBLE_CLASS}`}
               aria-pressed={disponible}
             >
-              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${disponible ? "left-6" : "left-1"}`} />
+              <span
+                className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${disponible ? "left-6" : "left-1"}`}
+              />
             </button>
           </div>
         </div>
 
         <div className="grid gap-4 border-b-8 border-slate-200 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_72px] sm:items-center">
           <div>
-            <h3 className="font-black text-slate-950">Agregar modificadores <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">0</span></h3>
+            <h3 className="font-black text-slate-950">
+              Agregar modificadores{" "}
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">0</span>
+            </h3>
             <p className="mt-1 text-xs font-bold text-slate-500">Ingredientes, sabores, cubiertos...</p>
           </div>
           <button
@@ -910,7 +972,9 @@ function ProductoFormModal({
             className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
           >
             {categoriasCatalogo.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
             ))}
           </select>
         </div>
@@ -982,7 +1046,9 @@ function CategoriaFormModal({
       return;
     }
 
-    const alreadyExists = categoriasCatalogo.some((categoria) => categoria.label.toLowerCase() === cleanName.toLowerCase());
+    const alreadyExists = categoriasCatalogo.some(
+      (categoria) => categoria.label.toLowerCase() === cleanName.toLowerCase()
+    );
 
     if (alreadyExists) {
       const message = "Esa categoría ya existe";
@@ -1081,7 +1147,9 @@ function ProductoRow({
   const isAvailable = producto.disponible !== false;
 
   return (
-    <article className={`grid gap-3 px-3 py-3 transition hover:bg-[#FFFDF3] sm:grid-cols-[minmax(0,1fr)_120px_96px] sm:items-center ${isAvailable ? "" : "bg-slate-50 opacity-70"}`}>
+    <article
+      className={`grid gap-3 px-3 py-3 transition hover:bg-[#FFFDF3] sm:grid-cols-[minmax(0,1fr)_120px_96px] sm:items-center ${isAvailable ? "" : "bg-slate-50 opacity-70"}`}
+    >
       <div className="flex min-w-0 items-center gap-3">
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400">
           <Utensils className="h-4 w-4" aria-hidden="true" />
@@ -1103,7 +1171,7 @@ function ProductoRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-black text-slate-950">{producto.nombre}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">
-            {isAvailable ? producto.destacado ? "Destacado" : producto.categoria : "Oculto"}
+            {isAvailable ? (producto.destacado ? "Destacado" : producto.categoria) : "Oculto"}
             {producto.descripcion ? ` · ${producto.descripcion}` : ""}
           </p>
         </div>
@@ -1123,7 +1191,11 @@ function ProductoRow({
           } ${FOCUS_VISIBLE_CLASS}`}
           aria-label={isAvailable ? `Ocultar ${producto.nombre}` : `Mostrar ${producto.nombre}`}
         >
-          {isAvailable ? <Eye className="h-5 w-5" aria-hidden="true" /> : <EyeOff className="h-5 w-5" aria-hidden="true" />}
+          {isAvailable ? (
+            <Eye className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <EyeOff className="h-5 w-5" aria-hidden="true" />
+          )}
         </button>
         <button
           type="button"

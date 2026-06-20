@@ -56,7 +56,8 @@ function AccessibilityPanel({
   }
 
   const getButtonClass = (active: boolean) => {
-    const baseClass = "min-h-[56px] rounded-xl border px-4 py-3 font-bold transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4";
+    const baseClass =
+      "min-h-[56px] rounded-xl border px-4 py-3 font-bold transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4";
 
     if (isAccessible) {
       return `${baseClass} text-lg ${
@@ -114,20 +115,17 @@ function AccessibilityPanel({
   ];
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/30 px-3 py-4 no-print sm:px-4"
-      onClick={onClose}
-      role="presentation"
-    >
+    <div className="fixed inset-0 z-50 bg-black/30 px-3 py-4 no-print sm:px-4" onClick={onClose} role="presentation">
       <aside
         aria-modal="true"
         role="dialog"
         aria-label="Panel de opciones simples"
         className={`
           ml-auto flex h-full w-full max-w-md flex-col
-          ${isAccessible
-            ? "rounded-3xl border-3 border-slate-900 bg-white shadow-2xl"
-            : "rounded-3xl bg-white shadow-2xl shadow-slate-900/20"
+          ${
+            isAccessible
+              ? "rounded-3xl border-3 border-slate-900 bg-white shadow-2xl"
+              : "rounded-3xl bg-white shadow-2xl shadow-slate-900/20"
           }
         `}
         onClick={(event) => event.stopPropagation()}
@@ -175,9 +173,10 @@ function AccessibilityPanel({
               className={`
                 flex-shrink-0 min-h-[56px] min-w-[56px] rounded-xl border font-bold transition
                 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4
-                ${isAccessible
-                  ? "text-2xl border-2 border-slate-900 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
-                  : "text-lg border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
+                ${
+                  isAccessible
+                    ? "text-2xl border-2 border-slate-900 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
+                    : "text-lg border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
                 }
               `}
             >
@@ -213,9 +212,7 @@ function AccessibilityPanel({
                   aria-pressed={isAccessible}
                   className={getButtonClass(isAccessible)}
                 >
-                  <span className={isAccessible ? "text-2xl" : ""}>
-                    {isAccessible ? "ACTIVADO" : "ACTIVAR"}
-                  </span>
+                  <span className={isAccessible ? "text-2xl" : ""}>{isAccessible ? "ACTIVADO" : "ACTIVAR"}</span>
                 </button>
               </div>
             </section>
@@ -231,9 +228,7 @@ function AccessibilityPanel({
                     ${isAccessible ? "text-lg font-semibold" : "text-sm"}
                   `}
                 >
-                  {isAccessible
-                    ? "Elige el tamaño que te sea más cómodo"
-                    : "Ajuste simple para leer mejor."}
+                  {isAccessible ? "Elige el tamaño que te sea más cómodo" : "Ajuste simple para leer mejor."}
                 </p>
               </div>
 
@@ -249,9 +244,7 @@ function AccessibilityPanel({
                     aria-pressed={textSize === option.value}
                     className={getButtonClass(textSize === option.value)}
                   >
-                    <span className={isAccessible ? "text-2xl" : ""}>
-                      {option.label}
-                    </span>
+                    <span className={isAccessible ? "text-2xl" : ""}>{option.label}</span>
                   </button>
                 ))}
               </div>
@@ -269,9 +262,7 @@ function AccessibilityPanel({
                       ${isAccessible ? "text-lg font-semibold" : "text-sm"}
                     `}
                   >
-                    {isAccessible
-                      ? "Colores más fuertes para ver mejor"
-                      : "Mejora la visibilidad de los elementos."}
+                    {isAccessible ? "Colores más fuertes para ver mejor" : "Mejora la visibilidad de los elementos."}
                   </p>
                 </div>
 
@@ -282,9 +273,7 @@ function AccessibilityPanel({
                   aria-pressed={isHighContrast}
                   className={getButtonClass(isHighContrast)}
                 >
-                  <span className={isAccessible ? "text-2xl" : ""}>
-                    {isHighContrast ? "ACTIVADO" : "ACTIVAR"}
-                  </span>
+                  <span className={isAccessible ? "text-2xl" : ""}>{isHighContrast ? "ACTIVADO" : "ACTIVAR"}</span>
                 </button>
               </div>
             </section>
@@ -314,9 +303,7 @@ function AccessibilityPanel({
                   aria-pressed={isVoiceEnabled}
                   className={getButtonClass(isVoiceEnabled)}
                 >
-                  <span className={isAccessible ? "text-2xl" : ""}>
-                    {isVoiceEnabled ? "ACTIVADO" : "ACTIVAR"}
-                  </span>
+                  <span className={isAccessible ? "text-2xl" : ""}>{isVoiceEnabled ? "ACTIVADO" : "ACTIVAR"}</span>
                 </button>
               </div>
             </section>
@@ -346,18 +333,14 @@ function AccessibilityPanel({
                   aria-pressed={isSoundEnabled}
                   className={getButtonClass(isSoundEnabled)}
                 >
-                  <span className={isAccessible ? "text-2xl" : ""}>
-                    {isSoundEnabled ? "ACTIVADO" : "ACTIVAR"}
-                  </span>
+                  <span className={isAccessible ? "text-2xl" : ""}>{isSoundEnabled ? "ACTIVADO" : "ACTIVAR"}</span>
                 </button>
               </div>
             </section>
 
             {isAccessible && (
               <div className="contrast-panel-soft space-y-2 rounded-2xl border-3 border-green-900 bg-green-50 p-6">
-                <p className="contrast-important text-lg font-black text-green-900">
-                  MODO FÁCIL ACTIVADO
-                </p>
+                <p className="contrast-important text-lg font-black text-green-900">MODO FÁCIL ACTIVADO</p>
                 <p className="contrast-body-text text-base font-semibold text-slate-800">
                   Todos los textos, botones y espacios se ven más grandes ahora.
                 </p>
@@ -379,9 +362,10 @@ function AccessibilityPanel({
               className={`
                 w-full min-h-[56px] rounded-xl border font-bold transition
                 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4
-                ${isAccessible
-                  ? "text-lg border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
-                  : "text-base border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
+                ${
+                  isAccessible
+                    ? "text-lg border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
+                    : "text-base border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
                 }
               `}
             >

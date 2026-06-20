@@ -23,8 +23,7 @@ const productImages: ProductImageEntry[] = Object.entries(productImageModules)
   .sort((left, right) => right.key.length - left.key.length);
 
 const productImageAliases: Record<string, string> = {
-  "2x1 sandwich inglesa carne y 2 ingredientes a eleccion":
-    "2x1 sandwich iguales carne y 2 ingredientes a eleccion"
+  "2x1 sandwich inglesa carne y 2 ingredientes a eleccion": "2x1 sandwich iguales carne y 2 ingredientes a eleccion"
 };
 
 function normalizeProductKey(value: string) {
@@ -55,7 +54,7 @@ function countSharedTokens(left: string, right: string) {
   return score;
 }
 
-export function resolveCatalogProductImage(nombre: string) {
+function resolveCatalogProductImage(nombre: string) {
   const normalizedName = normalizeProductKey(nombre);
   const aliasedName = productImageAliases[normalizedName] ?? normalizedName;
 

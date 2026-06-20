@@ -3,7 +3,7 @@ import {
   buildCategoriasCatalogo,
   groupProductosByCategoria,
   loadCustomCategorias,
-  withProductoCategoria,
+  withProductoCategoria
 } from "../../productos/ProductosShared";
 import { getProductos } from "../../../services/productos";
 import type { Producto } from "../../../types";
@@ -71,7 +71,10 @@ export function usePdvProducts({
 
   const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, loadCustomCategorias()), [productos]);
 
-  const productosDisponibles = useMemo(() => productos.filter((producto) => producto.disponible !== false), [productos]);
+  const productosDisponibles = useMemo(
+    () => productos.filter((producto) => producto.disponible !== false),
+    [productos]
+  );
 
   const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
     return withProductoCategoria(productosDisponibles, categoriasCatalogo);
@@ -86,10 +89,7 @@ export function usePdvProducts({
   }, [categoriasCatalogo, productos]);
 
   const productosFiltrados = useMemo(() => {
-    const filtradosPorCategoria = filterProductosByCategory(
-      productosConCategoria,
-      selectedCategory
-    );
+    const filtradosPorCategoria = filterProductosByCategory(productosConCategoria, selectedCategory);
 
     return filterProductosBySearch(filtradosPorCategoria, searchTerm);
   }, [productosConCategoria, searchTerm, selectedCategory]);

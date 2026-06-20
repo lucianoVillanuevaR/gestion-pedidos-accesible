@@ -42,7 +42,9 @@ class PedidoRequestError extends Error {
   }
 }
 
-function withPedidoProductImageUrls<T extends { detalles?: Array<{ producto?: { imagenUrl?: string | null } | null }> }>(pedido: T) {
+function withPedidoProductImageUrls<
+  T extends { detalles?: Array<{ producto?: { imagenUrl?: string | null } | null }> }
+>(pedido: T) {
   return {
     ...pedido,
     detalles: pedido.detalles?.map((detalle) => ({

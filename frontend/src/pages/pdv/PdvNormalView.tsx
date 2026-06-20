@@ -1,4 +1,16 @@
-import { CalendarDays, Check, Info, LockKeyhole, Printer, Search, Trash2, UnlockKeyhole, User, Volume2, X } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Info,
+  LockKeyhole,
+  Printer,
+  Search,
+  Trash2,
+  UnlockKeyhole,
+  User,
+  Volume2,
+  X
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useAuthContext } from "../../contexts/AuthContext";
 import type { Producto } from "../../types";
@@ -52,7 +64,8 @@ function PdvNormalView() {
     totalItems
   } = usePdvViewContext();
 
-  const selectedCategoryLabel = categoryFilters.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
+  const selectedCategoryLabel =
+    categoryFilters.find((filtro) => filtro.value === selectedCategory)?.label ?? "Productos";
   const orderDate = new Intl.DateTimeFormat("es-CL", {
     day: "2-digit",
     month: "2-digit",
@@ -95,7 +108,10 @@ function PdvNormalView() {
 
   return (
     <div className="grid h-[calc(100dvh-48px)] min-h-0 overflow-hidden bg-slate-100 print:block md:grid-cols-[162px_minmax(0,1fr)] xl:grid-cols-[162px_minmax(0,1fr)_400px] 2xl:grid-cols-[162px_minmax(0,1fr)_430px]">
-      <nav className="hidden min-h-0 border-r border-slate-200 bg-slate-50 print:hidden md:block" aria-label="Categorías de productos">
+      <nav
+        className="hidden min-h-0 border-r border-slate-200 bg-slate-50 print:hidden md:block"
+        aria-label="Categorías de productos"
+      >
         <div className="sticky top-0">
           <div className="border-b border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black uppercase text-slate-950">
             Categorías
@@ -127,7 +143,10 @@ function PdvNormalView() {
             <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
               <label htmlFor="searchProducto" className="relative block w-full sm:max-w-[250px]">
                 <span className="sr-only">Buscar producto</span>
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-700" aria-hidden="true" />
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-700"
+                  aria-hidden="true"
+                />
                 <input
                   id="searchProducto"
                   type="text"
@@ -202,7 +221,11 @@ function PdvNormalView() {
               aria-label={isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
               title={isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
             >
-              {isTurnoOpen ? <LockKeyhole className="h-4 w-4" aria-hidden="true" /> : <UnlockKeyhole className="h-4 w-4" aria-hidden="true" />}
+              {isTurnoOpen ? (
+                <LockKeyhole className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <UnlockKeyhole className="h-4 w-4" aria-hidden="true" />
+              )}
               <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
             </button>
           </div>
@@ -254,7 +277,10 @@ function PdvNormalView() {
               disabled={!canPrint}
               className={`w-full min-w-0 ${quickActionButtonClass} ${!canPrint ? "cursor-not-allowed opacity-40" : ""}`}
             >
-              <Printer className={`h-4 w-4 shrink-0 ${isHighContrast ? "text-current" : "text-slate-700"}`} aria-hidden="true" />
+              <Printer
+                className={`h-4 w-4 shrink-0 ${isHighContrast ? "text-current" : "text-slate-700"}`}
+                aria-hidden="true"
+              />
               <span>Imprimir</span>
             </button>
             <button
@@ -283,25 +309,21 @@ function PdvNormalView() {
         </div>
 
         {showResetConfirm && (
-          <div className={`mx-3 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 no-print print:hidden ${isHighContrast ? "contrast-panel-soft" : "border-red-200 bg-red-50"}`}>
+          <div
+            className={`mx-3 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 no-print print:hidden ${isHighContrast ? "contrast-panel-soft" : "border-red-200 bg-red-50"}`}
+          >
             <p className="font-bold text-sm">¿Está seguro de borrar el pedido?</p>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={resetPedido}
                 className={`rounded-lg border px-4 py-2 font-bold transition ${
-                  isHighContrast
-                    ? "contrast-button-danger"
-                    : "border-red-700 bg-red-600 text-white hover:bg-red-700"
+                  isHighContrast ? "contrast-button-danger" : "border-red-700 bg-red-600 text-white hover:bg-red-700"
                 }`}
               >
                 Sí, borrar
               </button>
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(false)}
-                className={quickActionButtonClass}
-              >
+              <button type="button" onClick={() => setShowResetConfirm(false)} className={quickActionButtonClass}>
                 Cancelar
               </button>
             </div>
@@ -316,17 +338,15 @@ function PdvNormalView() {
             aria-live="polite"
             className="mx-3 mt-3 min-w-0 outline-none"
           >
-            <Toast
-              feedback={feedback}
-              isAccessible={false}
-              isHighContrast={isHighContrast}
-              className="w-full"
-            />
+            <Toast feedback={feedback} isAccessible={false} isHighContrast={isHighContrast} className="w-full" />
           </div>
         )}
 
         {!isTurnoOpen && (
-          <div className="mx-3 mt-3 rounded-xl border border-red-300 bg-red-50 px-3 py-3 text-sm font-bold text-red-800 no-print print:hidden" role="alert">
+          <div
+            className="mx-3 mt-3 rounded-xl border border-red-300 bg-red-50 px-3 py-3 text-sm font-bold text-red-800 no-print print:hidden"
+            role="alert"
+          >
             <p>Turno cerrado. Abre turno para poder registrar pedidos.</p>
             <p className="mt-1 text-red-700">Para comenzar a vender, abre un turno.</p>
           </div>
@@ -340,22 +360,15 @@ function PdvNormalView() {
           ) : (
             <div className="space-y-2">
               {pedidoDetalles.map((item) => (
-                <div
-                  key={item.productoId}
-                  className="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-100 py-2"
-                >
+                <div key={item.productoId} className="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-100 py-2">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-slate-950">
-                      {item.producto.nombre}
-                    </p>
+                    <p className="truncate text-sm font-bold text-slate-950">{item.producto.nombre}</p>
                     <p className="text-xs text-slate-600">
                       {item.cantidad} x {formatCurrency(item.producto.precio)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <p className="text-sm font-bold">
-                      {formatCurrency(item.subtotal)}
-                    </p>
+                    <p className="text-sm font-bold">{formatCurrency(item.subtotal)}</p>
                     <button
                       type="button"
                       onClick={() => removeProduct(item.productoId)}
@@ -469,7 +482,9 @@ function PdvNormalView() {
           onConfirm={handleConfirmSubmit}
         >
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
-            <p>{totalItems} {totalItems === 1 ? "producto" : "productos"}</p>
+            <p>
+              {totalItems} {totalItems === 1 ? "producto" : "productos"}
+            </p>
             <p className="mt-1 text-xl font-black text-slate-950">{formatCurrency(total)}</p>
             <p className="mt-1">Pago: {getPaymentLabel(metodoPago)}</p>
           </div>
@@ -495,8 +510,16 @@ function PdvProductTile({
   onAdd: () => void;
 }) {
   return (
-    <article className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-yellow-400 hover:shadow-md"}`}>
-      <button type="button" onClick={onAdd} disabled={disabled} className="block w-full text-left disabled:cursor-not-allowed" aria-label={`Agregar ${producto.nombre}`}>
+    <article
+      className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-yellow-400 hover:shadow-md"}`}
+    >
+      <button
+        type="button"
+        onClick={onAdd}
+        disabled={disabled}
+        className="block w-full text-left disabled:cursor-not-allowed"
+        aria-label={`Agregar ${producto.nombre}`}
+      >
         <div className="relative h-[120px] overflow-hidden bg-slate-300">
           {producto.imagen ? (
             <img
@@ -514,7 +537,9 @@ function PdvProductTile({
             </div>
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pb-1.5 pt-8">
-            <h3 className="line-clamp-2 min-h-[34px] text-sm font-black uppercase leading-tight text-white">{producto.nombre}</h3>
+            <h3 className="line-clamp-2 min-h-[34px] text-sm font-black uppercase leading-tight text-white">
+              {producto.nombre}
+            </h3>
           </div>
           {cantidad > 0 && (
             <span className="absolute right-2 top-2 rounded-full bg-[#FECE00] px-2 py-0.5 text-xs font-black text-slate-950">
@@ -525,16 +550,34 @@ function PdvProductTile({
       </button>
       <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-2 py-1.5">
         <p className="truncate text-base font-black text-slate-800">{formatCurrency(producto.precio)}</p>
-        <button type="button" onClick={onAdd} disabled={disabled} className="rounded-full p-1 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed" aria-label={`Agregar ${producto.nombre}`}>
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={disabled}
+          className="rounded-full p-1 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed"
+          aria-label={`Agregar ${producto.nombre}`}
+        >
           <Info className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
       {cantidad > 0 && (
         <div className="grid grid-cols-2 border-t border-slate-200">
-          <button type="button" onClick={onDecrease} disabled={disabled} className="min-h-[32px] bg-slate-50 text-lg font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed" aria-label={`Disminuir ${producto.nombre}`}>
+          <button
+            type="button"
+            onClick={onDecrease}
+            disabled={disabled}
+            className="min-h-[32px] bg-slate-50 text-lg font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed"
+            aria-label={`Disminuir ${producto.nombre}`}
+          >
             -
           </button>
-          <button type="button" onClick={onIncrease} disabled={disabled} className="min-h-[32px] bg-[#FECE00] text-lg font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed" aria-label={`Aumentar ${producto.nombre}`}>
+          <button
+            type="button"
+            onClick={onIncrease}
+            disabled={disabled}
+            className="min-h-[32px] bg-[#FECE00] text-lg font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed"
+            aria-label={`Aumentar ${producto.nombre}`}
+          >
             +
           </button>
         </div>
@@ -564,20 +607,33 @@ function ConfirmDialog({
   title: string;
 }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 no-print" role="dialog" aria-modal="true" aria-labelledby="pdv-confirm-title">
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 no-print"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pdv-confirm-title"
+    >
       <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white shadow-2xl">
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 id="pdv-confirm-title" className="text-xl font-black text-slate-950">{title}</h2>
+          <h2 id="pdv-confirm-title" className="text-xl font-black text-slate-950">
+            {title}
+          </h2>
           <p className="mt-2 text-sm font-bold text-slate-600">{description}</p>
         </div>
-        <div className="space-y-4 p-5">
-          {children}
-        </div>
+        <div className="space-y-4 p-5">{children}</div>
         <div className="grid grid-cols-2 gap-3 border-t border-slate-200 p-4">
-          <button type="button" onClick={onCancel} className={`min-h-[46px] rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className={`min-h-[46px] rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+          >
             Cancelar
           </button>
-          <button type="button" onClick={onConfirm} className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
+          >
             {primaryLabel}
           </button>
         </div>

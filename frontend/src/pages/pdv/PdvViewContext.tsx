@@ -4,7 +4,7 @@ import type { MetodoPago, Producto } from "../../types";
 import type { FiltroCategoria } from "../../utils/pdv";
 import type { FeedbackState } from "./PdvShared";
 
-export type PedidoDetalleItem = {
+type PedidoDetalleItem = {
   productoId: number;
   cantidad: number;
   producto: Producto;

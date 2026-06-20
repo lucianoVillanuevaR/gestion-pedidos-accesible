@@ -1,17 +1,12 @@
 /// <reference types="node" />
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 const DEFAULT_STOCK_ACTUAL = 50;
 const DEFAULT_STOCK_MINIMO = 10;
 
-type CategoryKey =
-  | "destacados"
-  | "ahorros_exclusivos"
-  | "promociones"
-  | "completos_hot_dogs"
-  | "sandwich";
+type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos_hot_dogs" | "sandwich";
 
 type VariantSeed = {
   nombre: string;
@@ -43,7 +38,7 @@ type CategoryDefinition = {
   productos: CategoryProductSeed[];
 };
 
-type SeedTransaction = any;
+type SeedTransaction = Prisma.TransactionClient;
 
 const menuCatalog: CategoryDefinition[] = [
   {
@@ -254,10 +249,7 @@ function buildProductCatalog(catalog: CategoryDefinition[]): ProductSeed[] {
   for (const category of catalog) {
     for (const product of category.productos) {
       const current = mergedProducts.get(product.nombre);
-      const nextCategories = dedupeCategoryKeys([
-        ...(current?.categorias ?? []),
-        category.key
-      ]);
+      const nextCategories = dedupeCategoryKeys([...(current?.categorias ?? []), category.key]);
       const nextVariants = mergeVariants(current?.variantes, product.variantes);
 
       const mergedProduct: ProductSeed = {
@@ -286,19 +278,14 @@ function buildProductCatalog(catalog: CategoryDefinition[]): ProductSeed[] {
     }
   }
 
-  return Array.from(mergedProducts.values()).sort((left, right) =>
-    left.nombre.localeCompare(right.nombre, "es")
-  );
+  return Array.from(mergedProducts.values()).sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
 }
 
 function dedupeCategoryKeys(categoryKeys: CategoryKey[]): CategoryKey[] {
   return Array.from(new Set(categoryKeys));
 }
 
-function pickPreferredDescription(
-  current?: string,
-  incoming?: string
-): string | undefined {
+function pickPreferredDescription(current?: string, incoming?: string): string | undefined {
   if (!current) {
     return incoming;
   }
@@ -344,10 +331,7 @@ function ensureOptionalMatchingNumber(
   return current;
 }
 
-function mergeVariants(
-  current?: VariantSeed[],
-  incoming?: VariantSeed[]
-): VariantSeed[] | undefined {
+function mergeVariants(current?: VariantSeed[], incoming?: VariantSeed[]): VariantSeed[] | undefined {
   if (!current?.length && !incoming?.length) {
     return undefined;
   }
@@ -391,7 +375,7 @@ async function seedCategories(tx: SeedTransaction) {
   );
 
   return new Map(
-    entries.map((category: any) => {
+    entries.map((category) => {
       const definition = menuCatalog.find((item) => item.nombre === category.nombre);
 
       if (!definition) {
@@ -403,10 +387,7 @@ async function seedCategories(tx: SeedTransaction) {
   );
 }
 
-async function seedProducts(
-  tx: SeedTransaction,
-  categoryMap: Map<CategoryKey, number>
-) {
+async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, number>) {
   const visibleProductNames = products.map((product) => product.nombre);
 
   await tx.producto.updateMany({

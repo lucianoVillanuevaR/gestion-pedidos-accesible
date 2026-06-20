@@ -1,11 +1,6 @@
 import { ArrowLeftRight, Banknote, CheckCircle2, CreditCard, XCircle } from "lucide-react";
 import type { Producto } from "../../types";
-import {
-  detectCategoria,
-  formatCurrency,
-  getCategoriaLabel,
-  type ProductoCategoriaCatalogo
-} from "../../utils/pdv";
+import { detectCategoria, formatCurrency, getCategoriaLabel, type ProductoCategoriaCatalogo } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 
 export type FeedbackState = {
@@ -32,12 +27,8 @@ export const PAYMENT_OPTIONS = [
 ] as const;
 
 export const SOUND_CUES: Record<SoundCue, ToneStep[]> = {
-  add: [
-    { frequency: 880, durationMs: 70, type: "triangle", volume: 0.07 }
-  ],
-  decrease: [
-    { frequency: 640, durationMs: 75, type: "sine", volume: 0.062 }
-  ],
+  add: [{ frequency: 880, durationMs: 70, type: "triangle", volume: 0.07 }],
+  decrease: [{ frequency: 640, durationMs: 75, type: "sine", volume: 0.062 }],
   remove: [
     { frequency: 620, durationMs: 65, type: "sine", volume: 0.062 },
     { frequency: 520, durationMs: 90, delayMs: 55, type: "sine", volume: 0.07 }
@@ -80,7 +71,9 @@ export function Toast({
         : "bg-red-50 border border-red-300 text-red-950";
 
   return (
-    <div className={`rounded-2xl px-4 py-3 ${bgClass} animate-in fade-in slide-in-from-right-4 duration-300 ${className}`}>
+    <div
+      className={`rounded-2xl px-4 py-3 ${bgClass} animate-in fade-in slide-in-from-right-4 duration-300 ${className}`}
+    >
       <div className="flex items-start gap-3">
         <span className={`shrink-0 ${isAccessible ? "" : isSuccess ? "text-emerald-600" : "text-red-600"}`}>
           {isSuccess ? (
@@ -90,7 +83,11 @@ export function Toast({
           )}
         </span>
         <div className="min-w-0">
-          <p className={`font-bold ${isAccessible ? "text-lg" : "text-base"} ${isHighContrast ? "contrast-important" : ""}`}>{feedback.message}</p>
+          <p
+            className={`font-bold ${isAccessible ? "text-lg" : "text-base"} ${isHighContrast ? "contrast-important" : ""}`}
+          >
+            {feedback.message}
+          </p>
         </div>
       </div>
     </div>
@@ -125,11 +122,7 @@ export function ProductCard({
       } ${isHighContrast ? "contrast-panel" : ""}`}
     >
       <div
-        className={`h-32 overflow-hidden ${
-          isAccessible
-            ? "bg-slate-100 border-b-2 border-slate-900"
-            : "bg-[#FECE00]"
-        }`}
+        className={`h-32 overflow-hidden ${isAccessible ? "bg-slate-100 border-b-2 border-slate-900" : "bg-[#FECE00]"}`}
       >
         {producto.imagen ? (
           <img
@@ -163,16 +156,24 @@ export function ProductCard({
         </span>
 
         <div>
-          <h3 className={`font-black leading-tight text-slate-950 ${isAccessible ? "text-2xl" : "text-lg"} ${isHighContrast ? "contrast-important" : ""}`}>
+          <h3
+            className={`font-black leading-tight text-slate-950 ${isAccessible ? "text-2xl" : "text-lg"} ${isHighContrast ? "contrast-important" : ""}`}
+          >
             {producto.nombre}
           </h3>
           {producto.descripcion && (
-            <p className={`mt-1 text-slate-600 ${isAccessible ? "text-base" : "text-sm"} ${isHighContrast ? "contrast-body-text" : ""}`}>{producto.descripcion}</p>
+            <p
+              className={`mt-1 text-slate-600 ${isAccessible ? "text-base" : "text-sm"} ${isHighContrast ? "contrast-body-text" : ""}`}
+            >
+              {producto.descripcion}
+            </p>
           )}
         </div>
 
         <div className={`pt-2 border-t ${isAccessible ? "border-slate-300" : "border-yellow-100"}`}>
-          <p className={`font-black ${isAccessible ? "text-2xl" : "text-xl"} ${isAccessible ? "text-slate-900" : "text-yellow-700"} ${isHighContrast ? "contrast-important" : ""}`}>
+          <p
+            className={`font-black ${isAccessible ? "text-2xl" : "text-xl"} ${isAccessible ? "text-slate-900" : "text-yellow-700"} ${isHighContrast ? "contrast-important" : ""}`}
+          >
             {formatCurrency(producto.precio)}
           </p>
         </div>
@@ -217,9 +218,7 @@ export function ProductCard({
         ) : (
           <>
             {cantidad > 0 && (
-              <div
-                className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-[#FFF4BF] bg-[#FFFBF0] p-2"
-              >
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-[#FFF4BF] bg-[#FFFBF0] p-2">
                 <button
                   type="button"
                   onClick={onDecrease}

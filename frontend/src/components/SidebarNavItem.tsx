@@ -1,24 +1,18 @@
-import { NavLink } from "react-router-dom"
-import type { AppNavigationItem } from "../config/navigation"
+import { NavLink } from "react-router-dom";
+import type { AppNavigationItem } from "../config/navigation";
 
 type SidebarNavItemProps = {
-  isAccessible: boolean
-  isHighContrast: boolean
-  item: AppNavigationItem
-  onNavigate: () => void
-  pathOverride?: string
-}
+  isAccessible: boolean;
+  isHighContrast: boolean;
+  item: AppNavigationItem;
+  onNavigate: () => void;
+  pathOverride?: string;
+};
 
-function SidebarNavItem({
-  isAccessible,
-  isHighContrast,
-  item,
-  onNavigate,
-  pathOverride
-}: SidebarNavItemProps) {
-  const Icon = item.icon
-  const showDescription = !isAccessible
-  const path = pathOverride ?? item.path
+function SidebarNavItem({ isAccessible, isHighContrast, item, onNavigate, pathOverride }: SidebarNavItemProps) {
+  const Icon = item.icon;
+  const showDescription = !isAccessible;
+  const path = pathOverride ?? item.path;
 
   return (
     <NavLink
@@ -28,7 +22,7 @@ function SidebarNavItem({
       className={({ isActive }) => {
         const baseClass = `group flex w-full items-center rounded-2xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
           isAccessible ? "min-h-[68px] gap-4 px-4 py-3" : "min-h-[48px] gap-2.5 px-2.5 py-2"
-        }`
+        }`;
 
         return `${baseClass} ${
           isHighContrast
@@ -38,7 +32,7 @@ function SidebarNavItem({
             : isActive
               ? "border-[#FDB913] bg-[#FDB913] text-slate-950 shadow-sm shadow-[#FDB913]/20"
               : "border-slate-200 bg-white text-slate-950 hover:bg-slate-50 hover:border-slate-300"
-        }`
+        }`;
       }}
     >
       {({ isActive }) => (
@@ -63,11 +57,7 @@ function SidebarNavItem({
             {showDescription && (
               <span
                 className={`mt-0.5 block text-[11px] leading-snug ${
-                  isHighContrast
-                    ? "contrast-secondary-text"
-                    : isActive
-                      ? "text-slate-700/80"
-                      : "text-slate-600"
+                  isHighContrast ? "contrast-secondary-text" : isActive ? "text-slate-700/80" : "text-slate-600"
                 }`}
               >
                 {item.description}
@@ -77,7 +67,7 @@ function SidebarNavItem({
         </>
       )}
     </NavLink>
-  )
+  );
 }
 
-export default SidebarNavItem
+export default SidebarNavItem;

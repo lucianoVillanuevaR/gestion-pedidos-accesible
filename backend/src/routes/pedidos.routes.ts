@@ -1,10 +1,5 @@
 import { Router } from "express";
-import {
-  crearPedido,
-  getPedidos,
-  getPedidoById,
-  actualizarEstadoPedido
-} from "../controllers/pedidos.controller";
+import { crearPedido, getPedidos, getPedidoById, actualizarEstadoPedido } from "../controllers/pedidos.controller";
 
 const pedidosRoutes = Router();
 

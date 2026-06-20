@@ -100,10 +100,7 @@ export function buildPedidoSummary(items: Record<number, number>, productos: Pro
   return { detalles, total, cantidad };
 }
 
-export function filterProductosByCategory(
-  productos: ProductoConCategoria[],
-  selectedCategory: FiltroCategoria
-) {
+export function filterProductosByCategory(productos: ProductoConCategoria[], selectedCategory: FiltroCategoria) {
   if (selectedCategory === "Todos") {
     return productos;
   }
@@ -116,10 +113,7 @@ export function filterProductosByCategory(
   return productos.filter((producto) => producto.categoria === selectedCategory);
 }
 
-export function filterProductosBySearch(
-  productos: ProductoConCategoria[],
-  searchTerm: string
-) {
+export function filterProductosBySearch(productos: ProductoConCategoria[], searchTerm: string) {
   if (!searchTerm.trim()) {
     return productos;
   }
