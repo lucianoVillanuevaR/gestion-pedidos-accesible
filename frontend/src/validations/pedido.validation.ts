@@ -1,9 +1,12 @@
 import type { MetodoPago } from "../types";
+import {
+  CLIENTE_NOMBRE_PATTERN,
+  PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH,
+  PEDIDO_MAX_CANTIDAD_DETALLE,
+  PEDIDO_OBSERVACION_MAX_LENGTH
+} from "../domain/pedidoRules";
 
-export const PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH = 80;
-export const PEDIDO_OBSERVACION_MAX_LENGTH = 300;
-export const PEDIDO_MAX_CANTIDAD_DETALLE = 99;
-const CLIENTE_NOMBRE_PATTERN = /^[\p{L}\p{M}]+(?:[ '-][\p{L}\p{M}]+)*$/u;
+export { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, PEDIDO_MAX_CANTIDAD_DETALLE, PEDIDO_OBSERVACION_MAX_LENGTH };
 
 type ValidatePedidoSubmitParams = {
   clienteNombre?: string;

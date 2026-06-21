@@ -1,6 +1,6 @@
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../types";
 import { resolveProductImage } from "../utils/productImages";
-import { authenticatedFetch, buildApiUrl, throwApiError } from "./api";
+import { apiRequest } from "./api";
 
 function normalizeProducto(producto: Producto & { precio: number | string }): Producto {
   const imagen = resolveProductImage(producto);
@@ -13,12 +13,8 @@ function normalizeProducto(producto: Producto & { precio: number | string }): Pr
   };
 }
 
-async function readProductoResponse(res: Response, fallbackMessage: string) {
-  if (!res.ok) {
-    await throwApiError(res, fallbackMessage);
-  }
-
-  const producto = (await res.json()) as Producto & { precio: number | string };
+async function readProductoResponse(path: string, fallbackMessage: string, init?: RequestInit) {
+  const producto = await apiRequest<Producto & { precio: number | string }>(path, { ...init, fallbackMessage });
   return normalizeProducto(producto);
 }
 
@@ -26,62 +22,48 @@ export async function getProductos({ includeUnavailable = false }: { includeUnav
   Producto[]
 > {
   const query = includeUnavailable ? "?includeUnavailable=true" : "";
-  const res = await authenticatedFetch(buildApiUrl(`/api/productos${query}`));
-  if (!res.ok) throw new Error("Error cargando productos");
-  const data = (await res.json()) as Array<Producto & { precio: number | string }>;
+  const data = await apiRequest<Array<Producto & { precio: number | string }>>(`/api/productos${query}`, {
+    fallbackMessage: "Error cargando productos"
+  });
   return data.map(normalizeProducto);
 }
 
 export async function createProducto(payload: CreateProductoPayload): Promise<Producto> {
-  const res = await authenticatedFetch(buildApiUrl("/api/productos"), {
+  return readProductoResponse("/api/productos", "Error creando producto", {
     body: JSON.stringify(payload),
     headers: {
       "Content-Type": "application/json"
     },
     method: "POST"
   });
-
-  return readProductoResponse(res, "Error creando producto");
 }
 
 export async function updateProducto(id: number, payload: UpdateProductoPayload): Promise<Producto> {
-  const res = await authenticatedFetch(buildApiUrl(`/api/productos/${id}`), {
+  return readProductoResponse(`/api/productos/${id}`, "Error actualizando producto", {
     body: JSON.stringify(payload),
     headers: {
       "Content-Type": "application/json"
     },
     method: "PATCH"
   });
-
-  return readProductoResponse(res, "Error actualizando producto");
 }
 
 export async function deleteProducto(id: number): Promise<void> {
-  const res = await authenticatedFetch(buildApiUrl(`/api/productos/${id}`), {
-    method: "DELETE"
-  });
-
-  if (!res.ok) {
-    await throwApiError(res, "Error eliminando producto");
-  }
+  await apiRequest<void>(`/api/productos/${id}`, { fallbackMessage: "Error eliminando producto", method: "DELETE" });
 }
 
 export async function uploadProductImage(productId: number, file: File): Promise<Producto> {
   const formData = new FormData();
   formData.append("imagen", file);
 
-  const res = await authenticatedFetch(buildApiUrl(`/api/productos/${productId}/imagen`), {
+  return readProductoResponse(`/api/productos/${productId}/imagen`, "No se pudo subir la imagen", {
     body: formData,
     method: "POST"
   });
-
-  return readProductoResponse(res, "No se pudo subir la imagen");
 }
 
 export async function deleteProductImage(productId: number): Promise<Producto> {
-  const res = await authenticatedFetch(buildApiUrl(`/api/productos/${productId}/imagen`), {
+  return readProductoResponse(`/api/productos/${productId}/imagen`, "No se pudo eliminar la imagen", {
     method: "DELETE"
   });
-
-  return readProductoResponse(res, "No se pudo eliminar la imagen");
 }

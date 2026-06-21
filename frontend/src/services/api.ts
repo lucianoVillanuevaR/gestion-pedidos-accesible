@@ -36,6 +36,31 @@ export function authenticatedFetch(input: RequestInfo | URL, init: RequestInit =
   return fetch(input, { ...init, headers });
 }
 
+type ApiRequestOptions = RequestInit & {
+  authenticated?: boolean;
+  fallbackMessage: string;
+};
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions): Promise<T> {
+  const { authenticated = true, fallbackMessage, ...init } = options;
+  const request = authenticated ? authenticatedFetch : fetch;
+  const response = await request(buildApiUrl(path), init);
+
+  if (!response.ok) {
+    if ((response.status === 401 || response.status === 403) && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("riquisimo:authorization-error", { detail: response.status }));
+    }
+
+    await throwApiError(response, fallbackMessage);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return (await response.json()) as T;
+}
+
 export async function throwApiError(response: Response, fallbackMessage: string): Promise<never> {
   const rawBody = await response.text();
 

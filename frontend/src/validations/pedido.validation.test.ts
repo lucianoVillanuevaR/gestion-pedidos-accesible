@@ -51,4 +51,23 @@ describe("validatePedidoSubmit", () => {
     ).toBe("El nombre del cliente solo puede contener letras");
     expect(sanitizeClienteNombreInput("Juan 4! Pérez")).toBe("Juan Pérez");
   });
+
+  it("aplica los límites de texto como validación de UX", () => {
+    expect(
+      validatePedidoSubmit({
+        clienteNombre: "A".repeat(81),
+        isTurnoOpen: true,
+        metodoPago: "efectivo",
+        totalProductos: 1
+      })
+    ).toContain("80 caracteres");
+    expect(
+      validatePedidoSubmit({
+        isTurnoOpen: true,
+        metodoPago: "efectivo",
+        observacion: "A".repeat(301),
+        totalProductos: 1
+      })
+    ).toContain("300 caracteres");
+  });
 });

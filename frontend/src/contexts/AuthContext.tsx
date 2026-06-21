@@ -84,6 +84,20 @@ function AuthProvider({ children }: PropsWithChildren) {
       });
   }, []);
 
+  useEffect(() => {
+    const handleAuthorizationError = (event: Event) => {
+      if ((event as CustomEvent<number>).detail !== 401) {
+        return;
+      }
+
+      window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+      setUser(null);
+    };
+
+    window.addEventListener("riquisimo:authorization-error", handleAuthorizationError);
+    return () => window.removeEventListener("riquisimo:authorization-error", handleAuthorizationError);
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => {
     return {
       user,

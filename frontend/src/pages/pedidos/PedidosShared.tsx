@@ -2,6 +2,7 @@ import { ClipboardPlus } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { TRANSICIONES_ESTADO_PERMITIDAS } from "../../domain/pedidoRules";
 import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
 import { getPedidos, updatePedidoEstado } from "../../services/pedidos";
 import type {
@@ -80,15 +81,7 @@ const CAMBIO_ESTADO_OPTIONS: Array<{ label: string; value: EstadoPedido }> = [
 ];
 
 function getAllowedEstadoOptions(estado: EstadoPedido) {
-  const allowedByEstado: Record<EstadoPedido, EstadoPedido[]> = {
-    pendiente: ["en_preparacion", "cancelado"],
-    en_preparacion: ["listo", "cancelado"],
-    listo: ["entregado"],
-    entregado: [],
-    cancelado: []
-  };
-
-  return CAMBIO_ESTADO_OPTIONS.filter((option) => allowedByEstado[estado].includes(option.value));
+  return CAMBIO_ESTADO_OPTIONS.filter((option) => TRANSICIONES_ESTADO_PERMITIDAS[estado].includes(option.value));
 }
 
 export function getPedidoCounts(pedidos: PedidoResponse[]) {

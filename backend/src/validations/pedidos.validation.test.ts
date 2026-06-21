@@ -13,6 +13,7 @@ describe("validaciones de pedidos", () => {
   });
 
   it("rechaza productos repetidos y cantidades inválidas", () => {
+    expect(validatePedidoDetalles([])).toBe("El pedido debe tener al menos un detalle");
     expect(
       validatePedidoDetalles([
         { cantidad: 1, productoId: 4 },
@@ -20,6 +21,7 @@ describe("validaciones de pedidos", () => {
       ])
     ).toBe("No se puede repetir el mismo producto en el pedido");
     expect(validatePedidoDetalles([{ cantidad: 0, productoId: 4 }])).toContain("Detalle inválido");
+    expect(validatePedidoDetalles([{ cantidad: 100, productoId: 4 }])).toContain("entre 1 y 99");
   });
 
   it("permite solamente transiciones de estado válidas", () => {
@@ -39,5 +41,10 @@ describe("validaciones de pedidos", () => {
     expect(validatePedidoTextFields("Cliente 4", "Sin cebolla")).toBe(
       "El nombre del cliente solo puede contener letras"
     );
+  });
+
+  it("limita el nombre y la observación", () => {
+    expect(validatePedidoTextFields("A".repeat(81), "")).toContain("80 caracteres");
+    expect(validatePedidoTextFields("Ana", "A".repeat(301))).toContain("300 caracteres");
   });
 });

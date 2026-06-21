@@ -1,7 +1,7 @@
 import { AlertTriangle, CheckCircle2, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import fondoR from "../assets/fondoR.png";
+import fondoR from "../assets/fondoR.webp";
 import logoRiq from "../assets/logoRiq.png";
 import { DEMO_USERS, getDefaultRouteForRole } from "../constants/auth";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
@@ -237,48 +237,52 @@ function Login() {
               </div>
             )}
 
-            <div className={`rounded-lg ${isAccessible ? "border border-slate-300" : "border border-slate-200"}`}>
-              <button
-                type="button"
-                onClick={() => setShowDemoAccounts((currentValue) => !currentValue)}
-                className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-left font-semibold transition ${
-                  isAccessible
-                    ? "min-h-[60px] bg-slate-50 text-slate-900 text-lg hover:bg-slate-100"
-                    : "min-h-[52px] bg-slate-100 text-slate-900 text-sm hover:bg-slate-200"
-                }`}
-                aria-expanded={showDemoAccounts}
-              >
-                <span>Accesos de prueba</span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={`h-4 w-4 transition ${showDemoAccounts ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {showDemoAccounts && (
-                <div
-                  className={`space-y-3 border-t p-4 ${isAccessible ? "border-slate-300 bg-white" : "border-slate-200 bg-white"}`}
+            {DEMO_USERS.length > 0 && (
+              <div className={`rounded-lg ${isAccessible ? "border border-slate-300" : "border border-slate-200"}`}>
+                <button
+                  type="button"
+                  onClick={() => setShowDemoAccounts((currentValue) => !currentValue)}
+                  className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-left font-semibold transition ${
+                    isAccessible
+                      ? "min-h-[60px] bg-slate-50 text-slate-900 text-lg hover:bg-slate-100"
+                      : "min-h-[52px] bg-slate-100 text-slate-900 text-sm hover:bg-slate-200"
+                  }`}
+                  aria-expanded={showDemoAccounts}
                 >
-                  {DEMO_USERS.map((user) => (
-                    <div key={user.email} className="space-y-1 rounded-lg bg-slate-50 p-3">
-                      <p
-                        className={
-                          isAccessible ? "text-lg font-semibold text-slate-900" : "text-xs font-semibold text-slate-700"
-                        }
-                      >
-                        {user.label}
-                      </p>
-                      <p className={isAccessible ? "text-base text-slate-700" : "text-xs text-slate-600"}>
-                        {user.email}
-                      </p>
-                      <p className={isAccessible ? "text-base text-slate-700" : "text-xs text-slate-600"}>
-                        {user.password}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  <span>Accesos de prueba</span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={`h-4 w-4 transition ${showDemoAccounts ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {showDemoAccounts && (
+                  <div
+                    className={`space-y-3 border-t p-4 ${isAccessible ? "border-slate-300 bg-white" : "border-slate-200 bg-white"}`}
+                  >
+                    {DEMO_USERS.map((user) => (
+                      <div key={user.email} className="space-y-1 rounded-lg bg-slate-50 p-3">
+                        <p
+                          className={
+                            isAccessible
+                              ? "text-lg font-semibold text-slate-900"
+                              : "text-xs font-semibold text-slate-700"
+                          }
+                        >
+                          {user.label}
+                        </p>
+                        <p className={isAccessible ? "text-base text-slate-700" : "text-xs text-slate-600"}>
+                          {user.email}
+                        </p>
+                        <p className={isAccessible ? "text-base text-slate-700" : "text-xs text-slate-600"}>
+                          {user.password}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </main>

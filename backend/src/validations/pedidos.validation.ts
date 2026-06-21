@@ -1,21 +1,15 @@
-const ESTADOS_PEDIDO_VALIDOS = ["pendiente", "en_preparacion", "listo", "entregado", "cancelado"] as const;
-const METODOS_PAGO_VALIDOS = ["efectivo", "tarjeta", "transferencia"] as const;
-const PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH = 80;
-const PEDIDO_OBSERVACION_MAX_LENGTH = 300;
-const PEDIDO_MAX_DETALLES = 50;
-const PEDIDO_MAX_CANTIDAD_DETALLE = 99;
-const CLIENTE_NOMBRE_PATTERN = /^[\p{L}\p{M}]+(?:[ '-][\p{L}\p{M}]+)*$/u;
-
-type EstadoPedidoValido = (typeof ESTADOS_PEDIDO_VALIDOS)[number];
-type MetodoPagoValido = (typeof METODOS_PAGO_VALIDOS)[number];
-
-const TRANSICIONES_ESTADO_PERMITIDAS: Record<EstadoPedidoValido, EstadoPedidoValido[]> = {
-  pendiente: ["en_preparacion", "cancelado"],
-  en_preparacion: ["listo", "cancelado"],
-  listo: ["entregado"],
-  entregado: [],
-  cancelado: []
-};
+import {
+  CLIENTE_NOMBRE_PATTERN,
+  ESTADOS_PEDIDO_VALIDOS,
+  METODOS_PAGO_VALIDOS,
+  PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH,
+  PEDIDO_MAX_CANTIDAD_DETALLE,
+  PEDIDO_MAX_DETALLES,
+  PEDIDO_OBSERVACION_MAX_LENGTH,
+  TRANSICIONES_ESTADO_PERMITIDAS,
+  type EstadoPedidoValido,
+  type MetodoPagoValido
+} from "../domain/pedidoRules";
 
 type PedidoDetalleInput = {
   cantidad: number;
