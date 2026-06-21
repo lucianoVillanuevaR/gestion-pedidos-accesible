@@ -355,7 +355,6 @@ function PdvNormalView() {
             role="alert"
           >
             <p>Turno cerrado. Abre turno para poder registrar pedidos.</p>
-            <p className="mt-1 text-red-700">Para comenzar a vender, abre un turno.</p>
           </div>
         )}
 
