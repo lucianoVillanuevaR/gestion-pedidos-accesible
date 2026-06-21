@@ -2,17 +2,10 @@ import { ClipboardPlus } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { TRANSICIONES_ESTADO_PERMITIDAS } from "../../domain/pedidoRules";
+import { ESTADOS_PEDIDO_ACTIVOS, TRANSICIONES_ESTADO_PERMITIDAS } from "../../domain/pedidoRules";
 import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
 import { getPedidos, updatePedidoEstado } from "../../services/pedidos";
-import type {
-  AuthUser,
-  CierreTurno,
-  EstadoPedido,
-  MetodoPago,
-  PedidoDetalleResponse,
-  PedidoResponse
-} from "../../types";
+import type { CierreTurno, EstadoPedido, MetodoPago, PedidoDetalleResponse, PedidoResponse } from "../../types";
 
 export type EstadoFilter = EstadoPedido | "todos";
 type ModalAction = "detail" | "state" | "finish" | "cancel" | "history";
@@ -112,9 +105,7 @@ export type NormalSummary = ReturnType<typeof getNormalSummary>;
 
 export function getTurnoSummary(pedidos: PedidoResponse[]) {
   const pedidosEntregados = pedidos.filter((pedido) => pedido.estado === "entregado");
-  const pedidosPendientesTurno = pedidos.filter((pedido) =>
-    ["pendiente", "en_preparacion", "listo"].includes(pedido.estado)
-  );
+  const pedidosPendientesTurno = pedidos.filter((pedido) => ESTADOS_PEDIDO_ACTIVOS.includes(pedido.estado));
   const totalPendiente = pedidosPendientesTurno.reduce((total, pedido) => total + Number(pedido.total), 0);
   const totalPorMetodo: Record<MetodoPago, number> = {
     efectivo: 0,
@@ -384,28 +375,6 @@ export function getProductosVendidosResumen(pedidos: PedidoResponse[]): CierreTu
     });
 
   return [...productos.values()].sort((left, right) => right.cantidad - left.cantidad);
-}
-
-export function buildCierreTurno(pedidos: PedidoResponse[], user: AuthUser | null): CierreTurno {
-  const summary = getTurnoSummary(pedidos);
-
-  return {
-    id: `turno-${Date.now()}`,
-    fechaInicio: getFechaInicioTurno(pedidos),
-    fechaCierre: new Date().toISOString(),
-    usuarioId: user?.username,
-    pedidos: getCierrePedidosResumen(pedidos),
-    productosVendidos: getProductosVendidosResumen(pedidos),
-    totalPedidos: summary.totalPedidos,
-    pedidosEntregados: summary.pedidosEntregados,
-    pedidosCancelados: summary.pedidosCancelados,
-    pedidosPendientes: summary.pedidosPendientes,
-    totalVendido: summary.totalVendido,
-    totalEfectivo: summary.totalEfectivo,
-    totalPendiente: summary.totalPendiente,
-    totalTarjeta: summary.totalTarjeta,
-    totalTransferencia: summary.totalTransferencia
-  };
 }
 
 function normalizeText(value: string) {

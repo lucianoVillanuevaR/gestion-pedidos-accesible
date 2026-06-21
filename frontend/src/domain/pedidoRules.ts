@@ -16,6 +16,8 @@ export const ESTADOS_PEDIDO_VALIDOS: readonly EstadoPedido[] = [
   "cancelado"
 ];
 
+export const ESTADOS_PEDIDO_ACTIVOS: readonly EstadoPedido[] = ["pendiente", "en_preparacion", "listo"];
+
 export const METODOS_PAGO_VALIDOS: readonly MetodoPago[] = ["efectivo", "tarjeta", "transferencia"];
 
 export const TRANSICIONES_ESTADO_PERMITIDAS: Readonly<Record<EstadoPedido, readonly EstadoPedido[]>> = {

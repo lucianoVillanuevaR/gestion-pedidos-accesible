@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { ESTADOS_PEDIDO_ACTIVOS } from "../domain/pedidoRules";
 import { validateTurnoCanClose } from "./turnos.validation";
 
 describe("validaciones de turnos", () => {
+  it("reutiliza los estados activos centralizados", () => {
+    expect(ESTADOS_PEDIDO_ACTIVOS).toEqual(["pendiente", "en_preparacion", "listo"]);
+  });
+
   it("impide cerrar un turno que ya está cerrado", () => {
     expect(validateTurnoCanClose("cerrado", [])).toBe("El turno ya está cerrado");
   });

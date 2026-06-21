@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 
 const DEFAULT_STOCK_ACTUAL = 50;
 const DEFAULT_STOCK_MINIMO = 10;
+const DEFAULT_DEMO_PASSWORD = "123456";
 
 type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos_hot_dogs" | "sandwich";
 
@@ -478,19 +479,24 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
 }
 
 async function main() {
-  const passwordHash = await bcrypt.hash("123456", 12);
+  // Los usuarios demo facilitan el entorno local. En producción solo se crean mediante autorización explícita.
+  const shouldSeedDemoUsers = process.env.NODE_ENV !== "production" || process.env.SEED_DEMO_USERS === "true";
+  const demoPassword = process.env.SEED_DEMO_PASSWORD?.trim() || DEFAULT_DEMO_PASSWORD;
+  const passwordHash = shouldSeedDemoUsers ? await bcrypt.hash(demoPassword, 12) : null;
 
   await prisma.$transaction(async (tx) => {
-    for (const user of [
-      { username: "cajero", email: "cajero@demo.cl", role: "cajero", label: "Cajero" },
-      { username: "cocina", email: "cocina@demo.cl", role: "cocina", label: "Cocina" },
-      { username: "admin", email: "admin@demo.cl", role: "admin", label: "Administrador" }
-    ]) {
-      await tx.usuario.upsert({
-        where: { username: user.username },
-        update: { ...user, passwordHash, activo: true },
-        create: { ...user, passwordHash }
-      });
+    if (passwordHash) {
+      for (const user of [
+        { username: "cajero", email: "cajero@demo.cl", role: "cajero", label: "Cajero" },
+        { username: "cocina", email: "cocina@demo.cl", role: "cocina", label: "Cocina" },
+        { username: "admin", email: "admin@demo.cl", role: "admin", label: "Administrador" }
+      ]) {
+        await tx.usuario.upsert({
+          where: { username: user.username },
+          update: { ...user, passwordHash, activo: true },
+          create: { ...user, passwordHash }
+        });
+      }
     }
 
     const categoryMap = await seedCategories(tx);
@@ -499,6 +505,7 @@ async function main() {
 
   console.log(`${menuCatalog.length} categorías sincronizadas exitosamente.`);
   console.log(`${products.length} productos sincronizados exitosamente.`);
+  console.log(shouldSeedDemoUsers ? "Usuarios demo sincronizados para desarrollo." : "Usuarios demo omitidos.");
   console.log(
     `${products.filter((product) => product.variantes?.length).length} productos con variantes sincronizados.`
   );

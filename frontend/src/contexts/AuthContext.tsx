@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
-import { AUTH_STORAGE_KEY, AUTH_TOKEN_STORAGE_KEY } from "../constants/auth";
 import { getCurrentUser, loginRequest } from "../services/auth";
+import { clearAuthSession, getAuthToken, readAuthUser, storeAuthSession, storeAuthUser } from "../services/authStorage";
 import type { AuthUser } from "../types";
 
 type LoginPayload = {
@@ -19,67 +19,22 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function isValidUser(value: unknown): value is AuthUser {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as AuthUser;
-  return Boolean(
-    candidate.email &&
-    candidate.label &&
-    candidate.username &&
-    (candidate.role === "cajero" || candidate.role === "cocina" || candidate.role === "admin")
-  );
-}
-
-function readStoredUser() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    if (!window.sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-      return null;
-    }
-
-    const rawValue = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
-    if (!rawValue) {
-      return null;
-    }
-
-    const parsedValue = JSON.parse(rawValue);
-    return isValidUser(parsedValue) ? parsedValue : null;
-  } catch {
-    return null;
-  }
-}
-
 function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<AuthUser | null>(readStoredUser);
+  const [user, setUser] = useState<AuthUser | null>(readAuthUser);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    if (!user) {
-      window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
-      return;
-    }
-
-    window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    storeAuthUser(user);
   }, [user]);
 
   useEffect(() => {
-    if (!window.sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    if (!getAuthToken()) {
       return;
     }
 
     void getCurrentUser()
       .then(setUser)
       .catch(() => {
-        window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+        clearAuthSession();
         setUser(null);
       });
   }, []);
@@ -90,7 +45,7 @@ function AuthProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+      clearAuthSession();
       setUser(null);
     };
 
@@ -112,7 +67,7 @@ function AuthProvider({ children }: PropsWithChildren) {
 
         try {
           const { token, user: nextUser } = await loginRequest(normalizedIdentifier, normalizedPassword);
-          window.sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+          storeAuthSession(token, nextUser);
           setUser(nextUser);
           return { ok: true, user: nextUser };
         } catch (error) {
@@ -120,7 +75,7 @@ function AuthProvider({ children }: PropsWithChildren) {
         }
       },
       logout: () => {
-        window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+        clearAuthSession();
         setUser(null);
       }
     };

@@ -3,7 +3,6 @@ import { AlertTriangle, LoaderCircle } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { useAuthContext } from "../../contexts/AuthContext";
 import {
   abrirTurnoRemoto,
   guardarCierreTurno,
@@ -23,7 +22,6 @@ import {
 import { validateTurnoClose } from "../../validations/turno.validation";
 import { ACCESSIBLE_STEP_COUNT, type FeedbackState } from "./PdvShared";
 import {
-  buildCierreTurno,
   getPedidoDisplayNumber,
   readTurnoAbierto,
   setTurnoAbierto,
@@ -42,7 +40,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const location = useLocation();
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } =
     useAccessibilityContext();
-  const { user } = useAuthContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: true });
 
@@ -425,8 +422,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       }
 
       try {
-        const pedidos = await getPedidos();
-        await guardarCierreTurno(buildCierreTurno(pedidos, user));
+        await guardarCierreTurno();
         setTurnoAbierto(false);
         setIsTurnoOpen(false);
         setAccessibleStep(1);

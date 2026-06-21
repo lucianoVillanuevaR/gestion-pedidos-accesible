@@ -17,6 +17,15 @@ describe("validateProductoForm", () => {
   it("acepta un producto válido", () => {
     expect(validateProductoForm({ descripcion: "Con tomate", nombre: "Completo", precio: "2500" })).toBeNull();
   });
+
+  it("mantiene los límites de producto centralizados", () => {
+    expect(validateProductoForm({ descripcion: "", nombre: "A".repeat(81), precio: "2500" })).toContain(
+      "80 caracteres"
+    );
+    expect(validateProductoForm({ descripcion: "A".repeat(301), nombre: "Completo", precio: "2500" })).toContain(
+      "300 caracteres"
+    );
+  });
 });
 
 describe("buildProductoPayload", () => {

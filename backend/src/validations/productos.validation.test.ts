@@ -24,4 +24,11 @@ describe("validaciones de productos", () => {
   it("exige al menos un campo al actualizar", () => {
     expect(validateProductoUpdate({})).toEqual({ error: "Debe enviar al menos un campo para actualizar" });
   });
+
+  it("mantiene los límites de producto centralizados", () => {
+    expect(validateProductoCreate({ nombre: "A".repeat(81), precio: 2500 }).error).toContain("80 caracteres");
+    expect(validateProductoCreate({ descripcion: "A".repeat(301), nombre: "Completo", precio: 2500 }).error).toContain(
+      "300 caracteres"
+    );
+  });
 });

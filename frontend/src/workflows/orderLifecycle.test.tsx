@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AUTH_STORAGE_KEY, AUTH_TOKEN_STORAGE_KEY } from "../constants/auth";
 import { AuthProvider, useAuthContext } from "../contexts/AuthContext";
 import {
-  buildCierreTurno,
   getTurnoSummary,
   readTurnoAbierto,
   setTurnoAbierto,
@@ -52,7 +51,28 @@ function installPedidosApi() {
 
     if (url.endsWith("/api/turnos/1/cerrar") && init?.method === "POST") {
       turnoAbierto = false;
-      return jsonResponse({ turno: { id: 1, estado: "cerrado" } });
+      return jsonResponse({
+        turno: {
+          id: 1,
+          estado: "cerrado",
+          resumen: {
+            id: "turno-1",
+            fechaCierre: "2026-06-20T13:00:00.000Z",
+            usuarioId: "cajero",
+            pedidos: pedido ? [{ id: pedido.id }] : [],
+            productosVendidos: [],
+            totalPedidos: pedido ? 1 : 0,
+            pedidosEntregados: pedido?.estado === "entregado" ? 1 : 0,
+            pedidosCancelados: 0,
+            pedidosPendientes: 0,
+            totalVendido: pedido?.estado === "entregado" ? Number(pedido.total) : 0,
+            totalEfectivo: pedido?.estado === "entregado" ? Number(pedido.total) : 0,
+            totalPendiente: 0,
+            totalTarjeta: 0,
+            totalTransferencia: 0
+          }
+        }
+      });
     }
 
     if (url.endsWith("/api/pedidos") && init?.method === "POST") {
@@ -155,8 +175,7 @@ describe("flujo operativo principal", () => {
       totalVendido: 5000
     });
 
-    const cierre = buildCierreTurno(pedidos, result.current.user);
-    await guardarCierreTurno(cierre);
+    await guardarCierreTurno();
     setTurnoAbierto(false);
 
     expect(readTurnoAbierto()).toBe(false);
@@ -167,6 +186,8 @@ describe("flujo operativo principal", () => {
       totalVendido: 5000
     });
     expect(obtenerPedidoIdsCerrados().has(101)).toBe(true);
+    const closeRequest = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/api/turnos/1/cerrar"));
+    expect(closeRequest?.[1]?.body).toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(9);
   });
 });

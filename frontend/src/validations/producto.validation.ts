@@ -1,8 +1,11 @@
 import type { CreateProductoPayload } from "../types";
+import {
+  PRODUCTO_DESCRIPCION_MAX_LENGTH,
+  PRODUCTO_NOMBRE_MAX_LENGTH,
+  PRODUCTO_PRECIO_MAX
+} from "../domain/productoRules";
 
-export const PRODUCTO_NOMBRE_MAX_LENGTH = 80;
-export const PRODUCTO_DESCRIPCION_MAX_LENGTH = 300;
-export const PRODUCTO_PRECIO_MAX = 99999999.99;
+export { PRODUCTO_DESCRIPCION_MAX_LENGTH, PRODUCTO_NOMBRE_MAX_LENGTH, PRODUCTO_PRECIO_MAX };
 
 type ValidateProductoFormParams = {
   descripcion: string;

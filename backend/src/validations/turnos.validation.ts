@@ -1,4 +1,4 @@
-const ESTADOS_PEDIDO_ACTIVOS = ["pendiente", "en_preparacion", "listo"] as const;
+import { ESTADOS_PEDIDO_ACTIVOS } from "../domain/pedidoRules";
 
 export function validateTurnoCanClose(turnoEstado: string, estadosPedidos: string[]) {
   if (turnoEstado !== "abierto") {

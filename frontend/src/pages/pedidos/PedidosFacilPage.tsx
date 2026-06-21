@@ -3,12 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { useAuthContext } from "../../contexts/AuthContext";
+import { ESTADOS_PEDIDO_ACTIVOS } from "../../domain/pedidoRules";
 import useVoice from "../../hooks/useVoice";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
 import type { EstadoPedido, PedidoResponse } from "../../types";
 import {
-  buildCierreTurno,
   ESTADO_META,
   FOCUS_VISIBLE_CLASS,
   formatCurrency,
@@ -35,14 +34,12 @@ const FILTROS_FACILES: Array<{ label: string; value: EstadoFilter }> = [
   { label: "Todos", value: "todos" }
 ];
 
-const ESTADOS_ACTIVOS: EstadoPedido[] = ["pendiente", "en_preparacion", "listo"];
 const EASY_PRIMARY_BUTTON_CLASS = "border-slate-900 bg-slate-900 text-white hover:bg-black";
 const EASY_SECONDARY_BUTTON_CLASS = "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50";
 const EASY_SOFT_PANEL_CLASS = "border-slate-200 bg-slate-50";
 
 function PedidosFacilPage() {
   const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
-  const { user } = useAuthContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const [searchTerm, setSearchTerm] = useState("");
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
@@ -76,7 +73,7 @@ function PedidosFacilPage() {
   const turnoSummary = useMemo(() => getTurnoSummary(pedidos), [pedidos]);
   const pedidosMostrados = useMemo(() => {
     if (estadoFilter === "todos") {
-      return filteredPedidos.filter((pedido) => ESTADOS_ACTIVOS.includes(pedido.estado));
+      return filteredPedidos.filter((pedido) => ESTADOS_PEDIDO_ACTIVOS.includes(pedido.estado));
     }
 
     return filteredPedidos;
@@ -167,8 +164,7 @@ function PedidosFacilPage() {
   const handleCerrarTurno = async () => {
     try {
       setIsSavingCierre(true);
-      const cierre = buildCierreTurno(pedidos, user);
-      await guardarCierreTurno(cierre);
+      const cierre = await guardarCierreTurno();
       const message = `Turno cerrado. Ventas entregadas ${formatCurrency(String(cierre.totalVendido))}.`;
       setIsCierreModalOpen(false);
       setTurnoAbierto(false);

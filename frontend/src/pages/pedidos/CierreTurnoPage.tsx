@@ -25,7 +25,6 @@ import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "..
 import type { CierreProductoResumen } from "../../types";
 import { validateTurnoClose } from "../../validations/turno.validation";
 import {
-  buildCierreTurno,
   FOCUS_VISIBLE_CLASS,
   formatCurrency,
   formatDateTime,
@@ -106,8 +105,7 @@ function CierreTurnoPage() {
 
     try {
       setIsSaving(true);
-      const cierre = buildCierreTurno(pedidos, user);
-      await guardarCierreTurno(cierre);
+      const cierre = await guardarCierreTurno();
       setTurnoAbierto(false);
       setIsTurnoOpen(false);
       setIsConfirmOpen(false);

@@ -20,6 +20,7 @@ import type { KeyboardEvent as ReactKeyboardEvent, RefObject } from "react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { ESTADOS_PEDIDO_ACTIVOS } from "../../domain/pedidoRules";
 import useActionVoice from "../../hooks/useActionVoice";
 import { cargarCierresTurno, obtenerCierresTurno } from "../../services/cierresTurno";
 import type { CierrePedidoResumen, CierreTurno, EstadoPedido, MetodoPago, PedidoResponse } from "../../types";
@@ -1995,7 +1996,7 @@ function countTurnoPedidosByEstado(turno: HistorialTurno, estado: EstadoPedido) 
 }
 
 function countTurnoPedidosPendientes(turno: HistorialTurno) {
-  return turno.pedidos.filter((pedido) => ["pendiente", "en_preparacion", "listo"].includes(pedido.estado)).length;
+  return turno.pedidos.filter((pedido) => ESTADOS_PEDIDO_ACTIVOS.includes(pedido.estado)).length;
 }
 
 export default CocinaPage;

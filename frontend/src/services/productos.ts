@@ -22,14 +22,14 @@ export async function getProductos({ includeUnavailable = false }: { includeUnav
   Producto[]
 > {
   const query = includeUnavailable ? "?includeUnavailable=true" : "";
-  const data = await apiRequest<Array<Producto & { precio: number | string }>>(`/api/productos${query}`, {
+  const data = await apiRequest<Array<Producto & { precio: number | string }>>(`/productos${query}`, {
     fallbackMessage: "Error cargando productos"
   });
   return data.map(normalizeProducto);
 }
 
 export async function createProducto(payload: CreateProductoPayload): Promise<Producto> {
-  return readProductoResponse("/api/productos", "Error creando producto", {
+  return readProductoResponse("/productos", "Error creando producto", {
     body: JSON.stringify(payload),
     headers: {
       "Content-Type": "application/json"
@@ -39,7 +39,7 @@ export async function createProducto(payload: CreateProductoPayload): Promise<Pr
 }
 
 export async function updateProducto(id: number, payload: UpdateProductoPayload): Promise<Producto> {
-  return readProductoResponse(`/api/productos/${id}`, "Error actualizando producto", {
+  return readProductoResponse(`/productos/${id}`, "Error actualizando producto", {
     body: JSON.stringify(payload),
     headers: {
       "Content-Type": "application/json"
@@ -49,21 +49,21 @@ export async function updateProducto(id: number, payload: UpdateProductoPayload)
 }
 
 export async function deleteProducto(id: number): Promise<void> {
-  await apiRequest<void>(`/api/productos/${id}`, { fallbackMessage: "Error eliminando producto", method: "DELETE" });
+  await apiRequest<void>(`/productos/${id}`, { fallbackMessage: "Error eliminando producto", method: "DELETE" });
 }
 
 export async function uploadProductImage(productId: number, file: File): Promise<Producto> {
   const formData = new FormData();
   formData.append("imagen", file);
 
-  return readProductoResponse(`/api/productos/${productId}/imagen`, "No se pudo subir la imagen", {
+  return readProductoResponse(`/productos/${productId}/imagen`, "No se pudo subir la imagen", {
     body: formData,
     method: "POST"
   });
 }
 
 export async function deleteProductImage(productId: number): Promise<Producto> {
-  return readProductoResponse(`/api/productos/${productId}/imagen`, "No se pudo eliminar la imagen", {
+  return readProductoResponse(`/productos/${productId}/imagen`, "No se pudo eliminar la imagen", {
     method: "DELETE"
   });
 }

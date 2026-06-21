@@ -7,6 +7,7 @@ export const PEDIDO_MAX_CANTIDAD_DETALLE = 99;
 export const CLIENTE_NOMBRE_PATTERN = /^[\p{L}\p{M}]+(?:[ '-][\p{L}\p{M}]+)*$/u;
 
 export const ESTADOS_PEDIDO_VALIDOS = ["pendiente", "en_preparacion", "listo", "entregado", "cancelado"] as const;
+export const ESTADOS_PEDIDO_ACTIVOS = ["pendiente", "en_preparacion", "listo"] as const;
 
 export const METODOS_PAGO_VALIDOS = ["efectivo", "tarjeta", "transferencia"] as const;
 
