@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validatePedidoSubmit } from "./pedido.validation";
+import { sanitizeClienteNombreInput, validatePedidoSubmit } from "./pedido.validation";
 
 describe("validatePedidoSubmit", () => {
   it("exige abrir el turno antes de crear pedidos", () => {
@@ -27,5 +27,28 @@ describe("validatePedidoSubmit", () => {
         totalProductos: 2
       })
     ).toBeNull();
+  });
+
+  it("permite letras, tildes y separadores habituales en el nombre", () => {
+    expect(
+      validatePedidoSubmit({
+        clienteNombre: "María José O'Connor",
+        isTurnoOpen: true,
+        metodoPago: "efectivo",
+        totalProductos: 1
+      })
+    ).toBeNull();
+  });
+
+  it("rechaza números y símbolos en el nombre del cliente", () => {
+    expect(
+      validatePedidoSubmit({
+        clienteNombre: "Juan 4!",
+        isTurnoOpen: true,
+        metodoPago: "efectivo",
+        totalProductos: 1
+      })
+    ).toBe("El nombre del cliente solo puede contener letras");
+    expect(sanitizeClienteNombreInput("Juan 4! Pérez")).toBe("Juan Pérez");
   });
 });

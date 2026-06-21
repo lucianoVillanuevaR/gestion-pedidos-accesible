@@ -1,6 +1,7 @@
 import type { DemoUser, UserRole } from "../types";
 
 export const AUTH_STORAGE_KEY = "riquisimo-auth-session";
+export const AUTH_TOKEN_STORAGE_KEY = "riquisimo-auth-token";
 
 export const DEMO_USERS: DemoUser[] = [
   {

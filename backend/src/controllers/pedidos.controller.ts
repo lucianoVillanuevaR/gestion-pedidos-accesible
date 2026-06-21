@@ -82,6 +82,11 @@ export const crearPedido = async (req: Request, res: Response) => {
     }));
 
     const pedido = await prisma.$transaction(async (tx) => {
+      const turno = await tx.turno.findFirst({ where: { estado: "abierto" } });
+      if (!turno) {
+        throw new PedidoRequestError(409, "Debes abrir turno antes de registrar un pedido");
+      }
+
       const productosData = [];
       let total = new Decimal(0);
 
@@ -145,6 +150,7 @@ export const crearPedido = async (req: Request, res: Response) => {
 
       return tx.pedido.create({
         data: {
+          turnoId: turno.id,
           total,
           estado: "pendiente",
           metodoPago,
@@ -176,7 +182,13 @@ export const crearPedido = async (req: Request, res: Response) => {
 
 export const getPedidos = async (_req: Request, res: Response) => {
   try {
+    const turno = await prisma.turno.findFirst({ where: { estado: "abierto" }, select: { id: true } });
+    if (!turno) {
+      return res.json([]);
+    }
+
     const pedidos = await prisma.pedido.findMany({
+      where: { turnoId: turno.id },
       include: PEDIDO_WITH_DETALLES_INCLUDE,
       orderBy: { createdAt: "desc" }
     });

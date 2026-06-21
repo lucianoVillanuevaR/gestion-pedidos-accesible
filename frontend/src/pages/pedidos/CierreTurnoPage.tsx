@@ -21,8 +21,9 @@ import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
-import { guardarCierreTurno } from "../../services/cierresTurno";
+import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
 import type { CierreProductoResumen } from "../../types";
+import { validateTurnoClose } from "../../validations/turno.validation";
 import {
   buildCierreTurno,
   FOCUS_VISIBLE_CLASS,
@@ -58,6 +59,16 @@ function CierreTurnoPage() {
     productos: false
   });
 
+  useEffect(() => {
+    void sincronizarTurnoActual()
+      .then((turno) => {
+        setTurnoAbierto(Boolean(turno));
+        if (turno) setTurnoFechaInicio(turno.fechaInicio);
+        setIsTurnoOpen(Boolean(turno));
+      })
+      .catch(() => undefined);
+  }, []);
+
   const { error, isLoading, loadPedidos, pedidos } = usePedidosController({});
 
   useEffect(() => {
@@ -71,17 +82,28 @@ function CierreTurnoPage() {
   const pedidosDetalle = useMemo(() => getCierrePedidosResumen(pedidos), [pedidos]);
   const hasPedidosPendientes = summary.pedidosPendientes > 0;
 
-  const handleAbrirTurno = () => {
-    const fechaInicioTurno = new Date().toISOString();
-    setTurnoAbierto(true);
-    setTurnoFechaInicio(fechaInicioTurno);
-    setIsTurnoOpen(true);
-    setMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
-    speakAction("Turno abierto.", "cierre-abrir-turno");
-    loadPedidos();
+  const handleAbrirTurno = async () => {
+    try {
+      const turno = await abrirTurnoRemoto();
+      setTurnoAbierto(true);
+      setTurnoFechaInicio(turno.fechaInicio);
+      setIsTurnoOpen(true);
+      setMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
+      speakAction("Turno abierto.", "cierre-abrir-turno");
+      loadPedidos();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "No fue posible abrir el turno.");
+    }
   };
 
   const handleCerrarTurno = async () => {
+    const closeError = validateTurnoClose(isTurnoOpen);
+    if (closeError) {
+      setMessage(closeError);
+      setIsConfirmOpen(false);
+      return;
+    }
+
     try {
       setIsSaving(true);
       const cierre = buildCierreTurno(pedidos, user);

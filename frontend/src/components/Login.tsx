@@ -42,10 +42,10 @@ function Login() {
     speak(message);
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const result = login({ identifier, password });
+    const result = await login({ identifier, password });
 
     if (!result.ok) {
       announceError(result.message);

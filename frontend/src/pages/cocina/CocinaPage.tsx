@@ -16,19 +16,22 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, RefObject } from "react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
-import { obtenerCierresTurno } from "../../services/cierresTurno";
+import { cargarCierresTurno, obtenerCierresTurno } from "../../services/cierresTurno";
 import type { CierrePedidoResumen, CierreTurno, EstadoPedido, MetodoPago, PedidoResponse } from "../../types";
 import {
   ESTADO_META,
   FOCUS_VISIBLE_CLASS,
   PedidoModal,
   StatusBadge,
+  formatCurrency as formatKitchenCurrency,
+  formatDateTime as formatKitchenDateTime,
   formatElapsedTime,
+  formatMetodoPago as formatMetodoPagoLabel,
   formatTime,
   getPedidoCounts,
   getPedidoDisplayNumber,
@@ -87,6 +90,12 @@ export function CocinaHistorialPage() {
   const [liveMessage, setLiveMessage] = useState("Historial de turnos listo para consultar.");
   const [printTurnoId, setPrintTurnoId] = useState<string | null>(null);
 
+  useEffect(() => {
+    void cargarCierresTurno()
+      .then(setCierres)
+      .catch(() => undefined);
+  }, []);
+
   const turnosHistorial = useMemo(() => getTurnosHistorial(cierres), [cierres]);
   const filteredTurnos = useMemo(
     () => filterTurnosHistorial(turnosHistorial, { dateFilter, estadoFilter, metodoFilter, searchTerm }),
@@ -100,8 +109,12 @@ export function CocinaHistorialPage() {
       dedupeKey: "cocina-historial-refresh",
       cooldownMs: 1200
     });
-    setCierres(obtenerCierresTurno());
-    setLiveMessage("Historial actualizado.");
+    void cargarCierresTurno()
+      .then((nextCierres) => {
+        setCierres(nextCierres);
+        setLiveMessage("Historial actualizado.");
+      })
+      .catch((error) => setLiveMessage(error instanceof Error ? error.message : "No fue posible actualizar."));
   };
 
   const handleToggleTurno = (turnoId: string, view: "pedidos" | "resumen" = "resumen") => {
@@ -585,52 +598,32 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     }
   };
 
-  const cocinaView = isAccessibleView ? (
-    <CocinaFacilView
-      activeModal={activeModal}
-      counts={counts}
-      error={error}
-      isAutoRefreshEnabled={isAutoRefreshEnabled}
-      isFullscreen={isFullscreen}
-      isHighContrast={isHighContrast}
-      isLoading={isLoading}
-      onAdvanceVisible={handleAdvanceVisible}
-      onAutoRefreshToggle={() => setIsAutoRefreshEnabled((current) => !current)}
-      onEstadoChange={handleCocinaEstadoChange}
-      onFullscreenToggle={toggleFullscreen}
-      onOpenModal={setActiveModal}
-      onRefresh={handleRefresh}
-      pedidos={cocinaPedidos}
-      updatingPedidoId={updatingPedidoId}
-      urgentCount={urgentCount}
-    />
-  ) : (
-    <CocinaNormalView
-      activeModal={activeModal}
-      counts={counts}
-      error={error}
-      isAutoRefreshEnabled={isAutoRefreshEnabled}
-      isFullscreen={isFullscreen}
-      isHighContrast={isHighContrast}
-      isLoading={isLoading}
-      onAdvanceVisible={handleAdvanceVisible}
-      onAutoRefreshToggle={() => setIsAutoRefreshEnabled((current) => !current)}
-      onEstadoChange={handleCocinaEstadoChange}
-      onFullscreenToggle={toggleFullscreen}
-      onOpenModal={setActiveModal}
-      onRefresh={handleRefresh}
-      pedidos={cocinaPedidos}
-      updatingPedidoId={updatingPedidoId}
-      urgentCount={urgentCount}
-    />
-  );
+  const CocinaView = isAccessibleView ? CocinaFacilView : CocinaNormalView;
+  const cocinaViewProps: CocinaViewProps = {
+    activeModal,
+    counts,
+    error,
+    isAutoRefreshEnabled,
+    isFullscreen,
+    isHighContrast,
+    isLoading,
+    onAdvanceVisible: handleAdvanceVisible,
+    onAutoRefreshToggle: () => setIsAutoRefreshEnabled((current) => !current),
+    onEstadoChange: handleCocinaEstadoChange,
+    onFullscreenToggle: toggleFullscreen,
+    onOpenModal: setActiveModal,
+    onRefresh: handleRefresh,
+    pedidos: cocinaPedidos,
+    updatingPedidoId,
+    urgentCount
+  };
 
   return (
     <div
       ref={fullscreenTargetRef}
       className={`min-h-screen overflow-auto ${isHighContrast ? "bg-black" : isAccessibleView ? "bg-white" : "bg-[#F7F7F7]"}`}
     >
-      {cocinaView}
+      <CocinaView {...cocinaViewProps} />
     </div>
   );
 }
@@ -997,24 +990,12 @@ function CocinaSummary({
 }
 
 function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido }: TicketProps) {
-  const delayed = isPedidoDelayed(pedido);
-  const isPending = pedido.estado === "pendiente";
-  const isPreparing = pedido.estado === "en_preparacion";
-  const isReady = pedido.estado === "listo";
-  const numeroPedido = getPedidoDisplayNumber(pedido);
+  const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
+  const interactionProps = getKitchenTicketInteractionProps(pedido, onOpenModal);
 
   return (
     <article
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpenModal({ action: "detail", pedido })}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpenModal({ action: "detail", pedido });
-        }
-      }}
-      aria-label={`Ver detalle del pedido ${numeroPedido}`}
+      {...interactionProps}
       className={`flex min-h-[246px] cursor-pointer flex-col justify-between rounded-xl border border-dashed p-4 transition hover:-translate-y-0.5 hover:shadow-lg ${
         isHighContrast
           ? "contrast-panel border-yellow-400"
@@ -1121,24 +1102,12 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
 }
 
 function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido }: TicketProps) {
-  const delayed = isPedidoDelayed(pedido);
-  const isPending = pedido.estado === "pendiente";
-  const isPreparing = pedido.estado === "en_preparacion";
-  const isReady = pedido.estado === "listo";
-  const numeroPedido = getPedidoDisplayNumber(pedido);
+  const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
+  const interactionProps = getKitchenTicketInteractionProps(pedido, onOpenModal);
 
   return (
     <article
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpenModal({ action: "detail", pedido })}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpenModal({ action: "detail", pedido });
-        }
-      }}
-      aria-label={`Ver detalle del pedido ${numeroPedido}`}
+      {...interactionProps}
       className={`cursor-pointer rounded-[26px] p-6 transition hover:-translate-y-0.5 hover:shadow-xl ${
         isHighContrast
           ? "contrast-panel border-2 border-yellow-400"
@@ -1244,6 +1213,33 @@ function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, o
       </div>
     </article>
   );
+}
+
+function getKitchenTicketState(pedido: PedidoResponse) {
+  return {
+    delayed: isPedidoDelayed(pedido),
+    isPending: pedido.estado === "pendiente",
+    isPreparing: pedido.estado === "en_preparacion",
+    isReady: pedido.estado === "listo",
+    numeroPedido: getPedidoDisplayNumber(pedido)
+  };
+}
+
+function getKitchenTicketInteractionProps(pedido: PedidoResponse, onOpenModal: (modal: ActiveModal) => void) {
+  const openDetail = () => onOpenModal({ action: "detail", pedido });
+
+  return {
+    "aria-label": `Ver detalle del pedido ${getPedidoDisplayNumber(pedido)}`,
+    onClick: openDetail,
+    onKeyDown: (event: ReactKeyboardEvent<HTMLElement>) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openDetail();
+      }
+    },
+    role: "button" as const,
+    tabIndex: 0
+  };
 }
 
 function HistorialTurnoCard({
@@ -2000,37 +1996,6 @@ function countTurnoPedidosByEstado(turno: HistorialTurno, estado: EstadoPedido) 
 
 function countTurnoPedidosPendientes(turno: HistorialTurno) {
   return turno.pedidos.filter((pedido) => ["pendiente", "en_preparacion", "listo"].includes(pedido.estado)).length;
-}
-
-function formatKitchenDateTime(value: string) {
-  return new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "short",
-    timeStyle: "short"
-  }).format(new Date(value));
-}
-
-function formatKitchenCurrency(value: string) {
-  const amount = Number(value);
-
-  if (Number.isNaN(amount)) {
-    return value;
-  }
-
-  return new Intl.NumberFormat("es-CL", {
-    currency: "CLP",
-    maximumFractionDigits: 0,
-    style: "currency"
-  }).format(amount);
-}
-
-function formatMetodoPagoLabel(value: MetodoPago) {
-  const labels: Record<MetodoPago, string> = {
-    efectivo: "Efectivo",
-    tarjeta: "Tarjeta",
-    transferencia: "Transferencia"
-  };
-
-  return labels[value];
 }
 
 export default CocinaPage;

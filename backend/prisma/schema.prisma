@@ -73,7 +73,11 @@ model Pedido {
   observacion   String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  turnoId       Int?
   detalles      DetallePedido[]
+  turno         Turno?          @relation(fields: [turnoId], references: [id])
+
+  @@index([turnoId])
 }
 
 model DetallePedido {
@@ -89,4 +93,31 @@ model DetallePedido {
 
   @@index([pedidoId])
   @@index([productoId])
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  role         String
+  label        String
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  turnos       Turno[]
+}
+
+model Turno {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int
+  estado      String    @default("abierto")
+  fechaInicio DateTime  @default(now())
+  fechaCierre DateTime?
+  resumen     Json?
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  pedidos     Pedido[]
+
+  @@index([estado])
+  @@index([usuarioId])
 }

@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { Prisma, PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -477,7 +478,21 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
 }
 
 async function main() {
+  const passwordHash = await bcrypt.hash("123456", 12);
+
   await prisma.$transaction(async (tx) => {
+    for (const user of [
+      { username: "cajero", email: "cajero@demo.cl", role: "cajero", label: "Cajero" },
+      { username: "cocina", email: "cocina@demo.cl", role: "cocina", label: "Cocina" },
+      { username: "admin", email: "admin@demo.cl", role: "admin", label: "Administrador" }
+    ]) {
+      await tx.usuario.upsert({
+        where: { username: user.username },
+        update: { ...user, passwordHash, activo: true },
+        create: { ...user, passwordHash }
+      });
+    }
+
     const categoryMap = await seedCategories(tx);
     await seedProducts(tx, categoryMap);
   });

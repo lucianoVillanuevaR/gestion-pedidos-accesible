@@ -4,6 +4,7 @@ const PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH = 80;
 const PEDIDO_OBSERVACION_MAX_LENGTH = 300;
 const PEDIDO_MAX_DETALLES = 50;
 const PEDIDO_MAX_CANTIDAD_DETALLE = 99;
+const CLIENTE_NOMBRE_PATTERN = /^[\p{L}\p{M}]+(?:[ '-][\p{L}\p{M}]+)*$/u;
 
 type EstadoPedidoValido = (typeof ESTADOS_PEDIDO_VALIDOS)[number];
 type MetodoPagoValido = (typeof METODOS_PAGO_VALIDOS)[number];
@@ -117,6 +118,10 @@ export function validatePedidoTextFields(clienteNombre?: unknown, observacion?: 
 
   const clienteNombreLimpio = typeof clienteNombre === "string" ? clienteNombre.trim() : "";
   const observacionLimpia = typeof observacion === "string" ? observacion.trim() : "";
+
+  if (clienteNombreLimpio && !CLIENTE_NOMBRE_PATTERN.test(clienteNombreLimpio)) {
+    return "El nombre del cliente solo puede contener letras";
+  }
 
   if (clienteNombreLimpio.length > PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH) {
     return `El nombre del cliente no puede superar ${PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH} caracteres`;

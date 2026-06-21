@@ -9,7 +9,7 @@ import {
   type AccessibilityTextSize
 } from "../constants/accessibility";
 
-type AccessibilityState = {
+export type AccessibilityState = {
   isPanelOpen: boolean;
   isAccessible: boolean;
   textSize: AccessibilityTextSize;

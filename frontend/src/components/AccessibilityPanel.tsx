@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { AccessibilityTextSize } from "../constants/accessibility";
 import useVoice from "../hooks/useVoice";
 
@@ -32,22 +32,57 @@ function AccessibilityPanel({
   onToggleSound
 }: AccessibilityPanelProps) {
   const { speak } = useVoice({ enabled: true });
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!isOpen) {
       return undefined;
     }
 
+    const previouslyFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialogRef.current.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === firstElement || !dialogRef.current.contains(activeElement))) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && (activeElement === lastElement || !dialogRef.current.contains(activeElement))) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
+    closeButtonRef.current?.focus();
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocusedElement?.focus();
     };
   }, [isOpen, onClose]);
 
@@ -117,9 +152,11 @@ function AccessibilityPanel({
   return (
     <div className="fixed inset-0 z-50 bg-black/30 px-3 py-4 no-print sm:px-4" onClick={onClose} role="presentation">
       <aside
+        ref={dialogRef}
         aria-modal="true"
         role="dialog"
         aria-label="Panel de opciones simples"
+        tabIndex={-1}
         className={`
           ml-auto flex h-full w-full max-w-md flex-col
           ${
@@ -167,6 +204,7 @@ function AccessibilityPanel({
             </div>
 
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onClose}
               aria-label="Cerrar panel de opciones"

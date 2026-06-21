@@ -14,7 +14,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { useAuthContext } from "../../contexts/AuthContext";
 import type { Producto } from "../../types";
-import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH } from "../../validations/pedido.validation";
+import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
@@ -24,6 +24,7 @@ import { usePdvViewContext } from "./PdvViewContext";
 function PdvNormalView() {
   const { user } = useAuthContext();
   const [showOpenTurnoConfirm, setShowOpenTurnoConfirm] = useState(false);
+  const [showCloseTurnoConfirm, setShowCloseTurnoConfirm] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const {
     addProduct,
@@ -81,7 +82,7 @@ function PdvNormalView() {
 
   const handleTurnoButtonClick = () => {
     if (isTurnoOpen) {
-      handleToggleTurno();
+      setShowCloseTurnoConfirm(true);
       return;
     }
 
@@ -90,6 +91,11 @@ function PdvNormalView() {
 
   const handleConfirmOpenTurno = () => {
     setShowOpenTurnoConfirm(false);
+    handleToggleTurno();
+  };
+
+  const handleConfirmCloseTurno = () => {
+    setShowCloseTurnoConfirm(false);
     handleToggleTurno();
   };
 
@@ -256,9 +262,10 @@ function PdvNormalView() {
             </div>
             <input
               type="text"
+              aria-label="Nombre del cliente"
               value={clienteNombre}
               maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
-              onChange={(event) => setClienteNombre(event.target.value)}
+              onChange={(event) => setClienteNombre(sanitizeClienteNombreInput(event.target.value))}
               placeholder="Agregar un nombre de cliente"
               className="h-14 border-0 border-l border-[#FECE00] bg-yellow-50 px-3 text-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-yellow-300"
             />
@@ -471,6 +478,16 @@ function PdvNormalView() {
             </div>
           </div>
         </ConfirmDialog>
+      )}
+
+      {showCloseTurnoConfirm && (
+        <ConfirmDialog
+          title="Confirmar cierre de turno"
+          description="¿Seguro que deseas cerrar el turno? No podrás registrar pedidos hasta abrir uno nuevo."
+          primaryLabel="Sí, cerrar turno"
+          onCancel={() => setShowCloseTurnoConfirm(false)}
+          onConfirm={handleConfirmCloseTurno}
+        />
       )}
 
       {showSubmitConfirm && (

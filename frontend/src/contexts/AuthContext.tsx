@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
-import { AUTH_STORAGE_KEY, DEMO_USERS } from "../constants/auth";
+import { AUTH_STORAGE_KEY, AUTH_TOKEN_STORAGE_KEY } from "../constants/auth";
+import { getCurrentUser, loginRequest } from "../services/auth";
 import type { AuthUser } from "../types";
 
 type LoginPayload = {
@@ -11,7 +12,7 @@ type LoginResult = { ok: true; user: AuthUser } | { ok: false; message: string }
 
 type AuthContextValue = {
   isAuthenticated: boolean;
-  login: (payload: LoginPayload) => LoginResult;
+  login: (payload: LoginPayload) => Promise<LoginResult>;
   logout: () => void;
   user: AuthUser | null;
 };
@@ -38,6 +39,10 @@ function readStoredUser() {
   }
 
   try {
+    if (!window.sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+      return null;
+    }
+
     const rawValue = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!rawValue) {
       return null;
@@ -66,11 +71,24 @@ function AuthProvider({ children }: PropsWithChildren) {
     window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
   }, [user]);
 
+  useEffect(() => {
+    if (!window.sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+      return;
+    }
+
+    void getCurrentUser()
+      .then(setUser)
+      .catch(() => {
+        window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+        setUser(null);
+      });
+  }, []);
+
   const value = useMemo<AuthContextValue>(() => {
     return {
       user,
       isAuthenticated: Boolean(user),
-      login: ({ identifier, password }) => {
+      login: async ({ identifier, password }) => {
         const normalizedIdentifier = identifier.trim().toLowerCase();
         const normalizedPassword = password.trim();
 
@@ -78,25 +96,17 @@ function AuthProvider({ children }: PropsWithChildren) {
           return { ok: false, message: "Debe completar usuario y contraseña" };
         }
 
-        const matchingUser = DEMO_USERS.find((candidate) => {
-          return candidate.email === normalizedIdentifier || candidate.username === normalizedIdentifier;
-        });
-
-        if (!matchingUser || matchingUser.password !== normalizedPassword) {
-          return { ok: false, message: "Usuario o contraseña incorrectos" };
+        try {
+          const { token, user: nextUser } = await loginRequest(normalizedIdentifier, normalizedPassword);
+          window.sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+          setUser(nextUser);
+          return { ok: true, user: nextUser };
+        } catch (error) {
+          return { ok: false, message: error instanceof Error ? error.message : "No fue posible iniciar sesión" };
         }
-
-        const nextUser: AuthUser = {
-          email: matchingUser.email,
-          label: matchingUser.label,
-          role: matchingUser.role,
-          username: matchingUser.username
-        };
-
-        setUser(nextUser);
-        return { ok: true, user: nextUser };
       },
       logout: () => {
+        window.sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
         setUser(null);
       }
     };

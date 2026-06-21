@@ -3,7 +3,13 @@ import { AlertTriangle, LoaderCircle } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
+import { useAuthContext } from "../../contexts/AuthContext";
+import {
+  abrirTurnoRemoto,
+  guardarCierreTurno,
+  obtenerPedidoIdsCerrados,
+  sincronizarTurnoActual
+} from "../../services/cierresTurno";
 import { createPedido, getPedidos } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
 import TicketComanda from "../../components/TicketComanda";
@@ -14,8 +20,10 @@ import {
   PEDIDO_OBSERVACION_MAX_LENGTH,
   validatePedidoSubmit
 } from "../../validations/pedido.validation";
+import { validateTurnoClose } from "../../validations/turno.validation";
 import { ACCESSIBLE_STEP_COUNT, type FeedbackState } from "./PdvShared";
 import {
+  buildCierreTurno,
   getPedidoDisplayNumber,
   readTurnoAbierto,
   setTurnoAbierto,
@@ -34,6 +42,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const location = useLocation();
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } =
     useAccessibilityContext();
+  const { user } = useAuthContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: true });
 
@@ -61,6 +70,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
+
+  useEffect(() => {
+    void sincronizarTurnoActual()
+      .then((turno) => {
+        setTurnoAbierto(Boolean(turno));
+        if (turno) setTurnoFechaInicio(turno.fechaInicio);
+        setIsTurnoOpen(Boolean(turno));
+      })
+      .catch(() => undefined);
+  }, []);
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const initialProductHandledRef = useRef(false);
@@ -397,35 +416,50 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const handleToggleTurno = () => {
+  const handleToggleTurno = async () => {
     if (isTurnoOpen) {
-      setTurnoAbierto(false);
-      setIsTurnoOpen(false);
-      setAccessibleStep(1);
-      const message = "Turno cerrado. Debes abrir turno para registrar pedidos.";
-      setFeedback(null);
-      playSoundCue("error");
-      announce(message, {
-        priority: "high",
-        dedupeKey: "pdv-turno-cerrado",
-        cooldownMs: 2200,
-        interrupt: true
-      });
+      const closeError = validateTurnoClose(isTurnoOpen);
+      if (closeError) {
+        setFeedback({ type: "error", message: closeError });
+        return;
+      }
+
+      try {
+        const pedidos = await getPedidos();
+        await guardarCierreTurno(buildCierreTurno(pedidos, user));
+        setTurnoAbierto(false);
+        setIsTurnoOpen(false);
+        setAccessibleStep(1);
+        const message = "Turno cerrado correctamente.";
+        setFeedback({ type: "success", message });
+        playSoundCue("success");
+        announce(message, {
+          priority: "high",
+          dedupeKey: "pdv-turno-cerrado",
+          cooldownMs: 2200,
+          interrupt: true
+        });
+      } catch (error) {
+        setFeedback({
+          type: "error",
+          message: error instanceof Error ? error.message : "No fue posible cerrar el turno"
+        });
+      }
       return;
     }
 
-    setTurnoAbierto(true);
-    setTurnoFechaInicio(new Date().toISOString());
-    setIsTurnoOpen(true);
-    setAccessibleStep(1);
-    const message = "Turno abierto correctamente.";
-    setFeedback({ type: "success", message });
-    announce(message, {
-      priority: "high",
-      dedupeKey: "pdv-turno-abierto",
-      cooldownMs: 2200,
-      interrupt: true
-    });
+    try {
+      const turno = await abrirTurnoRemoto();
+      setTurnoAbierto(true);
+      setTurnoFechaInicio(turno.fechaInicio);
+      setIsTurnoOpen(true);
+      setAccessibleStep(1);
+      const message = "Turno abierto correctamente.";
+      setFeedback({ type: "success", message });
+      announce(message, { priority: "high", dedupeKey: "pdv-turno-abierto", cooldownMs: 2200, interrupt: true });
+    } catch (error) {
+      setFeedback({ type: "error", message: error instanceof Error ? error.message : "No fue posible abrir el turno" });
+    }
   };
 
   const openResetConfirm = () => {

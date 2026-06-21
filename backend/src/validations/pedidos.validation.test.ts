@@ -33,4 +33,11 @@ describe("validaciones de pedidos", () => {
     expect(validatePedidoTextFields(123, "Observación")).toBe("El nombre del cliente debe ser texto");
     expect(validatePedidoTextFields("Ana", "Sin cebolla")).toBeNull();
   });
+
+  it("acepta nombres con tildes y rechaza números en el nombre del cliente", () => {
+    expect(validatePedidoTextFields("María José O'Connor", "Sin cebolla")).toBeNull();
+    expect(validatePedidoTextFields("Cliente 4", "Sin cebolla")).toBe(
+      "El nombre del cliente solo puede contener letras"
+    );
+  });
 });

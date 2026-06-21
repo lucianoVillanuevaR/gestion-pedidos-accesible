@@ -1,13 +1,18 @@
 import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, LockKeyhole, UnlockKeyhole, XCircle } from "lucide-react";
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
-import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, PEDIDO_OBSERVACION_MAX_LENGTH } from "../../validations/pedido.validation";
+import {
+  PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH,
+  PEDIDO_OBSERVACION_MAX_LENGTH,
+  sanitizeClienteNombreInput
+} from "../../validations/pedido.validation";
 import { formatCurrency } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvFacilView() {
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
+  const [isCloseTurnoConfirmOpen, setIsCloseTurnoConfirmOpen] = useState(false);
   const {
     accessibleProductos,
     accessibleStep,
@@ -104,7 +109,14 @@ function PdvFacilView() {
           <div className="flex flex-col items-stretch gap-3">
             <button
               type="button"
-              onClick={handleToggleTurno}
+              onClick={() => {
+                if (isTurnoOpen) {
+                  setIsCloseTurnoConfirmOpen(true);
+                  return;
+                }
+
+                handleToggleTurno();
+              }}
               className={`inline-flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border px-4 py-3 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
                 isHighContrast
                   ? isTurnoOpen
@@ -305,26 +317,12 @@ function PdvFacilView() {
               ))
             )}
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={goPrevAccessibleStep}
-              className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}
-            >
-              Atrás
-            </button>
-            <button
-              type="button"
-              onClick={goNextAccessibleStep}
-              disabled={Boolean(accessibleStepValidation)}
-              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
-              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
-                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
-              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
-            >
-              Continuar
-            </button>
-          </div>
+          <AccessibleStepNavigation
+            validationError={accessibleStepValidation}
+            isHighContrast={isHighContrast}
+            onNext={goNextAccessibleStep}
+            onPrevious={goPrevAccessibleStep}
+          />
         </section>
       )}
 
@@ -371,26 +369,12 @@ function PdvFacilView() {
             <p className="font-semibold">Subtotal: {formatCurrency(total)}</p>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={goPrevAccessibleStep}
-              className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}
-            >
-              Atrás
-            </button>
-            <button
-              type="button"
-              onClick={goNextAccessibleStep}
-              disabled={Boolean(accessibleStepValidation)}
-              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
-              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
-                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
-              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
-            >
-              Continuar
-            </button>
-          </div>
+          <AccessibleStepNavigation
+            validationError={accessibleStepValidation}
+            isHighContrast={isHighContrast}
+            onNext={goNextAccessibleStep}
+            onPrevious={goPrevAccessibleStep}
+          />
         </section>
       )}
 
@@ -409,8 +393,8 @@ function PdvFacilView() {
               type="text"
               value={clienteNombre}
               maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
-              onChange={(event) => setClienteNombre(event.target.value)}
-              placeholder="Ej: Juan, mesa 4, retiro..."
+              onChange={(event) => setClienteNombre(sanitizeClienteNombreInput(event.target.value))}
+              placeholder="Ej: Juan Pérez"
               className="min-h-[58px] w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
             />
           </div>
@@ -440,26 +424,12 @@ function PdvFacilView() {
             </div>
           )}
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={goPrevAccessibleStep}
-              className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}
-            >
-              Atrás
-            </button>
-            <button
-              type="button"
-              onClick={goNextAccessibleStep}
-              disabled={Boolean(accessibleStepValidation)}
-              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
-              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
-                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
-              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
-            >
-              Continuar
-            </button>
-          </div>
+          <AccessibleStepNavigation
+            validationError={accessibleStepValidation}
+            isHighContrast={isHighContrast}
+            onNext={goNextAccessibleStep}
+            onPrevious={goPrevAccessibleStep}
+          />
         </section>
       )}
 
@@ -487,26 +457,12 @@ function PdvFacilView() {
             })}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={goPrevAccessibleStep}
-              className={`rounded-lg bg-white border-2 border-slate-900 py-3 px-4 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}
-            >
-              Atrás
-            </button>
-            <button
-              type="button"
-              onClick={goNextAccessibleStep}
-              disabled={Boolean(accessibleStepValidation)}
-              aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
-              className={`ml-auto rounded-lg py-3 px-4 font-bold ${
-                accessibleStepValidation ? "bg-slate-300 text-slate-500 cursor-not-allowed" : "bg-slate-900 text-white"
-              } ${isHighContrast && !accessibleStepValidation ? "contrast-button-primary" : ""}`}
-            >
-              Continuar
-            </button>
-          </div>
+          <AccessibleStepNavigation
+            validationError={accessibleStepValidation}
+            isHighContrast={isHighContrast}
+            onNext={goNextAccessibleStep}
+            onPrevious={goPrevAccessibleStep}
+          />
         </section>
       )}
 
@@ -601,6 +557,78 @@ function PdvFacilView() {
           </section>
         </div>
       )}
+
+      {isCloseTurnoConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmar-cierre-turno-title"
+            className={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+          >
+            <h2 id="confirmar-cierre-turno-title" className="text-3xl font-black text-slate-950">
+              ¿Deseas cerrar el turno?
+            </h2>
+            <p className="mt-3 text-xl font-bold text-slate-700">
+              No podrás registrar pedidos hasta abrir un turno nuevo.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setIsCloseTurnoConfirmOpen(false)}
+                className="min-h-[56px] rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-black text-slate-950 hover:bg-slate-50"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCloseTurnoConfirmOpen(false);
+                  handleToggleTurno();
+                }}
+                className="min-h-[56px] rounded-2xl border-2 border-red-800 bg-red-700 px-5 text-lg font-black text-white hover:bg-red-800"
+              >
+                Sí, cerrar turno
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AccessibleStepNavigation({
+  isHighContrast,
+  onNext,
+  onPrevious,
+  validationError
+}: {
+  isHighContrast: boolean;
+  onNext: () => void;
+  onPrevious: () => void;
+  validationError: string | null;
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        onClick={onPrevious}
+        className={`rounded-lg border-2 border-slate-900 bg-white px-4 py-3 font-bold ${isHighContrast ? "contrast-button-secondary" : ""}`}
+      >
+        Atrás
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={Boolean(validationError)}
+        aria-describedby={validationError ? "facil-step-validation" : undefined}
+        className={`ml-auto rounded-lg px-4 py-3 font-bold ${
+          validationError ? "cursor-not-allowed bg-slate-300 text-slate-500" : "bg-slate-900 text-white"
+        } ${isHighContrast && !validationError ? "contrast-button-primary" : ""}`}
+      >
+        Continuar
+      </button>
     </div>
   );
 }

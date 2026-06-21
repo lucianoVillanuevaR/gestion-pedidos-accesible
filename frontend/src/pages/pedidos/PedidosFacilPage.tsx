@@ -1,11 +1,11 @@
 import { AlertTriangle, Check, ClipboardPlus, LoaderCircle, RefreshCw, Search, Volume2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useVoice from "../../hooks/useVoice";
-import { guardarCierreTurno } from "../../services/cierresTurno";
+import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
 import type { EstadoPedido, PedidoResponse } from "../../types";
 import {
   buildCierreTurno,
@@ -49,6 +49,16 @@ function PedidosFacilPage() {
   const [isSavingCierre, setIsSavingCierre] = useState(false);
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
   const [liveMessage, setLiveMessage] = useState("Pedidos activos listos para revisar.");
+
+  useEffect(() => {
+    void sincronizarTurnoActual()
+      .then((turno) => {
+        setTurnoAbierto(Boolean(turno));
+        if (turno) setTurnoFechaInicio(turno.fechaInicio);
+        setIsTurnoOpen(Boolean(turno));
+      })
+      .catch(() => undefined);
+  }, []);
   const {
     activeModal,
     error,
@@ -178,13 +188,17 @@ function PedidosFacilPage() {
     }
   };
 
-  const handleAbrirTurno = () => {
-    const fechaInicio = new Date().toISOString();
-    setTurnoAbierto(true);
-    setTurnoFechaInicio(fechaInicio);
-    setIsTurnoOpen(true);
-    setLiveMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
-    loadPedidos();
+  const handleAbrirTurno = async () => {
+    try {
+      const turno = await abrirTurnoRemoto();
+      setTurnoAbierto(true);
+      setTurnoFechaInicio(turno.fechaInicio);
+      setIsTurnoOpen(true);
+      setLiveMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
+      loadPedidos();
+    } catch (error) {
+      setLiveMessage(error instanceof Error ? error.message : "No fue posible abrir el turno.");
+    }
   };
 
   return (
