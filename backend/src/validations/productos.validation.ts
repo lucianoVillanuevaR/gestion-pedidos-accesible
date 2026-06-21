@@ -2,7 +2,8 @@ import {
   PRODUCTO_CATEGORIA_MAX_LENGTH,
   PRODUCTO_DESCRIPCION_MAX_LENGTH,
   PRODUCTO_NOMBRE_MAX_LENGTH,
-  PRODUCTO_PRECIO_MAX
+  PRODUCTO_PRECIO_MAX,
+  PRODUCTO_PRECIO_MIN
 } from "../domain/productoRules";
 
 type ProductoInput = {
@@ -91,8 +92,10 @@ export function validateProductoCreate(input: ProductoInput): ProductoCreateResu
     return { error: descripcionError };
   }
 
-  if (!Number.isFinite(precio) || precio < 0 || precio > PRODUCTO_PRECIO_MAX) {
-    return { error: `El precio debe ser un número válido entre 0 y ${PRODUCTO_PRECIO_MAX}` };
+  if (!Number.isFinite(precio) || precio < PRODUCTO_PRECIO_MIN || precio > PRODUCTO_PRECIO_MAX) {
+    return {
+      error: `El precio debe ser un número válido entre ${PRODUCTO_PRECIO_MIN} y ${PRODUCTO_PRECIO_MAX}`
+    };
   }
 
   if (hasMoreThanTwoDecimals(precio)) {
@@ -165,8 +168,10 @@ export function validateProductoUpdate(input: ProductoInput): { data?: ProductoV
   if (input.precio !== undefined) {
     const precio = Number(input.precio);
 
-    if (!Number.isFinite(precio) || precio < 0 || precio > PRODUCTO_PRECIO_MAX) {
-      return { error: `El precio debe ser un número válido entre 0 y ${PRODUCTO_PRECIO_MAX}` };
+    if (!Number.isFinite(precio) || precio < PRODUCTO_PRECIO_MIN || precio > PRODUCTO_PRECIO_MAX) {
+      return {
+        error: `El precio debe ser un número válido entre ${PRODUCTO_PRECIO_MIN} y ${PRODUCTO_PRECIO_MAX}`
+      };
     }
 
     if (hasMoreThanTwoDecimals(precio)) {

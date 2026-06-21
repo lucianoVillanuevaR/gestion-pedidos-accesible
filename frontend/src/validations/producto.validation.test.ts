@@ -14,6 +14,10 @@ describe("validateProductoForm", () => {
     );
   });
 
+  it("rechaza precios menores al mínimo permitido", () => {
+    expect(validateProductoForm({ descripcion: "", nombre: "Completo", precio: "-1" })).toContain("entre 0 y");
+  });
+
   it("acepta un producto válido", () => {
     expect(validateProductoForm({ descripcion: "Con tomate", nombre: "Completo", precio: "2500" })).toBeNull();
   });

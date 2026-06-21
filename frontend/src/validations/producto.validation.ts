@@ -2,10 +2,11 @@ import type { CreateProductoPayload } from "../types";
 import {
   PRODUCTO_DESCRIPCION_MAX_LENGTH,
   PRODUCTO_NOMBRE_MAX_LENGTH,
-  PRODUCTO_PRECIO_MAX
+  PRODUCTO_PRECIO_MAX,
+  PRODUCTO_PRECIO_MIN
 } from "../domain/productoRules";
 
-export { PRODUCTO_DESCRIPCION_MAX_LENGTH, PRODUCTO_NOMBRE_MAX_LENGTH, PRODUCTO_PRECIO_MAX };
+export { PRODUCTO_DESCRIPCION_MAX_LENGTH, PRODUCTO_NOMBRE_MAX_LENGTH, PRODUCTO_PRECIO_MAX, PRODUCTO_PRECIO_MIN };
 
 type ValidateProductoFormParams = {
   descripcion: string;
@@ -34,8 +35,12 @@ export function validateProductoForm({ descripcion, nombre, precio }: ValidatePr
     return `La descripción no puede superar ${PRODUCTO_DESCRIPCION_MAX_LENGTH} caracteres`;
   }
 
-  if (!Number.isFinite(precioNumerico) || precioNumerico < 0 || precioNumerico > PRODUCTO_PRECIO_MAX) {
-    return `Ingresa un precio entre 0 y ${PRODUCTO_PRECIO_MAX}`;
+  if (
+    !Number.isFinite(precioNumerico) ||
+    precioNumerico < PRODUCTO_PRECIO_MIN ||
+    precioNumerico > PRODUCTO_PRECIO_MAX
+  ) {
+    return `Ingresa un precio entre ${PRODUCTO_PRECIO_MIN} y ${PRODUCTO_PRECIO_MAX}`;
   }
 
   if (hasMoreThanTwoDecimals(precioNumerico)) {

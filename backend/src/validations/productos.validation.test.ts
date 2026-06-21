@@ -21,6 +21,10 @@ describe("validaciones de productos", () => {
     });
   });
 
+  it("rechaza precios menores al mínimo permitido", () => {
+    expect(validateProductoCreate({ nombre: "Completo", precio: -1 }).error).toContain("entre 0 y");
+  });
+
   it("exige al menos un campo al actualizar", () => {
     expect(validateProductoUpdate({})).toEqual({ error: "Debe enviar al menos un campo para actualizar" });
   });

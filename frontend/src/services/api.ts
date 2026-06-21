@@ -4,8 +4,13 @@ import { getAuthToken } from "./authStorage";
 const API_URL = import.meta.env.VITE_API_URL?.trim() || "/api";
 
 function buildApiUrl(path: string) {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  let normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const normalizedBase = API_URL.endsWith("/") ? API_URL.slice(0, -1) : API_URL;
+
+  if (normalizedBase.endsWith("/api") && (normalizedPath === "/api" || normalizedPath.startsWith("/api/"))) {
+    normalizedPath = normalizedPath.slice(4) || "/";
+  }
+
   return `${normalizedBase}${normalizedPath}`;
 }
 

@@ -479,8 +479,8 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
 }
 
 async function main() {
-  // Los usuarios demo facilitan el entorno local. En producción solo se crean mediante autorización explícita.
-  const shouldSeedDemoUsers = process.env.NODE_ENV !== "production" || process.env.SEED_DEMO_USERS === "true";
+  // Los usuarios demo facilitan exclusivamente el entorno local y nunca se crean en producción.
+  const shouldSeedDemoUsers = process.env.NODE_ENV !== "production";
   const demoPassword = process.env.SEED_DEMO_PASSWORD?.trim() || DEFAULT_DEMO_PASSWORD;
   const passwordHash = shouldSeedDemoUsers ? await bcrypt.hash(demoPassword, 12) : null;
 
