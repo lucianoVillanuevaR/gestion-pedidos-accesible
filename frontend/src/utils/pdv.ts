@@ -1,4 +1,4 @@
-import type { MetodoPago, Producto } from "../types";
+import type { MetodoPago, PersonalizacionProducto, Producto } from "../types";
 
 export type ProductoCategoria = "Sandwich" | "Completos" | "Bebidas" | "Otros";
 export type ProductoCategoriaCatalogo = ProductoCategoria | (string & {});
@@ -6,10 +6,13 @@ export type FiltroCategoria = ProductoCategoriaCatalogo | "Destacados" | "Todos"
 export type ProductoConCategoria = Producto & { categoria: ProductoCategoriaCatalogo };
 
 interface PedidoDetalleCalculado {
+  itemKey: string;
   producto: Producto;
   productoId: number;
   cantidad: number;
   subtotal: number;
+  variante?: NonNullable<Producto["variantes"]>[number];
+  personalizacion?: PersonalizacionProducto;
 }
 
 export const FILTROS: Array<{ value: FiltroCategoria; label: string }> = [
@@ -77,19 +80,27 @@ export function getPaymentLabel(value: MetodoPago | "") {
   return "Pendiente";
 }
 
-export function buildPedidoSummary(items: Record<number, number>, productos: Producto[]) {
+export function buildPedidoSummary(
+  items: Record<string, number>,
+  productos: Producto[],
+  personalizaciones: Record<string, PersonalizacionProducto> = {}
+) {
   const detalles = Object.entries(items)
-    .map(([productoId, cantidad]) => {
-      const producto = productos.find((item) => item.id === Number(productoId));
+    .map(([itemKey, cantidad]) => {
+      const [productoId, varianteId] = itemKey.split(":").map(Number);
+      const producto = productos.find((item) => item.id === productoId);
       if (!producto) {
         return null;
       }
 
       return {
+        itemKey,
         producto,
         productoId: producto.id,
         cantidad,
-        subtotal: producto.precio * cantidad
+        subtotal: producto.precio * cantidad,
+        variante: varianteId ? producto.variantes?.find((item) => item.id === varianteId) : undefined,
+        personalizacion: personalizaciones[itemKey]
       };
     })
     .filter(Boolean) as PedidoDetalleCalculado[];

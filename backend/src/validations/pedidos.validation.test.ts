@@ -19,9 +19,38 @@ describe("validaciones de pedidos", () => {
         { cantidad: 1, productoId: 4 },
         { cantidad: 2, productoId: 4 }
       ])
-    ).toBe("No se puede repetir el mismo producto en el pedido");
+    ).toBe("No se puede repetir el mismo producto con la misma opción y personalización en el pedido");
     expect(validatePedidoDetalles([{ cantidad: 0, productoId: 4 }])).toContain("Detalle inválido");
     expect(validatePedidoDetalles([{ cantidad: 100, productoId: 4 }])).toContain("entre 1 y 99");
+  });
+
+  it("permite el mismo producto con opciones diferentes", () => {
+    expect(
+      validatePedidoDetalles([
+        { cantidad: 1, productoId: 4, varianteId: 10 },
+        { cantidad: 1, productoId: 4, varianteId: 11 }
+      ])
+    ).toBeNull();
+  });
+
+  it("valida aderezos y comentarios por detalle", () => {
+    expect(
+      validatePedidoDetalles([
+        { cantidad: 1, productoId: 4, personalizacion: { aderezos: ["Mostaza", "Mayonesa"], comentario: "Sin sal" } }
+      ])
+    ).toBeNull();
+    expect(
+      validatePedidoDetalles([{ cantidad: 1, productoId: 4, personalizacion: { aderezos: ["A", "B", "C", "D"] } }])
+    ).toContain("hasta 3 aderezos");
+  });
+
+  it("permite el mismo producto con personalizaciones diferentes", () => {
+    expect(
+      validatePedidoDetalles([
+        { cantidad: 1, productoId: 4, personalizacion: { aderezos: ["Mostaza"] } },
+        { cantidad: 1, productoId: 4, personalizacion: { aderezos: ["Ketchup"] } }
+      ])
+    ).toBeNull();
   });
 
   it("permite solamente transiciones de estado válidas", () => {

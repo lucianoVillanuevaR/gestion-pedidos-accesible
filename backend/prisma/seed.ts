@@ -59,7 +59,8 @@ const menuCatalog: CategoryDefinition[] = [
         nombre: "2x1 Completo Italiano o Alemán",
         precio: 3900,
         precioOriginal: 5571,
-        descuentoPorcentaje: 30
+        descuentoPorcentaje: 30,
+        variantes: buildVariants(["Italianos", "Alemanes"])
       },
       {
         nombre: "2x1 Sandwich Inglesa, Carne y 2 ingredientes a Elección",
@@ -426,6 +427,8 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
         disponible: true,
         destacado: product.destacado,
         promocion: product.promocion,
+        tipo: product.promocion ? "promo" : "producto",
+        controlaStock: !product.promocion,
         categorias: {
           set: categoryConnections
         }
@@ -439,24 +442,25 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
         disponible: true,
         destacado: product.destacado,
         promocion: product.promocion,
+        tipo: product.promocion ? "promo" : "producto",
+        controlaStock: !product.promocion,
         categorias: {
           connect: categoryConnections
         }
       }
     });
 
-    await tx.inventario.upsert({
-      where: { productoId: savedProduct.id },
-      update: {
-        stockActual: DEFAULT_STOCK_ACTUAL,
-        stockMinimo: DEFAULT_STOCK_MINIMO
-      },
-      create: {
-        productoId: savedProduct.id,
-        stockActual: DEFAULT_STOCK_ACTUAL,
-        stockMinimo: DEFAULT_STOCK_MINIMO
-      }
-    });
+    if (!product.promocion)
+      await tx.inventario.upsert({
+        where: { productoId: savedProduct.id },
+        update: {},
+        create: {
+          productoId: savedProduct.id,
+          stockActual: DEFAULT_STOCK_ACTUAL,
+          stockMinimo: DEFAULT_STOCK_MINIMO
+        }
+      });
+    else await tx.inventario.deleteMany({ where: { productoId: savedProduct.id } });
 
     await tx.variante.deleteMany({
       where: {
@@ -475,6 +479,42 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
         }))
       });
     }
+  }
+
+  const promoCompleto = await tx.producto.findUnique({
+    where: { nombre: "2x1 Completo Italiano o Alemán" },
+    include: { variantes: true }
+  });
+  const completoItaliano = await tx.producto.findUnique({ where: { nombre: "Completo Italiano" } });
+  const completoAleman = await tx.producto.findUnique({ where: { nombre: "Completo Alemán" } });
+  if (promoCompleto && completoItaliano && completoAleman) {
+    const italianos = promoCompleto.variantes.find((item) => item.nombre === "Italianos");
+    const alemanes = promoCompleto.variantes.find((item) => item.nombre === "Alemanes");
+    if (italianos && alemanes) {
+      await tx.productoComponente.deleteMany({ where: { productoId: promoCompleto.id } });
+      await tx.productoComponente.createMany({
+        data: [
+          { productoId: promoCompleto.id, componenteId: completoItaliano.id, cantidad: 2, varianteId: italianos.id },
+          { productoId: promoCompleto.id, componenteId: completoAleman.id, cantidad: 2, varianteId: alemanes.id }
+        ]
+      });
+    }
+  }
+
+  const promoCuatro = await tx.producto.findUnique({ where: { nombre: "4 Completos Alemanes" } });
+  if (promoCuatro && completoAleman) {
+    await tx.productoComponente.deleteMany({ where: { productoId: promoCuatro.id } });
+    await tx.productoComponente.create({
+      data: { productoId: promoCuatro.id, componenteId: completoAleman.id, cantidad: 4 }
+    });
+  }
+
+  const promocionesSinComponentes = await tx.producto.findMany({
+    where: { tipo: "promo", componentes: { none: {} } },
+    select: { nombre: true }
+  });
+  for (const promo of promocionesSinComponentes) {
+    console.warn(`TODO inventario: configurar manualmente componentes para "${promo.nombre}".`);
   }
 }
 

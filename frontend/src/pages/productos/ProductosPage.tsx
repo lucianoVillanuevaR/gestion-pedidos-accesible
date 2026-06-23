@@ -23,7 +23,7 @@ import {
   updateProducto,
   uploadProductImage
 } from "../../services/productos";
-import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
+import type { CreateProductoPayload, Producto, TipoProducto, UpdateProductoPayload } from "../../types";
 import { PRODUCT_IMAGE_ACCEPT, validateProductImageFile } from "../../validations/productImage.validation";
 import {
   PRODUCTO_DESCRIPCION_MAX_LENGTH,
@@ -71,7 +71,8 @@ function ProductosPage() {
     setActiveCategory,
     setError,
     setProductos,
-    setSearchTerm
+    setSearchTerm,
+    productosConCategoria
   } = useProductosCatalog({ categorias: categoriasCatalogo, includeUnavailable: true });
 
   const sortProductos = (productos: Producto[]) => {
@@ -317,7 +318,7 @@ function ProductosPage() {
   };
 
   const handleToggleAvailability = (producto: ProductoConCategoria) => {
-    const nextAvailability = producto.disponible === false;
+    const nextAvailability = (producto.disponibleConfigurado ?? producto.disponible) === false;
     speakAction(
       `Boton ${nextAvailability ? "activar" : "desactivar"} producto. ${nextAvailability ? "Activando" : "Desactivando"} ${producto.nombre}.`,
       `producto-toggle:${producto.id}:${nextAvailability}`,
@@ -529,6 +530,7 @@ function ProductosPage() {
 
         {addProductCategory && (
           <ProductoFormModal
+            availableProductos={productosConCategoria}
             categoriasCatalogo={categoriasCatalogo}
             defaultCategory={addProductCategory}
             isSaving={isCreating}
@@ -539,6 +541,7 @@ function ProductosPage() {
 
         {editingProducto && (
           <ProductoFormModal
+            availableProductos={productosConCategoria}
             categoriasCatalogo={categoriasCatalogo}
             defaultCategory={editingProducto.categoria}
             isSaving={updatingProductoId === editingProducto.id}
@@ -646,6 +649,7 @@ function CategoriaBlock({
 }
 
 function ProductoFormModal({
+  availableProductos,
   categoriasCatalogo,
   defaultCategory,
   isSaving,
@@ -656,6 +660,7 @@ function ProductoFormModal({
   onSubmit,
   producto
 }: {
+  availableProductos: ProductoConCategoria[];
   categoriasCatalogo: CategoriaCatalogoOption[];
   defaultCategory: CategoriaCatalogo;
   isSaving: boolean;
@@ -672,8 +677,19 @@ function ProductoFormModal({
   const [descripcion, setDescripcion] = useState(producto?.descripcion ?? "");
   const [precio, setPrecio] = useState(producto ? String(producto.precio) : "");
   const [categoria, setCategoria] = useState<CategoriaCatalogo>(defaultCategory);
-  const [disponible, setDisponible] = useState(producto?.disponible ?? true);
+  const [disponible, setDisponible] = useState(producto?.disponibleConfigurado ?? producto?.disponible ?? true);
   const [destacado, setDestacado] = useState(producto?.destacado ?? defaultCategory === "Destacados");
+  const [tipo, setTipo] = useState<TipoProducto>(producto?.tipo ?? "producto");
+  const [controlaStock, setControlaStock] = useState(producto?.controlaStock ?? true);
+  const [componentes, setComponentes] = useState<
+    Array<{ componenteId: number; cantidad: number; varianteId?: number }>
+  >(
+    producto?.componentes?.map(({ componenteId, cantidad, varianteId }) => ({
+      componenteId,
+      cantidad,
+      ...(varianteId ? { varianteId } : {})
+    })) ?? []
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [imageMessage, setImageMessage] = useState<string | null>(null);
   const [isImageSaving, setIsImageSaving] = useState(false);
@@ -773,7 +789,10 @@ function ProductoFormModal({
         destacado,
         disponible,
         nombre,
-        precio: precioNumerico
+        precio: precioNumerico,
+        tipo,
+        controlaStock,
+        componentes
       }),
       pendingImageFile
     );
@@ -783,7 +802,7 @@ function ProductoFormModal({
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-3 py-6">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-[440px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-2xl"
+        className="w-full max-w-[680px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-2xl"
         aria-label={producto ? "Editar producto" : "Agregar producto"}
       >
         <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-slate-200 px-4">
@@ -925,20 +944,101 @@ function ProductoFormModal({
         <div className="border-b-8 border-slate-200 px-4 py-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="font-black text-slate-950">Control de Stock</h3>
-              <p className="mt-1 text-xs font-bold text-slate-500">Disponible para venta en el catálogo.</p>
+              <h3 className="font-black text-slate-950">Tipo y control de stock</h3>
+              <p className="mt-1 text-xs font-bold text-slate-500">Las promos y combos descuentan sus componentes.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setDisponible((current) => !current)}
-              className={`relative h-6 w-11 rounded-full transition ${disponible ? "bg-emerald-500" : "bg-slate-300"} ${FOCUS_VISIBLE_CLASS}`}
-              aria-pressed={disponible}
+            <select
+              value={tipo}
+              onChange={(event) => {
+                const next = event.target.value as TipoProducto;
+                setTipo(next);
+                setControlaStock(next === "producto");
+                if (next === "producto") setComponentes([]);
+              }}
+              className={`min-h-[40px] rounded-lg border border-slate-300 bg-white px-2 font-bold ${FOCUS_VISIBLE_CLASS}`}
             >
-              <span
-                className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${disponible ? "left-6" : "left-1"}`}
-              />
-            </button>
+              <option value="producto">Producto normal</option>
+              <option value="promo">Promoción</option>
+              <option value="combo">Combo / pack</option>
+            </select>
           </div>
+
+          {tipo === "producto" ? (
+            <label className="mt-4 flex items-center gap-3 text-sm font-bold text-slate-700">
+              <input
+                type="checkbox"
+                checked={controlaStock}
+                onChange={(event) => setControlaStock(event.target.checked)}
+              />
+              Controla stock propio
+            </label>
+          ) : (
+            <div className="mt-4 space-y-3">
+              <p className="text-sm font-black text-slate-800">Componentes que descuentan stock</p>
+              {componentes.map((item, index) => (
+                <div key={index} className="space-y-1">
+                  {item.varianteId && (
+                    <p className="text-xs font-black text-yellow-700">
+                      Opción: {producto?.variantes?.find((variante) => variante.id === item.varianteId)?.nombre}
+                    </p>
+                  )}
+                  <div className="grid grid-cols-[minmax(0,1fr)_80px_36px] gap-2">
+                    <select
+                      value={item.componenteId || ""}
+                      onChange={(event) =>
+                        setComponentes((current) =>
+                          current.map((row, rowIndex) =>
+                            rowIndex === index ? { ...row, componenteId: Number(event.target.value) } : row
+                          )
+                        )
+                      }
+                      className={`min-h-[40px] rounded-lg border border-slate-300 bg-white px-2 text-sm font-bold ${FOCUS_VISIBLE_CLASS}`}
+                      aria-label={`Componente ${index + 1}`}
+                    >
+                      <option value="">Seleccionar producto</option>
+                      {availableProductos
+                        .filter((candidate) => candidate.id !== producto?.id && candidate.controlaStock !== false)
+                        .map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>
+                            {candidate.nombre}
+                          </option>
+                        ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={item.cantidad}
+                      onChange={(event) =>
+                        setComponentes((current) =>
+                          current.map((row, rowIndex) =>
+                            rowIndex === index ? { ...row, cantidad: Number(event.target.value) } : row
+                          )
+                        )
+                      }
+                      className={`min-h-[40px] rounded-lg border border-slate-300 px-2 font-bold ${FOCUS_VISIBLE_CLASS}`}
+                      aria-label={`Cantidad del componente ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setComponentes((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+                      aria-label={`Quitar componente ${index + 1}`}
+                      className={`rounded-lg border border-red-200 text-red-700 ${FOCUS_VISIBLE_CLASS}`}
+                    >
+                      <X className="mx-auto h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setComponentes((current) => [...current, { componenteId: 0, cantidad: 1 }])}
+                className={`inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-yellow-400 px-3 text-sm font-black ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Plus className="h-4 w-4" /> Agregar componente
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4 border-b-8 border-slate-200 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_72px] sm:items-center">
@@ -1223,3 +1323,5 @@ function EmptyProductos() {
 }
 
 export default ProductosPage;
+
+

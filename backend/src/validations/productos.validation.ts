@@ -13,7 +13,12 @@ type ProductoInput = {
   disponible?: unknown;
   nombre?: unknown;
   precio?: unknown;
+  tipo?: unknown;
+  controlaStock?: unknown;
+  componentes?: unknown;
 };
+
+export type ProductoComponenteInput = { componenteId: number; cantidad: number; varianteId?: number };
 
 type ProductoValidationResult = {
   categoria?: string;
@@ -22,7 +27,71 @@ type ProductoValidationResult = {
   disponible?: boolean;
   nombre?: string;
   precio?: number;
+  tipo?: "producto" | "promo" | "combo";
+  controlaStock?: boolean;
+  componentes?: ProductoComponenteInput[];
 };
+
+const TIPOS_PRODUCTO = ["producto", "promo", "combo"] as const;
+
+function validateTipoYComponentes(input: ProductoInput, partial: boolean) {
+  const data: Pick<ProductoValidationResult, "tipo" | "controlaStock" | "componentes"> = {};
+
+  if (input.tipo !== undefined) {
+    if (typeof input.tipo !== "string" || !TIPOS_PRODUCTO.includes(input.tipo as (typeof TIPOS_PRODUCTO)[number])) {
+      return { error: 'tipo debe ser "producto", "promo" o "combo"' };
+    }
+    data.tipo = input.tipo as ProductoValidationResult["tipo"];
+  } else if (!partial) {
+    data.tipo = "producto";
+  }
+
+  const stockError = validateOptionalBoolean(input.controlaStock, "controlaStock");
+  if (stockError) return { error: stockError };
+
+  if (typeof input.controlaStock === "boolean") {
+    data.controlaStock = input.controlaStock;
+  } else if (!partial) {
+    data.controlaStock = data.tipo === "producto";
+  }
+
+  if (input.componentes !== undefined) {
+    if (!Array.isArray(input.componentes)) return { error: "componentes debe ser una lista" };
+    const componentes: ProductoComponenteInput[] = [];
+    const ids = new Set<number>();
+    for (const raw of input.componentes) {
+      if (!raw || typeof raw !== "object") return { error: "Cada componente debe ser válido" };
+      const componenteId = Number((raw as { componenteId?: unknown }).componenteId);
+      const cantidad = Number((raw as { cantidad?: unknown }).cantidad);
+      const varianteRaw = (raw as { varianteId?: unknown }).varianteId;
+      const varianteId = varianteRaw === undefined || varianteRaw === null ? undefined : Number(varianteRaw);
+      if (!Number.isInteger(componenteId) || componenteId <= 0) {
+        return { error: "Cada componente debe tener un componenteId entero positivo" };
+      }
+      if (!Number.isInteger(cantidad) || cantidad <= 0) {
+        return { error: "La cantidad de cada componente debe ser un entero positivo" };
+      }
+      if (varianteId !== undefined && (!Number.isInteger(varianteId) || varianteId <= 0)) {
+        return { error: "varianteId debe ser un entero positivo" };
+      }
+      if (ids.has(componenteId)) return { error: "No se puede repetir un componente" };
+      ids.add(componenteId);
+      componentes.push({ componenteId, cantidad, ...(varianteId !== undefined && { varianteId }) });
+    }
+    data.componentes = componentes;
+  } else if (!partial) {
+    data.componentes = [];
+  }
+
+  if ((data.tipo === "promo" || data.tipo === "combo") && data.controlaStock === true) {
+    return { error: "Las promociones y combos no pueden controlar stock propio" };
+  }
+  if (data.tipo === "promo" || data.tipo === "combo") data.controlaStock = false;
+  if (data.componentes?.length && data.controlaStock) {
+    return { error: "Un producto con componentes no puede controlar stock propio" };
+  }
+  return { data };
+}
 
 function validateStringLength(value: string, fieldName: string, maxLength: number) {
   if (value.length > maxLength) {
@@ -62,13 +131,13 @@ function hasMoreThanTwoDecimals(value: number) {
 }
 
 type ProductoCreateResult = {
-  data?: Required<
-    Pick<ProductoValidationResult, "categoria" | "descripcion" | "destacado" | "disponible" | "nombre" | "precio">
-  >;
+  data?: Required<ProductoValidationResult>;
   error?: string;
 };
 
 export function validateProductoCreate(input: ProductoInput): ProductoCreateResult {
+  const composition = validateTipoYComponentes(input, false);
+  if (composition.error || !composition.data) return { error: composition.error };
   const nombre = typeof input.nombre === "string" ? input.nombre.trim() : "";
   const descripcion = typeof input.descripcion === "string" ? input.descripcion.trim() : "";
   const categoria = typeof input.categoria === "string" ? input.categoria.trim() : "Otros";
@@ -124,13 +193,19 @@ export function validateProductoCreate(input: ProductoInput): ProductoCreateResu
       destacado: typeof input.destacado === "boolean" ? input.destacado : categoria === "Destacados",
       disponible: typeof input.disponible === "boolean" ? input.disponible : true,
       nombre,
-      precio: Math.round(precio * 100) / 100
+      precio: Math.round(precio * 100) / 100,
+      tipo: composition.data.tipo ?? "producto",
+      controlaStock: composition.data.controlaStock ?? true,
+      componentes: composition.data.componentes ?? []
     }
   };
 }
 
 export function validateProductoUpdate(input: ProductoInput): { data?: ProductoValidationResult; error?: string } {
   const data: ProductoValidationResult = {};
+  const composition = validateTipoYComponentes(input, true);
+  if (composition.error || !composition.data) return { error: composition.error };
+  Object.assign(data, composition.data);
 
   if (input.nombre !== undefined) {
     if (typeof input.nombre !== "string") {

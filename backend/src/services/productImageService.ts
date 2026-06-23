@@ -21,7 +21,12 @@ const PRODUCTO_IMAGE_INCLUDE = {
     orderBy: {
       nombre: "asc"
     }
-  }
+  },
+  componentes: {
+    include: { componente: true },
+    orderBy: { id: "asc" }
+  },
+  variantes: { where: { disponible: true }, orderBy: { orden: "asc" } }
 } as const;
 
 function buildProductImageUrl(objectName: string | null | undefined) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, LoaderCircle } from "lucide-react";
+import { AlertTriangle, Check, LoaderCircle, Minus, Plus, X } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
@@ -12,7 +12,14 @@ import {
 import { createPedido, getPedidos } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
 import TicketComanda from "../../components/TicketComanda";
-import type { CreatePedidoPayload, MetodoPago, PedidoResponse, Producto } from "../../types";
+import type {
+  CreatePedidoPayload,
+  MetodoPago,
+  PedidoResponse,
+  PersonalizacionProducto,
+  Producto,
+  VarianteProducto
+} from "../../types";
 import { buildPedidoSummary, formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
 import {
   PEDIDO_MAX_CANTIDAD_DETALLE,
@@ -20,7 +27,7 @@ import {
   validatePedidoSubmit
 } from "../../validations/pedido.validation";
 import { validateTurnoClose } from "../../validations/turno.validation";
-import { ACCESSIBLE_STEP_COUNT, type FeedbackState } from "./PdvShared";
+import { ACCESSIBLE_STEP_COUNT, type FeedbackState, usesProductConfigurator } from "./PdvShared";
 import {
   getPedidoDisplayNumber,
   readTurnoAbierto,
@@ -57,7 +64,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setLoadingError
   } = usePdvProducts({ searchTerm, selectedCategory });
 
-  const [items, setItems] = useState<Record<number, number>>({});
+  const [items, setItems] = useState<Record<string, number>>({});
+  const [personalizaciones, setPersonalizaciones] = useState<Record<string, PersonalizacionProducto>>({});
+  const [pendingVariantProduct, setPendingVariantProduct] = useState<Producto | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
   const [clienteNombre, setClienteNombre] = useState("");
   const [observacion, setObservacion] = useState("");
@@ -114,8 +123,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     total,
     cantidad: totalItems
   } = useMemo(() => {
-    return buildPedidoSummary(items, productos);
-  }, [items, productos]);
+    return buildPedidoSummary(items, productos, personalizaciones);
+  }, [items, personalizaciones, productos]);
 
   useEffect(() => {
     if (pedidoDetalles.length === 0) {
@@ -177,7 +186,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const itemLines = pedidoDetalles.map((item) => {
-      return `${item.cantidad} ${item.producto.nombre}`;
+      return `${item.cantidad} ${item.producto.nombre}${item.variante ? `, opción ${item.variante.nombre}` : ""}`;
     });
 
     const parts = [
@@ -271,29 +280,46 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const clearPedidoForm = () => {
     setItems({});
+    setPersonalizaciones({});
+    setPendingVariantProduct(null);
     setMetodoPago("");
     setClienteNombre("");
     setObservacion("");
     setAccessibleObservationType("cocina");
   };
 
-  const addProduct = useCallback(
-    (producto: Producto) => {
+  const commitAddProduct = useCallback(
+    (
+      producto: Producto,
+      variante?: VarianteProducto,
+      cantidadAgregar = 1,
+      personalizacion: PersonalizacionProducto = { aderezos: [] }
+    ) => {
       if (!isTurnoOpen) {
         notifyTurnoClosed();
         return;
       }
 
-      const nextQuantity = (items[producto.id] || 0) + 1;
+      const signature = encodeURIComponent(JSON.stringify(personalizacion));
+      const itemKey = `${producto.id}:${variante?.id ?? "base"}:${signature}`;
+      const nextQuantity = (items[itemKey] || 0) + cantidadAgregar;
+
+      if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) {
+        const message = `La cantidad máxima por producto es ${PEDIDO_MAX_CANTIDAD_DETALLE}.`;
+        setFeedback({ type: "error", message });
+        playSoundCue("error");
+        return;
+      }
 
       setItems((currentItems) => ({
         ...currentItems,
-        [producto.id]: (currentItems[producto.id] || 0) + 1
+        [itemKey]: (currentItems[itemKey] || 0) + cantidadAgregar
       }));
+      setPersonalizaciones((current) => ({ ...current, [itemKey]: personalizacion }));
       const msg = "Producto agregado al pedido.";
       setFeedback({ type: "success", message: msg });
       playSoundCue("add");
-      announce(`${producto.nombre} agregado. Cantidad ${nextQuantity}.`, {
+      announce(`${producto.nombre}${variante ? `, ${variante.nombre}` : ""} agregado. Cantidad ${nextQuantity}.`, {
         priority: "normal",
         dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
         cooldownMs: 1800
@@ -301,6 +327,34 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     },
     [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue]
   );
+
+  const addProduct = useCallback(
+    (producto: Producto) => {
+      if (usesProductConfigurator(producto)) {
+        setPendingVariantProduct(producto);
+        announce(`Elige una opción para ${producto.nombre}.`, {
+          priority: "high",
+          dedupeKey: `variant-required:${producto.id}`,
+          cooldownMs: 1500,
+          interrupt: true
+        });
+        return;
+      }
+      commitAddProduct(producto);
+    },
+    [announce, commitAddProduct]
+  );
+
+  const selectPendingVariant = (
+    variante: VarianteProducto | undefined,
+    cantidad: number,
+    personalizacion: PersonalizacionProducto
+  ) => {
+    if (!pendingVariantProduct) return;
+    const producto = pendingVariantProduct;
+    setPendingVariantProduct(null);
+    commitAddProduct(producto, variante, cantidad, personalizacion);
+  };
 
   useEffect(() => {
     if (!isAccessible || initialProductHandledRef.current || loadingProductos) {
@@ -369,11 +423,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
   };
 
-  const removeProduct = (productoId: number) => {
+  const removeProduct = (itemKey: string) => {
     setItems((prevItems) => {
       const newItems = { ...prevItems };
-      delete newItems[productoId];
+      delete newItems[itemKey];
       return newItems;
+    });
+    setPersonalizaciones((current) => {
+      const next = { ...current };
+      delete next[itemKey];
+      return next;
     });
 
     playSoundCue("remove");
@@ -518,7 +577,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       clienteNombre: clienteNombre.trim() || undefined,
       detalles: pedidoDetalles.map((item) => ({
         productoId: item.productoId,
-        cantidad: item.cantidad
+        cantidad: item.cantidad,
+        varianteId: item.variante?.id,
+        personalizacion: item.personalizacion
       })),
       metodoPago: metodoPago as MetodoPago,
       observacion: observacion.trim() || undefined
@@ -862,6 +923,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
           {isAccessible ? <PdvFacilView /> : <PdvNormalView />}
 
+          {pendingVariantProduct && (
+            <VariantSelectionDialog
+              isAccessible={isAccessible}
+              isHighContrast={isHighContrast}
+              onClose={() => setPendingVariantProduct(null)}
+              onSelect={selectPendingVariant}
+              producto={pendingVariantProduct}
+            />
+          )}
+
           <div className="hidden print:block" ref={ticketRef}>
             <TicketComanda
               pedidoDetalles={pedidoDetalles}
@@ -878,3 +949,260 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 }
 
 export default PdvBasePage;
+
+const ADEREZOS_DISPONIBLES = ["Mostaza", "Mayonesa", "Ketchup", "Poca mayo"];
+
+function VariantSelectionDialog({
+  isAccessible,
+  isHighContrast,
+  onClose,
+  onSelect,
+  producto
+}: {
+  isAccessible: boolean;
+  isHighContrast: boolean;
+  onClose: () => void;
+  onSelect: (
+    variante: VarianteProducto | undefined,
+    cantidad: number,
+    personalizacion: PersonalizacionProducto
+  ) => void;
+  producto: Producto;
+}) {
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [cantidad, setCantidad] = useState(1);
+  const [aderezos, setAderezos] = useState<string[]>([]);
+  const [comentario, setComentario] = useState("");
+  const varianteSeleccionada = producto.variantes?.find((variante) => variante.id === selectedVariantId);
+  const variantesDisponibles = producto.variantes?.filter((item) => item.disponible !== false) ?? [];
+  const requiereOpcion = variantesDisponibles.length > 0;
+  const esSandwich = producto.nombre.toLocaleLowerCase("es").includes("sandwich");
+  const total = producto.precio * cantidad;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/70 px-3 py-5 backdrop-blur-[1px]">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="variant-selection-title"
+        className={`w-full overflow-hidden rounded-[22px] shadow-2xl ${isAccessible ? "max-w-3xl border-2" : "max-w-[680px] border"} ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-300 bg-white"}`}
+      >
+        <header
+          className={`flex items-center justify-between border-b px-5 ${isAccessible ? "min-h-[72px]" : "min-h-[56px]"} ${isHighContrast ? "border-yellow-400" : "border-slate-200"}`}
+        >
+          <div>
+            <p
+              className={`font-black uppercase tracking-[0.14em] ${isAccessible ? "text-sm" : "text-[11px] text-slate-500"}`}
+            >
+              {producto.tipo === "promo" ? "Configurar promoción" : "Configurar producto"}
+            </p>
+            <h2
+              id="variant-selection-title"
+              className={`${isAccessible ? "text-2xl" : "text-lg"} font-black text-slate-950`}
+            >
+              {producto.nombre}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`inline-flex items-center justify-center rounded-full transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${isAccessible ? "h-12 w-12" : "h-10 w-10"}`}
+            aria-label="Cerrar configuración"
+          >
+            <X className={isAccessible ? "h-7 w-7" : "h-5 w-5"} aria-hidden="true" />
+          </button>
+        </header>
+
+        <div
+          className={`grid border-b ${isHighContrast ? "border-yellow-400" : "border-slate-200"} sm:grid-cols-[minmax(0,1fr)_210px]`}
+        >
+          <div className={isAccessible ? "p-6" : "p-5"}>
+            <p
+              className={`font-semibold leading-relaxed ${isAccessible ? "text-lg" : "text-sm"} ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}
+            >
+              {producto.descripcion || "Selecciona cómo preparar esta promoción."}
+            </p>
+            <p className={`mt-6 font-black text-slate-950 ${isAccessible ? "text-3xl" : "text-2xl"}`}>
+              {formatCurrency(producto.precio)}
+            </p>
+          </div>
+          <div
+            className={`flex min-h-[150px] items-center justify-center overflow-hidden ${isHighContrast ? "bg-black" : "bg-[#FFF8DC]"}`}
+          >
+            {producto.imagen ? (
+              <img
+                src={producto.imagen}
+                alt={producto.altText || producto.nombre}
+                className="h-full max-h-[190px] w-full object-cover"
+              />
+            ) : (
+              <span
+                className={`px-5 text-center font-black uppercase tracking-wide ${isHighContrast ? "text-yellow-300" : "text-yellow-800"}`}
+              >
+                Riquísimo
+              </span>
+            )}
+          </div>
+        </div>
+
+        {requiereOpcion && (
+          <div className={isAccessible ? "p-6" : "p-5"}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className={`font-black text-slate-950 ${isAccessible ? "text-2xl" : "text-base"}`}>
+                  {esSandwich ? "Elige la carne de tu sándwich" : "Elige una opción"}
+                </h3>
+                <p
+                  className={`mt-1 font-semibold ${isAccessible ? "text-lg" : "text-sm"} ${isHighContrast ? "contrast-body-text" : "text-slate-500"}`}
+                >
+                  Selecciona una opción obligatoria
+                </p>
+              </div>
+              <span
+                className={`rounded-full border px-3 py-1 font-black ${isAccessible ? "text-base" : "text-xs"} ${isHighContrast ? "border-yellow-400 text-yellow-300" : "border-yellow-400 bg-yellow-50 text-yellow-800"}`}
+              >
+                Obligatorio
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de completo">
+              {variantesDisponibles.map((variante) => {
+                const isSelected = selectedVariantId === variante.id;
+                return (
+                  <button
+                    key={variante.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => setSelectedVariantId(variante.id)}
+                    className={`flex items-center gap-3 rounded-xl border-2 px-4 text-left font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${isAccessible ? "min-h-[76px] text-xl" : "min-h-[58px] text-base"} ${
+                      isSelected
+                        ? isHighContrast
+                          ? "contrast-button-primary"
+                          : "border-slate-900 bg-yellow-50 text-slate-950"
+                        : isHighContrast
+                          ? "contrast-button-secondary"
+                          : "border-slate-300 bg-white text-slate-800 hover:border-yellow-500 hover:bg-yellow-50"
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex shrink-0 items-center justify-center rounded-md border-2 ${isAccessible ? "h-8 w-8" : "h-6 w-6"} ${isSelected ? "border-slate-900 bg-slate-900 text-white" : "border-slate-400 bg-white"}`}
+                    >
+                      {isSelected && <Check className="h-4 w-4" aria-hidden="true" />}
+                    </span>
+                    {variante.nombre}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div
+          className={`border-t ${isAccessible ? "p-6" : "p-5"} ${isHighContrast ? "border-yellow-400" : "border-slate-200"}`}
+        >
+          <div>
+            <h3 className={`font-black text-slate-950 ${isAccessible ? "text-2xl" : "text-base"}`}>Aderezos</h3>
+            <p
+              className={`mt-1 font-semibold ${isAccessible ? "text-lg" : "text-sm"} ${isHighContrast ? "contrast-body-text" : "text-slate-500"}`}
+            >
+              Selecciona hasta 3 opciones
+            </p>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {ADEREZOS_DISPONIBLES.map((aderezo) => {
+              const isSelected = aderezos.includes(aderezo);
+              const isDisabled = !isSelected && aderezos.length >= 3;
+              return (
+                <button
+                  key={aderezo}
+                  type="button"
+                  aria-pressed={isSelected}
+                  disabled={isDisabled}
+                  onClick={() =>
+                    setAderezos((current) =>
+                      current.includes(aderezo) ? current.filter((item) => item !== aderezo) : [...current, aderezo]
+                    )
+                  }
+                  className={`flex items-center gap-2 rounded-xl border-2 px-3 font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${isAccessible ? "min-h-[68px] text-lg" : "min-h-[54px] text-sm"} ${
+                    isSelected
+                      ? isHighContrast
+                        ? "contrast-button-primary"
+                        : "border-slate-900 bg-yellow-50 text-slate-950"
+                      : isHighContrast
+                        ? "contrast-button-secondary"
+                        : "border-slate-300 bg-white text-slate-700 hover:border-yellow-500"
+                  }`}
+                >
+                  <span
+                    className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 ${isSelected ? "border-slate-900 bg-slate-900 text-white" : "border-slate-400 bg-white"}`}
+                  >
+                    {isSelected && <Check className="h-4 w-4" aria-hidden="true" />}
+                  </span>
+                  {aderezo}
+                </button>
+              );
+            })}
+          </div>
+
+          <label className="mt-5 block border-t border-slate-200 pt-5">
+            <span className={`block font-black text-slate-950 ${isAccessible ? "text-xl" : "text-sm"}`}>
+              Comentarios
+            </span>
+            <textarea
+              value={comentario}
+              onChange={(event) => setComentario(event.target.value)}
+              maxLength={200}
+              rows={isAccessible ? 3 : 2}
+              placeholder="Opcional"
+              className={`mt-2 w-full resize-none rounded-xl border-2 border-slate-300 bg-white px-3 py-2 font-semibold text-slate-950 outline-none focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 ${isAccessible ? "text-lg" : "text-sm"}`}
+            />
+          </label>
+        </div>
+
+        <footer
+          className={`grid gap-3 border-t p-4 sm:grid-cols-[220px_minmax(0,1fr)] ${isHighContrast ? "border-yellow-400" : "border-slate-200 bg-slate-50"}`}
+        >
+          <div
+            className={`grid grid-cols-[1fr_auto_1fr] items-center overflow-hidden rounded-xl border bg-white ${isHighContrast ? "border-yellow-400" : "border-slate-300"}`}
+          >
+            <button
+              type="button"
+              onClick={() => setCantidad((current) => Math.max(1, current - 1))}
+              disabled={cantidad <= 1}
+              className={`inline-flex items-center justify-center text-slate-700 transition hover:bg-slate-100 disabled:opacity-35 ${isAccessible ? "min-h-[64px]" : "min-h-[50px]"}`}
+              aria-label="Disminuir cantidad"
+            >
+              <Minus className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span className={`${isAccessible ? "text-2xl" : "text-lg"} min-w-12 text-center font-black text-slate-950`}>
+              {cantidad}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCantidad((current) => Math.min(PEDIDO_MAX_CANTIDAD_DETALLE, current + 1))}
+              className={`inline-flex items-center justify-center text-slate-950 transition hover:bg-yellow-50 ${isAccessible ? "min-h-[64px]" : "min-h-[50px]"}`}
+              aria-label="Aumentar cantidad"
+            >
+              <Plus className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+          <button
+            type="button"
+            disabled={requiereOpcion && !varianteSeleccionada}
+            onClick={() =>
+              (!requiereOpcion || varianteSeleccionada) &&
+              onSelect(varianteSeleccionada, cantidad, {
+                aderezos,
+                ...(comentario.trim() && { comentario: comentario.trim() })
+              })
+            }
+            className={`inline-flex items-center justify-center rounded-xl border-2 px-5 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500 ${isAccessible ? "min-h-[64px] text-xl" : "min-h-[50px] text-base"} ${!requiereOpcion || varianteSeleccionada ? (isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]") : ""}`}
+          >
+            {!requiereOpcion || varianteSeleccionada ? `Agregar · ${formatCurrency(total)}` : "Selecciona una opción"}
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}

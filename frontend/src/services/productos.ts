@@ -7,6 +7,8 @@ function normalizeProducto(producto: Producto & { precio: number | string }): Pr
 
   return {
     ...producto,
+    tipo: producto.tipo ?? "producto",
+    controlaStock: producto.controlaStock ?? true,
     precio: typeof producto.precio === "string" ? Number(producto.precio) : producto.precio,
     imagen: imagen ?? undefined,
     altText: producto.altText || `Imagen de ${producto.nombre}`

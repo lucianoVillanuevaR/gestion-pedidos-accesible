@@ -10,7 +10,10 @@ describe("validaciones de productos", () => {
         destacado: false,
         disponible: true,
         nombre: "Completo italiano",
-        precio: 2500
+        precio: 2500,
+        tipo: "producto",
+        controlaStock: true,
+        componentes: []
       }
     });
   });
@@ -27,6 +30,29 @@ describe("validaciones de productos", () => {
 
   it("exige al menos un campo al actualizar", () => {
     expect(validateProductoUpdate({})).toEqual({ error: "Debe enviar al menos un campo para actualizar" });
+  });
+
+  it("normaliza una promoción con componentes", () => {
+    expect(
+      validateProductoCreate({
+        nombre: "2x1 Completo italiano",
+        precio: 3900,
+        tipo: "promo",
+        controlaStock: false,
+        componentes: [{ componenteId: "7", cantidad: "2" }]
+      })
+    ).toMatchObject({
+      data: { tipo: "promo", controlaStock: false, componentes: [{ componenteId: 7, cantidad: 2 }] }
+    });
+  });
+
+  it("rechaza cantidades inválidas y stock propio en promos", () => {
+    expect(validateProductoUpdate({ componentes: [{ componenteId: 7, cantidad: 0 }] }).error).toContain(
+      "entero positivo"
+    );
+    expect(validateProductoUpdate({ tipo: "combo", controlaStock: true })).toEqual({
+      error: "Las promociones y combos no pueden controlar stock propio"
+    });
   });
 
   it("mantiene los límites de producto centralizados", () => {

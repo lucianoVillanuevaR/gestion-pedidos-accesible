@@ -18,6 +18,8 @@ model Producto {
   disponible          Boolean         @default(true)
   destacado           Boolean         @default(false)
   promocion           Boolean         @default(false)
+  tipo                TipoProducto    @default(producto)
+  controlaStock       Boolean         @default(true) @map("controla_stock")
   imagenUrl           String?         @map("imagen_url") @db.Text
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
@@ -25,6 +27,32 @@ model Producto {
   variantes           Variante[]
   inventario          Inventario?
   detallesPedido      DetallePedido[]
+  componentes         ProductoComponente[] @relation("ProductoVendido")
+  componenteDe        ProductoComponente[] @relation("ComponenteStock")
+}
+
+enum TipoProducto {
+  producto
+  promo
+  combo
+}
+
+model ProductoComponente {
+  id           Int @id @default(autoincrement())
+  productoId   Int @map("producto_id")
+  componenteId Int @map("componente_id")
+  cantidad     Int
+  varianteId   Int? @map("variante_id")
+
+  producto   Producto @relation("ProductoVendido", fields: [productoId], references: [id], onDelete: Cascade)
+  componente Producto @relation("ComponenteStock", fields: [componenteId], references: [id], onDelete: Restrict)
+  variante   Variante? @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, componenteId, varianteId])
+  @@index([productoId])
+  @@index([componenteId])
+  @@index([varianteId])
+  @@map("producto_componentes")
 }
 
 model Categoria {
@@ -48,6 +76,8 @@ model Variante {
   updatedAt   DateTime @updatedAt
 
   producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  componentes ProductoComponente[]
+  detallesPedido DetallePedido[]
 
   @@unique([productoId, nombre])
   @@index([productoId])
@@ -87,12 +117,16 @@ model DetallePedido {
   cantidad       Int
   precioUnitario Decimal @db.Decimal(10, 2)
   subtotal       Decimal @db.Decimal(10, 2)
+  varianteId     Int?
+  personalizacion Json?
 
   pedido   Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   producto Producto @relation(fields: [productoId], references: [id])
+  variante Variante? @relation(fields: [varianteId], references: [id])
 
   @@index([pedidoId])
   @@index([productoId])
+  @@index([varianteId])
 }
 
 model Usuario {

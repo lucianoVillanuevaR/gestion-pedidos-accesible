@@ -18,7 +18,7 @@ import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "..
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
-import { PAYMENT_OPTIONS, Toast } from "./PdvShared";
+import { PAYMENT_OPTIONS, Toast, usesProductConfigurator } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvNormalView() {
@@ -195,7 +195,7 @@ function PdvNormalView() {
                 <PdvProductTile
                   key={producto.id}
                   producto={producto}
-                  cantidad={items[producto.id] || 0}
+                  cantidad={usesProductConfigurator(producto) ? 0 : items[producto.id] || 0}
                   disabled={!isTurnoOpen}
                   onIncrease={() => increaseProduct(producto)}
                   onDecrease={() => decreaseProduct(producto)}
@@ -366,9 +366,18 @@ function PdvNormalView() {
           ) : (
             <div className="space-y-2">
               {pedidoDetalles.map((item) => (
-                <div key={item.productoId} className="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-100 py-2">
+                <div key={item.itemKey} className="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-100 py-2">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-slate-950">{item.producto.nombre}</p>
+                    {item.variante && (
+                      <p className="text-xs font-black text-yellow-700">Opción: {item.variante.nombre}</p>
+                    )}
+                    {item.personalizacion?.aderezos.length ? (
+                      <p className="text-xs text-slate-600">Aderezos: {item.personalizacion.aderezos.join(", ")}</p>
+                    ) : null}
+                    {item.personalizacion?.comentario && (
+                      <p className="text-xs italic text-slate-600">“{item.personalizacion.comentario}”</p>
+                    )}
                     <p className="text-xs text-slate-600">
                       {item.cantidad} x {formatCurrency(item.producto.precio)}
                     </p>
@@ -377,7 +386,7 @@ function PdvNormalView() {
                     <p className="text-sm font-bold">{formatCurrency(item.subtotal)}</p>
                     <button
                       type="button"
-                      onClick={() => removeProduct(item.productoId)}
+                      onClick={() => removeProduct(item.itemKey)}
                       className="rounded p-1 text-lg transition hover:bg-red-50 hover:opacity-70"
                       title={`Eliminar ${item.producto.nombre}`}
                       aria-label={`Eliminar ${item.producto.nombre} del pedido`}

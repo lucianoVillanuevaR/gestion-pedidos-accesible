@@ -20,6 +20,10 @@ export type ToneStep = {
 
 export const ACCESSIBLE_STEP_COUNT = 6;
 
+export function usesProductConfigurator(producto: Producto) {
+  return Boolean(producto);
+}
+
 export const PAYMENT_OPTIONS = [
   { value: "efectivo", label: "Efectivo", Icon: Banknote },
   { value: "tarjeta", label: "Tarjeta", Icon: CreditCard },

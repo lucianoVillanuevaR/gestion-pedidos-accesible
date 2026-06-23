@@ -7,7 +7,7 @@ import {
   sanitizeClienteNombreInput
 } from "../../validations/pedido.validation";
 import { formatCurrency } from "../../utils/pdv";
-import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard } from "./PdvShared";
+import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvFacilView() {
@@ -306,7 +306,7 @@ function PdvFacilView() {
                 <div key={producto.id}>
                   <ProductCard
                     producto={producto}
-                    cantidad={items[producto.id] || 0}
+                    cantidad={usesProductConfigurator(producto) ? 0 : items[producto.id] || 0}
                     isAccessible
                     isHighContrast={isHighContrast}
                     onIncrease={() => increaseProduct(producto)}
@@ -339,11 +339,20 @@ function PdvFacilView() {
             <div className="space-y-3">
               {pedidoDetalles.map((item) => (
                 <div
-                  key={item.productoId}
+                  key={item.itemKey}
                   className="rounded-lg p-4 bg-white border-2 border-slate-300 flex items-center justify-between"
                 >
                   <div>
                     <p className="font-black text-lg">{item.producto.nombre}</p>
+                    {item.variante && (
+                      <p className="text-base font-black text-yellow-700">Opción: {item.variante.nombre}</p>
+                    )}
+                    {item.personalizacion?.aderezos.length ? (
+                      <p className="text-base text-slate-600">Aderezos: {item.personalizacion.aderezos.join(", ")}</p>
+                    ) : null}
+                    {item.personalizacion?.comentario && (
+                      <p className="text-base italic text-slate-600">“{item.personalizacion.comentario}”</p>
+                    )}
                     <p className="text-slate-600">
                       {item.cantidad} x {formatCurrency(item.producto.precio)}
                     </p>
@@ -353,7 +362,7 @@ function PdvFacilView() {
                     <button
                       type="button"
                       onClick={() => {
-                        removeProduct(item.productoId);
+                        removeProduct(item.itemKey);
                       }}
                       className="rounded-lg bg-red-50 p-3 text-xl"
                     >

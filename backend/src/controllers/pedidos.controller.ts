@@ -2,6 +2,11 @@ import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
 import { withProductImageUrl } from "../services/productImageService";
+import {
+  buildStockRequirements,
+  getApplicableStockComponents,
+  type StockProduct
+} from "../services/stockRequirementsService";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import {
   validateEstadoPedido,
@@ -14,7 +19,8 @@ import {
 const PEDIDO_WITH_DETALLES_INCLUDE = {
   detalles: {
     include: {
-      producto: true
+      producto: true,
+      variante: true
     }
   }
 } as const;
@@ -23,6 +29,8 @@ interface CrearPedidoBody {
   detalles: Array<{
     productoId: number;
     cantidad: number;
+    varianteId?: number;
+    personalizacion?: { aderezos: string[]; comentario?: string };
   }>;
   metodoPago: string;
   clienteNombre?: string;
@@ -78,7 +86,14 @@ export const crearPedido = async (req: Request, res: Response) => {
 
     const detallesNormalizados = detalles.map((detalle) => ({
       cantidad: Number(detalle.cantidad),
-      productoId: Number(detalle.productoId)
+      productoId: Number(detalle.productoId),
+      varianteId: detalle.varianteId === undefined ? undefined : Number(detalle.varianteId),
+      personalizacion: detalle.personalizacion
+        ? {
+            aderezos: detalle.personalizacion.aderezos.map((item) => item.trim()),
+            ...(detalle.personalizacion.comentario?.trim() && { comentario: detalle.personalizacion.comentario.trim() })
+          }
+        : undefined
     }));
 
     const pedido = await prisma.$transaction(async (tx) => {
@@ -87,16 +102,27 @@ export const crearPedido = async (req: Request, res: Response) => {
         throw new PedidoRequestError(409, "Debes abrir turno antes de registrar un pedido");
       }
 
-      const productosData = [];
+      const productosData: Array<{
+        producto: { id: number; nombre: string; precio: Decimal };
+        cantidad: number;
+        subtotal: Decimal;
+        varianteId?: number;
+        personalizacion?: { aderezos: string[]; comentario?: string };
+      }> = [];
+      const productosStock: Array<{ producto: StockProduct; cantidadVendida: number }> = [];
       let total = new Decimal(0);
 
+      const productos = await tx.producto.findMany({
+        where: { id: { in: detallesNormalizados.map((item) => item.productoId) } },
+        include: {
+          inventario: true,
+          variantes: true,
+          componentes: { include: { componente: { include: { inventario: true } } } }
+        }
+      });
+
       for (const detalle of detallesNormalizados) {
-        const producto = await tx.producto.findUnique({
-          include: {
-            inventario: true
-          },
-          where: { id: detalle.productoId }
-        });
+        const producto = productos.find((item) => item.id === detalle.productoId);
 
         if (!producto) {
           throw new PedidoRequestError(404, `Producto con ID ${detalle.productoId} no encontrado`);
@@ -106,14 +132,17 @@ export const crearPedido = async (req: Request, res: Response) => {
           throw new PedidoRequestError(400, `Producto "${producto.nombre}" no está disponible`);
         }
 
-        const stockActual = producto.inventario?.stockActual ?? 0;
-
-        if (stockActual < detalle.cantidad) {
-          throw new PedidoRequestError(
-            400,
-            `Stock insuficiente para "${producto.nombre}". Disponible: ${stockActual}, solicitado: ${detalle.cantidad}`
-          );
+        const variante = detalle.varianteId
+          ? producto.variantes.find((item) => item.id === detalle.varianteId && item.disponible)
+          : undefined;
+        if (detalle.varianteId && !variante) {
+          throw new PedidoRequestError(400, `La opción elegida no pertenece a "${producto.nombre}"`);
         }
+        const requiereVariante = producto.componentes.some((item) => item.varianteId !== null);
+        if (requiereVariante && !variante) {
+          throw new PedidoRequestError(400, `Debes elegir una opción para "${producto.nombre}"`);
+        }
+        const componentesAplicables = getApplicableStockComponents(producto, variante?.id);
 
         const subtotal = producto.precio.mul(new Decimal(detalle.cantidad));
         total = total.add(subtotal);
@@ -121,21 +150,40 @@ export const crearPedido = async (req: Request, res: Response) => {
         productosData.push({
           producto,
           cantidad: detalle.cantidad,
-          subtotal
+          subtotal,
+          varianteId: variante?.id,
+          personalizacion: detalle.personalizacion
+        });
+        productosStock.push({
+          producto: { ...producto, componentes: componentesAplicables },
+          cantidadVendida: detalle.cantidad
         });
       }
 
-      for (const item of productosData) {
+      const consumos = buildStockRequirements(productosStock);
+
+      for (const [componenteId, consumo] of consumos) {
+        const componente = await tx.producto.findUnique({ where: { id: componenteId }, include: { inventario: true } });
+        const stockActual = componente?.inventario?.stockActual ?? 0;
+        if (!componente || stockActual < consumo.cantidad) {
+          throw new PedidoRequestError(
+            400,
+            `Stock insuficiente en componente "${consumo.componenteNombre}" para "${[...consumo.productosVendidos].join(", ")}". Disponible: ${stockActual}, requerido: ${consumo.cantidad}`
+          );
+        }
+      }
+
+      for (const [componenteId, consumo] of consumos) {
         const inventarioActualizado = await tx.inventario.updateMany({
           data: {
             stockActual: {
-              decrement: item.cantidad
+              decrement: consumo.cantidad
             }
           },
           where: {
-            productoId: item.producto.id,
+            productoId: componenteId,
             stockActual: {
-              gte: item.cantidad
+              gte: consumo.cantidad
             }
           }
         });
@@ -143,7 +191,7 @@ export const crearPedido = async (req: Request, res: Response) => {
         if (inventarioActualizado.count === 0) {
           throw new PedidoRequestError(
             409,
-            `Stock insuficiente para "${item.producto.nombre}". Intenta nuevamente con una cantidad menor.`
+            `Stock insuficiente en componente "${consumo.componenteNombre}". El stock cambió; intenta nuevamente.`
           );
         }
       }
@@ -161,7 +209,9 @@ export const crearPedido = async (req: Request, res: Response) => {
               productoId: item.producto.id,
               cantidad: item.cantidad,
               precioUnitario: item.producto.precio,
-              subtotal: item.subtotal
+              subtotal: item.subtotal,
+              varianteId: item.varianteId,
+              personalizacion: item.personalizacion
             }))
           }
         },

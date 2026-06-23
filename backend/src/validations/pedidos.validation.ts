@@ -14,6 +14,8 @@ import {
 type PedidoDetalleInput = {
   cantidad: number;
   productoId: number;
+  varianteId?: number;
+  personalizacion?: unknown;
 };
 
 export function validateMetodoPago(metodoPago: string) {
@@ -37,7 +39,7 @@ export function validatePedidoDetalles(detalles: PedidoDetalleInput[] | undefine
     return `El pedido no puede tener más de ${PEDIDO_MAX_DETALLES} detalles`;
   }
 
-  const productIds = new Set<number>();
+  const detalleKeys = new Set<string>();
 
   for (const detalle of detalles) {
     if (
@@ -51,13 +53,45 @@ export function validatePedidoDetalles(detalles: PedidoDetalleInput[] | undefine
       return `Detalle inválido: productoId y cantidad entera entre 1 y ${PEDIDO_MAX_CANTIDAD_DETALLE} son requeridos`;
     }
 
-    const productoId = Number(detalle.productoId);
-
-    if (productIds.has(productoId)) {
-      return "No se puede repetir el mismo producto en el pedido";
+    if (detalle.personalizacion !== undefined) {
+      if (
+        !detalle.personalizacion ||
+        typeof detalle.personalizacion !== "object" ||
+        Array.isArray(detalle.personalizacion)
+      ) {
+        return "Detalle inválido: personalizacion debe ser un objeto";
+      }
+      const personalizacion = detalle.personalizacion as { aderezos?: unknown; comentario?: unknown };
+      if (
+        !Array.isArray(personalizacion.aderezos) ||
+        personalizacion.aderezos.length > 3 ||
+        personalizacion.aderezos.some((item) => typeof item !== "string" || !item.trim() || item.length > 40)
+      ) {
+        return "Detalle inválido: selecciona hasta 3 aderezos válidos";
+      }
+      if (
+        personalizacion.comentario !== undefined &&
+        (typeof personalizacion.comentario !== "string" || personalizacion.comentario.trim().length > 200)
+      ) {
+        return "Detalle inválido: el comentario no puede superar 200 caracteres";
+      }
     }
 
-    productIds.add(productoId);
+    if (
+      detalle.varianteId !== undefined &&
+      (!Number.isInteger(Number(detalle.varianteId)) || Number(detalle.varianteId) <= 0)
+    ) {
+      return "Detalle inválido: varianteId debe ser un entero positivo";
+    }
+
+    const productoId = Number(detalle.productoId);
+    const detalleKey = `${productoId}:${detalle.varianteId ?? "base"}:${JSON.stringify(detalle.personalizacion ?? null)}`;
+
+    if (detalleKeys.has(detalleKey)) {
+      return "No se puede repetir el mismo producto con la misma opción y personalización en el pedido";
+    }
+
+    detalleKeys.add(detalleKey);
   }
 
   return null;

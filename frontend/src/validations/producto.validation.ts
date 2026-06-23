@@ -56,7 +56,10 @@ export function buildProductoPayload({
   destacado,
   disponible,
   nombre,
-  precio
+  precio,
+  tipo,
+  controlaStock,
+  componentes
 }: CreateProductoPayload & { precio: number }) {
   return {
     categoria,
@@ -64,6 +67,9 @@ export function buildProductoPayload({
     destacado,
     disponible,
     nombre: nombre.trim(),
-    precio: Math.round(precio * 100) / 100
+    precio: Math.round(precio * 100) / 100,
+    tipo,
+    controlaStock,
+    componentes
   };
 }
