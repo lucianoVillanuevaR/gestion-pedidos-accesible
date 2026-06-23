@@ -554,7 +554,7 @@ function ModalShell({ children, onClose, title }: { children: ReactNode; onClose
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[26px] bg-white p-5 shadow-2xl sm:p-6 ${
+        className={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[26px] bg-white p-5 shadow-2xl sm:p-6 ${
           isHighContrast
             ? "contrast-panel border-2 border-yellow-400"
             : isAccessible
@@ -602,6 +602,7 @@ export function PedidoModal({
   onEstadoChange: (pedido: PedidoResponse, estado: EstadoPedido) => void;
   onOpenModal: (modal: ActiveModal) => void;
 }) {
+  const { isAccessible } = useAccessibilityContext();
   const { action, pedido } = activeModal;
 
   if (action === "detail") {
@@ -619,26 +620,29 @@ export function PedidoModal({
               <p className="mt-1 text-lg font-black text-slate-950">{pedido.clienteNombre}</p>
             </div>
           )}
-          <div className="rounded-2xl border border-slate-200">
+          <div className="space-y-3">
             {(pedido.detalles ?? []).map((detalle) => (
-              <div
-                key={detalle.id}
-                className="flex items-start justify-between gap-4 border-b border-slate-100 px-4 py-3 last:border-b-0"
-              >
-                <div>
-                  <p className="font-black text-slate-950">
-                    {detalle.cantidad}x {getItemName(detalle)}
-                  </p>
-                  <p className="text-sm font-bold text-slate-500">{formatCurrency(detalle.precioUnitario)} c/u</p>
+              <div key={detalle.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-black leading-snug text-slate-950">
+                      {detalle.cantidad}x {getItemName(detalle)}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-slate-500">
+                      {formatCurrency(detalle.precioUnitario)} c/u
+                    </p>
+                  </div>
+                  <p className="shrink-0 font-black text-slate-950">{formatCurrency(detalle.subtotal)}</p>
                 </div>
-                <p className="font-black text-slate-950">{formatCurrency(detalle.subtotal)}</p>
+                <DetalleSeleccion detalle={detalle} isAccessible={isAccessible} />
               </div>
             ))}
           </div>
           {pedido.observacion && (
-            <p className="rounded-2xl border border-yellow-100 bg-[#FFF8DC] p-4 font-bold text-slate-700">
-              {pedido.observacion}
-            </p>
+            <div className="rounded-2xl border-2 border-yellow-300 bg-[#FFF8DC] p-4">
+              <p className="text-xs font-black uppercase tracking-wide text-yellow-900">Observación del pedido</p>
+              <p className="mt-1 font-bold leading-relaxed text-slate-900">{pedido.observacion}</p>
+            </div>
           )}
           <p className="text-right text-2xl font-black text-slate-950">Total {formatCurrency(pedido.total)}</p>
         </div>
@@ -759,6 +763,40 @@ export function PedidoModal({
         </div>
       </div>
     </ModalShell>
+  );
+}
+
+export function DetalleSeleccion({ detalle, isAccessible }: { detalle: PedidoDetalleResponse; isAccessible: boolean }) {
+  const aderezos = detalle.personalizacion?.aderezos ?? [];
+  const comentario = detalle.personalizacion?.comentario?.trim();
+  const variante = detalle.variante?.nombre;
+
+  if (!variante && aderezos.length === 0 && !comentario) return null;
+
+  const varianteNormalizada = variante?.toLocaleLowerCase("es") ?? "";
+  const esTipoCarne = ["churrasco", "pollo", "lomito", "mechada", "ave", "lomo"].some((carne) =>
+    varianteNormalizada.includes(carne)
+  );
+
+  return (
+    <div className={`mt-2 space-y-2 ${isAccessible ? "text-lg" : "text-sm"}`}>
+      {variante && (
+        <p className="w-fit rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-1.5 font-black text-slate-900">
+          {esTipoCarne ? "Carne" : "Opción"}: {variante}
+        </p>
+      )}
+      {aderezos.length > 0 && (
+        <p className="font-bold leading-relaxed text-slate-700">
+          <span className="font-black">Aderezos:</span> {aderezos.join(", ")}
+        </p>
+      )}
+      {comentario && (
+        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2.5 text-slate-950">
+          <p className="text-xs font-black uppercase tracking-wide text-amber-900">Comentario para cocina</p>
+          <p className="mt-1 font-black leading-relaxed">{comentario}</p>
+        </div>
+      )}
+    </div>
   );
 }
 

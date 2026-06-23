@@ -1,11 +1,7 @@
 import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, LockKeyhole, UnlockKeyhole, XCircle } from "lucide-react";
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
-import {
-  PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH,
-  PEDIDO_OBSERVACION_MAX_LENGTH,
-  sanitizeClienteNombreInput
-} from "../../validations/pedido.validation";
+import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
 import { usePdvViewContext } from "./PdvViewContext";
@@ -34,7 +30,6 @@ function PdvFacilView() {
     items,
     metodoPago,
     navigate,
-    observacion,
     panelBg,
     pedidoDetalles,
     puedeRegistrar,
@@ -42,10 +37,8 @@ function PdvFacilView() {
     selectedCategory,
     selectMetodoPago,
     sending,
-    setAccessibleObservationType,
     setAccessibleStep,
     setClienteNombre,
-    setObservacion,
     setSelectedCategory,
     total
   } = usePdvViewContext();
@@ -58,7 +51,7 @@ function PdvFacilView() {
     : [
         {
           title: "Elige una categoría",
-          description: "Toca una sola categoría para ver solo lo necesario y seguir sin perderte."
+          description: ""
         },
         {
           title: "Elige un producto",
@@ -70,7 +63,7 @@ function PdvFacilView() {
         },
         {
           title: "Datos del comprador",
-          description: "Ingresa el nombre del comprador y, si hace falta, agrega un comentario."
+          description: "Ingresa el nombre del comprador."
         },
         {
           title: "Selecciona el pago",
@@ -93,12 +86,16 @@ function PdvFacilView() {
             >
               Riquísimo · Modo fácil
             </p>
-            <h1 className="mt-3 font-black tracking-tight text-[2rem] sm:text-[2.35rem]">{stepGuidance.title}</h1>
-            <p
-              className={`mt-3 max-w-2xl text-lg leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}
-            >
-              {stepGuidance.description}
-            </p>
+            <h1 className="mt-3 font-black tracking-tight text-[2rem] sm:text-[2.35rem]">
+              Paso {visibleStepNumber}: {stepGuidance.title}
+            </h1>
+            {stepGuidance.description && (
+              <p
+                className={`mt-3 max-w-2xl text-lg leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}
+              >
+                {stepGuidance.description}
+              </p>
+            )}
             <p
               className={`mt-2 max-w-2xl text-lg font-bold ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}
             >
@@ -223,7 +220,7 @@ function PdvFacilView() {
       {isTurnoOpen && accessibleStep === 1 && (
         <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step1" className="font-black text-2xl mb-4">
-            Paso 2: Elige categoría
+            Paso 1: Elige categoría
           </h2>
           <div className="grid grid-cols-2 gap-4">
             {categoryFilters.map((filtro) => (
@@ -242,6 +239,14 @@ function PdvFacilView() {
                 aria-pressed={selectedCategory === filtro.value}
               >
                 <span>{filtro.label}</span>
+                {selectedCategory === filtro.value && (
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-base font-black ${isHighContrast ? "border-yellow-300 bg-yellow-300 text-black" : "border-white bg-white text-slate-950"}`}
+                  >
+                    <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                    Seleccionado
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -282,7 +287,7 @@ function PdvFacilView() {
       {isTurnoOpen && accessibleStep === 2 && (
         <section aria-labelledby="step2" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step2" className="font-black text-2xl mb-4">
-            Paso 3: Elige producto
+            Paso 2: Elige producto
           </h2>
           <p className="mb-3 text-lg font-semibold">Elige el producto y responde: ¿cuánto quieres?</p>
           <p className="mb-4 text-base text-slate-600">Usa los botones de menos y más para ajustar la cantidad.</p>
@@ -329,7 +334,7 @@ function PdvFacilView() {
       {isTurnoOpen && accessibleStep === 3 && (
         <section aria-labelledby="step3" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step3" className="font-black text-2xl mb-4">
-            Paso 4: Revisa tu pedido
+            Paso 3: Revisa tu pedido
           </h2>
           {pedidoDetalles.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed p-8 text-center">
@@ -390,7 +395,7 @@ function PdvFacilView() {
       {isTurnoOpen && accessibleStep === 4 && (
         <section aria-labelledby="step4" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step4" className="font-black text-2xl mb-4">
-            Comprador y comentario
+            Paso 4: Datos del comprador
           </h2>
 
           <div className="mb-5">
@@ -407,31 +412,6 @@ function PdvFacilView() {
               className="min-h-[58px] w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
             />
           </div>
-
-          <div className="mb-4">
-            <label htmlFor="accessibleObservacion" className="mb-2 block font-bold text-base">
-              Comentario opcional
-            </label>
-            <textarea
-              id="accessibleObservacion"
-              rows={4}
-              value={observacion}
-              maxLength={PEDIDO_OBSERVACION_MAX_LENGTH}
-              onChange={(event) => {
-                setAccessibleObservationType("cocina");
-                setObservacion(event.target.value);
-              }}
-              placeholder="Ej: sin cebolla, extra salsa, bien tostado..."
-              className="w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
-            />
-          </div>
-
-          {observacion.trim() && (
-            <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Comentario para cocina</p>
-              <p className="mt-2 font-medium text-slate-900">{observacion}</p>
-            </div>
-          )}
 
           <AccessibleStepNavigation
             validationError={accessibleStepValidation}
@@ -455,12 +435,29 @@ function PdvFacilView() {
                   key={option.value}
                   type="button"
                   onClick={() => selectMetodoPago(option.value)}
-                  className={`w-full flex items-center justify-between rounded-xl py-4 px-4 font-bold ${active ? "bg-slate-900 text-white" : "bg-white text-slate-900 border-2 border-slate-300"}`}
+                  className={`flex min-h-[72px] w-full items-center justify-between rounded-xl border-4 px-5 py-4 text-xl font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${
+                    active
+                      ? isHighContrast
+                        ? "contrast-button-primary"
+                        : "border-slate-950 bg-slate-900 text-white shadow-md"
+                      : isHighContrast
+                        ? "contrast-button-secondary"
+                        : "border-slate-300 bg-white text-slate-900 hover:border-slate-900"
+                  }`}
                   aria-pressed={active}
                 >
                   <option.Icon className="h-6 w-6 shrink-0" aria-hidden="true" />
                   <span>{option.label}</span>
-                  {active && <span className="text-sm">Seleccionado</span>}
+                  {active ? (
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-base font-black ${isHighContrast ? "border-yellow-300 bg-yellow-300 text-black" : "border-white bg-white text-slate-950"}`}
+                    >
+                      <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                      Seleccionado
+                    </span>
+                  ) : (
+                    <span className="h-7 w-7 rounded-full border-2 border-slate-400 bg-white" aria-hidden="true" />
+                  )}
                 </button>
               );
             })}
@@ -486,13 +483,6 @@ function PdvFacilView() {
             <p className="font-bold">Total a pagar</p>
             <p className="font-black text-3xl">{formatCurrency(total)}</p>
           </div>
-
-          {observacion.trim() && (
-            <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 mb-4">
-              <p className="font-bold text-slate-900">Comentario para cocina</p>
-              <p className="mt-2 text-slate-700">{observacion}</p>
-            </div>
-          )}
 
           <div className="flex flex-wrap items-center gap-3">
             <button

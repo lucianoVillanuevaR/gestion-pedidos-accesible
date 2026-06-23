@@ -185,14 +185,14 @@ export function ProductCard({
 
       <div className={`px-4 ${isAccessible ? "pb-3" : "pb-4"} space-y-2`}>
         {isAccessible ? (
-          <div className="rounded-xl border-2 border-slate-900 bg-slate-50 p-3">
-            <p className="mb-3 text-center text-lg font-bold text-slate-900">¿Cuánto?</p>
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="rounded-2xl border-2 border-slate-900 bg-slate-50 p-4">
+            <p className="mb-4 text-center text-xl font-black text-slate-900">¿Cuánto?</p>
+            <div className="grid grid-cols-[minmax(76px,1fr)_auto_minmax(76px,1fr)] items-center gap-4">
               <button
                 type="button"
                 onClick={onDecrease}
                 disabled={cantidad === 0}
-                className={`min-h-[56px] rounded-lg border-2 border-slate-900 bg-white text-3xl font-bold text-slate-900 transition ${
+                className={`min-h-[76px] rounded-xl border-4 border-slate-900 bg-white text-5xl font-black leading-none text-slate-900 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 ${
                   cantidad === 0 ? "cursor-not-allowed opacity-40" : "hover:bg-slate-100"
                 }`}
                 aria-label={`Disminuir ${producto.nombre}`}
@@ -200,22 +200,22 @@ export function ProductCard({
                 −
               </button>
 
-              <div className="min-w-[84px] text-center">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Cantidad</p>
-                <p className="text-3xl font-black text-slate-900">{cantidad}</p>
+              <div className="min-w-[104px] rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-center">
+                <p className="text-sm font-black uppercase tracking-wide text-slate-600">Cantidad</p>
+                <p className="text-5xl font-black leading-none text-slate-950">{cantidad}</p>
               </div>
 
               <button
                 type="button"
                 onClick={cantidad > 0 ? onIncrease : onAdd}
-                className="min-h-[56px] rounded-lg border-2 border-slate-900 bg-slate-900 text-3xl font-bold text-white transition hover:bg-black"
+                className="min-h-[76px] rounded-xl border-4 border-slate-900 bg-[#FECE00] text-5xl font-black leading-none text-slate-950 transition hover:bg-[#FFD633] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2"
                 aria-label={`Aumentar ${producto.nombre}`}
               >
                 +
               </button>
             </div>
 
-            <p className="mt-3 text-center text-sm font-medium text-slate-600">
+            <p className="mt-4 text-center text-base font-bold text-slate-700">
               {cantidad === 0 ? "Usa + para agregar este producto" : `Seleccionaste ${cantidad}`}
             </p>
           </div>

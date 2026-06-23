@@ -247,19 +247,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
     <div className="min-h-screen bg-[#F7F7F7]">
       <main className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6 2xl:max-w-[1800px]">
         <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 lg:flex-row lg:items-center lg:justify-end">
-            <button
-              type="button"
-              onClick={loadInventario}
-              disabled={isLoading}
-              className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-              Actualizar
-            </button>
-          </div>
-
-          <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center xl:grid-cols-[minmax(280px,1fr)_auto_auto]">
             <label className="relative block">
               <span className="sr-only">Buscar producto en inventario</span>
               <Search
@@ -301,6 +289,16 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
                 onClick={() => setActiveFilter("disponible")}
               />
             </div>
+
+            <button
+              type="button"
+              onClick={loadInventario}
+              disabled={isLoading}
+              className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 lg:col-span-2 xl:col-span-1 ${FOCUS_VISIBLE_CLASS}`}
+            >
+              <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
+              Actualizar
+            </button>
           </div>
         </section>
 
@@ -343,14 +341,16 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
                   key={section.value}
                   className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
                 >
-                  <header className="flex min-h-[54px] items-center justify-between gap-3 bg-slate-100 px-3">
+                  <header className="flex min-h-[58px] items-center justify-between gap-3 bg-slate-100 px-3 py-2">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-500">
                         <Warehouse className="h-4 w-4" aria-hidden="true" />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black text-slate-500">Estado de inventario</p>
-                        <h2 className="truncate text-sm font-black uppercase text-slate-950">{section.label}</h2>
+                        <p className="text-[11px] font-black leading-tight text-slate-500">Estado de inventario</p>
+                        <h2 className="truncate !text-base !leading-tight font-black uppercase text-slate-950">
+                          {section.label}
+                        </h2>
                       </div>
                     </div>
 

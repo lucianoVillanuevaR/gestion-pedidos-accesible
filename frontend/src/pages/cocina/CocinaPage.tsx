@@ -993,6 +993,7 @@ function CocinaSummary({
 function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido }: TicketProps) {
   const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
   const interactionProps = getKitchenTicketInteractionProps(pedido, onOpenModal);
+  const comentarios = getKitchenComments(pedido);
 
   return (
     <article
@@ -1027,6 +1028,16 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
           <p className="mt-3 rounded-lg border border-yellow-200 bg-[#FFF8DC] px-3 py-2 text-sm font-bold text-slate-800">
             {pedido.observacion}
           </p>
+        )}
+        {comentarios.length > 0 && (
+          <div className="mt-3 rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-2 text-sm text-slate-950">
+            <p className="text-xs font-black uppercase tracking-wide text-amber-900">Comentarios para cocina</p>
+            {comentarios.map((comentario) => (
+              <p key={`${comentario.productoId}-${comentario.texto}`} className="mt-1 font-black leading-snug">
+                {comentario.producto}: {comentario.texto}
+              </p>
+            ))}
+          </div>
         )}
         <p className="mt-3 text-xs font-black uppercase text-slate-400">Haz clic para ver todos los detalles</p>
       </div>
@@ -1105,6 +1116,7 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
 function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido }: TicketProps) {
   const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
   const interactionProps = getKitchenTicketInteractionProps(pedido, onOpenModal);
+  const comentarios = getKitchenComments(pedido);
 
   return (
     <article
@@ -1142,6 +1154,16 @@ function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, o
           <p className="mt-4 rounded-2xl border-2 border-yellow-300 bg-[#FFF8DC] p-4 text-xl font-black text-slate-950">
             {pedido.observacion}
           </p>
+        )}
+        {comentarios.length > 0 && (
+          <div className="mt-4 rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 text-slate-950">
+            <p className="text-lg font-black uppercase tracking-wide text-amber-900">Comentarios para cocina</p>
+            {comentarios.map((comentario) => (
+              <p key={`${comentario.productoId}-${comentario.texto}`} className="mt-2 text-xl font-black leading-snug">
+                {comentario.producto}: {comentario.texto}
+              </p>
+            ))}
+          </div>
         )}
       </div>
 
@@ -1224,6 +1246,22 @@ function getKitchenTicketState(pedido: PedidoResponse) {
     isReady: pedido.estado === "listo",
     numeroPedido: getPedidoDisplayNumber(pedido)
   };
+}
+
+function getKitchenComments(pedido: PedidoResponse) {
+  return (pedido.detalles ?? []).flatMap((detalle) => {
+    const texto = detalle.personalizacion?.comentario?.trim();
+
+    if (!texto) return [];
+
+    return [
+      {
+        producto: detalle.producto?.nombre ?? `Producto ${detalle.productoId}`,
+        productoId: detalle.productoId,
+        texto
+      }
+    ];
+  });
 }
 
 function getKitchenTicketInteractionProps(pedido: PedidoResponse, onOpenModal: (modal: ActiveModal) => void) {

@@ -150,7 +150,7 @@ function AccessibilityPanel({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/30 px-3 py-4 no-print sm:px-4" onClick={onClose} role="presentation">
+    <div className="fixed inset-0 z-[200] bg-black/40 px-3 py-4 no-print sm:px-4" onClick={onClose} role="presentation">
       <aside
         ref={dialogRef}
         aria-modal="true"
@@ -158,7 +158,7 @@ function AccessibilityPanel({
         aria-label="Panel de opciones simples"
         tabIndex={-1}
         className={`
-          ml-auto flex h-full w-full max-w-md flex-col
+          ml-auto flex h-full w-full max-w-md flex-col overflow-hidden
           ${
             isAccessible
               ? "rounded-3xl border-3 border-slate-900 bg-white shadow-2xl"
@@ -173,8 +173,8 @@ function AccessibilityPanel({
             ${headerPaddingClass} sm:px-6
           `}
         >
-          <div className="flex items-start justify-between gap-4">
-            <div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
+            <div className="min-w-0">
               <p
                 className={`
                   font-bold uppercase tracking-[0.16em]
@@ -209,7 +209,7 @@ function AccessibilityPanel({
               onClick={onClose}
               aria-label="Cerrar panel de opciones"
               className={`
-                flex-shrink-0 min-h-[56px] min-w-[56px] rounded-xl border font-bold transition
+                inline-flex min-h-[56px] shrink-0 items-center justify-center whitespace-nowrap rounded-xl border px-3 font-bold transition sm:px-4
                 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4
                 ${
                   isAccessible

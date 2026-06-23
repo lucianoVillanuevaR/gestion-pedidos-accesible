@@ -79,6 +79,9 @@ function PdvNormalView() {
     timeStyle: "short"
   }).format(new Date());
   const canPrint = isTurnoOpen && pedidoDetalles.length > 0;
+  const isCloseTurnoBlockedFeedback =
+    feedback?.type === "error" &&
+    feedback.message.startsWith("No puedes cerrar el turno mientras existan pedidos activos");
 
   const handleTurnoButtonClick = () => {
     if (isTurnoOpen) {
@@ -184,6 +187,21 @@ function PdvNormalView() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          {!isTurnoOpen && (
+            <div
+              className={`mb-4 rounded-xl border px-4 py-3 text-sm font-black ${
+                isHighContrast ? "contrast-panel-soft border-yellow-400" : "border-red-300 bg-red-50 text-red-900"
+              }`}
+              role="alert"
+            >
+              Turno cerrado. Abre turno para registrar pedidos.
+            </div>
+          )}
+          {isCloseTurnoBlockedFeedback && feedback && (
+            <div ref={feedbackRef} tabIndex={-1} role="alert" aria-live="assertive" className="mb-4 outline-none">
+              <Toast feedback={feedback} isAccessible={false} isHighContrast={isHighContrast} className="w-full" />
+            </div>
+          )}
           <h2 className="mb-2 text-xl font-black uppercase text-slate-800">{selectedCategoryLabel}</h2>
           {!loadingProductos && productosFiltrados.length === 0 && !loadingError ? (
             <div className="rounded-md border-2 border-dashed border-slate-300 bg-white p-8 text-center">
@@ -337,7 +355,7 @@ function PdvNormalView() {
           </div>
         )}
 
-        {feedback && (
+        {feedback && !isCloseTurnoBlockedFeedback && (
           <div
             ref={feedbackRef}
             tabIndex={-1}
@@ -346,15 +364,6 @@ function PdvNormalView() {
             className="mx-3 mt-3 min-w-0 outline-none"
           >
             <Toast feedback={feedback} isAccessible={false} isHighContrast={isHighContrast} className="w-full" />
-          </div>
-        )}
-
-        {!isTurnoOpen && (
-          <div
-            className="mx-3 mt-3 rounded-xl border border-red-300 bg-red-50 px-3 py-3 text-sm font-bold text-red-800 no-print print:hidden"
-            role="alert"
-          >
-            <p>Turno cerrado. Abre turno para poder registrar pedidos.</p>
           </div>
         )}
 
