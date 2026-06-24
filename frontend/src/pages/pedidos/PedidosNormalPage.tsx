@@ -1,5 +1,18 @@
-import { AlertTriangle, CalendarDays, Check, Clock3, Eye, Filter, LoaderCircle, RefreshCw, Search, Store, User, X } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Clock3,
+  Eye,
+  Filter,
+  LoaderCircle,
+  RefreshCw,
+  Search,
+  Store,
+  User,
+  X
+} from "lucide-react";
 import { useMemo, useState } from "react";
+import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import type { EstadoPedido, PedidoResponse } from "../../types";
@@ -19,7 +32,8 @@ import {
   StatusBadge,
   usePedidosController,
   type ActiveModal,
-  type EstadoFilter
+  type EstadoFilter,
+  type NormalSummary
 } from "./PedidosShared";
 
 function PedidosNormalPage() {
@@ -76,11 +90,7 @@ function PedidosNormalPage() {
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <section className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
-        <PedidosActivosHeader
-          entregadosHoy={entregadosHoy}
-          isHighContrast={isHighContrast}
-          summary={normalSummary}
-        />
+        <PedidosActivosHeader entregadosHoy={entregadosHoy} isHighContrast={isHighContrast} summary={normalSummary} />
 
         <NormalPedidosToolbar
           estadoFilter={estadoFilter}
@@ -93,12 +103,7 @@ function PedidosNormalPage() {
           summary={normalSummary}
         />
 
-        {error && (
-          <div className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`} role="alert">
-            <AlertTriangle className="mt-1 h-5 w-5" aria-hidden="true" />
-            <p className="font-bold">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
 
         {isLoading ? (
           <div className={`flex min-h-[260px] items-center justify-center rounded-[26px] ${panelClass}`}>
@@ -122,7 +127,6 @@ function PedidosNormalPage() {
             onOpenModal={setActiveModal}
           />
         )}
-
       </section>
     </div>
   );
@@ -172,7 +176,7 @@ function PedidosActivosHeader({
 }: {
   entregadosHoy: number;
   isHighContrast: boolean;
-  summary: ReturnType<typeof import("./PedidosShared").getNormalSummary>;
+  summary: NormalSummary;
 }) {
   const cards = [
     { label: "Pendientes", value: summary.pendientes },
@@ -182,7 +186,9 @@ function PedidosActivosHeader({
   ];
 
   return (
-    <header className={`rounded-[10px] border px-4 py-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}>
+    <header
+      className={`rounded-[10px] border px-4 py-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}
+    >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
@@ -219,16 +225,20 @@ function NormalPedidoRow({
   const numeroPedido = getPedidoDisplayNumber(pedido);
 
   return (
-    <article className={`grid gap-4 border-l-4 px-4 py-4 transition md:grid-cols-[170px_170px_130px_minmax(0,1fr)_210px] md:items-center xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_240px] ${
-      isCancelled ? "border-red-300 bg-slate-50 hover:bg-slate-50" : "border-[#FECE00] hover:bg-[#FFFDF3]"
-    }`}>
+    <article
+      className={`grid gap-4 border-l-4 px-4 py-4 transition md:grid-cols-[170px_170px_130px_minmax(0,1fr)_210px] md:items-center xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_240px] ${
+        isCancelled ? "border-red-300 bg-slate-50 hover:bg-slate-50" : "border-[#FECE00] hover:bg-[#FFFDF3]"
+      }`}
+    >
       <div>
         <p className="flex items-center gap-1.5 font-black text-yellow-600">
           #{numeroPedido}
           <Store className="h-4 w-4" aria-hidden="true" />
           En el local
         </p>
-        <p className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-600" : "text-slate-600"}`}>
+        <p
+          className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-600" : "text-slate-600"}`}
+        >
           <Clock3 className="h-4 w-4" aria-hidden="true" />
           {formatElapsedTime(pedido.createdAt)}
         </p>
@@ -246,7 +256,9 @@ function NormalPedidoRow({
 
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge estado={pedido.estado} />
-        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">PDV</span>
+        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
+          PDV
+        </span>
         <span className="truncate text-xs font-bold text-slate-500">{formatMetodoPago(pedido.metodoPago)}</span>
       </div>
 
@@ -262,11 +274,7 @@ function NormalPedidoRow({
         <p className="mt-2 text-xs font-bold text-slate-500">{getProductCount(pedido)} productos</p>
       </div>
 
-      <NormalPedidoActions
-        isUpdating={isUpdating}
-        onOpenModal={onOpenModal}
-        pedido={pedido}
-      />
+      <NormalPedidoActions isUpdating={isUpdating} onOpenModal={onOpenModal} pedido={pedido} />
     </article>
   );
 }
@@ -323,7 +331,13 @@ function NormalPedidoActions({
 
       {actions.statusLabel && (
         <BoardActionStatus
-          icon={actions.statusLabel === "Finalizado" ? <Check className="h-5 w-5" aria-hidden="true" /> : <X className="h-5 w-5" aria-hidden="true" />}
+          icon={
+            actions.statusLabel === "Finalizado" ? (
+              <Check className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <X className="h-5 w-5" aria-hidden="true" />
+            )
+          }
           label={actions.statusLabel}
           tone={actions.statusLabel === "Finalizado" ? "success" : "danger"}
         />
@@ -349,7 +363,7 @@ function NormalPedidosToolbar({
   searchTerm: string;
   setEstadoFilter: (value: EstadoFilter) => void;
   setSearchTerm: (value: string) => void;
-  summary: ReturnType<typeof import("./PedidosShared").getNormalSummary>;
+  summary: NormalSummary;
 }) {
   const countsByFilter: Record<EstadoFilter, number> = {
     cancelado: summary.total - summary.pendientes - summary.enPreparacion - summary.listos - summary.entregados,
@@ -361,7 +375,9 @@ function NormalPedidosToolbar({
   };
 
   return (
-    <section className={`overflow-hidden rounded-[10px] ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}>
+    <section
+      className={`overflow-hidden rounded-[10px] ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}
+    >
       <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
           <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-slate-600">
@@ -390,13 +406,15 @@ function NormalPedidosToolbar({
                 {isActive && <Check className="h-4 w-4" aria-hidden="true" />}
                 {option.label}
                 {count > 0 && (
-                  <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black ${
-                    option.value === "pendiente"
-                      ? "bg-yellow-500 text-white"
-                      : option.value === "en_preparacion" || option.value === "listo"
-                        ? "bg-emerald-500 text-white"
-                        : "bg-slate-100 text-slate-700"
-                  }`}>
+                  <span
+                    className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-black ${
+                      option.value === "pendiente"
+                        ? "bg-yellow-500 text-white"
+                        : option.value === "en_preparacion" || option.value === "listo"
+                          ? "bg-emerald-500 text-white"
+                          : "bg-slate-100 text-slate-700"
+                    }`}
+                  >
                     {count}
                   </span>
                 )}
@@ -411,7 +429,10 @@ function NormalPedidosToolbar({
       <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto]">
         <label className="relative block">
           <span className="sr-only">Buscar pedido</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
+            aria-hidden="true"
+          />
           <input
             type="search"
             value={searchTerm}
@@ -426,9 +447,7 @@ function NormalPedidosToolbar({
           onClick={() => loadPedidos()}
           disabled={isLoading}
           className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-            isHighContrast
-              ? "contrast-button-secondary"
-              : "border-slate-900 bg-slate-900 text-white hover:bg-black"
+            isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"
           } ${FOCUS_VISIBLE_CLASS}`}
         >
           <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
@@ -486,7 +505,9 @@ function BoardActionStatus({
   }[tone];
 
   return (
-    <span className={`inline-flex min-h-[52px] min-w-[84px] flex-col items-center justify-center rounded-lg border px-3 text-sm font-black leading-tight ${toneClass}`}>
+    <span
+      className={`inline-flex min-h-[52px] min-w-[84px] flex-col items-center justify-center rounded-lg border px-3 text-sm font-black leading-tight ${toneClass}`}
+    >
       {icon}
       {label}
     </span>
@@ -562,9 +583,11 @@ function getEntregadosHoy(pedidos: PedidoResponse[]) {
 
     const createdAt = new Date(pedido.createdAt);
 
-    return createdAt.getFullYear() === today.getFullYear()
-      && createdAt.getMonth() === today.getMonth()
-      && createdAt.getDate() === today.getDate();
+    return (
+      createdAt.getFullYear() === today.getFullYear() &&
+      createdAt.getMonth() === today.getMonth() &&
+      createdAt.getDate() === today.getDate()
+    );
   }).length;
 }
 

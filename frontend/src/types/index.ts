@@ -10,6 +10,37 @@ export interface Producto {
   altText?: string;
   disponible?: boolean;
   destacado?: boolean;
+  tipo?: TipoProducto;
+  controlaStock?: boolean;
+  disponibleConfigurado?: boolean;
+  stockDisponible?: number | null;
+  componentes?: ProductoComponente[];
+  variantes?: VarianteProducto[];
+  requiereSeleccionVariante?: boolean;
+}
+
+export type TipoProducto = "producto" | "promo" | "combo";
+
+export interface ProductoComponente {
+  id?: number;
+  componenteId: number;
+  cantidad: number;
+  varianteId?: number | null;
+  componente?: Pick<Producto, "id" | "nombre" | "controlaStock" | "tipo">;
+}
+
+export interface VarianteProducto {
+  id: number;
+  productoId: number;
+  nombre: string;
+  descripcion?: string | null;
+  orden?: number;
+  disponible?: boolean;
+}
+
+export interface PersonalizacionProducto {
+  aderezos: string[];
+  comentario?: string;
 }
 
 export interface CreateProductoPayload {
@@ -19,6 +50,9 @@ export interface CreateProductoPayload {
   disponible?: boolean;
   nombre: string;
   precio: number;
+  tipo?: TipoProducto;
+  controlaStock?: boolean;
+  componentes?: Array<{ componenteId: number; cantidad: number; varianteId?: number }>;
 }
 
 export type UpdateProductoPayload = Partial<CreateProductoPayload>;
@@ -39,6 +73,8 @@ export interface DemoUser extends AuthUser {
 interface PedidoItem {
   productoId: number;
   cantidad: number;
+  varianteId?: number;
+  personalizacion?: PersonalizacionProducto;
 }
 
 export type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
@@ -60,6 +96,9 @@ export interface PedidoDetalleResponse {
   precioUnitario: string;
   subtotal: string;
   producto?: Producto;
+  variante?: VarianteProducto | null;
+  varianteId?: number | null;
+  personalizacion?: PersonalizacionProducto | null;
 }
 
 export interface PedidoResponse {
@@ -105,7 +144,7 @@ export type CierrePedidoResumen = {
   detalles: CierrePedidoDetalle[];
 };
 
-export type CierrePedidoDetalle = {
+type CierrePedidoDetalle = {
   cantidad: number;
   precioUnitario: number;
   productoId: number;
@@ -134,6 +173,8 @@ export interface InventarioItem {
   productoNombre: string;
   stockActual: number;
   stockMinimo: number;
+  tipo?: TipoProducto;
+  controlaStock?: boolean;
 }
 
 export type UpdateInventarioPayload = {

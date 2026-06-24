@@ -1,14 +1,17 @@
 import { createContext, useContext, type Dispatch, type RefObject, type SetStateAction } from "react";
 import type { NavigateFunction } from "react-router-dom";
-import type { MetodoPago, Producto } from "../../types";
+import type { MetodoPago, PersonalizacionProducto, Producto, VarianteProducto } from "../../types";
 import type { FiltroCategoria } from "../../utils/pdv";
 import type { FeedbackState } from "./PdvShared";
 
-export type PedidoDetalleItem = {
+type PedidoDetalleItem = {
+  itemKey: string;
   productoId: number;
   cantidad: number;
   producto: Producto;
   subtotal: number;
+  variante?: VarianteProducto;
+  personalizacion?: PersonalizacionProducto;
 };
 
 export type PdvViewContextValue = {
@@ -36,7 +39,7 @@ export type PdvViewContextValue = {
   isHighContrast: boolean;
   isPanelOpen: boolean;
   isTurnoOpen: boolean;
-  items: Record<number, number>;
+  items: Record<string, number>;
   loadingError: string | null;
   loadingProductos: boolean;
   loadProductos: () => void;
@@ -50,7 +53,7 @@ export type PdvViewContextValue = {
   puedeRegistrar: boolean;
   quickActionButtonClass: string;
   quickActionIconButtonClass: string;
-  removeProduct: (productoId: number) => void;
+  removeProduct: (itemKey: string) => void;
   resetPedido: () => void;
   searchTerm: string;
   selectedCategory: FiltroCategoria;

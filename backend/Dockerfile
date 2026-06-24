@@ -10,7 +10,7 @@ RUN npm ci
 
 COPY . .
 
-# Generar cliente Prisma
+# Generar cliente Prisma y compilar TypeScript
 RUN npm run prisma:generate
 RUN npm run build
 
@@ -33,3 +33,5 @@ RUN npm run prisma:generate
 EXPOSE 3000
 
 CMD ["sh", "-c", "npm run prisma:migrate:prod && npm run seed:prod && npm start"]
+
+

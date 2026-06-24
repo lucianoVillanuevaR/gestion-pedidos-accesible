@@ -1,8 +1,12 @@
 import type { CreateProductoPayload } from "../types";
+import {
+  PRODUCTO_DESCRIPCION_MAX_LENGTH,
+  PRODUCTO_NOMBRE_MAX_LENGTH,
+  PRODUCTO_PRECIO_MAX,
+  PRODUCTO_PRECIO_MIN
+} from "../domain/productoRules";
 
-export const PRODUCTO_NOMBRE_MAX_LENGTH = 80;
-export const PRODUCTO_DESCRIPCION_MAX_LENGTH = 300;
-export const PRODUCTO_PRECIO_MAX = 99999999.99;
+export { PRODUCTO_DESCRIPCION_MAX_LENGTH, PRODUCTO_NOMBRE_MAX_LENGTH, PRODUCTO_PRECIO_MAX, PRODUCTO_PRECIO_MIN };
 
 type ValidateProductoFormParams = {
   descripcion: string;
@@ -31,8 +35,12 @@ export function validateProductoForm({ descripcion, nombre, precio }: ValidatePr
     return `La descripción no puede superar ${PRODUCTO_DESCRIPCION_MAX_LENGTH} caracteres`;
   }
 
-  if (!Number.isFinite(precioNumerico) || precioNumerico < 0 || precioNumerico > PRODUCTO_PRECIO_MAX) {
-    return `Ingresa un precio entre 0 y ${PRODUCTO_PRECIO_MAX}`;
+  if (
+    !Number.isFinite(precioNumerico) ||
+    precioNumerico < PRODUCTO_PRECIO_MIN ||
+    precioNumerico > PRODUCTO_PRECIO_MAX
+  ) {
+    return `Ingresa un precio entre ${PRODUCTO_PRECIO_MIN} y ${PRODUCTO_PRECIO_MAX}`;
   }
 
   if (hasMoreThanTwoDecimals(precioNumerico)) {
@@ -48,7 +56,10 @@ export function buildProductoPayload({
   destacado,
   disponible,
   nombre,
-  precio
+  precio,
+  tipo,
+  controlaStock,
+  componentes
 }: CreateProductoPayload & { precio: number }) {
   return {
     categoria,
@@ -56,6 +67,9 @@ export function buildProductoPayload({
     destacado,
     disponible,
     nombre: nombre.trim(),
-    precio: Math.round(precio * 100) / 100
+    precio: Math.round(precio * 100) / 100,
+    tipo,
+    controlaStock,
+    componentes
   };
 }

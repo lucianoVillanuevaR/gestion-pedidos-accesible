@@ -11,7 +11,8 @@ type EasyModeActionsProps = {
   showHome?: boolean;
 };
 
-const FOCUS_CLASS = "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2";
+const FOCUS_CLASS =
+  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2";
 
 function EasyModeActions({
   className = "",
@@ -49,9 +50,7 @@ function EasyModeActions({
   };
 
   const actionCount = (showHome ? 1 : 0) + 1 + (showHelp ? 1 : 0);
-  const gridClass = actionCount >= 3
-    ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-    : "grid gap-3 sm:grid-cols-2";
+  const gridClass = actionCount >= 3 ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-3" : "grid gap-3 sm:grid-cols-2";
 
   return (
     <div className={`${gridClass} ${className}`}>

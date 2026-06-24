@@ -9,22 +9,50 @@ generator client {
 }
 
 model Producto {
-  id                  Int             @id @default(autoincrement())
-  nombre              String          @unique
+  id                  Int                  @id @default(autoincrement())
+  nombre              String               @unique
   descripcion         String?
-  precio              Decimal         @db.Decimal(10, 2)
-  precioOriginal      Decimal?        @map("precio_original") @db.Decimal(10, 2)
-  descuentoPorcentaje Int?            @map("descuento_porcentaje")
-  disponible          Boolean         @default(true)
-  destacado           Boolean         @default(false)
-  promocion           Boolean         @default(false)
-  imagenUrl           String?         @map("imagen_url") @db.Text
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  precio              Decimal              @db.Decimal(10, 2)
+  precioOriginal      Decimal?             @map("precio_original") @db.Decimal(10, 2)
+  descuentoPorcentaje Int?                 @map("descuento_porcentaje")
+  disponible          Boolean              @default(true)
+  destacado           Boolean              @default(false)
+  promocion           Boolean              @default(false)
+  tipo                TipoProducto         @default(producto)
+  controlaStock       Boolean              @default(true) @map("controla_stock")
+  imagenUrl           String?              @map("imagen_url") @db.Text
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   categorias          Categoria[]
   variantes           Variante[]
   inventario          Inventario?
   detallesPedido      DetallePedido[]
+  componentes         ProductoComponente[] @relation("ProductoVendido")
+  componenteDe        ProductoComponente[] @relation("ComponenteStock")
+}
+
+enum TipoProducto {
+  producto
+  promo
+  combo
+}
+
+model ProductoComponente {
+  id           Int  @id @default(autoincrement())
+  productoId   Int  @map("producto_id")
+  componenteId Int  @map("componente_id")
+  cantidad     Int
+  varianteId   Int? @map("variante_id")
+
+  producto   Producto  @relation("ProductoVendido", fields: [productoId], references: [id], onDelete: Cascade)
+  componente Producto  @relation("ComponenteStock", fields: [componenteId], references: [id], onDelete: Restrict)
+  variante   Variante? @relation(fields: [varianteId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, componenteId, varianteId])
+  @@index([productoId])
+  @@index([componenteId])
+  @@index([varianteId])
+  @@map("producto_componentes")
 }
 
 model Categoria {
@@ -47,7 +75,9 @@ model Variante {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  producto       Producto             @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  componentes    ProductoComponente[]
+  detallesPedido DetallePedido[]
 
   @@unique([productoId, nombre])
   @@index([productoId])
@@ -73,20 +103,55 @@ model Pedido {
   observacion   String?
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  turnoId       Int?
   detalles      DetallePedido[]
+  turno         Turno?          @relation(fields: [turnoId], references: [id])
+
+  @@index([turnoId])
 }
 
 model DetallePedido {
-  id             Int     @id @default(autoincrement())
-  pedidoId       Int
-  productoId     Int
-  cantidad       Int
-  precioUnitario Decimal @db.Decimal(10, 2)
-  subtotal       Decimal @db.Decimal(10, 2)
+  id              Int     @id @default(autoincrement())
+  pedidoId        Int
+  productoId      Int
+  cantidad        Int
+  precioUnitario  Decimal @db.Decimal(10, 2)
+  subtotal        Decimal @db.Decimal(10, 2)
+  varianteId      Int?
+  personalizacion Json?
 
-  pedido   Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  producto Producto @relation(fields: [productoId], references: [id])
+  pedido   Pedido    @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto Producto  @relation(fields: [productoId], references: [id])
+  variante Variante? @relation(fields: [varianteId], references: [id])
 
   @@index([pedidoId])
   @@index([productoId])
+  @@index([varianteId])
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  role         String
+  label        String
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  turnos       Turno[]
+}
+
+model Turno {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int
+  estado      String    @default("abierto")
+  fechaInicio DateTime  @default(now())
+  fechaCierre DateTime?
+  resumen     Json?
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  pedidos     Pedido[]
+
+  @@index([estado])
+  @@index([usuarioId])
 }

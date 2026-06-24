@@ -1,35 +1,12 @@
 import { createContext, useContext, type PropsWithChildren } from "react";
-import useAccessibility from "../hooks/useAccessibility";
+import useAccessibility, { type AccessibilityState } from "../hooks/useAccessibility";
 
-type AccessibilityTextSize = "small" | "normal" | "large";
-
-type AccessibilityContextValue = {
-  isPanelOpen: boolean;
-  isAccessible: boolean;
-  textSize: AccessibilityTextSize;
-  isHighContrast: boolean;
-  isVoiceEnabled: boolean;
-  isSoundEnabled: boolean;
-  setTextSize: (value: AccessibilityTextSize) => void;
-  setAccessibleMode: (value: boolean) => void;
-  openAccessibilityPanel: () => void;
-  closeAccessibilityPanel: () => void;
-  toggleAccessibility: () => void;
-  toggleHighContrast: () => void;
-  toggleVoiceEnabled: () => void;
-  toggleSoundEnabled: () => void;
-};
-
-const AccessibilityContext = createContext<AccessibilityContextValue | null>(null);
+const AccessibilityContext = createContext<AccessibilityState | null>(null);
 
 function AccessibilityProvider({ children }: PropsWithChildren) {
-  const accessibility = useAccessibility() as AccessibilityContextValue;
+  const accessibility = useAccessibility();
 
-  return (
-    <AccessibilityContext.Provider value={accessibility}>
-      {children}
-    </AccessibilityContext.Provider>
-  );
+  return <AccessibilityContext.Provider value={accessibility}>{children}</AccessibilityContext.Provider>;
 }
 
 function useAccessibilityContext() {

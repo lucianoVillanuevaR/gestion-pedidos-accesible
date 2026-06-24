@@ -1,4 +1,13 @@
-import { Accessibility, ChefHat, ClipboardList, ClipboardPlus, FileCheck2, History, Volume2, Warehouse } from "lucide-react";
+import {
+  Accessibility,
+  ChefHat,
+  ClipboardList,
+  ClipboardPlus,
+  FileCheck2,
+  History,
+  Volume2,
+  Warehouse
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../components/EasyModeActions";
@@ -68,7 +77,8 @@ function ModoFacilPage() {
   const softPanelClass = isHighContrast
     ? "contrast-panel-soft border-2 border-yellow-400"
     : "border-2 border-slate-200 bg-slate-50";
-  const focusClass = "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2";
+  const focusClass =
+    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2";
   const handleReadIntro = () => {
     speakAction(
       "Estás en modo fácil. Puedes crear un pedido, ver pedidos activos, revisar preparación, consultar stock básico, cerrar turno o ver pedidos recientes.",
@@ -82,13 +92,15 @@ function ModoFacilPage() {
         <header className={`rounded-[28px] p-6 sm:p-8 ${panelClass}`}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "text-yellow-300" : "text-slate-500"}`}>
+              <p
+                className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "text-yellow-300" : "text-slate-500"}`}
+              >
                 Riquísimo
               </p>
-              <h1 className="mt-3 text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-                Modo fácil
-              </h1>
-              <p className={`mt-3 text-xl font-bold leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}>
+              <h1 className="mt-3 text-4xl font-black leading-tight tracking-tight sm:text-5xl">Modo fácil</h1>
+              <p
+                className={`mt-3 text-xl font-bold leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}
+              >
                 Elige una opción para continuar.
               </p>
             </div>
@@ -99,7 +111,9 @@ function ModoFacilPage() {
                 type="button"
                 onClick={handleReadIntro}
                 className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${
-                  isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
+                  isHighContrast
+                    ? "contrast-button-secondary"
+                    : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
                 } ${focusClass}`}
               >
                 <Volume2 className="h-6 w-6" aria-hidden="true" />
@@ -119,7 +133,10 @@ function ModoFacilPage() {
             >
               <Accessibility className="h-6 w-6" />
             </span>
-            <h2 id="easy-actions-title" className={`text-2xl font-black ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
+            <h2
+              id="easy-actions-title"
+              className={`text-2xl font-black ${isHighContrast ? "contrast-important" : "text-slate-950"}`}
+            >
               ¿Qué quieres hacer ahora?
             </h2>
           </div>
@@ -148,7 +165,9 @@ function ModoFacilPage() {
                 </span>
                 <span className="min-w-0">
                   <span className="block text-2xl font-black leading-tight">{action.label}</span>
-                  <span className={`mt-2 block text-lg font-bold leading-snug ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}>
+                  <span
+                    className={`mt-2 block text-lg font-bold leading-snug ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}
+                  >
                     {action.description}
                   </span>
                 </span>

@@ -1,24 +1,21 @@
-const ESTADOS_PEDIDO_VALIDOS = ["pendiente", "en_preparacion", "listo", "entregado", "cancelado"] as const;
-const METODOS_PAGO_VALIDOS = ["efectivo", "tarjeta", "transferencia"] as const;
-const PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH = 80;
-const PEDIDO_OBSERVACION_MAX_LENGTH = 300;
-const PEDIDO_MAX_DETALLES = 50;
-const PEDIDO_MAX_CANTIDAD_DETALLE = 99;
-
-type EstadoPedidoValido = (typeof ESTADOS_PEDIDO_VALIDOS)[number];
-type MetodoPagoValido = (typeof METODOS_PAGO_VALIDOS)[number];
-
-const TRANSICIONES_ESTADO_PERMITIDAS: Record<EstadoPedidoValido, EstadoPedidoValido[]> = {
-  pendiente: ["en_preparacion", "cancelado"],
-  en_preparacion: ["listo", "cancelado"],
-  listo: ["entregado"],
-  entregado: [],
-  cancelado: []
-};
+import {
+  CLIENTE_NOMBRE_PATTERN,
+  ESTADOS_PEDIDO_VALIDOS,
+  METODOS_PAGO_VALIDOS,
+  PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH,
+  PEDIDO_MAX_CANTIDAD_DETALLE,
+  PEDIDO_MAX_DETALLES,
+  PEDIDO_OBSERVACION_MAX_LENGTH,
+  TRANSICIONES_ESTADO_PERMITIDAS,
+  type EstadoPedidoValido,
+  type MetodoPagoValido
+} from "../domain/pedidoRules";
 
 type PedidoDetalleInput = {
   cantidad: number;
   productoId: number;
+  varianteId?: number;
+  personalizacion?: unknown;
 };
 
 export function validateMetodoPago(metodoPago: string) {
@@ -42,7 +39,7 @@ export function validatePedidoDetalles(detalles: PedidoDetalleInput[] | undefine
     return `El pedido no puede tener más de ${PEDIDO_MAX_DETALLES} detalles`;
   }
 
-  const productIds = new Set<number>();
+  const detalleKeys = new Set<string>();
 
   for (const detalle of detalles) {
     if (
@@ -56,13 +53,45 @@ export function validatePedidoDetalles(detalles: PedidoDetalleInput[] | undefine
       return `Detalle inválido: productoId y cantidad entera entre 1 y ${PEDIDO_MAX_CANTIDAD_DETALLE} son requeridos`;
     }
 
-    const productoId = Number(detalle.productoId);
-
-    if (productIds.has(productoId)) {
-      return "No se puede repetir el mismo producto en el pedido";
+    if (detalle.personalizacion !== undefined) {
+      if (
+        !detalle.personalizacion ||
+        typeof detalle.personalizacion !== "object" ||
+        Array.isArray(detalle.personalizacion)
+      ) {
+        return "Detalle inválido: personalizacion debe ser un objeto";
+      }
+      const personalizacion = detalle.personalizacion as { aderezos?: unknown; comentario?: unknown };
+      if (
+        !Array.isArray(personalizacion.aderezos) ||
+        personalizacion.aderezos.length > 3 ||
+        personalizacion.aderezos.some((item) => typeof item !== "string" || !item.trim() || item.length > 40)
+      ) {
+        return "Detalle inválido: selecciona hasta 3 aderezos válidos";
+      }
+      if (
+        personalizacion.comentario !== undefined &&
+        (typeof personalizacion.comentario !== "string" || personalizacion.comentario.trim().length > 200)
+      ) {
+        return "Detalle inválido: el comentario no puede superar 200 caracteres";
+      }
     }
 
-    productIds.add(productoId);
+    if (
+      detalle.varianteId !== undefined &&
+      (!Number.isInteger(Number(detalle.varianteId)) || Number(detalle.varianteId) <= 0)
+    ) {
+      return "Detalle inválido: varianteId debe ser un entero positivo";
+    }
+
+    const productoId = Number(detalle.productoId);
+    const detalleKey = `${productoId}:${detalle.varianteId ?? "base"}:${JSON.stringify(detalle.personalizacion ?? null)}`;
+
+    if (detalleKeys.has(detalleKey)) {
+      return "No se puede repetir el mismo producto con la misma opción y personalización en el pedido";
+    }
+
+    detalleKeys.add(detalleKey);
   }
 
   return null;
@@ -117,6 +146,10 @@ export function validatePedidoTextFields(clienteNombre?: unknown, observacion?: 
 
   const clienteNombreLimpio = typeof clienteNombre === "string" ? clienteNombre.trim() : "";
   const observacionLimpia = typeof observacion === "string" ? observacion.trim() : "";
+
+  if (clienteNombreLimpio && !CLIENTE_NOMBRE_PATTERN.test(clienteNombreLimpio)) {
+    return "El nombre del cliente solo puede contener letras";
+  }
 
   if (clienteNombreLimpio.length > PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH) {
     return `El nombre del cliente no puede superar ${PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH} caracteres`;

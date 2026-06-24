@@ -1,6 +1,7 @@
 import { FileSpreadsheet, Filter, MoreVertical, Plus, Search, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { normalizeSearchText } from "../../utils/formatters";
 import { FOCUS_VISIBLE_CLASS, formatCurrency, usePedidosController } from "../pedidos/PedidosShared";
 
 type SegmentFilter = "todos" | "elite" | "top" | "frecuente" | "comprador" | "sin_pedidos";
@@ -38,12 +39,15 @@ function ClientesPage() {
 
   const clientes = useMemo(() => buildClientesFromPedidos(pedidos), [pedidos]);
   const filteredClientes = useMemo(() => {
-    const normalizedSearch = normalizeText(searchTerm);
+    const normalizedSearch = normalizeSearchText(searchTerm);
 
     return clientes.filter((cliente) => {
       const matchesFilter = segmentFilter === "todos" || cliente.segmento === segmentFilter;
-      const matchesSearch = !normalizedSearch
-        || normalizeText(`${cliente.nombre} ${cliente.telefono} ${cliente.canal} ${getSegmentLabel(cliente.segmento)}`).includes(normalizedSearch);
+      const matchesSearch =
+        !normalizedSearch ||
+        normalizeSearchText(
+          `${cliente.nombre} ${cliente.telefono} ${cliente.canal} ${getSegmentLabel(cliente.segmento)}`
+        ).includes(normalizedSearch);
 
       return matchesFilter && matchesSearch;
     });
@@ -55,11 +59,15 @@ function ClientesPage() {
         <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h1 className="text-3xl font-black text-slate-950">Clientes</h1>
-            <p className="mt-1 text-sm font-bold text-slate-500">{clientes.length} clientes registrados desde pedidos.</p>
+            <p className="mt-1 text-sm font-bold text-slate-500">
+              {clientes.length} clientes registrados desde pedidos.
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <label className={`flex min-h-[48px] min-w-[240px] items-center gap-2 rounded-xl border px-3 shadow-sm ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white"}`}>
+            <label
+              className={`flex min-h-[48px] min-w-[240px] items-center gap-2 rounded-xl border px-3 shadow-sm ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white"}`}
+            >
               <Search className="h-5 w-5 text-slate-500" aria-hidden="true" />
               <span className="sr-only">Buscar cliente</span>
               <input
@@ -87,7 +95,9 @@ function ClientesPage() {
           </div>
         </div>
 
-        <div className={`overflow-hidden rounded-xl border ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white shadow-sm"}`}>
+        <div
+          className={`overflow-hidden rounded-xl border ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white shadow-sm"}`}
+        >
           <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-600">
@@ -131,7 +141,9 @@ function ClientesPage() {
             <div className="flex min-h-[260px] flex-col items-center justify-center px-4 text-center">
               <UserRound className="h-12 w-12 text-slate-300" aria-hidden="true" />
               <p className="mt-3 text-xl font-black text-slate-950">No hay clientes para mostrar</p>
-              <p className="mt-1 text-sm font-bold text-slate-500">Cuando un pedido tenga nombre de cliente, aparecerá aquí.</p>
+              <p className="mt-1 text-sm font-bold text-slate-500">
+                Cuando un pedido tenga nombre de cliente, aparecerá aquí.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -158,7 +170,9 @@ function ClientesPage() {
                       <td className="px-4 py-3 font-bold text-slate-700">{cliente.canal}</td>
                       <td className="px-4 py-3 font-bold text-slate-700">{cliente.puntos}</td>
                       <td className="px-4 py-3 font-bold text-slate-700">{cliente.totalPedidos}</td>
-                      <td className="px-4 py-3 font-black text-slate-950">{formatCurrency(String(cliente.totalComprado))}</td>
+                      <td className="px-4 py-3 font-black text-slate-950">
+                        {formatCurrency(String(cliente.totalComprado))}
+                      </td>
                       <td className="px-4 py-3">
                         <SegmentBadge segment={cliente.segmento} />
                       </td>
@@ -191,9 +205,11 @@ function SegmentBadge({ segment }: { segment: SegmentFilter }) {
   const isEmpty = segment === "sin_pedidos";
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
-      isEmpty ? "border-slate-200 bg-slate-50 text-slate-600" : "border-yellow-300 bg-[#FFF8DC] text-yellow-800"
-    }`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${
+        isEmpty ? "border-slate-200 bg-slate-50 text-slate-600" : "border-yellow-300 bg-[#FFF8DC] text-yellow-800"
+      }`}
+    >
       {label}
     </span>
   );
@@ -220,7 +236,7 @@ function buildClientesFromPedidos(pedidos: ReturnType<typeof usePedidosControlle
       return;
     }
 
-    const id = normalizeText(nombre);
+    const id = normalizeSearchText(nombre);
     const currentCliente = clientes.get(id);
     const total = Number(pedido.total);
     const totalComprado = Number.isNaN(total) ? 0 : total;
@@ -317,14 +333,6 @@ function isNewerDate(left?: string, right?: string) {
   }
 
   return new Date(left).getTime() > new Date(right).getTime();
-}
-
-function normalizeText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
 }
 
 export default ClientesPage;

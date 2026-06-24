@@ -1,7 +1,8 @@
-import { AlertTriangle, ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
+import { ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
+import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
@@ -23,21 +24,19 @@ function ProductosFacilPage() {
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [selectedCategory, setSelectedCategory] = useState<CategoriaFacil>("Todos");
   const [selectedProducto, setSelectedProducto] = useState<ProductoConCategoria | null>(null);
-  const {
-    error,
-    isLoading,
-    loadProductos,
-    productosConCategoria
-  } = useProductosCatalog({ includeUnavailable: true });
+  const { error, isLoading, loadProductos, productosConCategoria } = useProductosCatalog({ includeUnavailable: true });
 
-  const productosFiltrados = selectedCategory === "Todos"
-    ? productosConCategoria
-    : selectedCategory === "Destacados"
-      ? productosConCategoria.filter((producto) => producto.destacado)
-      : productosConCategoria.filter((producto) => producto.categoria === selectedCategory);
+  const productosFiltrados =
+    selectedCategory === "Todos"
+      ? productosConCategoria
+      : selectedCategory === "Destacados"
+        ? productosConCategoria.filter((producto) => producto.destacado)
+        : productosConCategoria.filter((producto) => producto.categoria === selectedCategory);
 
   const pageBg = isHighContrast ? "bg-black" : "bg-white";
-  const panelClass = isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white";
+  const panelClass = isHighContrast
+    ? "contrast-panel border-2 border-yellow-400"
+    : "border-2 border-slate-900 bg-white";
 
   const handleRefreshProductos = () => {
     speak("Actualizando productos.", {
@@ -76,10 +75,7 @@ function ProductosFacilPage() {
   return (
     <div className={`min-h-screen ${pageBg}`}>
       <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
-        <AccessibleIntroCard
-          handleRefreshProductos={handleRefreshProductos}
-          isHighContrast={isHighContrast}
-        />
+        <AccessibleIntroCard handleRefreshProductos={handleRefreshProductos} isHighContrast={isHighContrast} />
 
         <section className={`rounded-[26px] p-4 sm:p-5 ${panelClass}`} aria-label="Categorías de productos">
           <div className="flex flex-wrap gap-4">
@@ -109,12 +105,7 @@ function ProductosFacilPage() {
           </div>
         </section>
 
-        {error && (
-          <div className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`} role="alert">
-            <AlertTriangle className="mt-1 h-6 w-6" aria-hidden="true" />
-            <p className="text-lg font-black">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert isHighContrast={isHighContrast} isLarge message={error} />}
 
         {isLoading ? (
           <div className={`flex min-h-[260px] items-center justify-center rounded-[26px] ${panelClass}`}>
@@ -158,16 +149,24 @@ function AccessibleIntroCard({
   isHighContrast: boolean;
 }) {
   return (
-    <header className={`rounded-3xl p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
-      <p className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
+    <header
+      className={`rounded-3xl p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+    >
+      <p
+        className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}
+      >
         Riquísimo · Modo fácil
       </p>
       <div className="mt-3 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div className="max-w-4xl">
-          <h2 className={`text-[2.35rem] font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}>
+          <h2
+            className={`text-[2.35rem] font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}
+          >
             Ver menú
           </h2>
-          <p className={`mt-3 max-w-3xl text-xl font-semibold leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}>
+          <p
+            className={`mt-3 max-w-3xl text-xl font-semibold leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}
+          >
             Revisa los productos disponibles usando categorías grandes y botones simples.
           </p>
         </div>
@@ -176,7 +175,9 @@ function AccessibleIntroCard({
           <Link
             to="/pdv/facil"
             className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-4 text-lg font-black no-underline transition ${
-              isHighContrast ? "contrast-button-primary" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+              isHighContrast
+                ? "contrast-button-primary"
+                : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
@@ -241,11 +242,13 @@ function ProductoFacilCard({
           </p>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <p className="text-4xl font-black text-slate-950">{formatCurrency(producto.precio)}</p>
-            <p className={`rounded-full border-2 px-4 py-2 text-lg font-black ${
-              isAvailable
-                ? "border-emerald-700 bg-emerald-50 text-emerald-800"
-                : "border-red-700 bg-red-50 text-red-800"
-            }`}>
+            <p
+              className={`rounded-full border-2 px-4 py-2 text-lg font-black ${
+                isAvailable
+                  ? "border-emerald-700 bg-emerald-50 text-emerald-800"
+                  : "border-red-700 bg-red-50 text-red-800"
+              }`}
+            >
               {availabilityLabel}
             </p>
           </div>
@@ -339,7 +342,9 @@ function ProductoDetailModal({
             type="button"
             onClick={onClose}
             className={`min-h-[66px] rounded-2xl border-2 px-5 text-xl font-black transition ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-100"
+              isHighContrast
+                ? "contrast-button-secondary"
+                : "border-slate-900 bg-white text-slate-950 hover:bg-slate-100"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             Volver
@@ -350,15 +355,11 @@ function ProductoDetailModal({
   );
 }
 
-function EmptyProductosFacil({
-  isHighContrast,
-  onShowAll
-}: {
-  isHighContrast: boolean;
-  onShowAll: () => void;
-}) {
+function EmptyProductosFacil({ isHighContrast, onShowAll }: { isHighContrast: boolean; onShowAll: () => void }) {
   return (
-    <div className={`rounded-[26px] p-8 text-center ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
+    <div
+      className={`rounded-[26px] p-8 text-center ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+    >
       <p className="text-3xl font-black text-slate-950">No hay productos en esta categoría</p>
       <p className="mt-3 text-xl font-semibold text-slate-600">Elige otra categoría para seguir revisando el menú.</p>
       <button

@@ -30,7 +30,9 @@ body {
   margin: 0;
   min-width: 320px;
   background-color: #fffbeb;
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 * {

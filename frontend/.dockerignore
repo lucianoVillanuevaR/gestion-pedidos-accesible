@@ -5,11 +5,17 @@ node_modules/
 dist/
 build/
 coverage/
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
 .cache/
 .tmp/
 tmp/
 temp/
 *.tsbuildinfo
+**/*.test.ts
+**/*.test.tsx
 
 # Environment files and secrets
 .env
@@ -46,5 +52,4 @@ Thumbs.db
 # Docker / infra
 Dockerfile*
 docker-compose.yml
-
 

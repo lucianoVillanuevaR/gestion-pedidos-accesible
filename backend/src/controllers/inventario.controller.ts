@@ -26,12 +26,16 @@ function toInventarioResponse(item: {
     disponible: boolean;
     id: number;
     nombre: string;
+    tipo: "producto" | "promo" | "combo";
+    controlaStock: boolean;
   };
 }) {
   return {
     productoId: item.productoId,
     productoNombre: item.producto.nombre,
     productoDisponible: item.producto.disponible,
+    tipo: item.producto.tipo,
+    controlaStock: item.producto.controlaStock,
     stockActual: item.stockActual,
     stockMinimo: item.stockMinimo,
     estado: getEstadoInventario(item.stockActual, item.stockMinimo)
@@ -44,18 +48,21 @@ export const getInventario = async (_req: Request, res: Response) => {
       include: {
         inventario: true
       },
+      where: { controlaStock: true, tipo: "producto" },
       orderBy: { nombre: "asc" }
     });
 
     const inventario = await Promise.all(
       productos.map(async (producto) => {
-        const item = producto.inventario ?? (await prisma.inventario.create({
-          data: {
-            productoId: producto.id,
-            stockActual: DEFAULT_STOCK_ACTUAL,
-            stockMinimo: DEFAULT_STOCK_MINIMO
-          }
-        }));
+        const item =
+          producto.inventario ??
+          (await prisma.inventario.create({
+            data: {
+              productoId: producto.id,
+              stockActual: DEFAULT_STOCK_ACTUAL,
+              stockMinimo: DEFAULT_STOCK_MINIMO
+            }
+          }));
 
         return toInventarioResponse({
           producto,
@@ -96,6 +103,10 @@ export const updateInventarioProducto = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
 
+    if (!producto.controlaStock || producto.tipo !== "producto") {
+      return res.status(400).json({ error: "Este producto no controla stock propio" });
+    }
+
     const item = await prisma.inventario.upsert({
       create: {
         productoId,
@@ -106,12 +117,14 @@ export const updateInventarioProducto = async (req: Request, res: Response) => {
       where: { productoId }
     });
 
-    res.json(toInventarioResponse({
-      producto,
-      productoId,
-      stockActual: item.stockActual,
-      stockMinimo: item.stockMinimo
-    }));
+    res.json(
+      toInventarioResponse({
+        producto,
+        productoId,
+        stockActual: item.stockActual,
+        stockMinimo: item.stockMinimo
+      })
+    );
   } catch (error) {
     console.error("Error al actualizar inventario:", error);
     res.status(500).json({ error: "Error al actualizar inventario" });

@@ -3,26 +3,31 @@ import { AlertTriangle, LoaderCircle } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
+import {
+  abrirTurnoRemoto,
+  guardarCierreTurno,
+  obtenerPedidoIdsCerrados,
+  sincronizarTurnoActual
+} from "../../services/cierresTurno";
 import { createPedido, getPedidos } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
 import TicketComanda from "../../components/TicketComanda";
-import type { CreatePedidoPayload, MetodoPago, PedidoResponse, Producto } from "../../types";
-import {
-  buildPedidoSummary,
-  formatCurrency,
-  getPaymentLabel,
-  type FiltroCategoria
-} from "../../utils/pdv";
+import type {
+  CreatePedidoPayload,
+  MetodoPago,
+  PedidoResponse,
+  PersonalizacionProducto,
+  Producto,
+  VarianteProducto
+} from "../../types";
+import { buildPedidoSummary, formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
 import {
   PEDIDO_MAX_CANTIDAD_DETALLE,
   PEDIDO_OBSERVACION_MAX_LENGTH,
   validatePedidoSubmit
 } from "../../validations/pedido.validation";
-import {
-  ACCESSIBLE_STEP_COUNT,
-  type FeedbackState
-} from "./PdvShared";
+import { validateTurnoClose } from "../../validations/turno.validation";
+import { ACCESSIBLE_STEP_COUNT, type FeedbackState, usesProductConfigurator } from "./PdvShared";
 import {
   getPedidoDisplayNumber,
   readTurnoAbierto,
@@ -35,12 +40,14 @@ import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
 import PdvFacilView from "./PdvFacilView";
 import PdvNormalView from "./PdvNormalView";
+import PdvProductConfigurator from "./PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
 
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } =
+    useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: true });
 
@@ -58,7 +65,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setLoadingError
   } = usePdvProducts({ searchTerm, selectedCategory });
 
-  const [items, setItems] = useState<Record<number, number>>({});
+  const [items, setItems] = useState<Record<string, number>>({});
+  const [personalizaciones, setPersonalizaciones] = useState<Record<string, PersonalizacionProducto>>({});
+  const [pendingVariantProduct, setPendingVariantProduct] = useState<Producto | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
   const [clienteNombre, setClienteNombre] = useState("");
   const [observacion, setObservacion] = useState("");
@@ -68,6 +77,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
+
+  useEffect(() => {
+    void sincronizarTurnoActual()
+      .then((turno) => {
+        setTurnoAbierto(Boolean(turno));
+        if (turno) setTurnoFechaInicio(turno.fechaInicio);
+        setIsTurnoOpen(Boolean(turno));
+      })
+      .catch(() => undefined);
+  }, []);
 
   const feedbackRef = useRef<HTMLDivElement | null>(null);
   const initialProductHandledRef = useRef(false);
@@ -100,9 +119,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setAccessibleStep(1);
   }, [isAccessible]);
 
-  const { detalles: pedidoDetalles, total, cantidad: totalItems } = useMemo(() => {
-    return buildPedidoSummary(items, productos);
-  }, [items, productos]);
+  const {
+    detalles: pedidoDetalles,
+    total,
+    cantidad: totalItems
+  } = useMemo(() => {
+    return buildPedidoSummary(items, productos, personalizaciones);
+  }, [items, personalizaciones, productos]);
 
   useEffect(() => {
     if (pedidoDetalles.length === 0) {
@@ -119,15 +142,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   });
   const puedeRegistrar = !submitValidationError && !sending;
 
-  const announce = useCallback((message: string, options = {}) => {
-    if (isVoiceEnabled) {
-      speak(message, options);
-    }
-  }, [isVoiceEnabled, speak]);
+  const announce = useCallback(
+    (message: string, options = {}) => {
+      if (isVoiceEnabled) {
+        speak(message, options);
+      }
+    },
+    [isVoiceEnabled, speak]
+  );
 
   const notifyTurnoClosed = useCallback(() => {
     const message = "Debe abrir turno antes de registrar pedidos.";
-    setFeedback({ type: "error", message });
     playSoundCue("error");
     announce(message, {
       priority: "high",
@@ -161,7 +186,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const itemLines = pedidoDetalles.map((item) => {
-      return `${item.cantidad} ${item.producto.nombre}`;
+      return `${item.cantidad} ${item.producto.nombre}${item.variante ? `, opción ${item.variante.nombre}` : ""}`;
     });
 
     const parts = [
@@ -192,7 +217,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       interrupt: true,
       rate: isAccessible ? 0.8 : 0.86
     });
-  }, [clienteNombre, isAccessible, isTurnoOpen, metodoPago, observacion, pedidoDetalles, speakOnDemand, total, totalItems]);
+  }, [
+    clienteNombre,
+    isAccessible,
+    isTurnoOpen,
+    metodoPago,
+    observacion,
+    pedidoDetalles,
+    speakOnDemand,
+    total,
+    totalItems
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -207,68 +242,117 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     return () => window.removeEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
   }, [handleReadPedidoSummary]);
 
-  const setItemQuantity = useCallback((producto: Producto, nextQuantity: number) => {
-    if (!isTurnoOpen) {
-      notifyTurnoClosed();
-      return;
-    }
-
-    if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) {
-      const message = `La cantidad máxima por producto es ${PEDIDO_MAX_CANTIDAD_DETALLE}.`;
-      setFeedback({ type: "error", message });
-      playSoundCue("error");
-      announce(message, {
-        priority: "high",
-        dedupeKey: `quantity-max:${producto.id}`,
-        cooldownMs: 1800,
-        interrupt: true
-      });
-      return;
-    }
-
-    setItems((currentItems) => {
-      if (nextQuantity <= 0) {
-        const nextItems = { ...currentItems };
-        delete nextItems[producto.id];
-        return nextItems;
+  const setItemQuantity = useCallback(
+    (producto: Producto, nextQuantity: number) => {
+      if (!isTurnoOpen) {
+        notifyTurnoClosed();
+        return;
       }
 
-      return {
-        ...currentItems,
-        [producto.id]: nextQuantity
-      };
-    });
-  }, [announce, isTurnoOpen, notifyTurnoClosed, playSoundCue]);
+      if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) {
+        const message = `La cantidad máxima por producto es ${PEDIDO_MAX_CANTIDAD_DETALLE}.`;
+        setFeedback({ type: "error", message });
+        playSoundCue("error");
+        announce(message, {
+          priority: "high",
+          dedupeKey: `quantity-max:${producto.id}`,
+          cooldownMs: 1800,
+          interrupt: true
+        });
+        return;
+      }
+
+      setItems((currentItems) => {
+        if (nextQuantity <= 0) {
+          const nextItems = { ...currentItems };
+          delete nextItems[producto.id];
+          return nextItems;
+        }
+
+        return {
+          ...currentItems,
+          [producto.id]: nextQuantity
+        };
+      });
+    },
+    [announce, isTurnoOpen, notifyTurnoClosed, playSoundCue]
+  );
 
   const clearPedidoForm = () => {
     setItems({});
+    setPersonalizaciones({});
+    setPendingVariantProduct(null);
     setMetodoPago("");
     setClienteNombre("");
     setObservacion("");
     setAccessibleObservationType("cocina");
   };
 
-  const addProduct = useCallback((producto: Producto) => {
-    if (!isTurnoOpen) {
-      notifyTurnoClosed();
-      return;
-    }
+  const commitAddProduct = useCallback(
+    (
+      producto: Producto,
+      variante?: VarianteProducto,
+      cantidadAgregar = 1,
+      personalizacion: PersonalizacionProducto = { aderezos: [] }
+    ) => {
+      if (!isTurnoOpen) {
+        notifyTurnoClosed();
+        return;
+      }
 
-    const nextQuantity = (items[producto.id] || 0) + 1;
+      const signature = encodeURIComponent(JSON.stringify(personalizacion));
+      const itemKey = `${producto.id}:${variante?.id ?? "base"}:${signature}`;
+      const nextQuantity = (items[itemKey] || 0) + cantidadAgregar;
 
-    setItems((currentItems) => ({
-      ...currentItems,
-      [producto.id]: (currentItems[producto.id] || 0) + 1
-    }));
-    const msg = "Producto agregado al pedido.";
-    setFeedback({ type: "success", message: msg });
-    playSoundCue("add");
-    announce(`${producto.nombre} agregado. Cantidad ${nextQuantity}.`, {
-      priority: "normal",
-      dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
-      cooldownMs: 1800
-    });
-  }, [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue]);
+      if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) {
+        const message = `La cantidad máxima por producto es ${PEDIDO_MAX_CANTIDAD_DETALLE}.`;
+        setFeedback({ type: "error", message });
+        playSoundCue("error");
+        return;
+      }
+
+      setItems((currentItems) => ({
+        ...currentItems,
+        [itemKey]: (currentItems[itemKey] || 0) + cantidadAgregar
+      }));
+      setPersonalizaciones((current) => ({ ...current, [itemKey]: personalizacion }));
+      playSoundCue("add");
+      announce(`${producto.nombre}${variante ? `, ${variante.nombre}` : ""} agregado. Cantidad ${nextQuantity}.`, {
+        priority: "normal",
+        dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
+        cooldownMs: 1800
+      });
+    },
+    [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue]
+  );
+
+  const addProduct = useCallback(
+    (producto: Producto) => {
+      if (usesProductConfigurator(producto)) {
+        setPendingVariantProduct(producto);
+        announce(`Elige una opción para ${producto.nombre}.`, {
+          priority: "high",
+          dedupeKey: `variant-required:${producto.id}`,
+          cooldownMs: 1500,
+          interrupt: true
+        });
+        return;
+      }
+      commitAddProduct(producto);
+    },
+    [announce, commitAddProduct]
+  );
+
+  const selectPendingVariant = (
+    variante: VarianteProducto | undefined,
+    cantidad: number,
+    personalizacion: PersonalizacionProducto
+  ) => {
+    if (!pendingVariantProduct) return;
+    const producto = pendingVariantProduct;
+    setPendingVariantProduct(null);
+    commitAddProduct(producto, variante, cantidad, personalizacion);
+  };
 
   useEffect(() => {
     if (!isAccessible || initialProductHandledRef.current || loadingProductos) {
@@ -337,15 +421,19 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
   };
 
-  const removeProduct = (productoId: number) => {
+  const removeProduct = (itemKey: string) => {
     setItems((prevItems) => {
       const newItems = { ...prevItems };
-      delete newItems[productoId];
+      delete newItems[itemKey];
       return newItems;
+    });
+    setPersonalizaciones((current) => {
+      const next = { ...current };
+      delete next[itemKey];
+      return next;
     });
 
     playSoundCue("remove");
-    setFeedback({ type: "success", message: "Producto eliminado del pedido." });
     announce("Producto eliminado del pedido.", {
       priority: "normal",
       dedupeKey: "product-removed",
@@ -381,35 +469,48 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const handleToggleTurno = () => {
+  const handleToggleTurno = async () => {
     if (isTurnoOpen) {
-      setTurnoAbierto(false);
-      setIsTurnoOpen(false);
-      setAccessibleStep(1);
-      const message = "Turno cerrado. Debes abrir turno para registrar pedidos.";
-      setFeedback(null);
-      playSoundCue("error");
-      announce(message, {
-        priority: "high",
-        dedupeKey: "pdv-turno-cerrado",
-        cooldownMs: 2200,
-        interrupt: true
-      });
+      const closeError = validateTurnoClose(isTurnoOpen);
+      if (closeError) {
+        setFeedback({ type: "error", message: closeError });
+        return;
+      }
+
+      try {
+        await guardarCierreTurno();
+        setTurnoAbierto(false);
+        setIsTurnoOpen(false);
+        setAccessibleStep(1);
+        const message = "Turno cerrado correctamente.";
+        setFeedback({ type: "success", message });
+        playSoundCue("success");
+        announce(message, {
+          priority: "high",
+          dedupeKey: "pdv-turno-cerrado",
+          cooldownMs: 2200,
+          interrupt: true
+        });
+      } catch (error) {
+        setFeedback({
+          type: "error",
+          message: error instanceof Error ? error.message : "No fue posible cerrar el turno"
+        });
+      }
       return;
     }
 
-    setTurnoAbierto(true);
-    setTurnoFechaInicio(new Date().toISOString());
-    setIsTurnoOpen(true);
-    setAccessibleStep(1);
-    const message = "Turno abierto correctamente.";
-    setFeedback({ type: "success", message });
-    announce(message, {
-      priority: "high",
-      dedupeKey: "pdv-turno-abierto",
-      cooldownMs: 2200,
-      interrupt: true
-    });
+    try {
+      const turno = await abrirTurnoRemoto();
+      setTurnoAbierto(true);
+      setTurnoFechaInicio(turno.fechaInicio);
+      setIsTurnoOpen(true);
+      setAccessibleStep(1);
+      const message = "Turno abierto correctamente.";
+      announce(message, { priority: "high", dedupeKey: "pdv-turno-abierto", cooldownMs: 2200, interrupt: true });
+    } catch (error) {
+      setFeedback({ type: "error", message: error instanceof Error ? error.message : "No fue posible abrir el turno" });
+    }
   };
 
   const openResetConfirm = () => {
@@ -426,11 +527,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setMetodoPago(value);
 
     const voiceMessage =
-      value === "efectivo"
-        ? "Pago en efectivo"
-        : value === "tarjeta"
-          ? "Pago con tarjeta"
-          : "Pago por transferencia";
+      value === "efectivo" ? "Pago en efectivo" : value === "tarjeta" ? "Pago con tarjeta" : "Pago por transferencia";
 
     announce(voiceMessage, {
       priority: "normal",
@@ -476,7 +573,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       clienteNombre: clienteNombre.trim() || undefined,
       detalles: pedidoDetalles.map((item) => ({
         productoId: item.productoId,
-        cantidad: item.cantidad
+        cantidad: item.cantidad,
+        varianteId: item.variante?.id,
+        personalizacion: item.personalizacion
       })),
       metodoPago: metodoPago as MetodoPago,
       observacion: observacion.trim() || undefined
@@ -490,12 +589,15 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       setFeedback({ type: "success", message: successMsg });
       clearPedidoForm();
       playSoundCue("success");
-      announce(numeroPedido ? `Pedido numero ${numeroPedido} registrado correctamente.` : "Pedido registrado correctamente.", {
-        priority: "high",
-        dedupeKey: "pedido-registrado",
-        cooldownMs: 3000,
-        interrupt: true
-      });
+      announce(
+        numeroPedido ? `Pedido numero ${numeroPedido} registrado correctamente.` : "Pedido registrado correctamente.",
+        {
+          priority: "high",
+          dedupeKey: "pedido-registrado",
+          cooldownMs: 3000,
+          interrupt: true
+        }
+      );
       shouldResetAccessibleFlow = isAccessible;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
@@ -550,7 +652,11 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const bgWrapper = isHighContrast ? "bg-black" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const textColor = isHighContrast ? "text-white" : isAccessible ? "text-slate-950" : "text-[#1F2937]";
-  const cardBorder = isHighContrast ? "border-2 border-yellow-400" : isAccessible ? "border-2 border-slate-900" : "border border-slate-200";
+  const cardBorder = isHighContrast
+    ? "border-2 border-yellow-400"
+    : isAccessible
+      ? "border-2 border-slate-900"
+      : "border border-slate-200";
   const panelBg = isHighContrast ? "bg-black contrast-panel" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const quickActionButtonClass = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 font-bold text-[13px] whitespace-nowrap transition ${
     isHighContrast
@@ -562,74 +668,84 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       ? "contrast-button-secondary"
       : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
   }`;
-  const accessibleObservationPlaceholder = accessibleObservationType === "cocina"
-    ? "Ej: sin cebolla, extra salsa, bien tostado..."
-    : "Ej: cliente retira afuera, llamar al llegar, sin apuro...";
-  const getAccessibleStepMessage = (step: number) => {
-    if (!isTurnoOpen) {
-      return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Abre turno para registrar pedidos.`;
-    }
+  const accessibleObservationPlaceholder =
+    accessibleObservationType === "cocina"
+      ? "Ej: sin cebolla, extra salsa, bien tostado..."
+      : "Ej: cliente retira afuera, llamar al llegar, sin apuro...";
+  const getAccessibleStepMessage = useCallback(
+    (step: number) => {
+      if (!isTurnoOpen) {
+        return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Abre turno para registrar pedidos.`;
+      }
 
-    switch (step) {
-      case 1:
-        return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoria.`;
-      case 2:
-        return `Paso 3 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
-      case 3:
-        return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Revisa tu pedido. Total ${formatCurrency(total)}.`;
-      case 4:
-        return `Comentario opcional.`;
-      case 5:
-        return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Metodo de pago.`;
-      case ACCESSIBLE_STEP_COUNT:
-        return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta metodo de pago."}`;
-      default:
-        return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
-    }
-  };
+      switch (step) {
+        case 1:
+          return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoria.`;
+        case 2:
+          return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
+        case 3:
+          return `Paso 3 de ${ACCESSIBLE_STEP_COUNT}. Revisa tu pedido. Total ${formatCurrency(total)}.`;
+        case 4:
+          return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Ingresa el nombre del comprador.`;
+        case 5:
+          return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Metodo de pago.`;
+        case ACCESSIBLE_STEP_COUNT:
+          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta metodo de pago."}`;
+        default:
+          return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
+      }
+    },
+    [isTurnoOpen, metodoPago, total]
+  );
 
-  const getAccessibleStepValidation = (step: number) => {
-    if (!isAccessible) {
+  const getAccessibleStepValidation = useCallback(
+    (step: number) => {
+      if (!isAccessible) {
+        return null;
+      }
+
+      if (!isTurnoOpen) {
+        return "Turno cerrado. Abre turno para registrar pedidos.";
+      }
+
+      if ((step === 2 || step === 3) && pedidoDetalles.length === 0) {
+        return "Agrega al menos un producto para continuar.";
+      }
+
+      if (step === 4 && observacion.trim().length > PEDIDO_OBSERVACION_MAX_LENGTH) {
+        return `La observación no puede superar ${PEDIDO_OBSERVACION_MAX_LENGTH} caracteres.`;
+      }
+
+      if (step === 5 && metodoPago === "") {
+        return "Selecciona un método de pago para continuar.";
+      }
+
+      if (step === ACCESSIBLE_STEP_COUNT) {
+        return submitValidationError;
+      }
+
       return null;
-    }
-
-    if (!isTurnoOpen) {
-      return "Turno cerrado. Abre turno para registrar pedidos.";
-    }
-
-    if ((step === 2 || step === 3) && pedidoDetalles.length === 0) {
-      return "Agrega al menos un producto para continuar.";
-    }
-
-    if (step === 4 && observacion.trim().length > PEDIDO_OBSERVACION_MAX_LENGTH) {
-      return `La observación no puede superar ${PEDIDO_OBSERVACION_MAX_LENGTH} caracteres.`;
-    }
-
-    if (step === 5 && metodoPago === "") {
-      return "Selecciona un método de pago para continuar.";
-    }
-
-    if (step === ACCESSIBLE_STEP_COUNT) {
-      return submitValidationError;
-    }
-
-    return null;
-  };
+    },
+    [isAccessible, isTurnoOpen, metodoPago, observacion, pedidoDetalles.length, submitValidationError]
+  );
 
   const accessibleStepValidation = getAccessibleStepValidation(accessibleStep);
 
-  const announceAccessibleStep = (step: number) => {
-    announce(getAccessibleStepMessage(step), {
-      priority: "high",
-      dedupeKey: `pdv-step-button:${step}`,
-      cooldownMs: 700,
-      delayMs: 0,
-      force: true,
-      interrupt: true
-    });
-  };
+  const announceAccessibleStep = useCallback(
+    (step: number) => {
+      announce(getAccessibleStepMessage(step), {
+        priority: "high",
+        dedupeKey: `pdv-step-button:${step}`,
+        cooldownMs: 700,
+        delayMs: 0,
+        force: true,
+        interrupt: true
+      });
+    },
+    [announce, getAccessibleStepMessage]
+  );
 
-  const goNextAccessibleStep = () => {
+  const goNextAccessibleStep = useCallback(() => {
     const validationMessage = getAccessibleStepValidation(accessibleStep);
 
     if (validationMessage) {
@@ -649,15 +765,15 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       announceAccessibleStep(nextStep);
       return nextStep;
     });
-  };
+  }, [accessibleStep, announce, announceAccessibleStep, getAccessibleStepValidation, playSoundCue]);
 
-  const goPrevAccessibleStep = () => {
+  const goPrevAccessibleStep = useCallback(() => {
     setAccessibleStep((currentStep) => {
       const nextStep = Math.max(1, currentStep - 1);
       announceAccessibleStep(nextStep);
       return nextStep;
     });
-  };
+  }, [announceAccessibleStep]);
 
   useEffect(() => {
     if (!isAccessible) {
@@ -756,7 +872,10 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   return (
     <PdvViewProvider value={viewContext}>
       <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
-        <div className={`w-full print:px-0 print:py-0 ${isAccessible ? "mx-auto max-w-[1520px] px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6" : "px-0 py-0"}`} style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}>
+        <div
+          className={`w-full print:px-0 print:py-0 ${isAccessible ? "mx-auto max-w-[1520px] px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6" : "px-0 py-0"}`}
+          style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}
+        >
           {loadingProductos && (
             <div
               role="status"
@@ -799,6 +918,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           )}
 
           {isAccessible ? <PdvFacilView /> : <PdvNormalView />}
+
+          {pendingVariantProduct && (
+            <PdvProductConfigurator
+              isAccessible={isAccessible}
+              isHighContrast={isHighContrast}
+              onClose={() => setPendingVariantProduct(null)}
+              onSelect={selectPendingVariant}
+              producto={pendingVariantProduct}
+            />
+          )}
 
           <div className="hidden print:block" ref={ticketRef}>
             <TicketComanda
