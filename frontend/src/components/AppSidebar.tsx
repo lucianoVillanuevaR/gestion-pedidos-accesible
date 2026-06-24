@@ -1,95 +1,118 @@
-import { Accessibility, LogOut, ShieldCheck, X } from "lucide-react"
-import { useLocation, useNavigate } from "react-router-dom"
-import logoRiq from "../assets/logoRiq.png"
-import { getSidebarNavigation, isClientesRoute, isHistorialPedidosRoute, isInventarioRoute, isPdvRoute, isPedidosRoute, isProductosRoute } from "../config/navigation"
-import { useAccessibilityContext } from "../contexts/AccessibilityContext"
-import { useAuthContext } from "../contexts/AuthContext"
-import { getDefaultRouteForRole } from "../constants/auth"
-import useActionVoice from "../hooks/useActionVoice"
-import SidebarNavItem from "./SidebarNavItem"
+import { Accessibility, LogOut, ShieldCheck, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import logoRiq from "../assets/logoRiq.png";
+import {
+  getSidebarNavigation,
+  isClientesRoute,
+  isHistorialPedidosRoute,
+  isInventarioRoute,
+  isPdvRoute,
+  isPedidosRoute,
+  isProductosRoute
+} from "../config/navigation";
+import { useAccessibilityContext } from "../contexts/AccessibilityContext";
+import { useAuthContext } from "../contexts/AuthContext";
+import { getDefaultRouteForRole } from "../constants/auth";
+import useActionVoice from "../hooks/useActionVoice";
+import SidebarNavItem from "./SidebarNavItem";
 
 type AppSidebarProps = {
-  hasTopBrandBar?: boolean
-  isOpen: boolean
-  onClose: () => void
-}
+  hasTopBrandBar?: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+};
 
-const VOICED_SIDEBAR_ITEMS = new Set(["Nuevo Pedido", "Pedidos activos", "Preparación", "Productos", "Inventario", "Cierre de turno"])
+const VOICED_SIDEBAR_ITEMS = new Set([
+  "Nuevo Pedido",
+  "Pedidos activos",
+  "Preparación",
+  "Productos",
+  "Inventario",
+  "Cierre de turno"
+]);
 
 function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } = useAccessibilityContext()
-  const { logout, user } = useAuthContext()
-  const { speakAction } = useActionVoice(isVoiceEnabled)
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } =
+    useAccessibilityContext();
+  const { logout, user } = useAuthContext();
+  const { speakAction } = useActionVoice(isVoiceEnabled);
 
   if (!user) {
-    return null
+    return null;
   }
 
-  const navigationItems = getSidebarNavigation(user.role)
-  const isPdvPage = isPdvRoute(location.pathname)
-  const isPedidosPage = isPedidosRoute(location.pathname)
-  const isProductosPage = isProductosRoute(location.pathname)
-  const isInventarioPage = isInventarioRoute(location.pathname)
-  const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname)
-  const isClientesPage = isClientesRoute(location.pathname)
-  const hasYellowHeader = isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isHistorialPedidosPage || isClientesPage
-  const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[82vw] max-w-[280px] lg:w-[240px]"
+  const navigationItems = getSidebarNavigation(user.role);
+  const isPdvPage = isPdvRoute(location.pathname);
+  const isPedidosPage = isPedidosRoute(location.pathname);
+  const isProductosPage = isProductosRoute(location.pathname);
+  const isInventarioPage = isInventarioRoute(location.pathname);
+  const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname);
+  const isClientesPage = isClientesRoute(location.pathname);
+  const hasYellowHeader =
+    isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isHistorialPedidosPage || isClientesPage;
+  const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[82vw] max-w-[280px] lg:w-[240px]";
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"
     : isAccessible
       ? "border-slate-300 bg-slate-50 text-slate-950"
       : hasYellowHeader
         ? "border-yellow-200 bg-[#FECE00] text-slate-950"
-        : "border-slate-200 bg-white text-slate-950"
+        : "border-slate-200 bg-white text-slate-950";
   const brandBadgeClass = isHighContrast
     ? "bg-white/10 border border-white/20"
     : isAccessible
       ? "bg-slate-950 border border-slate-950 text-white"
       : hasYellowHeader
         ? "bg-[#FFF8DC] border border-yellow-300"
-        : "bg-slate-100 border border-slate-300"
-  const brandTitleClass = isHighContrast ? "text-white" : "text-slate-950"
-  const brandSubtitleClass = isHighContrast ? "text-yellow-200/80" : isAccessible ? "text-slate-700" : hasYellowHeader ? "text-slate-700" : "text-slate-500"
+        : "bg-slate-100 border border-slate-300";
+  const brandTitleClass = isHighContrast ? "text-white" : "text-slate-950";
+  const brandSubtitleClass = isHighContrast
+    ? "text-yellow-200/80"
+    : isAccessible
+      ? "text-slate-700"
+      : hasYellowHeader
+        ? "text-slate-700"
+        : "text-slate-500";
   const brandCloseButtonClass = isHighContrast
     ? "contrast-button-secondary"
     : isAccessible
       ? "border-slate-950 bg-slate-950 text-white hover:bg-slate-800"
       : hasYellowHeader
         ? "border-yellow-300 bg-[#FFF8DC] text-slate-950 hover:bg-[#FFF4BF]"
-        : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200"
+        : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200";
   const brandHeaderSpacingClass = hasYellowHeader
     ? `${isAccessible ? "h-[84px] min-h-[84px]" : "h-[56px] min-h-[56px]"} px-3`
-    : `px-3 ${isAccessible ? "py-5" : "py-3"}`
-  const navigationSpacingClass = isAccessible ? "space-y-3" : "space-y-1.5"
-  const footerSpacingClass = isAccessible ? "mt-auto border-t px-4 py-5" : "mt-auto border-t px-2.5 py-3"
+    : `px-3 ${isAccessible ? "py-5" : "py-3"}`;
+  const navigationSpacingClass = isAccessible ? "space-y-3" : "space-y-1.5";
+  const footerSpacingClass = isAccessible ? "mt-auto border-t px-4 py-5" : "mt-auto border-t px-2.5 py-3";
   const accessibilityButtonClass = isHighContrast
     ? "contrast-button-secondary"
     : isAccessible
       ? "border-yellow-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633] focus-visible:ring-yellow-400"
-      : "border-yellow-300 bg-white text-slate-950 hover:bg-[#FFF8DC] focus-visible:ring-yellow-400"
+      : "border-yellow-300 bg-white text-slate-950 hover:bg-[#FFF8DC] focus-visible:ring-yellow-400";
 
   const handleLogout = () => {
-    logout()
-    onClose()
-    navigate("/", { replace: true })
-  }
+    logout();
+    onClose();
+    navigate("/", { replace: true });
+  };
 
   const handleOpenAccessibility = () => {
-    openAccessibilityPanel()
-    onClose()
-  }
+    openAccessibilityPanel();
+    onClose();
+  };
 
   const handleSidebarNavigate = (label: string) => {
     if (!VOICED_SIDEBAR_ITEMS.has(label)) {
-      onClose()
-      return
+      onClose();
+      return;
     }
 
-    speakAction(label, `sidebar:${label}`)
-    onClose()
-  }
+    speakAction(label, `sidebar:${label}`);
+    onClose();
+  };
 
   return (
     <>
@@ -107,9 +130,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
         id="main-sidebar"
         className={`fixed inset-y-0 left-0 z-50 flex ${widthClass} flex-col border-r transition-transform duration-300 lg:translate-x-0 ${
           hasTopBrandBar ? "lg:bottom-0 lg:top-12 lg:h-[calc(100vh-48px)]" : ""
-        } ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } ${
+        } ${isOpen ? "translate-x-0" : "-translate-x-full"} ${
           isHighContrast
             ? "contrast-panel border-yellow-400 text-white"
             : isAccessible
@@ -118,16 +139,24 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
         }`}
         aria-label="Navegación principal"
       >
-        <div className={`flex items-center justify-between gap-3 border-b ${brandHeaderSpacingClass} ${brandHeaderClass} ${hasTopBrandBar ? "lg:hidden" : ""}`}>
+        <div
+          className={`flex items-center justify-between gap-3 border-b ${brandHeaderSpacingClass} ${brandHeaderClass} ${hasTopBrandBar ? "lg:hidden" : ""}`}
+        >
           <div className="min-w-0 flex items-center gap-2">
-            <div className={`flex ${isAccessible ? "h-14 w-14" : "h-9 w-9"} items-center justify-center rounded-xl p-1.5 ${brandBadgeClass}`}>
+            <div
+              className={`flex ${isAccessible ? "h-14 w-14" : "h-9 w-9"} items-center justify-center rounded-xl p-1.5 ${brandBadgeClass}`}
+            >
               <img src={logoRiq} alt="Logo de Riquísimo" className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0">
-              <p className={`truncate font-black tracking-tight ${brandTitleClass} ${isAccessible ? "text-[1.5rem]" : "text-[13px]"}`}>
+              <p
+                className={`truncate font-black tracking-tight ${brandTitleClass} ${isAccessible ? "text-[1.5rem]" : "text-[13px]"}`}
+              >
                 Riquísimo
               </p>
-              <p className={`text-[10px] leading-tight ${brandSubtitleClass} ${isAccessible ? "text-sm font-medium" : ""}`}>
+              <p
+                className={`text-[10px] leading-tight ${brandSubtitleClass} ${isAccessible ? "text-sm font-medium" : ""}`}
+              >
                 Sistema de Pedidos
               </p>
             </div>
@@ -154,17 +183,17 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                     ? "/pdv/facil"
                     : isAccessible && item.path === "/pedidos"
                       ? "/pedidos/facil"
-                    : isAccessible && item.path === "/preparacion"
-                      ? "/preparacion/facil"
-                    : isAccessible && item.path === "/productos"
-                      ? "/productos/facil"
-                    : isAccessible && item.path === "/inventario"
-                      ? "/inventario/facil"
-                    : isAccessible && item.path === "/cierre-turno"
-                      ? "/cierre-turno/facil"
-                      : isAccessible && item.path === "/cocina"
-                        ? "/cocina/facil"
-                        : undefined
+                      : isAccessible && item.path === "/preparacion"
+                        ? "/preparacion/facil"
+                        : isAccessible && item.path === "/productos"
+                          ? "/productos/facil"
+                          : isAccessible && item.path === "/inventario"
+                            ? "/inventario/facil"
+                            : isAccessible && item.path === "/cierre-turno"
+                              ? "/cierre-turno/facil"
+                              : isAccessible && item.path === "/cocina"
+                                ? "/cocina/facil"
+                                : undefined
                 }
                 isAccessible={isAccessible}
                 isHighContrast={isHighContrast}
@@ -183,14 +212,18 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             className={`mb-2 inline-flex w-full items-center justify-between gap-2 rounded-2xl border px-3 transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${accessibilityButtonClass} ${isAccessible ? "min-h-[68px]" : "min-h-[48px]"}`}
           >
             <span className="flex min-w-0 items-center gap-2 text-left">
-              <span className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-9 w-9 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "border border-yellow-300 bg-[#FECE00] text-slate-950"}`}>
+              <span
+                className={`inline-flex items-center justify-center rounded-2xl ${isAccessible ? "h-12 w-12 text-2xl" : "h-9 w-9 text-xl"} ${isHighContrast ? "border border-current bg-black/10" : "border border-yellow-300 bg-[#FECE00] text-slate-950"}`}
+              >
                 <Accessibility className={isAccessible ? "h-6 w-6" : "h-[18px] w-[18px]"} aria-hidden="true" />
               </span>
               <span className="min-w-0">
                 <span className={`block font-black leading-tight ${isAccessible ? "text-lg" : "text-[13px]"}`}>
                   {isAccessible ? "Opciones de ayuda" : "Accesibilidad"}
                 </span>
-                <span className={`mt-0.5 block ${isAccessible ? "text-sm" : "text-[11px]"} ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}>
+                <span
+                  className={`mt-0.5 block ${isAccessible ? "text-sm" : "text-[11px]"} ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}
+                >
                   Modo fácil, contraste y ayuda
                 </span>
               </span>
@@ -198,14 +231,22 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             <ShieldCheck className={isAccessible ? "h-6 w-6" : "h-5 w-5"} aria-hidden="true" />
           </button>
 
-          <div className={`mb-2 rounded-2xl px-3 py-2.5 ${isHighContrast ? "bg-black/30" : isAccessible ? "border border-slate-200 bg-slate-50" : "bg-slate-50"}`}>
-            <p className={`text-xs font-semibold uppercase tracking-[0.12em] ${isHighContrast ? "text-yellow-200/70" : "text-slate-500"}`}>
+          <div
+            className={`mb-2 rounded-2xl px-3 py-2.5 ${isHighContrast ? "bg-black/30" : isAccessible ? "border border-slate-200 bg-slate-50" : "bg-slate-50"}`}
+          >
+            <p
+              className={`text-xs font-semibold uppercase tracking-[0.12em] ${isHighContrast ? "text-yellow-200/70" : "text-slate-500"}`}
+            >
               Usuario
             </p>
-            <p className={`mt-1 font-semibold leading-tight ${isHighContrast ? "text-white" : "text-slate-900"} ${isAccessible ? "text-lg" : "text-[13px]"}`}>
+            <p
+              className={`mt-1 font-semibold leading-tight ${isHighContrast ? "text-white" : "text-slate-900"} ${isAccessible ? "text-lg" : "text-[13px]"}`}
+            >
               {user.label}
             </p>
-            <p className={`mt-0.5 truncate text-[11px] ${isHighContrast ? "text-white/60" : "text-slate-500"} ${isAccessible ? "text-sm" : ""}`}>
+            <p
+              className={`mt-0.5 truncate text-[11px] ${isHighContrast ? "text-white/60" : "text-slate-500"} ${isAccessible ? "text-sm" : ""}`}
+            >
               {user.email}
             </p>
           </div>
@@ -229,8 +270,8 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             <button
               type="button"
               onClick={() => {
-                onClose()
-                navigate(getDefaultRouteForRole(user.role))
+                onClose();
+                navigate(getDefaultRouteForRole(user.role));
               }}
               className={`mt-2 w-full rounded-xl border px-4 py-3 font-medium transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
                 isHighContrast
@@ -246,7 +287,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
         </div>
       </aside>
     </>
-  )
+  );
 }
 
-export default AppSidebar
+export default AppSidebar;

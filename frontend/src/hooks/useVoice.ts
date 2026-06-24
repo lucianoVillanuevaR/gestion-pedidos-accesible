@@ -114,7 +114,9 @@ function getPreferredVoice(speechSynthesis: SpeechSynthesis) {
 
   const isSpanishVoice = (voice: SpeechSynthesisVoice) => voice.lang?.toLowerCase().startsWith("es") ?? false;
   const isChileSpanishVoice = (voice: SpeechSynthesisVoice) =>
-    voice.lang?.toLowerCase() === VOICE_LANGUAGE.toLowerCase() || voice.lang?.toLowerCase().startsWith("es-cl") || false;
+    voice.lang?.toLowerCase() === VOICE_LANGUAGE.toLowerCase() ||
+    voice.lang?.toLowerCase().startsWith("es-cl") ||
+    false;
   const isGoogleVoice = (voice: SpeechSynthesisVoice) => normalizeVoiceName(voice.name).includes("google");
   const hasGoogleSpanishName = (voice: SpeechSynthesisVoice) => {
     const normalizedName = normalizeVoiceName(voice.name);

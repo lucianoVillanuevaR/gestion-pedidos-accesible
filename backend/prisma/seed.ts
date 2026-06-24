@@ -1,17 +1,14 @@
 /// <reference types="node" />
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 const DEFAULT_STOCK_ACTUAL = 50;
 const DEFAULT_STOCK_MINIMO = 10;
+const DEFAULT_DEMO_PASSWORD = "123456";
 
-type CategoryKey =
-  | "destacados"
-  | "ahorros_exclusivos"
-  | "promociones"
-  | "completos_hot_dogs"
-  | "sandwich";
+type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos_hot_dogs" | "sandwich";
 
 type VariantSeed = {
   nombre: string;
@@ -43,7 +40,7 @@ type CategoryDefinition = {
   productos: CategoryProductSeed[];
 };
 
-type SeedTransaction = any;
+type SeedTransaction = Prisma.TransactionClient;
 
 const menuCatalog: CategoryDefinition[] = [
   {
@@ -62,7 +59,8 @@ const menuCatalog: CategoryDefinition[] = [
         nombre: "2x1 Completo Italiano o Alemán",
         precio: 3900,
         precioOriginal: 5571,
-        descuentoPorcentaje: 30
+        descuentoPorcentaje: 30,
+        variantes: buildVariants(["Italianos", "Alemanes"])
       },
       {
         nombre: "2x1 Sandwich Inglesa, Carne y 2 ingredientes a Elección",
@@ -254,10 +252,7 @@ function buildProductCatalog(catalog: CategoryDefinition[]): ProductSeed[] {
   for (const category of catalog) {
     for (const product of category.productos) {
       const current = mergedProducts.get(product.nombre);
-      const nextCategories = dedupeCategoryKeys([
-        ...(current?.categorias ?? []),
-        category.key
-      ]);
+      const nextCategories = dedupeCategoryKeys([...(current?.categorias ?? []), category.key]);
       const nextVariants = mergeVariants(current?.variantes, product.variantes);
 
       const mergedProduct: ProductSeed = {
@@ -286,19 +281,14 @@ function buildProductCatalog(catalog: CategoryDefinition[]): ProductSeed[] {
     }
   }
 
-  return Array.from(mergedProducts.values()).sort((left, right) =>
-    left.nombre.localeCompare(right.nombre, "es")
-  );
+  return Array.from(mergedProducts.values()).sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
 }
 
 function dedupeCategoryKeys(categoryKeys: CategoryKey[]): CategoryKey[] {
   return Array.from(new Set(categoryKeys));
 }
 
-function pickPreferredDescription(
-  current?: string,
-  incoming?: string
-): string | undefined {
+function pickPreferredDescription(current?: string, incoming?: string): string | undefined {
   if (!current) {
     return incoming;
   }
@@ -344,10 +334,7 @@ function ensureOptionalMatchingNumber(
   return current;
 }
 
-function mergeVariants(
-  current?: VariantSeed[],
-  incoming?: VariantSeed[]
-): VariantSeed[] | undefined {
+function mergeVariants(current?: VariantSeed[], incoming?: VariantSeed[]): VariantSeed[] | undefined {
   if (!current?.length && !incoming?.length) {
     return undefined;
   }
@@ -391,7 +378,7 @@ async function seedCategories(tx: SeedTransaction) {
   );
 
   return new Map(
-    entries.map((category: any) => {
+    entries.map((category) => {
       const definition = menuCatalog.find((item) => item.nombre === category.nombre);
 
       if (!definition) {
@@ -403,10 +390,7 @@ async function seedCategories(tx: SeedTransaction) {
   );
 }
 
-async function seedProducts(
-  tx: SeedTransaction,
-  categoryMap: Map<CategoryKey, number>
-) {
+async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, number>) {
   const visibleProductNames = products.map((product) => product.nombre);
 
   await tx.producto.updateMany({
@@ -443,6 +427,8 @@ async function seedProducts(
         disponible: true,
         destacado: product.destacado,
         promocion: product.promocion,
+        tipo: product.promocion ? "promo" : "producto",
+        controlaStock: !product.promocion,
         categorias: {
           set: categoryConnections
         }
@@ -456,24 +442,25 @@ async function seedProducts(
         disponible: true,
         destacado: product.destacado,
         promocion: product.promocion,
+        tipo: product.promocion ? "promo" : "producto",
+        controlaStock: !product.promocion,
         categorias: {
           connect: categoryConnections
         }
       }
     });
 
-    await tx.inventario.upsert({
-      where: { productoId: savedProduct.id },
-      update: {
-        stockActual: DEFAULT_STOCK_ACTUAL,
-        stockMinimo: DEFAULT_STOCK_MINIMO
-      },
-      create: {
-        productoId: savedProduct.id,
-        stockActual: DEFAULT_STOCK_ACTUAL,
-        stockMinimo: DEFAULT_STOCK_MINIMO
-      }
-    });
+    if (!product.promocion)
+      await tx.inventario.upsert({
+        where: { productoId: savedProduct.id },
+        update: {},
+        create: {
+          productoId: savedProduct.id,
+          stockActual: DEFAULT_STOCK_ACTUAL,
+          stockMinimo: DEFAULT_STOCK_MINIMO
+        }
+      });
+    else await tx.inventario.deleteMany({ where: { productoId: savedProduct.id } });
 
     await tx.variante.deleteMany({
       where: {
@@ -493,16 +480,72 @@ async function seedProducts(
       });
     }
   }
+
+  const promoCompleto = await tx.producto.findUnique({
+    where: { nombre: "2x1 Completo Italiano o Alemán" },
+    include: { variantes: true }
+  });
+  const completoItaliano = await tx.producto.findUnique({ where: { nombre: "Completo Italiano" } });
+  const completoAleman = await tx.producto.findUnique({ where: { nombre: "Completo Alemán" } });
+  if (promoCompleto && completoItaliano && completoAleman) {
+    const italianos = promoCompleto.variantes.find((item) => item.nombre === "Italianos");
+    const alemanes = promoCompleto.variantes.find((item) => item.nombre === "Alemanes");
+    if (italianos && alemanes) {
+      await tx.productoComponente.deleteMany({ where: { productoId: promoCompleto.id } });
+      await tx.productoComponente.createMany({
+        data: [
+          { productoId: promoCompleto.id, componenteId: completoItaliano.id, cantidad: 2, varianteId: italianos.id },
+          { productoId: promoCompleto.id, componenteId: completoAleman.id, cantidad: 2, varianteId: alemanes.id }
+        ]
+      });
+    }
+  }
+
+  const promoCuatro = await tx.producto.findUnique({ where: { nombre: "4 Completos Alemanes" } });
+  if (promoCuatro && completoAleman) {
+    await tx.productoComponente.deleteMany({ where: { productoId: promoCuatro.id } });
+    await tx.productoComponente.create({
+      data: { productoId: promoCuatro.id, componenteId: completoAleman.id, cantidad: 4 }
+    });
+  }
+
+  const promocionesSinComponentes = await tx.producto.findMany({
+    where: { tipo: "promo", componentes: { none: {} } },
+    select: { nombre: true }
+  });
+  for (const promo of promocionesSinComponentes) {
+    console.warn(`TODO inventario: configurar manualmente componentes para "${promo.nombre}".`);
+  }
 }
 
 async function main() {
+  // Los usuarios demo facilitan exclusivamente el entorno local y nunca se crean en producción.
+  const shouldSeedDemoUsers = process.env.NODE_ENV !== "production";
+  const demoPassword = process.env.SEED_DEMO_PASSWORD?.trim() || DEFAULT_DEMO_PASSWORD;
+  const passwordHash = shouldSeedDemoUsers ? await bcrypt.hash(demoPassword, 12) : null;
+
   await prisma.$transaction(async (tx) => {
+    if (passwordHash) {
+      for (const user of [
+        { username: "cajero", email: "cajero@demo.cl", role: "cajero", label: "Cajero" },
+        { username: "cocina", email: "cocina@demo.cl", role: "cocina", label: "Cocina" },
+        { username: "admin", email: "admin@demo.cl", role: "admin", label: "Administrador" }
+      ]) {
+        await tx.usuario.upsert({
+          where: { username: user.username },
+          update: { ...user, passwordHash, activo: true },
+          create: { ...user, passwordHash }
+        });
+      }
+    }
+
     const categoryMap = await seedCategories(tx);
     await seedProducts(tx, categoryMap);
   });
 
   console.log(`${menuCatalog.length} categorías sincronizadas exitosamente.`);
   console.log(`${products.length} productos sincronizados exitosamente.`);
+  console.log(shouldSeedDemoUsers ? "Usuarios demo sincronizados para desarrollo." : "Usuarios demo omitidos.");
   console.log(
     `${products.filter((product) => product.variantes?.length).length} productos con variantes sincronizados.`
   );

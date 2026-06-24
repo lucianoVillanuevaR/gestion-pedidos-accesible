@@ -11,7 +11,7 @@ import {
 export type CategoriaCatalogo = ProductoCategoriaCatalogo | "Destacados";
 export type CategoriaCatalogoOption = { label: string; value: CategoriaCatalogo };
 
-export const CUSTOM_CATEGORIES_STORAGE_KEY = "riquisimo-custom-product-categories";
+const CUSTOM_CATEGORIES_STORAGE_KEY = "riquisimo-custom-product-categories";
 
 export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { label: "Destacados", value: "Destacados" },
@@ -36,7 +36,9 @@ export function loadCustomCategorias(): CategoriaCatalogoOption[] {
       return [];
     }
 
-    return parsedCategorias.filter((categoria) => typeof categoria?.label === "string" && typeof categoria?.value === "string");
+    return parsedCategorias.filter(
+      (categoria) => typeof categoria?.label === "string" && typeof categoria?.value === "string"
+    );
   } catch {
     return [];
   }
@@ -75,9 +77,10 @@ export function withProductoCategoria(productos: Producto[], categorias = CATEGO
 
   return productos.map((producto) => ({
     ...producto,
-    categoria: producto.categoria?.trim() && categoriasDisponibles.has(producto.categoria.trim() as CategoriaCatalogo)
-      ? (producto.categoria.trim() as CategoriaCatalogo)
-      : detectCategoria(producto)
+    categoria:
+      producto.categoria?.trim() && categoriasDisponibles.has(producto.categoria.trim() as CategoriaCatalogo)
+        ? (producto.categoria.trim() as CategoriaCatalogo)
+        : detectCategoria(producto)
   }));
 }
 
@@ -108,11 +111,13 @@ export function groupProductosByCategoria(productos: ProductoConCategoria[], cat
   const fallbackDestacados = destacados.length > 0 ? destacados : productos.slice(0, 4);
   const categoriasBase = new Set(CATEGORIAS_CATALOGO.map((categoria) => categoria.value));
 
-  return categorias.map((categoria) => ({
-    ...categoria,
-    productos:
-      categoria.value === "Destacados"
-        ? fallbackDestacados
-        : productos.filter((producto) => producto.categoria === categoria.value)
-  })).filter((grupo) => grupo.productos.length > 0 || !categoriasBase.has(grupo.value));
+  return categorias
+    .map((categoria) => ({
+      ...categoria,
+      productos:
+        categoria.value === "Destacados"
+          ? fallbackDestacados
+          : productos.filter((producto) => producto.categoria === categoria.value)
+    }))
+    .filter((grupo) => grupo.productos.length > 0 || !categoriasBase.has(grupo.value));
 }

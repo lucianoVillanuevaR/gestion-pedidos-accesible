@@ -1,5 +1,4 @@
 import {
-  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
+import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
@@ -88,12 +88,14 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
 
     return inventario.filter((item) => {
       const matchesFilter = activeFilter === "todos" || item.estado === activeFilter;
-      const matchesSearch = !normalizedSearch || [
-        item.productoNombre,
-        getEstadoLabel(item.estado, isAccessible),
-        String(item.stockActual),
-        String(item.stockMinimo)
-      ].some((value) => value.toLowerCase().includes(normalizedSearch));
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          item.productoNombre,
+          getEstadoLabel(item.estado, isAccessible),
+          String(item.stockActual),
+          String(item.stockMinimo)
+        ].some((value) => value.toLowerCase().includes(normalizedSearch));
 
       return matchesFilter && matchesSearch;
     });
@@ -113,13 +115,17 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
     getInventario()
       .then((items) => {
         setInventario(items);
-        setDraftValues(Object.fromEntries(items.map((item) => [
-          item.productoId,
-          {
-            stockActual: String(item.stockActual),
-            stockMinimo: String(item.stockMinimo)
-          }
-        ])));
+        setDraftValues(
+          Object.fromEntries(
+            items.map((item) => [
+              item.productoId,
+              {
+                stockActual: String(item.stockActual),
+                stockMinimo: String(item.stockMinimo)
+              }
+            ])
+          )
+        );
       })
       .catch((requestError) => {
         setError(requestError instanceof Error ? requestError.message : "No se pudo cargar inventario");
@@ -131,15 +137,16 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
     loadInventario();
   }, []);
 
-  const updateDraftValue = (productoId: number, field: "stockActual" | "stockMinimo") => (event: ChangeEvent<HTMLInputElement>) => {
-    setDraftValues((currentValues) => ({
-      ...currentValues,
-      [productoId]: {
-        ...currentValues[productoId],
-        [field]: event.target.value
-      }
-    }));
-  };
+  const updateDraftValue =
+    (productoId: number, field: "stockActual" | "stockMinimo") => (event: ChangeEvent<HTMLInputElement>) => {
+      setDraftValues((currentValues) => ({
+        ...currentValues,
+        [productoId]: {
+          ...currentValues[productoId],
+          [field]: event.target.value
+        }
+      }));
+    };
 
   const handleSave = async (item: InventarioItem) => {
     const draft = draftValues[item.productoId];
@@ -156,9 +163,11 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
       setError(null);
       setMessage(null);
       const updatedItem = await updateInventario(item.productoId, { stockActual, stockMinimo });
-      setInventario((currentItems) => currentItems.map((currentItem) => (
-        currentItem.productoId === updatedItem.productoId ? updatedItem : currentItem
-      )));
+      setInventario((currentItems) =>
+        currentItems.map((currentItem) =>
+          currentItem.productoId === updatedItem.productoId ? updatedItem : currentItem
+        )
+      );
       setDraftValues((currentValues) => ({
         ...currentValues,
         [updatedItem.productoId]: {
@@ -184,12 +193,16 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   if (isAccessible) {
     return (
       <section className="mx-auto w-full max-w-7xl space-y-5">
-        <div className={`rounded-[28px] p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-yellow-400" : "border-2 border-slate-900 bg-white"}`}>
+        <div
+          className={`rounded-[28px] p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-lg font-black uppercase tracking-[0.18em] text-slate-500">Modo fácil</p>
               <h1 className="mt-2 text-4xl font-black text-slate-950">Stock básico</h1>
-              <p className="mt-3 text-xl font-bold text-slate-700">Revisa qué productos están disponibles o agotados.</p>
+              <p className="mt-3 text-xl font-bold text-slate-700">
+                Revisa qué productos están disponibles o agotados.
+              </p>
             </div>
             <div className="grid gap-3 xl:min-w-[760px]">
               <EasyModeActions />
@@ -216,7 +229,9 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
                     <h2 className="text-2xl font-black text-slate-950">{item.productoNombre}</h2>
                     <p className="mt-2 text-xl font-bold text-slate-700">Stock: {item.stockActual}</p>
                   </div>
-                  <span className={`inline-flex min-h-[56px] items-center justify-center rounded-2xl border-2 px-5 text-xl font-black ${getEstadoClass(item.estado)}`}>
+                  <span
+                    className={`inline-flex min-h-[56px] items-center justify-center rounded-2xl border-2 px-5 text-xl font-black ${getEstadoClass(item.estado)}`}
+                  >
                     {getEstadoLabel(item.estado, true)}
                   </span>
                 </div>
@@ -232,22 +247,13 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
     <div className="min-h-screen bg-[#F7F7F7]">
       <main className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6 2xl:max-w-[1800px]">
         <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 lg:flex-row lg:items-center lg:justify-end">
-            <button
-              type="button"
-              onClick={loadInventario}
-              disabled={isLoading}
-              className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-              Actualizar
-            </button>
-          </div>
-
-          <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center xl:grid-cols-[minmax(280px,1fr)_auto_auto]">
             <label className="relative block">
               <span className="sr-only">Buscar producto en inventario</span>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
+                aria-hidden="true"
+              />
               <input
                 type="search"
                 value={searchTerm}
@@ -258,27 +264,56 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
             </label>
 
             <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Estados de inventario">
-              <FilterChip active={activeFilter === "todos"} count={counts.todos} label="Todos" onClick={() => setActiveFilter("todos")} />
-              <FilterChip active={activeFilter === "sin_stock"} count={counts.sin_stock} label="Sin stock" onClick={() => setActiveFilter("sin_stock")} />
-              <FilterChip active={activeFilter === "bajo_stock"} count={counts.bajo_stock} label="Bajo stock" onClick={() => setActiveFilter("bajo_stock")} />
-              <FilterChip active={activeFilter === "disponible"} count={counts.disponible} label="Disponible" onClick={() => setActiveFilter("disponible")} />
+              <FilterChip
+                active={activeFilter === "todos"}
+                count={counts.todos}
+                label="Todos"
+                onClick={() => setActiveFilter("todos")}
+              />
+              <FilterChip
+                active={activeFilter === "sin_stock"}
+                count={counts.sin_stock}
+                label="Sin stock"
+                onClick={() => setActiveFilter("sin_stock")}
+              />
+              <FilterChip
+                active={activeFilter === "bajo_stock"}
+                count={counts.bajo_stock}
+                label="Bajo stock"
+                onClick={() => setActiveFilter("bajo_stock")}
+              />
+              <FilterChip
+                active={activeFilter === "disponible"}
+                count={counts.disponible}
+                label="Disponible"
+                onClick={() => setActiveFilter("disponible")}
+              />
             </div>
+
+            <button
+              type="button"
+              onClick={loadInventario}
+              disabled={isLoading}
+              className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 lg:col-span-2 xl:col-span-1 ${FOCUS_VISIBLE_CLASS}`}
+            >
+              <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
+              Actualizar
+            </button>
           </div>
         </section>
 
         {message && (
-          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950" role="status" aria-live="polite">
+          <div
+            className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950"
+            role="status"
+            aria-live="polite"
+          >
             <CheckCircle2 className="mt-1 h-5 w-5" aria-hidden="true" />
             <p className="font-bold">{message}</p>
           </div>
         )}
 
-        {error && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-950" role="alert">
-            <AlertTriangle className="mt-1 h-5 w-5" aria-hidden="true" />
-            <p className="font-bold">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {isLoading ? (
           <LoadingState label="Cargando inventario..." />
@@ -294,15 +329,20 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
               const isCollapsed = collapsedSections[section.value];
 
               return (
-                <article key={section.value} className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-                  <header className="flex min-h-[54px] items-center justify-between gap-3 bg-slate-100 px-3">
+                <article
+                  key={section.value}
+                  className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]"
+                >
+                  <header className="flex min-h-[58px] items-center justify-between gap-3 bg-slate-100 px-3 py-2">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-500">
                         <Warehouse className="h-4 w-4" aria-hidden="true" />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black text-slate-500">Estado de inventario</p>
-                        <h2 className="truncate text-sm font-black uppercase text-slate-950">{section.label}</h2>
+                        <p className="text-[11px] font-black leading-tight text-slate-500">Estado de inventario</p>
+                        <h2 className="truncate !text-base !leading-tight font-black uppercase text-slate-950">
+                          {section.label}
+                        </h2>
                       </div>
                     </div>
 
@@ -316,7 +356,11 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
                         className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
                         aria-label={isCollapsed ? `Expandir ${section.label}` : `Contraer ${section.label}`}
                       >
-                        {isCollapsed ? <ChevronDown className="h-5 w-5" aria-hidden="true" /> : <ChevronUp className="h-5 w-5" aria-hidden="true" />}
+                        {isCollapsed ? (
+                          <ChevronDown className="h-5 w-5" aria-hidden="true" />
+                        ) : (
+                          <ChevronUp className="h-5 w-5" aria-hidden="true" />
+                        )}
                       </button>
                     </div>
                   </header>
@@ -345,7 +389,17 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   );
 }
 
-function FilterChip({ active, count, label, onClick }: { active: boolean; count: number; label: string; onClick: () => void }) {
+function FilterChip({
+  active,
+  count,
+  label,
+  onClick
+}: {
+  active: boolean;
+  count: number;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
@@ -376,7 +430,10 @@ function InventarioRow({
   draftValues?: { stockActual: string; stockMinimo: string };
   isSaving: boolean;
   item: InventarioItem;
-  onDraftChange: (productoId: number, field: "stockActual" | "stockMinimo") => (event: ChangeEvent<HTMLInputElement>) => void;
+  onDraftChange: (
+    productoId: number,
+    field: "stockActual" | "stockMinimo"
+  ) => (event: ChangeEvent<HTMLInputElement>) => void;
   onSave: (item: InventarioItem) => void;
 }) {
   return (
@@ -393,7 +450,9 @@ function InventarioRow({
         </div>
       </div>
 
-      <span className={`inline-flex min-h-[34px] items-center justify-center rounded-full border px-3 text-xs font-black ${getEstadoClass(item.estado)}`}>
+      <span
+        className={`inline-flex min-h-[34px] items-center justify-center rounded-full border px-3 text-xs font-black ${getEstadoClass(item.estado)}`}
+      >
         {getEstadoLabel(item.estado, false)}
       </span>
 

@@ -1,43 +1,43 @@
-import { Navigate, Outlet, Route, Routes } from "react-router-dom"
-import AppLayout from "../components/AppLayout"
-import { getDefaultRouteForRole } from "../constants/auth"
-import { useAuthContext } from "../contexts/AuthContext"
-import ClientesPage from "../pages/clientes/ClientesPage"
-import CocinaPage, { CocinaFacilPage, CocinaHistorialPage } from "../pages/cocina/CocinaPage"
-import HomePage from "../pages/HomePage"
-import InventarioPage from "../pages/inventario/InventarioPage"
-import ModoFacilPage from "../pages/ModoFacilPage"
-import CierreTurnoPage from "../pages/pedidos/CierreTurnoPage"
-import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage"
-import PedidosPage from "../pages/pedidos/PedidosNormalPage"
-import PdvBasePage from "../pages/pdv/PdvBasePage"
-import ProductosFacilPage from "../pages/productos/ProductosFacilPage"
-import ProductosPage from "../pages/productos/ProductosPage"
-import PortalPage from "../pages/PortalPage"
-import type { UserRole } from "../types"
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import AppLayout from "../components/AppLayout";
+import { getDefaultRouteForRole } from "../constants/auth";
+import { useAuthContext } from "../contexts/AuthContext";
+import ClientesPage from "../pages/clientes/ClientesPage";
+import CocinaPage, { CocinaFacilPage, CocinaHistorialPage } from "../pages/cocina/CocinaPage";
+import HomePage from "../pages/HomePage";
+import InventarioPage from "../pages/inventario/InventarioPage";
+import ModoFacilPage from "../pages/ModoFacilPage";
+import CierreTurnoPage from "../pages/pedidos/CierreTurnoPage";
+import PedidosFacilPage from "../pages/pedidos/PedidosFacilPage";
+import PedidosPage from "../pages/pedidos/PedidosNormalPage";
+import PdvBasePage from "../pages/pdv/PdvBasePage";
+import ProductosFacilPage from "../pages/productos/ProductosFacilPage";
+import ProductosPage from "../pages/productos/ProductosPage";
+import PortalPage from "../pages/PortalPage";
+import type { UserRole } from "../types";
 
 function RequireAuth() {
-  const { isAuthenticated } = useAuthContext()
+  const { isAuthenticated } = useAuthContext();
 
   if (!isAuthenticated) {
-    return <Navigate replace to="/" />
+    return <Navigate replace to="/" />;
   }
 
-  return <AppLayout />
+  return <AppLayout />;
 }
 
 function RequireRole({ allowedRoles }: { allowedRoles: UserRole[] }) {
-  const { user } = useAuthContext()
+  const { user } = useAuthContext();
 
   if (!user) {
-    return <Navigate replace to="/" />
+    return <Navigate replace to="/" />;
   }
 
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate replace to={getDefaultRouteForRole(user.role)} />
+    return <Navigate replace to={getDefaultRouteForRole(user.role)} />;
   }
 
-  return <Outlet />
+  return <Outlet />;
 }
 
 function AppRoutes() {
@@ -112,7 +112,7 @@ function AppRoutes() {
 
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>
-  )
+  );
 }
 
-export default AppRoutes
+export default AppRoutes;

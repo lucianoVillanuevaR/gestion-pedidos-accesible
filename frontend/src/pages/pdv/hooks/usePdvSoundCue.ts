@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 import { SOUND_CUES, type SoundCue, type ToneStep } from "../PdvShared";
 
 function getBrowserAudioContext() {
-  const AudioContextClass = window.AudioContext || (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   return AudioContextClass ?? null;
 }
 
@@ -60,22 +62,25 @@ export function usePdvSoundCue(isSoundEnabled: boolean) {
     };
   }, []);
 
-  return useCallback((cue: SoundCue) => {
-    const context = getAudioContext();
-    if (!context) {
-      return;
-    }
+  return useCallback(
+    (cue: SoundCue) => {
+      const context = getAudioContext();
+      if (!context) {
+        return;
+      }
 
-    const steps = SOUND_CUES[cue];
-    const baseStart = Math.max(context.currentTime + 0.01, lastSoundEndRef.current + 0.03);
-    let soundEnd = baseStart;
+      const steps = SOUND_CUES[cue];
+      const baseStart = Math.max(context.currentTime + 0.01, lastSoundEndRef.current + 0.03);
+      let soundEnd = baseStart;
 
-    steps.forEach((step) => {
-      const startAt = baseStart + (step.delayMs || 0) / 1000;
-      scheduleTone(context, startAt, step);
-      soundEnd = Math.max(soundEnd, startAt + step.durationMs / 1000);
-    });
+      steps.forEach((step) => {
+        const startAt = baseStart + (step.delayMs || 0) / 1000;
+        scheduleTone(context, startAt, step);
+        soundEnd = Math.max(soundEnd, startAt + step.durationMs / 1000);
+      });
 
-    lastSoundEndRef.current = soundEnd;
-  }, [getAudioContext]);
+      lastSoundEndRef.current = soundEnd;
+    },
+    [getAudioContext]
+  );
 }

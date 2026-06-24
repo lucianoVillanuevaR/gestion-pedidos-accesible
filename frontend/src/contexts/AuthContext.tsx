@@ -1,120 +1,97 @@
-import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react"
-import { AUTH_STORAGE_KEY, DEMO_USERS } from "../constants/auth"
-import type { AuthUser } from "../types"
+import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { getCurrentUser, loginRequest } from "../services/auth";
+import { clearAuthSession, getAuthToken, readAuthUser, storeAuthSession, storeAuthUser } from "../services/authStorage";
+import type { AuthUser } from "../types";
 
 type LoginPayload = {
-  identifier: string
-  password: string
-}
+  identifier: string;
+  password: string;
+};
 
-type LoginResult =
-  | { ok: true; user: AuthUser }
-  | { ok: false; message: string }
+type LoginResult = { ok: true; user: AuthUser } | { ok: false; message: string };
 
 type AuthContextValue = {
-  isAuthenticated: boolean
-  login: (payload: LoginPayload) => LoginResult
-  logout: () => void
-  user: AuthUser | null
-}
+  isAuthenticated: boolean;
+  login: (payload: LoginPayload) => Promise<LoginResult>;
+  logout: () => void;
+  user: AuthUser | null;
+};
 
-const AuthContext = createContext<AuthContextValue | null>(null)
-
-function isValidUser(value: unknown): value is AuthUser {
-  if (!value || typeof value !== "object") {
-    return false
-  }
-
-  const candidate = value as AuthUser
-  return Boolean(
-    candidate.email &&
-      candidate.label &&
-      candidate.username &&
-      (candidate.role === "cajero" || candidate.role === "cocina" || candidate.role === "admin")
-  )
-}
-
-function readStoredUser() {
-  if (typeof window === "undefined") {
-    return null
-  }
-
-  try {
-    const rawValue = window.sessionStorage.getItem(AUTH_STORAGE_KEY)
-    if (!rawValue) {
-      return null
-    }
-
-    const parsedValue = JSON.parse(rawValue)
-    return isValidUser(parsedValue) ? parsedValue : null
-  } catch {
-    return null
-  }
-}
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<AuthUser | null>(readStoredUser)
+  const [user, setUser] = useState<AuthUser | null>(readAuthUser);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return
+    storeAuthUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    if (!getAuthToken()) {
+      return;
     }
 
-    if (!user) {
-      window.sessionStorage.removeItem(AUTH_STORAGE_KEY)
-      return
-    }
+    void getCurrentUser()
+      .then(setUser)
+      .catch(() => {
+        clearAuthSession();
+        setUser(null);
+      });
+  }, []);
 
-    window.sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user))
-  }, [user])
+  useEffect(() => {
+    const handleAuthorizationError = (event: Event) => {
+      if ((event as CustomEvent<number>).detail !== 401) {
+        return;
+      }
+
+      clearAuthSession();
+      setUser(null);
+    };
+
+    window.addEventListener("riquisimo:authorization-error", handleAuthorizationError);
+    return () => window.removeEventListener("riquisimo:authorization-error", handleAuthorizationError);
+  }, []);
 
   const value = useMemo<AuthContextValue>(() => {
     return {
       user,
       isAuthenticated: Boolean(user),
-      login: ({ identifier, password }) => {
-        const normalizedIdentifier = identifier.trim().toLowerCase()
-        const normalizedPassword = password.trim()
+      login: async ({ identifier, password }) => {
+        const normalizedIdentifier = identifier.trim().toLowerCase();
+        const normalizedPassword = password.trim();
 
         if (!normalizedIdentifier || !normalizedPassword) {
-          return { ok: false, message: "Debe completar usuario y contraseña" }
+          return { ok: false, message: "Debe completar usuario y contraseña" };
         }
 
-        const matchingUser = DEMO_USERS.find((candidate) => {
-          return candidate.email === normalizedIdentifier || candidate.username === normalizedIdentifier
-        })
-
-        if (!matchingUser || matchingUser.password !== normalizedPassword) {
-          return { ok: false, message: "Usuario o contraseña incorrectos" }
+        try {
+          const { token, user: nextUser } = await loginRequest(normalizedIdentifier, normalizedPassword);
+          storeAuthSession(token, nextUser);
+          setUser(nextUser);
+          return { ok: true, user: nextUser };
+        } catch (error) {
+          return { ok: false, message: error instanceof Error ? error.message : "No fue posible iniciar sesión" };
         }
-
-        const nextUser: AuthUser = {
-          email: matchingUser.email,
-          label: matchingUser.label,
-          role: matchingUser.role,
-          username: matchingUser.username
-        }
-
-        setUser(nextUser)
-        return { ok: true, user: nextUser }
       },
       logout: () => {
-        setUser(null)
+        clearAuthSession();
+        setUser(null);
       }
-    }
-  }, [user])
+    };
+  }, [user]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 function useAuthContext() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuthContext must be used within AuthProvider")
+    throw new Error("useAuthContext must be used within AuthProvider");
   }
 
-  return context
+  return context;
 }
 
-export { AuthProvider, useAuthContext }
+export { AuthProvider, useAuthContext };

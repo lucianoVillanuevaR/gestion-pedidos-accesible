@@ -1,23 +1,15 @@
-import {
-  ChefHat,
-  ClipboardList,
-  ClipboardPlus,
-  FileCheck2,
-  Package,
-  Settings2,
-  Warehouse
-} from "lucide-react"
-import type { LucideIcon } from "lucide-react"
-import type { UserRole } from "../types"
+import { ChefHat, ClipboardList, ClipboardPlus, FileCheck2, Package, Settings2, Warehouse } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { UserRole } from "../types";
 
 export type AppNavigationItem = {
-  allowedRoles: UserRole[]
-  description: string
-  icon: LucideIcon
-  label: string
-  path: string
-  sidebarRoles?: UserRole[]
-}
+  allowedRoles: UserRole[];
+  description: string;
+  icon: LucideIcon;
+  label: string;
+  path: string;
+  sidebarRoles?: UserRole[];
+};
 
 const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
   {
@@ -84,45 +76,56 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
     icon: Settings2,
     allowedRoles: ["admin"]
   }
-]
+];
 
 export function getSidebarNavigation(role: UserRole) {
   return APP_NAVIGATION_ITEMS.filter((item) => {
-    const roles = item.sidebarRoles ?? item.allowedRoles
-    return roles.includes(role)
-  })
+    const roles = item.sidebarRoles ?? item.allowedRoles;
+    return roles.includes(role);
+  });
 }
 
 export function getRouteMeta(pathname: string) {
   return [...APP_NAVIGATION_ITEMS]
     .sort((left, right) => right.path.length - left.path.length)
-    .find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`))
+    .find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
 }
 
 export function isPdvRoute(pathname: string) {
-  return pathname === "/pdv" || pathname === "/pdv/facil"
+  return pathname === "/pdv" || pathname === "/pdv/facil";
 }
 
 export function isPedidosRoute(pathname: string) {
-  return pathname === "/pedidos" || pathname === "/pedidos/facil" || pathname === "/cierre-turno" || pathname === "/cierre-turno/facil"
+  return (
+    pathname === "/pedidos" ||
+    pathname === "/pedidos/facil" ||
+    pathname === "/cierre-turno" ||
+    pathname === "/cierre-turno/facil"
+  );
 }
 
 export function isProductosRoute(pathname: string) {
-  return pathname === "/productos" || pathname === "/productos/facil"
+  return pathname === "/productos" || pathname === "/productos/facil";
 }
 
 export function isCocinaRoute(pathname: string) {
-  return pathname === "/cocina" || pathname === "/cocina/facil" || pathname === "/preparacion" || pathname === "/preparacion/facil" || pathname.startsWith("/cocina/")
+  return (
+    pathname === "/cocina" ||
+    pathname === "/cocina/facil" ||
+    pathname === "/preparacion" ||
+    pathname === "/preparacion/facil" ||
+    pathname.startsWith("/cocina/")
+  );
 }
 
 export function isHistorialPedidosRoute(pathname: string) {
-  return pathname === "/historial-pedidos"
+  return pathname === "/historial-pedidos";
 }
 
 export function isClientesRoute(pathname: string) {
-  return pathname === "/clientes"
+  return pathname === "/clientes";
 }
 
 export function isInventarioRoute(pathname: string) {
-  return pathname === "/inventario" || pathname === "/inventario/facil"
+  return pathname === "/inventario" || pathname === "/inventario/facil";
 }

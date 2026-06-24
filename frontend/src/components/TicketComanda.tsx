@@ -1,12 +1,15 @@
 import { UtensilsCrossed } from "lucide-react";
 import { formatCurrency, getPaymentLabel } from "../utils/pdv";
-import type { MetodoPago, Producto } from "../types";
+import type { MetodoPago, PersonalizacionProducto, Producto, VarianteProducto } from "../types";
 
 type TicketDetalle = {
+  itemKey: string;
   productoId: number;
   cantidad: number;
   subtotal: number;
   producto: Producto;
+  variante?: VarianteProducto;
+  personalizacion?: PersonalizacionProducto;
 };
 
 type TicketComandaProps = {
@@ -69,14 +72,19 @@ function TicketComanda({ pedidoDetalles, total, metodoPago, observacion, numeroP
           <p className="ticket-empty">Sin productos</p>
         ) : (
           pedidoDetalles.map((item) => (
-            <div key={item.productoId} className="ticket-item">
+            <div key={item.itemKey} className="ticket-item">
               <div className="ticket-item-line">
                 <span className="ticket-qty">{item.cantidad}</span>
                 <span className="ticket-product">{item.producto.nombre}</span>
                 <span className="ticket-price">{formatCurrency(item.subtotal)}</span>
               </div>
-              {item.producto.descripcion && (
-                <div className="ticket-description">{item.producto.descripcion}</div>
+              {item.producto.descripcion && <div className="ticket-description">{item.producto.descripcion}</div>}
+              {item.variante && <div className="ticket-description">Opción: {item.variante.nombre}</div>}
+              {item.personalizacion?.aderezos.length ? (
+                <div className="ticket-description">Aderezos: {item.personalizacion.aderezos.join(", ")}</div>
+              ) : null}
+              {item.personalizacion?.comentario && (
+                <div className="ticket-description">Comentario: {item.personalizacion.comentario}</div>
               )}
             </div>
           ))

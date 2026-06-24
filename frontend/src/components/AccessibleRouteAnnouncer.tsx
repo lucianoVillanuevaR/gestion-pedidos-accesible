@@ -5,13 +5,16 @@ import { getRouteMeta } from "../config/navigation";
 const ROUTE_MESSAGES: Record<string, string> = {
   "/pdv": "Nuevo pedido. Busca productos, arma el pedido, elige pago y registra la venta.",
   "/modo-facil": "Modo fácil. Elige una acción principal con botones grandes.",
-  "/pdv/facil": "Nuevo pedido en modo fácil. Sigue los pasos: categoría, producto, revisión, observación, pago y registro.",
+  "/pdv/facil":
+    "Nuevo pedido en modo fácil. Sigue los pasos: categoría, producto, revisión, observación, pago y registro.",
   "/pedidos": "Pedidos. Revisa pedidos activos, cambia estados y consulta detalles.",
-  "/pedidos/facil": "Pedidos en modo fácil. Usa filtros grandes para revisar pendientes, en preparación, listos, entregados o cancelados.",
+  "/pedidos/facil":
+    "Pedidos en modo fácil. Usa filtros grandes para revisar pendientes, en preparación, listos, entregados o cancelados.",
   "/cierre-turno": "Cierre de turno. Revisa ventas confirmadas, metodos de pago, productos vendidos y cierre de caja.",
   "/cierre-turno/facil": "Cierre de turno en modo fácil. Revisa el resumen administrativo y confirma el cierre.",
   "/productos": "Productos. Revisa el catalogo, disponibilidad, precios y categorias.",
-  "/productos/facil": "Productos en modo fácil. Revisa productos con tarjetas grandes y puedes enviarlos a nuevo pedido.",
+  "/productos/facil":
+    "Productos en modo fácil. Revisa productos con tarjetas grandes y puedes enviarlos a nuevo pedido.",
   "/clientes": "Clientes. Revisa registro, segmentos y estado de clientes.",
   "/cocina": "Cocina. Vista general para preparar y organizar comandas.",
   "/preparacion/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",

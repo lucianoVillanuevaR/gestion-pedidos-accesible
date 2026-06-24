@@ -1,27 +1,53 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { getUploadErrorMessage, uploadProductImageMiddleware } from "../middlewares/uploadImage";
-import { deleteProductImage, uploadProductImage, withProductImageUrl } from "../services/productImageService";
+import { deleteProductImage, uploadProductImage } from "../services/productImageService";
+import { PRODUCTO_CATALOG_INCLUDE, toProductoResponse } from "../services/productoCatalogService";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateProductoCreate, validateProductoUpdate } from "../validations/productos.validation";
 
-const PRODUCTO_WITH_CATEGORIAS_INCLUDE = {
-  categorias: {
-    orderBy: {
-      nombre: "asc"
+async function validateComponentes(
+  productoId: number | null,
+  componentes: Array<{ componenteId: number; varianteId?: number }>
+) {
+  if (!componentes.length) return;
+  if (productoId !== null && componentes.some((item) => item.componenteId === productoId)) {
+    throw new ProductoRequestError(400, "Un producto no puede ser componente de sí mismo");
+  }
+  const validos = await prisma.producto.count({
+    where: { id: { in: componentes.map((item) => item.componenteId) }, controlaStock: true }
+  });
+  if (validos !== componentes.length) {
+    throw new ProductoRequestError(400, "Todos los componentes deben existir y controlar stock real");
+  }
+  const varianteIds = componentes.flatMap((item) => (item.varianteId ? [item.varianteId] : []));
+  if (varianteIds.length) {
+    if (productoId === null) throw new ProductoRequestError(400, "Las variantes deben pertenecer al producto editado");
+    const variantesValidas = await prisma.variante.count({ where: { id: { in: varianteIds }, productoId } });
+    if (variantesValidas !== new Set(varianteIds).size) {
+      throw new ProductoRequestError(400, "Todas las variantes deben pertenecer al producto vendido");
     }
   }
-} as const;
+}
+
+class ProductoRequestError extends Error {
+  constructor(
+    public statusCode: number,
+    message: string
+  ) {
+    super(message);
+  }
+}
 
 export const getProductos = async (req: Request, res: Response) => {
   try {
     const includeUnavailable = req.query.includeUnavailable === "true";
     const productos = await prisma.producto.findMany({
-      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
+      include: PRODUCTO_CATALOG_INCLUDE,
       where: includeUnavailable ? undefined : { disponible: true },
       orderBy: { nombre: "asc" }
     });
-    res.json(productos.map(withProductImageUrl));
+    res.json(productos.map(toProductoResponse));
   } catch (error) {
     console.error("Error al obtener productos:", error);
     res.status(500).json({ error: "Error al obtener productos" });
@@ -39,7 +65,7 @@ export const getProductoById = async (req: Request, res: Response) => {
 
     const productoId = parsePositiveIntegerId(id);
     const producto = await prisma.producto.findUnique({
-      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
+      include: PRODUCTO_CATALOG_INCLUDE,
       where: { id: productoId }
     });
 
@@ -47,7 +73,7 @@ export const getProductoById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
 
-    res.json(withProductImageUrl(producto));
+    res.json(toProductoResponse(producto));
   } catch (error) {
     console.error("Error al obtener producto:", error);
     res.status(500).json({ error: "Error al obtener producto" });
@@ -62,7 +88,9 @@ export const createProducto = async (req: Request, res: Response) => {
       return res.status(400).json({ error: validation.error });
     }
 
-    const { categoria, descripcion, destacado, disponible, nombre, precio } = validation.data;
+    const { categoria, componentes, controlaStock, descripcion, destacado, disponible, nombre, precio, tipo } =
+      validation.data;
+    await validateComponentes(null, componentes);
     const producto = await prisma.producto.create({
       data: {
         descripcion,
@@ -70,12 +98,17 @@ export const createProducto = async (req: Request, res: Response) => {
         disponible,
         nombre,
         precio,
-        inventario: {
-          create: {
-            stockActual: 0,
-            stockMinimo: 0
+        tipo,
+        controlaStock,
+        ...(controlaStock && {
+          inventario: {
+            create: {
+              stockActual: 0,
+              stockMinimo: 0
+            }
           }
-        },
+        }),
+        componentes: { create: componentes },
         categorias: {
           connectOrCreate: {
             create: {
@@ -86,11 +119,12 @@ export const createProducto = async (req: Request, res: Response) => {
           }
         }
       },
-      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE
+      include: PRODUCTO_CATALOG_INCLUDE
     });
 
-    res.status(201).json(withProductImageUrl(producto));
+    res.status(201).json(toProductoResponse(producto));
   } catch (error) {
+    if (error instanceof ProductoRequestError) return res.status(error.statusCode).json({ error: error.message });
     if (error instanceof Error && "code" in error && error.code === "P2002") {
       return res.status(409).json({ error: "Ya existe un producto con ese nombre" });
     }
@@ -115,8 +149,28 @@ export const updateProducto = async (req: Request, res: Response) => {
       return res.status(400).json({ error: validation.error });
     }
 
-    const { categoria, ...productoData } = validation.data;
+    const { categoria, componentes, ...productoData } = validation.data;
+    const productoId = parsePositiveIntegerId(id);
+    const productoActual = await prisma.producto.findUnique({
+      where: { id: productoId },
+      include: { _count: { select: { componentes: true } } }
+    });
+    if (!productoActual) return res.status(404).json({ error: "Producto no encontrado" });
+    const tipoFinal = productoData.tipo ?? productoActual.tipo;
+    const controlaStockFinal = productoData.controlaStock ?? productoActual.controlaStock;
+    if ((tipoFinal === "promo" || tipoFinal === "combo") && controlaStockFinal) {
+      return res.status(400).json({ error: "Las promociones y combos no pueden controlar stock propio" });
+    }
+    const cantidadComponentesFinal = componentes?.length ?? productoActual._count.componentes;
+    if (cantidadComponentesFinal > 0 && controlaStockFinal) {
+      return res.status(400).json({ error: "Un producto con componentes no puede controlar stock propio" });
+    }
+    if (componentes) await validateComponentes(productoId, componentes);
     const data: Parameters<typeof prisma.producto.update>[0]["data"] = { ...productoData };
+
+    if (componentes !== undefined) {
+      data.componentes = { deleteMany: {}, create: componentes };
+    }
 
     if (categoria !== undefined) {
       data.categorias = {
@@ -131,14 +185,27 @@ export const updateProducto = async (req: Request, res: Response) => {
       };
     }
 
-    const producto = await prisma.producto.update({
-      data,
-      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
-      where: { id: parsePositiveIntegerId(id) }
+    const producto = await prisma.$transaction(async (tx) => {
+      const updated = await tx.producto.update({
+        data,
+        include: PRODUCTO_CATALOG_INCLUDE,
+        where: { id: productoId }
+      });
+      if (updated.controlaStock) {
+        await tx.inventario.upsert({
+          where: { productoId },
+          update: {},
+          create: { productoId, stockActual: 0, stockMinimo: 0 }
+        });
+      } else {
+        await tx.inventario.deleteMany({ where: { productoId } });
+      }
+      return tx.producto.findUniqueOrThrow({ include: PRODUCTO_CATALOG_INCLUDE, where: { id: productoId } });
     });
 
-    res.json(withProductImageUrl(producto));
+    res.json(toProductoResponse(producto));
   } catch (error) {
+    if (error instanceof ProductoRequestError) return res.status(error.statusCode).json({ error: error.message });
     if (error instanceof Error && "code" in error && error.code === "P2002") {
       return res.status(409).json({ error: "Ya existe un producto con ese nombre" });
     }
@@ -196,7 +263,8 @@ export const deleteProducto = async (req: Request, res: Response) => {
 
     if (error instanceof Error && "code" in error && error.code === "P2003") {
       return res.status(409).json({
-        error: "No se puede eliminar un producto relacionado con otros registros. Puedes ocultarlo para que no se venda."
+        error:
+          "No se puede eliminar un producto relacionado con otros registros. Puedes ocultarlo para que no se venda."
       });
     }
 
