@@ -10,8 +10,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "seed": "tsx prisma/seed.ts",
-    "seed:prod": "node dist/prisma/seed.js",
+    "seed": "node dist/prisma/seed.js",
+    "seed:dev": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . --max-warnings 0",
@@ -48,6 +48,6 @@
     "vitest": "^4.1.9"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "npm run seed:dev"
   }
 }

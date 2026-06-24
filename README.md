@@ -22,7 +22,7 @@ El sistema incorpora un modo normal/admin y un modo fácil/accesible orientado a
 El proyecto se ejecuta mediante Docker Compose con cuatro servicios principales:
 
 * `frontend`: sirve la aplicación web con Nginx y expone el proxy `/api`.
-* `backend`: API REST, Prisma, conexión a PostgreSQL, conexión a MinIO y healthcheck.
+* `backend`: aplica migraciones y el seed idempotente antes de iniciar la API REST.
 * `postgres`: base de datos relacional persistente.
 * `minio`: almacenamiento persistente de imágenes de productos.
 
@@ -56,6 +56,8 @@ Variables principales:
 PORT=3000
 CLIENT_URL=http://localhost
 JWT_SECRET=clave_demo_cambiar_en_produccion
+SEED_DEMO_USERS=true
+SEED_DEMO_PASSWORD=123456
 
 DATABASE_URL=postgresql://admin:admin123@postgres:5432/sistema_pedidos
 POSTGRES_DB=sistema_pedidos
@@ -77,26 +79,45 @@ El frontend usa `/api` y Nginx redirige esas llamadas al backend.
 
 En producción se deben cambiar las credenciales demo y usar valores seguros.
 
+Dentro de Docker, `DATABASE_URL` debe apuntar a `postgres:5432`; `localhost:5433` se usa únicamente para conectarse desde el host en desarrollo. PostgreSQL toma sus credenciales al crear el volumen por primera vez: no cambies `POSTGRES_USER`, `POSTGRES_PASSWORD` ni `DATABASE_URL` después del primer arranque sin hacer antes un respaldo y planificar la migración.
+
 ---
 
-## Levantar con Docker
+## Despliegue en un servidor limpio
 
-Validar configuración:
-
-```bash
-docker compose config
-```
-
-Construir y levantar servicios:
+El flujo recomendado completo es:
 
 ```bash
+git clone <repo>
+cd gestion-pedidos-accesible
+cp .env.example .env
+nano .env
 docker compose up -d --build
 ```
+
+En `.env`, cambia como mínimo las contraseñas de PostgreSQL y MinIO y define un `JWT_SECRET` largo y aleatorio. Si no quieres cuentas de demostración, usa `SEED_DEMO_USERS=false`.
+
+El contenedor backend ejecuta automáticamente, en este orden:
+
+1. `prisma migrate deploy`.
+2. El seed idempotente con Node.js.
+3. El inicio de la API.
+
+El seed crea solo los usuarios demo ausentes, sincroniza categorías y productos base sin duplicarlos y prepara el bucket de MinIO si aún no existe. Puede ejecutarse nuevamente sin borrar pedidos, productos agregados, imágenes ni archivos. No hace falta un comando manual en el despliegue normal.
 
 Revisar estado:
 
 ```bash
 docker compose ps
+docker compose logs --tail=100 backend
+docker compose logs --tail=100 frontend
+curl http://localhost/api/health
+```
+
+Si se necesita repetir el seed de forma controlada con los servicios levantados:
+
+```bash
+docker compose exec backend npm run seed
 ```
 
 Logs útiles:
@@ -120,7 +141,7 @@ Importante:
 docker compose down -v
 ```
 
-borra los volúmenes `postgres_data` y `minio_data`. Eso elimina la base de datos y los archivos guardados. No usarlo salvo que se quiera resetear completamente el entorno de desarrollo.
+borra los volúmenes `postgres_data` y `minio_data`. Esto elimina definitivamente la base de datos y todos los archivos de MinIO. No debe usarse en un servidor con datos reales salvo que exista respaldo y se busque un reinicio total.
 
 ---
 
@@ -133,7 +154,7 @@ Esto permite detener y volver a levantar el proyecto sin perder pedidos, product
 
 ---
 
-## Healthchecks
+## Comprobaciones de disponibilidad
 
 Comandos de prueba:
 
@@ -155,6 +176,8 @@ Respuesta esperada del backend:
 ---
 
 ## MinIO
+
+MinIO es parte necesaria del sistema porque almacena las imágenes de productos; no debe eliminarse del despliegue.
 
 Consola web:
 
@@ -363,7 +386,7 @@ cd backend
 npm install
 npx prisma generate
 npx prisma migrate dev
-npm run seed
+npm run seed:dev
 npm run dev
 ```
 
@@ -431,7 +454,7 @@ Después de levantar el proyecto, probar:
 ## Estado actual
 
 * Docker Compose funcional.
-* Servicios frontend, backend, PostgreSQL y MinIO con healthchecks.
+* Servicios frontend, backend, PostgreSQL y MinIO; PostgreSQL conserva el healthcheck requerido para Prisma.
 * Persistencia mediante volúmenes Docker.
 * Modo normal/admin implementado.
 * Modo fácil/accesible implementado.
@@ -459,3 +482,4 @@ Para producción se debe:
 * No exponer claves secretas en el frontend.
 * Configurar políticas adecuadas para archivos.
 * Usar HTTPS si se despliega públicamente.
+* Exponer públicamente solo el frontend por 80/443. Los puertos 3000, 5433, 9000 y 9001 se publican en este Compose para desarrollo/presentación y deben cerrarse o retirarse en la configuración del servidor real.
