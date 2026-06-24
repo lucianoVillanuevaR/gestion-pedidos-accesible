@@ -23,7 +23,6 @@ import type {
 import { buildPedidoSummary, formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
 import {
   PEDIDO_MAX_CANTIDAD_DETALLE,
-  PEDIDO_OBSERVACION_MAX_LENGTH,
   validatePedidoSubmit
 } from "../../validations/pedido.validation";
 import { validateTurnoClose } from "../../validations/turno.validation";
@@ -575,7 +574,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const payload: CreatePedidoPayload = {
-      clienteNombre: clienteNombre.trim() || undefined,
+      clienteNombre: clienteNombre.trim(),
       detalles: pedidoDetalles.map((item) => ({
         productoId: item.productoId,
         cantidad: item.cantidad,
@@ -717,8 +716,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         return "Agrega al menos un producto para continuar.";
       }
 
-      if (step === 4 && observacion.trim().length > PEDIDO_OBSERVACION_MAX_LENGTH) {
-        return `La observación no puede superar ${PEDIDO_OBSERVACION_MAX_LENGTH} caracteres.`;
+      if (step === 4 && !clienteNombre.trim()) {
+        return "El nombre del cliente es obligatorio";
       }
 
       if (step === 5 && metodoPago === "") {
@@ -731,7 +730,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
       return null;
     },
-    [isAccessible, isTurnoOpen, metodoPago, observacion, pedidoDetalles.length, submitValidationError]
+    [clienteNombre, isAccessible, isTurnoOpen, metodoPago, pedidoDetalles.length, submitValidationError]
   );
 
   const accessibleStepValidation = getAccessibleStepValidation(accessibleStep);

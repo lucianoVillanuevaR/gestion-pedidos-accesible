@@ -298,7 +298,7 @@ function PedidosFacilPage() {
               isHighContrast
                 ? "contrast-button-secondary"
                 : isTurnoOpen
-                  ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
+                  ? "border-red-800 bg-red-700 text-white hover:bg-red-800"
                   : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
             } ${FOCUS_VISIBLE_CLASS}`}
             aria-label={
@@ -633,7 +633,7 @@ function CierreFacilModal({
             onClick={onConfirm}
             disabled={isSaving}
             className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isHighContrast ? "contrast-button-primary" : "border-red-700 bg-red-700 text-white hover:bg-red-800"
+              isHighContrast ? "contrast-button-primary" : "border-red-800 bg-red-700 text-white hover:bg-red-800"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             {isSaving ? "Guardando..." : "Sí, cerrar turno"}

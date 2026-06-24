@@ -179,7 +179,11 @@ export function validatePedidoTextFields(clienteNombre?: unknown, observacion?: 
   const clienteNombreLimpio = typeof clienteNombre === "string" ? clienteNombre.trim() : "";
   const observacionLimpia = typeof observacion === "string" ? observacion.trim() : "";
 
-  if (clienteNombreLimpio && !CLIENTE_NOMBRE_PATTERN.test(clienteNombreLimpio)) {
+  if (!clienteNombreLimpio) {
+    return "El nombre del cliente es obligatorio";
+  }
+
+  if (!CLIENTE_NOMBRE_PATTERN.test(clienteNombreLimpio)) {
     return "El nombre del cliente solo puede contener letras";
   }
 

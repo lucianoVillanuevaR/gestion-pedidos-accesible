@@ -215,7 +215,7 @@ function CierreTurnoPage() {
               <button
                 type="button"
                 onClick={isTurnoOpen ? () => setIsConfirmOpen(true) : handleAbrirTurno}
-                className={`inline-flex min-h-[64px] items-center justify-center gap-2 rounded-2xl border-2 px-5 text-xl font-black transition ${isTurnoOpen ? "border-red-700 bg-red-700 text-white hover:bg-red-800" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"} ${FOCUS_VISIBLE_CLASS}`}
+                className={`inline-flex min-h-[64px] items-center justify-center gap-2 rounded-2xl border-2 px-5 text-xl font-black transition ${isTurnoOpen ? "border-red-800 bg-red-700 text-white hover:bg-red-800" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"} ${FOCUS_VISIBLE_CLASS}`}
               >
                 <Check className="h-6 w-6" aria-hidden="true" />
                 {isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
@@ -335,7 +335,7 @@ function CierreHeader({
               <button
                 type="button"
                 onClick={onCerrarTurno}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl border border-red-700 bg-red-700 px-5 font-black text-white transition hover:bg-red-800 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border border-red-800 bg-red-700 px-5 font-black text-white transition hover:bg-red-800 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
               >
                 <Check className="h-5 w-5" aria-hidden="true" />
                 Cerrar turno
@@ -656,7 +656,7 @@ function CerrarTurnoModal({
             type="button"
             onClick={onConfirm}
             disabled={isSaving}
-            className={`min-h-[52px] rounded-xl border border-red-700 bg-red-700 px-4 font-black text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+            className={`min-h-[52px] rounded-xl border border-red-800 bg-red-700 px-4 font-black text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
           >
             {isSaving ? "Guardando..." : "Cerrar turno"}
           </button>

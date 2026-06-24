@@ -30,7 +30,7 @@ function SidebarNavItem({ isAccessible, isHighContrast, item, onNavigate, pathOv
               ? "contrast-button-primary"
               : "contrast-button-secondary"
             : isActive
-              ? "border-[#FDB913] bg-[#FDB913] text-slate-950 shadow-sm shadow-[#FDB913]/20"
+              ? "border-[#FECE00] bg-[#FECE00] text-slate-950 shadow-sm shadow-[#FECE00]/20"
               : "border-slate-200 bg-white text-slate-950 hover:bg-slate-50 hover:border-slate-300"
         }`;
       }}

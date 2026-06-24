@@ -248,9 +248,13 @@ export function ProductoFormModal({
 
           <div className="space-y-3">
             <label className="block">
-              <span className="mb-1 block text-xs font-bold text-slate-500">Nombre</span>
+              <span className="mb-1 block text-xs font-bold text-slate-500">
+                Nombre <span aria-hidden="true">*</span>
+              </span>
               <input
                 value={nombre}
+                required
+                aria-required="true"
                 maxLength={PRODUCTO_NOMBRE_MAX_LENGTH}
                 onChange={(event) => setNombre(event.target.value)}
                 placeholder={producto ? "Nombre del producto" : "Producto nuevo"}

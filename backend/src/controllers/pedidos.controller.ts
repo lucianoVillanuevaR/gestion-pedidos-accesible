@@ -33,7 +33,7 @@ interface CrearPedidoBody {
     personalizacion?: PersonalizacionPedido;
   }>;
   metodoPago: string;
-  clienteNombre?: string;
+  clienteNombre: string;
   observacion?: string;
 }
 
@@ -236,7 +236,7 @@ export const crearPedido = async (req: Request, res: Response) => {
           total,
           estado: "pendiente",
           metodoPago,
-          clienteNombre: clienteNombre?.trim() || null,
+          clienteNombre: clienteNombre.trim(),
           observacion: observacion?.trim() || null,
           detalles: {
             create: productosData.map((item) => ({

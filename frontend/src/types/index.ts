@@ -88,7 +88,7 @@ export type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
 export type EstadoPedido = "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
 
 export interface CreatePedidoPayload {
-  clienteNombre?: string;
+  clienteNombre: string;
   detalles: PedidoItem[];
   metodoPago: MetodoPago;
   observacion?: string;

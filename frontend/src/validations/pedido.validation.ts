@@ -37,7 +37,11 @@ export function validatePedidoSubmit({
 
   const clienteNombreLimpio = clienteNombre.trim();
 
-  if (clienteNombreLimpio && !CLIENTE_NOMBRE_PATTERN.test(clienteNombreLimpio)) {
+  if (!clienteNombreLimpio) {
+    return "El nombre del cliente es obligatorio";
+  }
+
+  if (!CLIENTE_NOMBRE_PATTERN.test(clienteNombreLimpio)) {
     return "El nombre del cliente solo puede contener letras";
   }
 

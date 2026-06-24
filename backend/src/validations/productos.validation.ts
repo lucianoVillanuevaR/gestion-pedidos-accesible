@@ -138,7 +138,16 @@ type ProductoCreateResult = {
 export function validateProductoCreate(input: ProductoInput): ProductoCreateResult {
   const composition = validateTipoYComponentes(input, false);
   if (composition.error || !composition.data) return { error: composition.error };
-  const nombre = typeof input.nombre === "string" ? input.nombre.trim() : "";
+
+  if (input.nombre === undefined || input.nombre === null || input.nombre === "") {
+    return { error: "El nombre del producto es obligatorio" };
+  }
+
+  if (typeof input.nombre !== "string") {
+    return { error: "El nombre del producto debe ser texto" };
+  }
+
+  const nombre = input.nombre.trim();
   const descripcion = typeof input.descripcion === "string" ? input.descripcion.trim() : "";
   const categoria = typeof input.categoria === "string" ? input.categoria.trim() : "Otros";
   const precio = Number(input.precio);

@@ -120,7 +120,7 @@ function PdvFacilView() {
                     ? "contrast-button-danger"
                     : "contrast-button-primary"
                   : isTurnoOpen
-                    ? "border-red-700 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
+                    ? "border-red-800 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
                     : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-700"
               }`}
               aria-pressed={isTurnoOpen}
@@ -405,11 +405,13 @@ function PdvFacilView() {
 
           <div className="mb-5">
             <label htmlFor="accessibleClienteNombre" className="mb-2 block font-bold text-base">
-              Nombre del comprador
+              Nombre del comprador <span aria-hidden="true">*</span>
             </label>
             <input
               id="accessibleClienteNombre"
               type="text"
+              aria-required="true"
+              required
               value={clienteNombre}
               maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
               onChange={(event) => setClienteNombre(sanitizeClienteNombreInput(event.target.value))}

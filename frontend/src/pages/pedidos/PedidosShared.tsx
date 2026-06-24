@@ -737,7 +737,7 @@ export function PedidoModal({
             className={`min-h-[62px] rounded-2xl border px-5 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isFinish
                 ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-                : "border-red-700 bg-red-600 text-white hover:bg-red-700"
+                : "border-red-800 bg-red-700 text-white hover:bg-red-800"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             {isUpdating ? "Guardando..." : isFinish ? "Marcar entregado" : "Cancelar pedido"}
@@ -775,8 +775,8 @@ export function DetalleSeleccion({ detalle, isAccessible }: { detalle: PedidoDet
         </p>
       )}
       {comentario && (
-        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2.5 text-slate-950">
-          <p className="text-xs font-black uppercase tracking-wide text-amber-900">Comentario para cocina</p>
+        <div className="rounded-xl border-2 border-yellow-300 bg-[#FFF8DC] px-3 py-2.5 text-slate-950">
+          <p className="text-xs font-black uppercase tracking-wide text-yellow-950">Comentario para cocina</p>
           <p className="mt-1 font-black leading-relaxed">{comentario}</p>
         </div>
       )}
