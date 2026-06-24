@@ -80,6 +80,9 @@ function TicketComanda({ pedidoDetalles, total, metodoPago, observacion, numeroP
               </div>
               {item.producto.descripcion && <div className="ticket-description">{item.producto.descripcion}</div>}
               {item.variante && <div className="ticket-description">Opción: {item.variante.nombre}</div>}
+              {item.personalizacion?.combinacion && (
+                <div className="ticket-description">Combinación: {item.personalizacion.combinacion.nombre}</div>
+              )}
               {item.personalizacion?.aderezos.length ? (
                 <div className="ticket-description">Aderezos: {item.personalizacion.aderezos.join(", ")}</div>
               ) : null}

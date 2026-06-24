@@ -41,6 +41,12 @@ export interface VarianteProducto {
 export interface PersonalizacionProducto {
   aderezos: string[];
   comentario?: string;
+  combinacion?: CombinacionPromocion;
+}
+
+export interface CombinacionPromocion {
+  nombre: string;
+  componentes: Array<{ componenteId: number; cantidad: number }>;
 }
 
 export interface CreateProductoPayload {

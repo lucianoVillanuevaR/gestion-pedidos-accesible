@@ -7,6 +7,7 @@ export type StockRequirement = {
 export type StockProduct = {
   id: number;
   nombre: string;
+  tipo: "producto" | "promo" | "combo";
   controlaStock: boolean;
   componentes: Array<{
     componenteId: number;
@@ -16,12 +17,57 @@ export type StockProduct = {
   }>;
 };
 
-export function getApplicableStockComponents(producto: StockProduct, varianteId?: number) {
+export function getApplicableStockComponents(
+  producto: StockProduct,
+  varianteId?: number,
+  combinacion?: { componentes: Array<{ componenteId: number; cantidad: number }> }
+) {
   const requiereVariante = producto.componentes.some((item) => item.varianteId != null);
+  const [primerComponente, segundoComponente] = producto.componentes;
+  const esPromoCombinableSinVariantes =
+    producto.tipo === "promo" &&
+    producto.componentes.length === 2 &&
+    producto.componentes.every((item) => item.varianteId == null && item.cantidad > 0);
+  const esPromoCombinableConVariantes =
+    producto.tipo === "promo" &&
+    producto.componentes.length === 2 &&
+    primerComponente.varianteId != null &&
+    segundoComponente.varianteId != null &&
+    primerComponente.varianteId !== segundoComponente.varianteId &&
+    primerComponente.cantidad === segundoComponente.cantidad;
+  const esPromoCombinable = esPromoCombinableSinVariantes || esPromoCombinableConVariantes;
+
+  if (esPromoCombinable && combinacion) {
+    const idsPermitidos = new Set(producto.componentes.map((item) => item.componenteId));
+    const totalEsperado = esPromoCombinableConVariantes
+      ? primerComponente.cantidad
+      : producto.componentes.reduce((total, item) => total + item.cantidad, 0);
+    const totalSeleccionado = combinacion.componentes.reduce((total, item) => total + item.cantidad, 0);
+    const idsSeleccionados = new Set(combinacion.componentes.map((item) => item.componenteId));
+    if (
+      totalSeleccionado !== totalEsperado ||
+      idsSeleccionados.size !== combinacion.componentes.length ||
+      combinacion.componentes.some((item) => !idsPermitidos.has(item.componenteId))
+    ) {
+      throw new Error(`La combinación elegida para "${producto.nombre}" no es válida`);
+    }
+
+    return combinacion.componentes.map((seleccion) => {
+      const componente = producto.componentes.find((item) => item.componenteId === seleccion.componenteId)!;
+      return { ...componente, cantidad: seleccion.cantidad };
+    });
+  }
+
   if (requiereVariante && !varianteId) {
     throw new Error(`Debes elegir una opción para "${producto.nombre}"`);
   }
-  return producto.componentes.filter((item) => item.varianteId == null || item.varianteId === varianteId);
+  if (requiereVariante) {
+    return producto.componentes.filter((item) => item.varianteId == null || item.varianteId === varianteId);
+  }
+
+  if (!esPromoCombinable) return producto.componentes;
+  if (!combinacion) throw new Error(`Debes elegir una combinación para "${producto.nombre}"`);
+  return producto.componentes;
 }
 
 export function buildStockRequirements(

@@ -381,6 +381,11 @@ function PdvNormalView() {
                     {item.variante && (
                       <p className="text-xs font-black text-yellow-700">Opción: {item.variante.nombre}</p>
                     )}
+                    {item.personalizacion?.combinacion && (
+                      <p className="text-xs font-black text-yellow-700">
+                        Combinación: {item.personalizacion.combinacion.nombre}
+                      </p>
+                    )}
                     {item.personalizacion?.aderezos.length ? (
                       <p className="text-xs text-slate-600">Aderezos: {item.personalizacion.aderezos.join(", ")}</p>
                     ) : null}

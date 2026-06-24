@@ -2,6 +2,7 @@ import { Check, Minus, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../types";
 import { formatCurrency } from "../../utils/pdv";
+import { buildPromoCombinations } from "../../utils/promoCombinations";
 import { PEDIDO_MAX_CANTIDAD_DETALLE } from "../../validations/pedido.validation";
 
 const ADEREZOS_DISPONIBLES = ["Mostaza", "Mayonesa", "Ketchup", "Poca mayo"];
@@ -25,6 +26,7 @@ export default function PdvProductConfigurator({
   producto: Producto;
 }) {
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedCombinationIndex, setSelectedCombinationIndex] = useState<number | null>(null);
   const [cantidad, setCantidad] = useState(1);
   const [aderezos, setAderezos] = useState<string[]>([]);
   const [comentario, setComentario] = useState("");
@@ -32,14 +34,18 @@ export default function PdvProductConfigurator({
   const easyHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const varianteSeleccionada = producto.variantes?.find((variante) => variante.id === selectedVariantId);
   const variantesDisponibles = producto.variantes?.filter((item) => item.disponible !== false) ?? [];
-  const requiereOpcion = variantesDisponibles.length > 0;
+  const combinacionesDisponibles = buildPromoCombinations(producto);
+  const combinacionSeleccionada =
+    selectedCombinationIndex == null ? undefined : combinacionesDisponibles[selectedCombinationIndex];
+  const requiereOpcion = variantesDisponibles.length > 0 || combinacionesDisponibles.length > 0;
   const esSandwich = producto.nombre.toLocaleLowerCase("es").includes("sandwich");
   const total = producto.precio * cantidad;
   const easySteps: Array<"opcion" | "aderezos" | "confirmar"> = requiereOpcion
     ? ["opcion", "aderezos", "confirmar"]
     : ["aderezos", "confirmar"];
   const easyStage = easySteps[easyConfigStep];
-  const canContinueEasy = easyStage !== "opcion" || Boolean(varianteSeleccionada);
+  const opcionSeleccionada = Boolean(varianteSeleccionada || combinacionSeleccionada);
+  const canContinueEasy = easyStage !== "opcion" || opcionSeleccionada;
 
   const toggleAderezo = (aderezo: string) => {
     setAderezos((current) =>
@@ -137,15 +143,27 @@ export default function PdvProductConfigurator({
               <div>
                 <p className="text-xl font-bold text-slate-700">Toca una opción. Debes elegir una para continuar.</p>
                 <div className="mt-5 grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label={stageTitle}>
-                  {variantesDisponibles.map((variante) => {
-                    const isSelected = selectedVariantId === variante.id;
+                  {(combinacionesDisponibles.length
+                    ? combinacionesDisponibles.map((combinacion, index) => ({
+                        key: `combinacion-${index}`,
+                        nombre: combinacion.nombre,
+                        selected: selectedCombinationIndex === index,
+                        select: () => setSelectedCombinationIndex(index)
+                      }))
+                    : variantesDisponibles.map((variante) => ({
+                        key: `variante-${variante.id}`,
+                        nombre: variante.nombre,
+                        selected: selectedVariantId === variante.id,
+                        select: () => setSelectedVariantId(variante.id)
+                      }))).map((opcion) => {
+                    const isSelected = opcion.selected;
                     return (
                       <button
-                        key={variante.id}
+                        key={opcion.key}
                         type="button"
                         role="radio"
                         aria-checked={isSelected}
-                        onClick={() => setSelectedVariantId(variante.id)}
+                        onClick={opcion.select}
                         className={`flex min-h-[96px] flex-wrap items-center justify-between gap-3 rounded-2xl border-4 px-5 py-4 text-left text-2xl font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${
                           isSelected
                             ? isHighContrast
@@ -162,7 +180,7 @@ export default function PdvProductConfigurator({
                           >
                             {isSelected && <Check className="h-6 w-6" aria-hidden="true" />}
                           </span>
-                          <span>{variante.nombre}</span>
+                          <span>{opcion.nombre}</span>
                         </span>
                         {isSelected && (
                           <span
@@ -238,6 +256,11 @@ export default function PdvProductConfigurator({
                   {varianteSeleccionada && (
                     <p className="mt-3 text-lg font-bold text-slate-700">Opción: {varianteSeleccionada.nombre}</p>
                   )}
+                  {combinacionSeleccionada && (
+                    <p className="mt-3 text-lg font-bold text-slate-700">
+                      Combinación: {combinacionSeleccionada.nombre}
+                    </p>
+                  )}
                   <p className="mt-2 text-lg font-bold text-slate-700">
                     Aderezos: {aderezos.length ? aderezos.join(", ") : "Sin aderezos"}
                   </p>
@@ -305,7 +328,8 @@ export default function PdvProductConfigurator({
                 onClick={() =>
                   onSelect(varianteSeleccionada, cantidad, {
                     aderezos,
-                    comentario: comentario.trim() || undefined
+                    comentario: comentario.trim() || undefined,
+                    combinacion: combinacionSeleccionada
                   })
                 }
                 className={`min-h-[68px] rounded-2xl border-4 px-6 text-xl font-black focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]"}`}
@@ -415,15 +439,27 @@ export default function PdvProductConfigurator({
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de completo">
-              {variantesDisponibles.map((variante) => {
-                const isSelected = selectedVariantId === variante.id;
+              {(combinacionesDisponibles.length
+                ? combinacionesDisponibles.map((combinacion, index) => ({
+                    key: `combinacion-${index}`,
+                    nombre: combinacion.nombre,
+                    selected: selectedCombinationIndex === index,
+                    select: () => setSelectedCombinationIndex(index)
+                  }))
+                : variantesDisponibles.map((variante) => ({
+                    key: `variante-${variante.id}`,
+                    nombre: variante.nombre,
+                    selected: selectedVariantId === variante.id,
+                    select: () => setSelectedVariantId(variante.id)
+                  }))).map((opcion) => {
+                const isSelected = opcion.selected;
                 return (
                   <button
-                    key={variante.id}
+                    key={opcion.key}
                     type="button"
                     role="radio"
                     aria-checked={isSelected}
-                    onClick={() => setSelectedVariantId(variante.id)}
+                    onClick={opcion.select}
                     className={`flex items-center gap-3 rounded-xl border-2 px-4 text-left font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${isAccessible ? "min-h-[76px] text-xl" : "min-h-[58px] text-base"} ${
                       isSelected
                         ? isHighContrast
@@ -439,7 +475,7 @@ export default function PdvProductConfigurator({
                     >
                       {isSelected && <Check className="h-4 w-4" aria-hidden="true" />}
                     </span>
-                    {variante.nombre}
+                    {opcion.nombre}
                   </button>
                 );
               })}
@@ -552,17 +588,18 @@ export default function PdvProductConfigurator({
           </div>
           <button
             type="button"
-            disabled={requiereOpcion && !varianteSeleccionada}
+            disabled={requiereOpcion && !opcionSeleccionada}
             onClick={() =>
-              (!requiereOpcion || varianteSeleccionada) &&
+              (!requiereOpcion || opcionSeleccionada) &&
               onSelect(varianteSeleccionada, cantidad, {
                 aderezos,
-                comentario: comentario.trim() || undefined
+                comentario: comentario.trim() || undefined,
+                combinacion: combinacionSeleccionada
               })
             }
-            className={`inline-flex items-center justify-center rounded-xl border-2 px-5 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500 ${isAccessible ? "min-h-[64px] text-xl" : "min-h-[50px] text-base"} ${!requiereOpcion || varianteSeleccionada ? (isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]") : ""}`}
+            className={`inline-flex items-center justify-center rounded-xl border-2 px-5 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-200 disabled:text-slate-500 ${isAccessible ? "min-h-[64px] text-xl" : "min-h-[50px] text-base"} ${!requiereOpcion || opcionSeleccionada ? (isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]") : ""}`}
           >
-            {!requiereOpcion || varianteSeleccionada ? `Agregar · ${formatCurrency(total)}` : "Selecciona una opción"}
+            {!requiereOpcion || opcionSeleccionada ? `Agregar · ${formatCurrency(total)}` : "Selecciona una opción"}
           </button>
         </footer>
       </section>

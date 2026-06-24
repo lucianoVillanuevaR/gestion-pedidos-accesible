@@ -61,7 +61,11 @@ export function validatePedidoDetalles(detalles: PedidoDetalleInput[] | undefine
       ) {
         return "Detalle inválido: personalizacion debe ser un objeto";
       }
-      const personalizacion = detalle.personalizacion as { aderezos?: unknown; comentario?: unknown };
+      const personalizacion = detalle.personalizacion as {
+        aderezos?: unknown;
+        comentario?: unknown;
+        combinacion?: unknown;
+      };
       if (
         !Array.isArray(personalizacion.aderezos) ||
         personalizacion.aderezos.length > 3 ||
@@ -74,6 +78,34 @@ export function validatePedidoDetalles(detalles: PedidoDetalleInput[] | undefine
         (typeof personalizacion.comentario !== "string" || personalizacion.comentario.trim().length > 200)
       ) {
         return "Detalle inválido: el comentario no puede superar 200 caracteres";
+      }
+      if (personalizacion.combinacion !== undefined) {
+        const combinacion = personalizacion.combinacion as {
+          nombre?: unknown;
+          componentes?: unknown;
+        };
+        if (
+          !combinacion ||
+          typeof combinacion !== "object" ||
+          typeof combinacion.nombre !== "string" ||
+          !combinacion.nombre.trim() ||
+          combinacion.nombre.length > 160 ||
+          !Array.isArray(combinacion.componentes) ||
+          combinacion.componentes.length < 1 ||
+          combinacion.componentes.length > 2 ||
+          combinacion.componentes.some(
+            (item) =>
+              !item ||
+              typeof item !== "object" ||
+              !Number.isInteger(Number((item as { componenteId?: unknown }).componenteId)) ||
+              Number((item as { componenteId?: unknown }).componenteId) <= 0 ||
+              !Number.isInteger(Number((item as { cantidad?: unknown }).cantidad)) ||
+              Number((item as { cantidad?: unknown }).cantidad) <= 0 ||
+              Number((item as { cantidad?: unknown }).cantidad) > 10
+          )
+        ) {
+          return "Detalle inválido: la combinación de la promoción no es válida";
+        }
       }
     }
 

@@ -751,9 +751,10 @@ export function PedidoModal({
 export function DetalleSeleccion({ detalle, isAccessible }: { detalle: PedidoDetalleResponse; isAccessible: boolean }) {
   const aderezos = detalle.personalizacion?.aderezos ?? [];
   const comentario = detalle.personalizacion?.comentario?.trim();
+  const combinacion = detalle.personalizacion?.combinacion?.nombre;
   const variante = detalle.variante?.nombre;
 
-  if (!variante && aderezos.length === 0 && !comentario) return null;
+  if (!variante && !combinacion && aderezos.length === 0 && !comentario) return null;
 
   const varianteNormalizada = variante?.toLocaleLowerCase("es") ?? "";
   const esTipoCarne = ["churrasco", "pollo", "lomito", "mechada", "ave", "lomo"].some((carne) =>
@@ -767,6 +768,7 @@ export function DetalleSeleccion({ detalle, isAccessible }: { detalle: PedidoDet
           {esTipoCarne ? "Carne" : "Opción"}: {variante}
         </p>
       )}
+      {combinacion && <p className="font-bold text-slate-700">Combinación: {combinacion}</p>}
       {aderezos.length > 0 && (
         <p className="font-bold leading-relaxed text-slate-700">
           <span className="font-black">Aderezos:</span> {aderezos.join(", ")}

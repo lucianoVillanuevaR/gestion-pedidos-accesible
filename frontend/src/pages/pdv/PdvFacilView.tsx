@@ -352,6 +352,11 @@ function PdvFacilView() {
                     {item.variante && (
                       <p className="text-base font-black text-yellow-700">Opción: {item.variante.nombre}</p>
                     )}
+                    {item.personalizacion?.combinacion && (
+                      <p className="text-base font-black text-yellow-700">
+                        Combinación: {item.personalizacion.combinacion.nombre}
+                      </p>
+                    )}
                     {item.personalizacion?.aderezos.length ? (
                       <p className="text-base text-slate-600">Aderezos: {item.personalizacion.aderezos.join(", ")}</p>
                     ) : null}

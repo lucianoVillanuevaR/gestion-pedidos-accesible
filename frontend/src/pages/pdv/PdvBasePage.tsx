@@ -186,7 +186,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const itemLines = pedidoDetalles.map((item) => {
-      return `${item.cantidad} ${item.producto.nombre}${item.variante ? `, opción ${item.variante.nombre}` : ""}`;
+      const opcion = item.variante
+        ? `, opción ${item.variante.nombre}`
+        : item.personalizacion?.combinacion
+          ? `, combinación ${item.personalizacion.combinacion.nombre}`
+          : "";
+      return `${item.cantidad} ${item.producto.nombre}${opcion}`;
     });
 
     const parts = [
