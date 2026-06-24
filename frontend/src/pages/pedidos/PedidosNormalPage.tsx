@@ -1,5 +1,4 @@
 import {
-  AlertTriangle,
   CalendarDays,
   Check,
   Clock3,
@@ -13,6 +12,7 @@ import {
   X
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import type { EstadoPedido, PedidoResponse } from "../../types";
@@ -103,15 +103,7 @@ function PedidosNormalPage() {
           summary={normalSummary}
         />
 
-        {error && (
-          <div
-            className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`}
-            role="alert"
-          >
-            <AlertTriangle className="mt-1 h-5 w-5" aria-hidden="true" />
-            <p className="font-bold">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
 
         {isLoading ? (
           <div className={`flex min-h-[260px] items-center justify-center rounded-[26px] ${panelClass}`}>

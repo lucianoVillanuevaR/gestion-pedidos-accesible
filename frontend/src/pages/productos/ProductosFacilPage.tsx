@@ -1,7 +1,8 @@
-import { AlertTriangle, ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
+import { ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
+import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
@@ -104,15 +105,7 @@ function ProductosFacilPage() {
           </div>
         </section>
 
-        {error && (
-          <div
-            className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`}
-            role="alert"
-          >
-            <AlertTriangle className="mt-1 h-6 w-6" aria-hidden="true" />
-            <p className="text-lg font-black">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert isHighContrast={isHighContrast} isLarge message={error} />}
 
         {isLoading ? (
           <div className={`flex min-h-[260px] items-center justify-center rounded-[26px] ${panelClass}`}>

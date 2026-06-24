@@ -6,6 +6,9 @@ import { ESTADOS_PEDIDO_ACTIVOS, TRANSICIONES_ESTADO_PERMITIDAS } from "../../do
 import { obtenerPedidoIdsCerrados } from "../../services/cierresTurno";
 import { getPedidos, updatePedidoEstado } from "../../services/pedidos";
 import type { CierreTurno, EstadoPedido, MetodoPago, PedidoDetalleResponse, PedidoResponse } from "../../types";
+import { formatCurrency, normalizeSearchText } from "../../utils/formatters";
+
+export { formatCurrency } from "../../utils/formatters";
 
 export type EstadoFilter = EstadoPedido | "todos";
 type ModalAction = "detail" | "state" | "finish" | "cancel" | "history";
@@ -128,20 +131,6 @@ export function getTurnoSummary(pedidos: PedidoResponse[]) {
     totalTransferencia: totalPorMetodo.transferencia,
     totalVendido: totalPorMetodo.efectivo + totalPorMetodo.tarjeta + totalPorMetodo.transferencia
   };
-}
-
-export function formatCurrency(value: string) {
-  const amount = Number(value);
-
-  if (Number.isNaN(amount)) {
-    return value;
-  }
-
-  return new Intl.NumberFormat("es-CL", {
-    currency: "CLP",
-    maximumFractionDigits: 0,
-    style: "currency"
-  }).format(amount);
 }
 
 export function formatTime(value?: string) {
@@ -377,15 +366,8 @@ export function getProductosVendidosResumen(pedidos: PedidoResponse[]): CierreTu
   return [...productos.values()].sort((left, right) => right.cantidad - left.cantidad);
 }
 
-function normalizeText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
 function pedidoMatchesSearch(pedido: PedidoResponse, searchTerm: string) {
-  const normalizedSearch = normalizeText(searchTerm.trim());
+  const normalizedSearch = normalizeSearchText(searchTerm);
 
   if (!normalizedSearch) {
     return true;
@@ -402,7 +384,7 @@ function pedidoMatchesSearch(pedido: PedidoResponse, searchTerm: string) {
     pedido.estado
   ].join(" ");
 
-  return normalizeText(searchableText).includes(normalizedSearch);
+  return normalizeSearchText(searchableText).includes(normalizedSearch);
 }
 
 function sortPedidos(pedidos: PedidoResponse[], sortOption: SortOption) {

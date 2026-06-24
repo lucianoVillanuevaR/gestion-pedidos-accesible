@@ -18,6 +18,7 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
+import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
@@ -172,15 +173,7 @@ function CierreTurnoPage() {
           </div>
         )}
 
-        {error && (
-          <div
-            className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-200 bg-red-50 text-red-950"}`}
-            role="alert"
-          >
-            <AlertTriangle className="mt-1 h-5 w-5" aria-hidden="true" />
-            <p className="font-bold">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
 
         {isLoading ? (
           <div className={`flex min-h-[280px] items-center justify-center rounded-[18px] ${panelClass}`}>

@@ -1,64 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { getUploadErrorMessage, uploadProductImageMiddleware } from "../middlewares/uploadImage";
-import { deleteProductImage, uploadProductImage, withProductImageUrl } from "../services/productImageService";
+import { deleteProductImage, uploadProductImage } from "../services/productImageService";
+import { PRODUCTO_CATALOG_INCLUDE, toProductoResponse } from "../services/productoCatalogService";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateProductoCreate, validateProductoUpdate } from "../validations/productos.validation";
-
-const PRODUCTO_WITH_CATEGORIAS_INCLUDE = {
-  categorias: {
-    orderBy: {
-      nombre: "asc"
-    }
-  },
-  inventario: true,
-  componentes: {
-    include: {
-      componente: { include: { inventario: true } }
-    },
-    orderBy: { id: "asc" }
-  },
-  variantes: { where: { disponible: true }, orderBy: { orden: "asc" } }
-} as const;
-
-function toProductoResponse<
-  T extends {
-    disponible: boolean;
-    controlaStock: boolean;
-    inventario?: { stockActual: number } | null;
-    componentes?: Array<{
-      cantidad: number;
-      varianteId?: number | null;
-      componente: { inventario?: { stockActual: number } | null };
-    }>;
-    categorias?: Array<{ nombre: string }>;
-    imagenUrl?: string | null;
-  }
->(producto: T) {
-  const componentes = producto.componentes ?? [];
-  const variantesConStock = [...new Set(componentes.flatMap((item) => (item.varianteId ? [item.varianteId] : [])))];
-  const disponibilidadDe = (items: typeof componentes) =>
-    Math.min(...items.map((item) => Math.floor((item.componente.inventario?.stockActual ?? 0) / item.cantidad)));
-  const stockDisponible = componentes.length
-    ? variantesConStock.length
-      ? Math.max(
-          ...variantesConStock.map((varianteId) =>
-            disponibilidadDe(componentes.filter((item) => !item.varianteId || item.varianteId === varianteId))
-          )
-        )
-      : disponibilidadDe(componentes)
-    : producto.controlaStock
-      ? (producto.inventario?.stockActual ?? 0)
-      : null;
-
-  return withProductImageUrl({
-    ...producto,
-    disponibleConfigurado: producto.disponible,
-    disponible: producto.disponible && (stockDisponible === null || stockDisponible > 0),
-    requiereSeleccionVariante: variantesConStock.length > 0,
-    stockDisponible
-  });
-}
 
 async function validateComponentes(
   productoId: number | null,
@@ -97,7 +43,7 @@ export const getProductos = async (req: Request, res: Response) => {
   try {
     const includeUnavailable = req.query.includeUnavailable === "true";
     const productos = await prisma.producto.findMany({
-      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
+      include: PRODUCTO_CATALOG_INCLUDE,
       where: includeUnavailable ? undefined : { disponible: true },
       orderBy: { nombre: "asc" }
     });
@@ -119,7 +65,7 @@ export const getProductoById = async (req: Request, res: Response) => {
 
     const productoId = parsePositiveIntegerId(id);
     const producto = await prisma.producto.findUnique({
-      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
+      include: PRODUCTO_CATALOG_INCLUDE,
       where: { id: productoId }
     });
 
@@ -173,7 +119,7 @@ export const createProducto = async (req: Request, res: Response) => {
           }
         }
       },
-      include: PRODUCTO_WITH_CATEGORIAS_INCLUDE
+      include: PRODUCTO_CATALOG_INCLUDE
     });
 
     res.status(201).json(toProductoResponse(producto));
@@ -242,7 +188,7 @@ export const updateProducto = async (req: Request, res: Response) => {
     const producto = await prisma.$transaction(async (tx) => {
       const updated = await tx.producto.update({
         data,
-        include: PRODUCTO_WITH_CATEGORIAS_INCLUDE,
+        include: PRODUCTO_CATALOG_INCLUDE,
         where: { id: productoId }
       });
       if (updated.controlaStock) {
@@ -254,7 +200,7 @@ export const updateProducto = async (req: Request, res: Response) => {
       } else {
         await tx.inventario.deleteMany({ where: { productoId } });
       }
-      return tx.producto.findUniqueOrThrow({ include: PRODUCTO_WITH_CATEGORIAS_INCLUDE, where: { id: productoId } });
+      return tx.producto.findUniqueOrThrow({ include: PRODUCTO_CATALOG_INCLUDE, where: { id: productoId } });
     });
 
     res.json(toProductoResponse(producto));

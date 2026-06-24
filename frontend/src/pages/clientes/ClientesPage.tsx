@@ -1,6 +1,7 @@
 import { FileSpreadsheet, Filter, MoreVertical, Plus, Search, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { normalizeSearchText } from "../../utils/formatters";
 import { FOCUS_VISIBLE_CLASS, formatCurrency, usePedidosController } from "../pedidos/PedidosShared";
 
 type SegmentFilter = "todos" | "elite" | "top" | "frecuente" | "comprador" | "sin_pedidos";
@@ -38,13 +39,13 @@ function ClientesPage() {
 
   const clientes = useMemo(() => buildClientesFromPedidos(pedidos), [pedidos]);
   const filteredClientes = useMemo(() => {
-    const normalizedSearch = normalizeText(searchTerm);
+    const normalizedSearch = normalizeSearchText(searchTerm);
 
     return clientes.filter((cliente) => {
       const matchesFilter = segmentFilter === "todos" || cliente.segmento === segmentFilter;
       const matchesSearch =
         !normalizedSearch ||
-        normalizeText(
+        normalizeSearchText(
           `${cliente.nombre} ${cliente.telefono} ${cliente.canal} ${getSegmentLabel(cliente.segmento)}`
         ).includes(normalizedSearch);
 
@@ -235,7 +236,7 @@ function buildClientesFromPedidos(pedidos: ReturnType<typeof usePedidosControlle
       return;
     }
 
-    const id = normalizeText(nombre);
+    const id = normalizeSearchText(nombre);
     const currentCliente = clientes.get(id);
     const total = Number(pedido.total);
     const totalComprado = Number.isNaN(total) ? 0 : total;
@@ -332,14 +333,6 @@ function isNewerDate(left?: string, right?: string) {
   }
 
   return new Date(left).getTime() > new Date(right).getTime();
-}
-
-function normalizeText(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
 }
 
 export default ClientesPage;

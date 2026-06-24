@@ -1,4 +1,5 @@
 import type { MetodoPago, PersonalizacionProducto, Producto } from "../types";
+export { formatCurrency } from "./formatters";
 
 export type ProductoCategoria = "Sandwich" | "Completos" | "Bebidas" | "Otros";
 export type ProductoCategoriaCatalogo = ProductoCategoria | (string & {});
@@ -25,14 +26,6 @@ export const FILTROS: Array<{ value: FiltroCategoria; label: string }> = [
 
 function normalizeText(value: string) {
   return value.toLowerCase();
-}
-
-export function formatCurrency(value: number) {
-  return new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0
-  }).format(value);
 }
 
 export function detectCategoria(producto: Pick<Producto, "nombre">): ProductoCategoria {

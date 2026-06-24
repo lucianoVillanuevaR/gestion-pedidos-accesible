@@ -1,5 +1,4 @@
 import {
-  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -12,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
+import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
@@ -313,15 +313,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
           </div>
         )}
 
-        {error && (
-          <div
-            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-950"
-            role="alert"
-          >
-            <AlertTriangle className="mt-1 h-5 w-5" aria-hidden="true" />
-            <p className="font-bold">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {isLoading ? (
           <LoadingState label="Cargando inventario..." />
