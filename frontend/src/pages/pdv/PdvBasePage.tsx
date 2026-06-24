@@ -21,10 +21,7 @@ import type {
   VarianteProducto
 } from "../../types";
 import { buildPedidoSummary, formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
-import {
-  PEDIDO_MAX_CANTIDAD_DETALLE,
-  validatePedidoSubmit
-} from "../../validations/pedido.validation";
+import { PEDIDO_MAX_CANTIDAD_DETALLE, validatePedidoSubmit } from "../../validations/pedido.validation";
 import { validateTurnoClose } from "../../validations/turno.validation";
 import { ACCESSIBLE_STEP_COUNT, type FeedbackState, usesProductConfigurator } from "./PdvShared";
 import {

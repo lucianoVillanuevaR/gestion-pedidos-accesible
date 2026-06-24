@@ -100,7 +100,9 @@ export const crearPedido = async (req: Request, res: Response) => {
       personalizacion: detalle.personalizacion
         ? {
             aderezos: detalle.personalizacion.aderezos.map((item) => item.trim()),
-            ...(detalle.personalizacion.comentario?.trim() && { comentario: detalle.personalizacion.comentario.trim() }),
+            ...(detalle.personalizacion.comentario?.trim() && {
+              comentario: detalle.personalizacion.comentario.trim()
+            }),
             ...(detalle.personalizacion.combinacion && {
               combinacion: {
                 nombre: detalle.personalizacion.combinacion.nombre.trim(),

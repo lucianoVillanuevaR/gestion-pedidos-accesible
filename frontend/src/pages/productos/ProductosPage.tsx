@@ -33,7 +33,7 @@ import {
   type CategoriaCatalogo,
   type CategoriaCatalogoOption
 } from "./ProductosShared";
-import { CategoriaFormModal, ProductoFormModal } from "./ProductosModals";
+import { CategoriaDeleteModal, CategoriaFormModal, ProductoFormModal } from "./ProductosModals";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
 
 type CategoriaGrupo = {
@@ -49,6 +49,7 @@ function ProductosPage() {
   const [customCategorias, setCustomCategorias] = useState<CategoriaCatalogoOption[]>(loadCustomCategorias);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
   const categoriasCatalogo = useMemo(() => mergeCategorias(customCategorias), [customCategorias]);
@@ -278,24 +279,6 @@ function ProductosPage() {
     });
   };
 
-  const handleDeleteActiveCategory = () => {
-    const activeGrupo = grupos.find((grupo) => grupo.value === activeCategory);
-
-    if (!activeGrupo) {
-      const message = "Selecciona una categoría para eliminar.";
-      setError(message);
-      speak(message, {
-        priority: "high",
-        dedupeKey: "producto-category-delete-no-active",
-        cooldownMs: 2500,
-        interrupt: true
-      });
-      return;
-    }
-
-    handleDeleteCategory(activeGrupo);
-  };
-
   const handleOpenEditProduct = (producto: ProductoConCategoria) => {
     setEditingProducto(producto);
     speakAction(
@@ -335,20 +318,11 @@ function ProductosPage() {
     );
   };
 
-  const handleDeleteCategory = (grupo: CategoriaGrupo) => {
-    const isCustomCategory = customCategorias.some((categoria) => categoria.value === grupo.value);
+  const handleDeleteCategory = (categoryValue: CategoriaCatalogo) => {
+    const categoria = customCategorias.find((item) => item.value === categoryValue);
+    const grupo = grupos.find((item) => item.value === categoryValue);
 
-    if (!isCustomCategory) {
-      const message = "Solo puedes eliminar categorías creadas manualmente.";
-      setError(message);
-      speak(message, {
-        priority: "high",
-        dedupeKey: `producto-category-delete-base:${grupo.value}`,
-        cooldownMs: 2500,
-        interrupt: true
-      });
-      return;
-    }
+    if (!categoria || !grupo) return;
 
     if (grupo.productos.length > 0) {
       const message = "Primero elimina o cambia de categoría los productos antes de borrar esta categoría.";
@@ -362,16 +336,11 @@ function ProductosPage() {
       return;
     }
 
-    const confirmed = window.confirm(`¿Eliminar la categoría "${grupo.label}"?`);
-
-    if (!confirmed) {
-      return;
-    }
-
     const nextCategorias = customCategorias.filter((categoria) => categoria.value !== grupo.value);
     setCustomCategorias(nextCategorias);
     saveCustomCategorias(nextCategorias);
     setActiveCategory("Destacados");
+    setIsDeletingCategory(false);
     setError(null);
     speakAction(`Categoria eliminada. ${grupo.label}.`, `producto-category-deleted:${grupo.value}`, {
       cooldownMs: 1800,
@@ -394,7 +363,7 @@ function ProductosPage() {
       <main className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
         <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 lg:flex-row lg:items-center lg:justify-end">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
               <button
                 type="button"
                 onClick={handleOpenCreateProduct}
@@ -413,8 +382,8 @@ function ProductosPage() {
               </button>
               <button
                 type="button"
-                onClick={handleDeleteActiveCategory}
-                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
+                onClick={() => setIsDeletingCategory(true)}
+                className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-red-800 bg-red-700 px-4 text-sm font-black text-white transition hover:bg-red-800 ${FOCUS_VISIBLE_CLASS}`}
               >
                 <Trash2 className="h-5 w-5" aria-hidden="true" />
                 Eliminar categoría
@@ -431,7 +400,7 @@ function ProductosPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid gap-3 px-3 py-3">
             <label className="relative block">
               <span className="sr-only">Buscar producto</span>
               <Search
@@ -447,7 +416,7 @@ function ProductosPage() {
               />
             </label>
 
-            <div className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Categorías del menú">
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Categorías del menú">
               {grupos.map((grupo) => {
                 const isActive = activeCategory === grupo.value;
 
@@ -458,13 +427,14 @@ function ProductosPage() {
                     onClick={() => handleSelectCategory(grupo)}
                     aria-selected={isActive}
                     role="tab"
-                    className={`inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-black transition ${
+                    title={grupo.label}
+                    className={`inline-flex min-h-[42px] max-w-full items-center gap-2 rounded-xl border px-3 text-sm font-black transition ${
                       isActive
                         ? "border-[#FECE00] bg-yellow-50 text-slate-950"
                         : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                     } ${FOCUS_VISIBLE_CLASS}`}
                   >
-                    {grupo.label}
+                    <span className="max-w-[220px] truncate">{grupo.label}</span>
                     <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1 text-xs text-slate-700">
                       {grupo.productos.length}
                     </span>
@@ -542,6 +512,17 @@ function ProductosPage() {
             categoriasCatalogo={categoriasCatalogo}
             onClose={() => setIsCreatingCategory(false)}
             onSubmit={handleCreateCategory}
+          />
+        )}
+
+        {isDeletingCategory && (
+          <CategoriaDeleteModal
+            categorias={customCategorias.map((categoria) => ({
+              ...categoria,
+              productosCount: grupos.find((grupo) => grupo.value === categoria.value)?.productos.length ?? 0
+            }))}
+            onClose={() => setIsDeletingCategory(false)}
+            onSubmit={handleDeleteCategory}
           />
         )}
       </main>

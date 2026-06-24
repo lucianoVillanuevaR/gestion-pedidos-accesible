@@ -1,10 +1,11 @@
-import { ChevronDown, Plus, Upload, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, Plus, Trash2, Upload, X } from "lucide-react";
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import type { CreateProductoPayload, Producto, TipoProducto } from "../../types";
 import { PRODUCT_IMAGE_ACCEPT, validateProductImageFile } from "../../validations/productImage.validation";
 import {
+  PRODUCTO_CATEGORIA_MAX_LENGTH,
   PRODUCTO_DESCRIPCION_MAX_LENGTH,
   PRODUCTO_NOMBRE_MAX_LENGTH,
   PRODUCTO_PRECIO_MAX,
@@ -167,14 +168,19 @@ export function ProductoFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-3 py-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-[2px] sm:p-6">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-[680px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-2xl"
+        className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-3rem)]"
         aria-label={producto ? "Editar producto" : "Agregar producto"}
       >
-        <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-slate-200 px-4">
-          <h2 className="text-base font-black text-slate-950">{producto ? "Editar producto" : "Agregar producto"}</h2>
+        <div className="flex min-h-[68px] shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-5 sm:px-6">
+          <div>
+            <h2 className="text-xl font-black text-slate-950 sm:text-2xl">
+              {producto ? "Editar producto" : "Agregar producto"}
+            </h2>
+            <p className="mt-0.5 text-sm font-semibold text-slate-500">Completa los datos para mostrarlo en el menú.</p>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -187,283 +193,265 @@ export function ProductoFormModal({
           </div>
         </div>
 
-        <div className="grid gap-4 p-4 sm:grid-cols-[136px_minmax(0,1fr)]">
-          <div className="space-y-2">
-            <div className="flex min-h-[112px] items-center justify-center overflow-hidden rounded-lg border border-yellow-300 bg-[#FFF8DC]">
-              {currentImageUrl ? (
-                <img
-                  src={currentImageUrl}
-                  alt={`Imagen de ${producto?.nombre || "producto"}`}
-                  onError={(event) => {
-                    event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
-                  }}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="flex flex-col items-center gap-2 px-3 text-center text-sm font-black text-slate-700">
-                  <Upload className="h-6 w-6" aria-hidden="true" />
-                  Sin imagen
-                </span>
-              )}
-            </div>
+        <div className="grid overflow-y-auto bg-slate-50 p-4 sm:p-5 lg:grid-cols-2 lg:items-start lg:gap-4">
+          <div className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[150px_minmax(0,1fr)] lg:col-span-2">
+            <div className="space-y-2">
+              <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-yellow-300 bg-yellow-50">
+                {currentImageUrl ? (
+                  <img
+                    src={currentImageUrl}
+                    alt={`Imagen de ${producto?.nombre || "producto"}`}
+                    onError={(event) => {
+                      event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
+                    }}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex flex-col items-center gap-2 px-3 text-center text-sm font-black text-slate-700">
+                    <Upload className="h-6 w-6" aria-hidden="true" />
+                    Sin imagen
+                  </span>
+                )}
+              </div>
 
-            <div className="grid gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={PRODUCT_IMAGE_ACCEPT}
-                onChange={handleImageChange}
-                className="sr-only"
-                aria-label="Seleccionar imagen del producto"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isImageSaving}
-                className={`min-h-[40px] rounded-lg border border-yellow-300 bg-[#FECE00] px-3 text-sm font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
-              >
-                {currentImageUrl ? "Cambiar imagen" : "Subir imagen"}
-              </button>
-              {producto?.imagenUrl && (
+              <div className="grid gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={PRODUCT_IMAGE_ACCEPT}
+                  onChange={handleImageChange}
+                  className="sr-only"
+                  aria-label="Seleccionar imagen del producto"
+                />
                 <button
                   type="button"
-                  onClick={handleDeleteImage}
+                  onClick={() => fileInputRef.current?.click()}
                   disabled={isImageSaving}
-                  className={`min-h-[40px] rounded-lg border border-red-300 bg-red-50 px-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+                  className={`min-h-[44px] rounded-xl border border-yellow-400 bg-[#FECE00] px-3 text-sm font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
                 >
-                  Eliminar imagen
+                  {currentImageUrl ? "Cambiar imagen" : "Subir imagen"}
                 </button>
+                {producto?.imagenUrl && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteImage}
+                    disabled={isImageSaving}
+                    className={`min-h-[40px] rounded-lg border border-red-800 bg-red-700 px-3 text-sm font-black text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+                  >
+                    Eliminar imagen
+                  </button>
+                )}
+              </div>
+
+              {imageMessage && (
+                <p
+                  className={`rounded-lg border px-2 py-1 text-xs font-bold ${imageMessage.includes("correctamente") ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}
+                  role="status"
+                >
+                  {imageMessage}
+                </p>
               )}
             </div>
 
-            {imageMessage && (
-              <p
-                className={`rounded-lg border px-2 py-1 text-xs font-bold ${imageMessage.includes("correctamente") ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}
-                role="status"
+            <div className="space-y-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold text-slate-500">
+                  Nombre <span aria-hidden="true">*</span>
+                </span>
+                <input
+                  value={nombre}
+                  required
+                  aria-required="true"
+                  maxLength={PRODUCTO_NOMBRE_MAX_LENGTH}
+                  onChange={(event) => setNombre(event.target.value)}
+                  placeholder={producto ? "Nombre del producto" : "Producto nuevo"}
+                  className={`min-h-[48px] w-full rounded-xl border border-slate-300 px-4 font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 ${FOCUS_VISIBLE_CLASS}`}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold text-slate-500">Descripción</span>
+                <textarea
+                  value={descripcion}
+                  maxLength={PRODUCTO_DESCRIPCION_MAX_LENGTH}
+                  onChange={(event) => setDescripcion(event.target.value)}
+                  placeholder="Descripción"
+                  rows={3}
+                  className={`w-full resize-none rounded-xl border border-slate-300 px-4 py-3 font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 ${FOCUS_VISIBLE_CLASS}`}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:mt-0">
+            <h3 className="text-lg font-black text-slate-950">Precio y disponibilidad</h3>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              Define el precio de venta y si aparece disponible.
+            </p>
+
+            <label className="mt-4 block max-w-[240px]">
+              <span className="mb-1 block text-xs font-bold text-slate-500">Precio</span>
+              <input
+                type="number"
+                min="0"
+                max={PRODUCTO_PRECIO_MAX}
+                step="0.01"
+                value={precio}
+                onChange={(event) => setPrecio(event.target.value)}
+                placeholder="CLP 0"
+                className={`min-h-[48px] w-full rounded-xl border border-slate-300 px-4 font-bold text-slate-950 outline-none transition focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 ${FOCUS_VISIBLE_CLASS}`}
+              />
+            </label>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setDisponible((current) => !current)}
+                className={`inline-flex min-h-[30px] items-center gap-1 rounded-full px-3 text-sm font-black transition ${
+                  disponible ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
+                } ${FOCUS_VISIBLE_CLASS}`}
               >
-                {imageMessage}
-              </p>
+                {disponible ? "Disponible" : "No disponible"}
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:mt-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="font-black text-slate-950">Tipo y control de stock</h3>
+                <p className="mt-1 text-xs font-bold text-slate-500">Las promos y combos descuentan sus componentes.</p>
+              </div>
+              <select
+                value={tipo}
+                onChange={(event) => {
+                  const next = event.target.value as TipoProducto;
+                  setTipo(next);
+                  setControlaStock(next === "producto");
+                  if (next === "producto") setComponentes([]);
+                }}
+                className={`min-h-[40px] rounded-lg border border-slate-300 bg-white px-2 font-bold ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <option value="producto">Producto normal</option>
+                <option value="promo">Promoción</option>
+                <option value="combo">Combo / pack</option>
+              </select>
+            </div>
+
+            {tipo === "producto" ? (
+              <label className="mt-4 flex items-center gap-3 text-sm font-bold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={controlaStock}
+                  onChange={(event) => setControlaStock(event.target.checked)}
+                />
+                Controla stock propio
+              </label>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <p className="text-sm font-black text-slate-800">Componentes que descuentan stock</p>
+                {componentes.map((item, index) => (
+                  <div key={index} className="space-y-1">
+                    {item.varianteId && (
+                      <p className="text-xs font-black text-yellow-700">
+                        Opción: {producto?.variantes?.find((variante) => variante.id === item.varianteId)?.nombre}
+                      </p>
+                    )}
+                    <div className="grid grid-cols-[minmax(0,1fr)_80px_36px] gap-2">
+                      <select
+                        value={item.componenteId || ""}
+                        onChange={(event) =>
+                          setComponentes((current) =>
+                            current.map((row, rowIndex) =>
+                              rowIndex === index ? { ...row, componenteId: Number(event.target.value) } : row
+                            )
+                          )
+                        }
+                        className={`min-h-[40px] rounded-lg border border-slate-300 bg-white px-2 text-sm font-bold ${FOCUS_VISIBLE_CLASS}`}
+                        aria-label={`Componente ${index + 1}`}
+                      >
+                        <option value="">Seleccionar producto</option>
+                        {availableProductos
+                          .filter((candidate) => candidate.id !== producto?.id && candidate.controlaStock !== false)
+                          .map((candidate) => (
+                            <option key={candidate.id} value={candidate.id}>
+                              {candidate.nombre}
+                            </option>
+                          ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={item.cantidad}
+                        onChange={(event) =>
+                          setComponentes((current) =>
+                            current.map((row, rowIndex) =>
+                              rowIndex === index ? { ...row, cantidad: Number(event.target.value) } : row
+                            )
+                          )
+                        }
+                        className={`min-h-[40px] rounded-lg border border-slate-300 px-2 font-bold ${FOCUS_VISIBLE_CLASS}`}
+                        aria-label={`Cantidad del componente ${index + 1}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setComponentes((current) => current.filter((_, rowIndex) => rowIndex !== index))}
+                        aria-label={`Quitar componente ${index + 1}`}
+                        className={`rounded-lg border border-red-200 text-red-700 ${FOCUS_VISIBLE_CLASS}`}
+                      >
+                        <X className="mx-auto h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setComponentes((current) => [...current, { componenteId: 0, cantidad: 1 }])}
+                  className={`inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-yellow-400 px-3 text-sm font-black ${FOCUS_VISIBLE_CLASS}`}
+                >
+                  <Plus className="h-4 w-4" /> Agregar componente
+                </button>
+              </div>
             )}
           </div>
 
-          <div className="space-y-3">
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold text-slate-500">
-                Nombre <span aria-hidden="true">*</span>
-              </span>
-              <input
-                value={nombre}
-                required
-                aria-required="true"
-                maxLength={PRODUCTO_NOMBRE_MAX_LENGTH}
-                onChange={(event) => setNombre(event.target.value)}
-                placeholder={producto ? "Nombre del producto" : "Producto nuevo"}
-                className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
-              />
-            </label>
-            <label className="block">
-              <span className="sr-only">Descripción</span>
-              <textarea
-                value={descripcion}
-                maxLength={PRODUCTO_DESCRIPCION_MAX_LENGTH}
-                onChange={(event) => setDescripcion(event.target.value)}
-                placeholder="Descripción"
-                rows={3}
-                className={`w-full resize-none rounded-lg border border-slate-300 px-3 py-2 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
-              />
-            </label>
-          </div>
-        </div>
-
-        <div className="border-y-8 border-slate-200 px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-base font-black text-slate-950">Precio(s)</h3>
-            <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-slate-300 text-sm font-bold">
-              <span className="bg-yellow-50 px-6 py-2 text-center text-slate-950">Simple</span>
-              <span className="px-6 py-2 text-center text-slate-700">Variantes</span>
-            </div>
-          </div>
-
-          <label className="mt-4 block max-w-[200px]">
-            <span className="mb-1 block text-xs font-bold text-slate-500">Precio</span>
-            <input
-              type="number"
-              min="0"
-              max={PRODUCTO_PRECIO_MAX}
-              step="0.01"
-              value={precio}
-              onChange={(event) => setPrecio(event.target.value)}
-              placeholder="CLP 0"
-              className={`min-h-[40px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
-            />
-          </label>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setDisponible((current) => !current)}
-              className={`inline-flex min-h-[30px] items-center gap-1 rounded-full px-3 text-sm font-black transition ${
-                disponible ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              {disponible ? "Disponible" : "No disponible"}
-              <ChevronDown className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <FakeChip label="Descuento" />
-          </div>
-        </div>
-
-        <div className="border-b-8 border-slate-200 px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[minmax(0,1fr)_240px] sm:items-center lg:col-span-2 lg:mt-0">
             <div>
-              <h3 className="font-black text-slate-950">Tipo y control de stock</h3>
-              <p className="mt-1 text-xs font-bold text-slate-500">Las promos y combos descuentan sus componentes.</p>
+              <h3 className="font-black text-slate-950">Categoría</h3>
+              <p className="mt-1 text-xs font-bold text-slate-500">Selecciona dónde se mostrará este producto.</p>
             </div>
             <select
-              value={tipo}
+              value={categoria}
               onChange={(event) => {
-                const next = event.target.value as TipoProducto;
-                setTipo(next);
-                setControlaStock(next === "producto");
-                if (next === "producto") setComponentes([]);
+                const value = event.target.value as CategoriaCatalogo;
+                setCategoria(value);
+                setDestacado(value === "Destacados" || destacado);
               }}
-              className={`min-h-[40px] rounded-lg border border-slate-300 bg-white px-2 font-bold ${FOCUS_VISIBLE_CLASS}`}
+              className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
             >
-              <option value="producto">Producto normal</option>
-              <option value="promo">Promoción</option>
-              <option value="combo">Combo / pack</option>
+              {categoriasCatalogo.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
-          {tipo === "producto" ? (
-            <label className="mt-4 flex items-center gap-3 text-sm font-bold text-slate-700">
-              <input
-                type="checkbox"
-                checked={controlaStock}
-                onChange={(event) => setControlaStock(event.target.checked)}
-              />
-              Controla stock propio
-            </label>
-          ) : (
-            <div className="mt-4 space-y-3">
-              <p className="text-sm font-black text-slate-800">Componentes que descuentan stock</p>
-              {componentes.map((item, index) => (
-                <div key={index} className="space-y-1">
-                  {item.varianteId && (
-                    <p className="text-xs font-black text-yellow-700">
-                      Opción: {producto?.variantes?.find((variante) => variante.id === item.varianteId)?.nombre}
-                    </p>
-                  )}
-                  <div className="grid grid-cols-[minmax(0,1fr)_80px_36px] gap-2">
-                    <select
-                      value={item.componenteId || ""}
-                      onChange={(event) =>
-                        setComponentes((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index ? { ...row, componenteId: Number(event.target.value) } : row
-                          )
-                        )
-                      }
-                      className={`min-h-[40px] rounded-lg border border-slate-300 bg-white px-2 text-sm font-bold ${FOCUS_VISIBLE_CLASS}`}
-                      aria-label={`Componente ${index + 1}`}
-                    >
-                      <option value="">Seleccionar producto</option>
-                      {availableProductos
-                        .filter((candidate) => candidate.id !== producto?.id && candidate.controlaStock !== false)
-                        .map((candidate) => (
-                          <option key={candidate.id} value={candidate.id}>
-                            {candidate.nombre}
-                          </option>
-                        ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={item.cantidad}
-                      onChange={(event) =>
-                        setComponentes((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index ? { ...row, cantidad: Number(event.target.value) } : row
-                          )
-                        )
-                      }
-                      className={`min-h-[40px] rounded-lg border border-slate-300 px-2 font-bold ${FOCUS_VISIBLE_CLASS}`}
-                      aria-label={`Cantidad del componente ${index + 1}`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setComponentes((current) => current.filter((_, rowIndex) => rowIndex !== index))}
-                      aria-label={`Quitar componente ${index + 1}`}
-                      className={`rounded-lg border border-red-200 text-red-700 ${FOCUS_VISIBLE_CLASS}`}
-                    >
-                      <X className="mx-auto h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setComponentes((current) => [...current, { componenteId: 0, cantidad: 1 }])}
-                className={`inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-yellow-400 px-3 text-sm font-black ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <Plus className="h-4 w-4" /> Agregar componente
-              </button>
-            </div>
+          {formError && (
+            <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800 lg:col-span-2 lg:mt-0">
+              {formError}
+            </p>
           )}
         </div>
 
-        <div className="grid gap-4 border-b-8 border-slate-200 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_72px] sm:items-center">
-          <div>
-            <h3 className="font-black text-slate-950">
-              Agregar modificadores{" "}
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">0</span>
-            </h3>
-            <p className="mt-1 text-xs font-bold text-slate-500">Ingredientes, sabores, cubiertos...</p>
-          </div>
-          <button
-            type="button"
-            className={`inline-flex min-h-[40px] items-center justify-center rounded-lg border border-[#FECE00] bg-white text-yellow-700 transition hover:bg-yellow-50 ${FOCUS_VISIBLE_CLASS}`}
-          >
-            <Plus className="h-5 w-5" aria-hidden="true" />
-          </button>
-        </div>
-
-        <div className="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_200px] sm:items-center">
-          <div>
-            <h3 className="font-black text-slate-950">Categoría</h3>
-            <p className="mt-1 text-xs font-bold text-slate-500">Selecciona dónde se mostrará este producto.</p>
-          </div>
-          <select
-            value={categoria}
-            onChange={(event) => {
-              const value = event.target.value as CategoriaCatalogo;
-              setCategoria(value);
-              setDestacado(value === "Destacados" || destacado);
-            }}
-            className={`min-h-[44px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
-          >
-            {categoriasCatalogo.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {formError && (
-          <p className="mx-4 mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800">
-            {formError}
-          </p>
-        )}
-
-        <div className="flex flex-col gap-3 border-t border-slate-200 p-4 sm:flex-row">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-slate-200 bg-white p-4 sm:flex-row sm:px-5">
           {producto && onDeleteProduct && (
             <button
               type="button"
               onClick={() => onDeleteProduct(producto)}
               disabled={isSaving}
-              className={`min-h-[44px] rounded-xl border border-red-200 bg-red-50 px-4 font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-1 ${FOCUS_VISIBLE_CLASS}`}
+              className={`min-h-[44px] rounded-xl border border-red-800 bg-red-700 px-4 font-black text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-1 ${FOCUS_VISIBLE_CLASS}`}
             >
               Eliminar producto
             </button>
@@ -518,6 +506,18 @@ export function CategoriaFormModal({
       return;
     }
 
+    if (cleanName.length > PRODUCTO_CATEGORIA_MAX_LENGTH) {
+      const message = `El nombre no puede superar ${PRODUCTO_CATEGORIA_MAX_LENGTH} caracteres`;
+      setFormError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: "categoria-form-error-largo",
+        cooldownMs: 2000,
+        interrupt: true
+      });
+      return;
+    }
+
     const alreadyExists = categoriasCatalogo.some(
       (categoria) => categoria.label.toLowerCase() === cleanName.toLowerCase()
     );
@@ -539,14 +539,19 @@ export function CategoriaFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-3 py-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-[420px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-2xl"
+        className="w-full max-w-[480px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
         aria-label="Crear categoría"
       >
-        <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-slate-200 px-4">
-          <h2 className="text-base font-black text-slate-950">Crear categoría</h2>
+        <div className="flex min-h-[68px] items-center justify-between gap-3 border-b border-slate-200 px-5">
+          <div>
+            <h2 className="text-xl font-black text-slate-950">Crear categoría</h2>
+            <p className="mt-0.5 text-sm font-semibold text-slate-500">
+              Organiza productos bajo un nombre fácil de reconocer.
+            </p>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -557,15 +562,23 @@ export function CategoriaFormModal({
           </button>
         </div>
 
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 bg-slate-50 p-5">
           <label className="block">
-            <span className="mb-1 block text-xs font-bold text-slate-500">Nombre</span>
+            <span className="mb-2 block text-sm font-black text-slate-700">
+              Nombre{" "}
+              <span aria-hidden="true" className="text-red-600">
+                *
+              </span>
+            </span>
             <input
               autoFocus
+              required
+              aria-required="true"
+              maxLength={PRODUCTO_CATEGORIA_MAX_LENGTH}
               value={nombre}
               onChange={(event) => setNombre(event.target.value)}
               placeholder="Ej: Promociones"
-              className={`min-h-[44px] w-full rounded-lg border border-slate-300 px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
+              className={`min-h-[50px] w-full rounded-xl border border-slate-300 bg-white px-4 font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 ${FOCUS_VISIBLE_CLASS}`}
             />
           </label>
 
@@ -576,7 +589,7 @@ export function CategoriaFormModal({
           )}
         </div>
 
-        <div className="flex gap-3 border-t border-slate-200 p-4">
+        <div className="flex gap-3 border-t border-slate-200 p-5">
           <button
             type="button"
             onClick={onClose}
@@ -588,7 +601,7 @@ export function CategoriaFormModal({
             type="submit"
             className={`min-h-[44px] flex-1 rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
           >
-            Crear
+            Crear categoría
           </button>
         </div>
       </form>
@@ -596,11 +609,114 @@ export function CategoriaFormModal({
   );
 }
 
-function FakeChip({ label }: { label: string }) {
+export function CategoriaDeleteModal({
+  categorias,
+  onClose,
+  onSubmit
+}: {
+  categorias: Array<CategoriaCatalogoOption & { productosCount: number }>;
+  onClose: () => void;
+  onSubmit: (categoria: CategoriaCatalogo) => void;
+}) {
+  const [selectedCategory, setSelectedCategory] = useState<CategoriaCatalogo | "">("");
+  const selected = categorias.find((categoria) => categoria.value === selectedCategory);
+  const canDelete = Boolean(selected && selected.productosCount === 0);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (canDelete && selectedCategory) onSubmit(selectedCategory);
+  };
+
   return (
-    <span className="inline-flex min-h-[30px] items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm font-bold text-slate-700">
-      <Plus className="h-4 w-4" aria-hidden="true" />
-      {label}
-    </span>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-[520px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+        aria-labelledby="delete-category-title"
+      >
+        <div className="flex min-h-[68px] items-center justify-between gap-3 border-b border-slate-200 px-5">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-red-50 text-red-700">
+              <Trash2 className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 id="delete-category-title" className="text-xl font-black text-slate-950">
+                Eliminar categoría
+              </h2>
+              <p className="text-sm font-semibold text-slate-500">Elige cuál deseas eliminar.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
+            aria-label="Cerrar"
+          >
+            <X className="h-6 w-6" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="space-y-4 bg-slate-50 p-5">
+          {categorias.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
+              <p className="font-black text-slate-900">No hay categorías personalizadas</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">
+                Las categorías predeterminadas no se pueden eliminar.
+              </p>
+            </div>
+          ) : (
+            <label className="block">
+              <span className="mb-2 block text-sm font-black text-slate-700">Categoría</span>
+              <select
+                autoFocus
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value as CategoriaCatalogo)}
+                className={`min-h-[50px] w-full rounded-xl border border-slate-300 bg-white px-4 font-bold text-slate-950 outline-none transition focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <option value="">Selecciona una categoría</option>
+                {categorias.map((categoria) => (
+                  <option key={categoria.value} value={categoria.value}>
+                    {categoria.label} ({categoria.productosCount} productos)
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {selected && selected.productosCount > 0 && (
+            <div className="flex gap-3 rounded-2xl border border-red-800 bg-red-700 p-4 text-white" role="alert">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="font-black">Esta categoría contiene {selected.productosCount} productos</p>
+                <p className="mt-1 text-sm font-semibold">Cámbialos de categoría antes de eliminarla.</p>
+              </div>
+            </div>
+          )}
+
+          {selected && selected.productosCount === 0 && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-900">
+              Se eliminará <strong>{selected.label}</strong>. Esta acción no se puede deshacer.
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 border-t border-slate-200 p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`min-h-[46px] flex-1 rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={!canDelete}
+            className={`min-h-[46px] flex-1 rounded-xl border border-red-700 bg-red-700 px-4 font-black text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300 disabled:text-slate-500 ${FOCUS_VISIBLE_CLASS}`}
+          >
+            Eliminar categoría
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

@@ -22,6 +22,16 @@ export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { label: "Otros", value: "Otros" }
 ];
 
+const CATEGORIA_ALIASES: Record<string, CategoriaCatalogo> = {
+  "Completos / Hot Dogs": "Completos",
+  "Completos / Hot dogs": "Completos"
+};
+
+export function normalizeCategoriaCatalogo(categoria: string): CategoriaCatalogo {
+  const cleanCategoria = categoria.trim();
+  return CATEGORIA_ALIASES[cleanCategoria] ?? (cleanCategoria as CategoriaCatalogo);
+}
+
 export function loadCustomCategorias(): CategoriaCatalogoOption[] {
   try {
     const storedCategorias = window.localStorage.getItem(CUSTOM_CATEGORIES_STORAGE_KEY);
@@ -53,10 +63,11 @@ export function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
 
   [...CATEGORIAS_CATALOGO, ...customCategorias].forEach((categoria) => {
     const label = categoria.label.trim();
-    const value = String(categoria.value).trim() as CategoriaCatalogo;
+    const value = normalizeCategoriaCatalogo(String(categoria.value));
+    const normalizedLabel = CATEGORIA_ALIASES[label] ?? label;
 
     if (label && value && !categoriaMap.has(value)) {
-      categoriaMap.set(value, { label, value });
+      categoriaMap.set(value, { label: normalizedLabel, value });
     }
   });
 
@@ -67,7 +78,10 @@ export function buildCategoriasCatalogo(productos: Producto[], customCategorias:
   const categoriasProductos = productos
     .map((producto) => producto.categoria?.trim())
     .filter((categoria): categoria is string => Boolean(categoria))
-    .map((categoria) => ({ label: categoria, value: categoria as CategoriaCatalogo }));
+    .map((categoria) => {
+      const value = normalizeCategoriaCatalogo(categoria);
+      return { label: value, value };
+    });
 
   return mergeCategorias([...customCategorias, ...categoriasProductos]);
 }
@@ -75,13 +89,14 @@ export function buildCategoriasCatalogo(productos: Producto[], customCategorias:
 export function withProductoCategoria(productos: Producto[], categorias = CATEGORIAS_CATALOGO): ProductoConCategoria[] {
   const categoriasDisponibles = new Set(categorias.map((categoria) => categoria.value));
 
-  return productos.map((producto) => ({
-    ...producto,
-    categoria:
-      producto.categoria?.trim() && categoriasDisponibles.has(producto.categoria.trim() as CategoriaCatalogo)
-        ? (producto.categoria.trim() as CategoriaCatalogo)
-        : detectCategoria(producto)
-  }));
+  return productos.map((producto) => {
+    const categoria = producto.categoria ? normalizeCategoriaCatalogo(producto.categoria) : null;
+
+    return {
+      ...producto,
+      categoria: categoria && categoriasDisponibles.has(categoria) ? categoria : detectCategoria(producto)
+    };
+  });
 }
 
 export function filterCatalogoProductos(productos: ProductoConCategoria[], searchTerm: string) {
