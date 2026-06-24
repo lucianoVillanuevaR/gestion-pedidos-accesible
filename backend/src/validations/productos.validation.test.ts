@@ -2,6 +2,21 @@ import { describe, expect, it } from "vitest";
 import { validateProductoCreate, validateProductoUpdate } from "./productos.validation";
 
 describe("validaciones de productos", () => {
+  it("exige el nombre al crear un producto", () => {
+    expect(validateProductoCreate({ precio: 2500 })).toEqual({
+      error: "El nombre del producto es obligatorio"
+    });
+    expect(validateProductoCreate({ nombre: "   ", precio: 2500 })).toEqual({
+      error: "El nombre del producto es obligatorio"
+    });
+  });
+
+  it("rechaza un nombre que no sea texto", () => {
+    expect(validateProductoCreate({ nombre: 123, precio: 2500 })).toEqual({
+      error: "El nombre del producto debe ser texto"
+    });
+  });
+
   it("normaliza un producto nuevo y aplica valores predeterminados", () => {
     expect(validateProductoCreate({ nombre: "  Completo italiano  ", precio: "2500" })).toEqual({
       data: {
@@ -30,6 +45,12 @@ describe("validaciones de productos", () => {
 
   it("exige al menos un campo al actualizar", () => {
     expect(validateProductoUpdate({})).toEqual({ error: "Debe enviar al menos un campo para actualizar" });
+  });
+
+  it("no permite borrar el nombre al actualizar", () => {
+    expect(validateProductoUpdate({ nombre: "   " })).toEqual({
+      error: "El nombre del producto es obligatorio"
+    });
   });
 
   it("normaliza una promoción con componentes", () => {

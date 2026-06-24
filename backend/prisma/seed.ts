@@ -10,7 +10,7 @@ const DEFAULT_STOCK_MINIMO = 10;
 const MINIO_RETRY_ATTEMPTS = 12;
 const MINIO_RETRY_DELAY_MS = 2500;
 
-type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos_hot_dogs" | "sandwich";
+type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos" | "sandwich";
 
 type VariantSeed = {
   nombre: string;
@@ -171,9 +171,9 @@ const menuCatalog: CategoryDefinition[] = [
     ]
   },
   {
-    key: "completos_hot_dogs",
-    nombre: "Completos / Hot Dogs",
-    descripcion: "Completos y hot dogs disponibles en el menú.",
+    key: "completos",
+    nombre: "Completos",
+    descripcion: "Todos los completos disponibles en el menú.",
     orden: 4,
     productos: [
       {
@@ -565,6 +565,17 @@ async function main() {
 
     const categoryMap = await seedCategories(tx);
     await seedProducts(tx, categoryMap);
+    const completos = await tx.producto.findMany({
+      where: { nombre: { contains: "Completo", mode: "insensitive" } },
+      select: { id: true }
+    });
+    await tx.categoria.update({
+      where: { nombre: "Completos" },
+      data: { productos: { connect: completos } }
+    });
+    await tx.categoria.deleteMany({
+      where: { nombre: { in: ["Completos / Hot Dogs", "Completos / Hot dogs"] } }
+    });
   });
 
   await ensureMinioBucketWithRetry();

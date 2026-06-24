@@ -569,8 +569,8 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
           </p>
         )}
         {comentarios.length > 0 && (
-          <div className="mt-3 rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-2 text-sm text-slate-950">
-            <p className="text-xs font-black uppercase tracking-wide text-amber-900">Comentarios para cocina</p>
+          <div className="mt-3 rounded-lg border-2 border-yellow-300 bg-[#FFF8DC] px-3 py-2 text-sm text-slate-950">
+            <p className="text-xs font-black uppercase tracking-wide text-yellow-950">Comentarios para cocina</p>
             {comentarios.map((comentario) => (
               <p key={`${comentario.productoId}-${comentario.texto}`} className="mt-1 font-black leading-snug">
                 {comentario.producto}: {comentario.texto}
@@ -695,8 +695,8 @@ function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, o
           </p>
         )}
         {comentarios.length > 0 && (
-          <div className="mt-4 rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 text-slate-950">
-            <p className="text-lg font-black uppercase tracking-wide text-amber-900">Comentarios para cocina</p>
+          <div className="mt-4 rounded-2xl border-2 border-yellow-400 bg-[#FFF8DC] p-4 text-slate-950">
+            <p className="text-lg font-black uppercase tracking-wide text-yellow-950">Comentarios para cocina</p>
             {comentarios.map((comentario) => (
               <p key={`${comentario.productoId}-${comentario.texto}`} className="mt-2 text-xl font-black leading-snug">
                 {comentario.producto}: {comentario.texto}

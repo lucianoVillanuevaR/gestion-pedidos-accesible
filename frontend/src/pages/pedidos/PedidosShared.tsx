@@ -737,7 +737,7 @@ export function PedidoModal({
             className={`min-h-[62px] rounded-2xl border px-5 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isFinish
                 ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-                : "border-red-700 bg-red-600 text-white hover:bg-red-700"
+                : "border-red-800 bg-red-700 text-white hover:bg-red-800"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             {isUpdating ? "Guardando..." : isFinish ? "Marcar entregado" : "Cancelar pedido"}
@@ -751,9 +751,10 @@ export function PedidoModal({
 export function DetalleSeleccion({ detalle, isAccessible }: { detalle: PedidoDetalleResponse; isAccessible: boolean }) {
   const aderezos = detalle.personalizacion?.aderezos ?? [];
   const comentario = detalle.personalizacion?.comentario?.trim();
+  const combinacion = detalle.personalizacion?.combinacion?.nombre;
   const variante = detalle.variante?.nombre;
 
-  if (!variante && aderezos.length === 0 && !comentario) return null;
+  if (!variante && !combinacion && aderezos.length === 0 && !comentario) return null;
 
   const varianteNormalizada = variante?.toLocaleLowerCase("es") ?? "";
   const esTipoCarne = ["churrasco", "pollo", "lomito", "mechada", "ave", "lomo"].some((carne) =>
@@ -767,14 +768,15 @@ export function DetalleSeleccion({ detalle, isAccessible }: { detalle: PedidoDet
           {esTipoCarne ? "Carne" : "Opción"}: {variante}
         </p>
       )}
+      {combinacion && <p className="font-bold text-slate-700">Combinación: {combinacion}</p>}
       {aderezos.length > 0 && (
         <p className="font-bold leading-relaxed text-slate-700">
           <span className="font-black">Aderezos:</span> {aderezos.join(", ")}
         </p>
       )}
       {comentario && (
-        <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2.5 text-slate-950">
-          <p className="text-xs font-black uppercase tracking-wide text-amber-900">Comentario para cocina</p>
+        <div className="rounded-xl border-2 border-yellow-300 bg-[#FFF8DC] px-3 py-2.5 text-slate-950">
+          <p className="text-xs font-black uppercase tracking-wide text-yellow-950">Comentario para cocina</p>
           <p className="mt-1 font-black leading-relaxed">{comentario}</p>
         </div>
       )}

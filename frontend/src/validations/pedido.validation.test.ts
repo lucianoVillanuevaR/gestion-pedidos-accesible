@@ -17,6 +17,17 @@ describe("validatePedidoSubmit", () => {
     );
   });
 
+  it("exige el nombre del cliente", () => {
+    expect(
+      validatePedidoSubmit({
+        clienteNombre: "   ",
+        isTurnoOpen: true,
+        metodoPago: "efectivo",
+        totalProductos: 1
+      })
+    ).toBe("El nombre del cliente es obligatorio");
+  });
+
   it("acepta un pedido válido", () => {
     expect(
       validatePedidoSubmit({
@@ -63,6 +74,7 @@ describe("validatePedidoSubmit", () => {
     ).toContain("80 caracteres");
     expect(
       validatePedidoSubmit({
+        clienteNombre: "Ana",
         isTurnoOpen: true,
         metodoPago: "efectivo",
         observacion: "A".repeat(301),

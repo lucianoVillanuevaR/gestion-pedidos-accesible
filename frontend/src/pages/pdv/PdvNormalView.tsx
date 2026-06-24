@@ -238,7 +238,7 @@ function PdvNormalView() {
               onClick={handleTurnoButtonClick}
               className={`inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border px-3 text-xs font-black transition ${
                 isTurnoOpen
-                  ? "border-red-700 bg-red-700 text-white hover:bg-red-800"
+                  ? "border-red-800 bg-red-700 text-white hover:bg-red-800"
                   : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
               } ${isHighContrast ? (isTurnoOpen ? "contrast-button-danger" : "contrast-button-primary") : ""}`}
               aria-pressed={isTurnoOpen}
@@ -281,10 +281,12 @@ function PdvNormalView() {
             <input
               type="text"
               aria-label="Nombre del cliente"
+              aria-required="true"
+              required
               value={clienteNombre}
               maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
               onChange={(event) => setClienteNombre(sanitizeClienteNombreInput(event.target.value))}
-              placeholder="Agregar un nombre de cliente"
+              placeholder="Nombre del cliente (obligatorio)"
               className="h-14 border-0 border-l border-[#FECE00] bg-yellow-50 px-3 text-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-yellow-300"
             />
           </div>
@@ -343,7 +345,7 @@ function PdvNormalView() {
                 type="button"
                 onClick={resetPedido}
                 className={`rounded-lg border px-4 py-2 font-bold transition ${
-                  isHighContrast ? "contrast-button-danger" : "border-red-700 bg-red-600 text-white hover:bg-red-700"
+                  isHighContrast ? "contrast-button-danger" : "border-red-800 bg-red-700 text-white hover:bg-red-800"
                 }`}
               >
                 Sí, borrar
@@ -380,6 +382,11 @@ function PdvNormalView() {
                     <p className="truncate text-sm font-bold text-slate-950">{item.producto.nombre}</p>
                     {item.variante && (
                       <p className="text-xs font-black text-yellow-700">Opción: {item.variante.nombre}</p>
+                    )}
+                    {item.personalizacion?.combinacion && (
+                      <p className="text-xs font-black text-yellow-700">
+                        Combinación: {item.personalizacion.combinacion.nombre}
+                      </p>
                     )}
                     {item.personalizacion?.aderezos.length ? (
                       <p className="text-xs text-slate-600">Aderezos: {item.personalizacion.aderezos.join(", ")}</p>

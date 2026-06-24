@@ -41,6 +41,12 @@ export interface VarianteProducto {
 export interface PersonalizacionProducto {
   aderezos: string[];
   comentario?: string;
+  combinacion?: CombinacionPromocion;
+}
+
+export interface CombinacionPromocion {
+  nombre: string;
+  componentes: Array<{ componenteId: number; cantidad: number }>;
 }
 
 export interface CreateProductoPayload {
@@ -82,7 +88,7 @@ export type MetodoPago = "efectivo" | "tarjeta" | "transferencia";
 export type EstadoPedido = "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
 
 export interface CreatePedidoPayload {
-  clienteNombre?: string;
+  clienteNombre: string;
   detalles: PedidoItem[];
   metodoPago: MetodoPago;
   observacion?: string;

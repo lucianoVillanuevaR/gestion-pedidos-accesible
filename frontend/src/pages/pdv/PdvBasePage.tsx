@@ -21,11 +21,7 @@ import type {
   VarianteProducto
 } from "../../types";
 import { buildPedidoSummary, formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
-import {
-  PEDIDO_MAX_CANTIDAD_DETALLE,
-  PEDIDO_OBSERVACION_MAX_LENGTH,
-  validatePedidoSubmit
-} from "../../validations/pedido.validation";
+import { PEDIDO_MAX_CANTIDAD_DETALLE, validatePedidoSubmit } from "../../validations/pedido.validation";
 import { validateTurnoClose } from "../../validations/turno.validation";
 import { ACCESSIBLE_STEP_COUNT, type FeedbackState, usesProductConfigurator } from "./PdvShared";
 import {
@@ -186,7 +182,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const itemLines = pedidoDetalles.map((item) => {
-      return `${item.cantidad} ${item.producto.nombre}${item.variante ? `, opción ${item.variante.nombre}` : ""}`;
+      const opcion = item.variante
+        ? `, opción ${item.variante.nombre}`
+        : item.personalizacion?.combinacion
+          ? `, combinación ${item.personalizacion.combinacion.nombre}`
+          : "";
+      return `${item.cantidad} ${item.producto.nombre}${opcion}`;
     });
 
     const parts = [
@@ -570,7 +571,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     const payload: CreatePedidoPayload = {
-      clienteNombre: clienteNombre.trim() || undefined,
+      clienteNombre: clienteNombre.trim(),
       detalles: pedidoDetalles.map((item) => ({
         productoId: item.productoId,
         cantidad: item.cantidad,
@@ -712,8 +713,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         return "Agrega al menos un producto para continuar.";
       }
 
-      if (step === 4 && observacion.trim().length > PEDIDO_OBSERVACION_MAX_LENGTH) {
-        return `La observación no puede superar ${PEDIDO_OBSERVACION_MAX_LENGTH} caracteres.`;
+      if (step === 4 && !clienteNombre.trim()) {
+        return "El nombre del cliente es obligatorio";
       }
 
       if (step === 5 && metodoPago === "") {
@@ -726,7 +727,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
       return null;
     },
-    [isAccessible, isTurnoOpen, metodoPago, observacion, pedidoDetalles.length, submitValidationError]
+    [clienteNombre, isAccessible, isTurnoOpen, metodoPago, pedidoDetalles.length, submitValidationError]
   );
 
   const accessibleStepValidation = getAccessibleStepValidation(accessibleStep);

@@ -30,12 +30,21 @@ interface CrearPedidoBody {
     productoId: number;
     cantidad: number;
     varianteId?: number;
-    personalizacion?: { aderezos: string[]; comentario?: string };
+    personalizacion?: PersonalizacionPedido;
   }>;
   metodoPago: string;
-  clienteNombre?: string;
+  clienteNombre: string;
   observacion?: string;
 }
+
+type PersonalizacionPedido = {
+  aderezos: string[];
+  comentario?: string;
+  combinacion?: {
+    nombre: string;
+    componentes: Array<{ componenteId: number; cantidad: number }>;
+  };
+};
 
 interface ActualizarEstadoBody {
   estado: string;
@@ -91,7 +100,18 @@ export const crearPedido = async (req: Request, res: Response) => {
       personalizacion: detalle.personalizacion
         ? {
             aderezos: detalle.personalizacion.aderezos.map((item) => item.trim()),
-            ...(detalle.personalizacion.comentario?.trim() && { comentario: detalle.personalizacion.comentario.trim() })
+            ...(detalle.personalizacion.comentario?.trim() && {
+              comentario: detalle.personalizacion.comentario.trim()
+            }),
+            ...(detalle.personalizacion.combinacion && {
+              combinacion: {
+                nombre: detalle.personalizacion.combinacion.nombre.trim(),
+                componentes: detalle.personalizacion.combinacion.componentes.map((item) => ({
+                  componenteId: Number(item.componenteId),
+                  cantidad: Number(item.cantidad)
+                }))
+              }
+            })
           }
         : undefined
     }));
@@ -107,7 +127,7 @@ export const crearPedido = async (req: Request, res: Response) => {
         cantidad: number;
         subtotal: Decimal;
         varianteId?: number;
-        personalizacion?: { aderezos: string[]; comentario?: string };
+        personalizacion?: PersonalizacionPedido;
       }> = [];
       const productosStock: Array<{ producto: StockProduct; cantidadVendida: number }> = [];
       let total = new Decimal(0);
@@ -139,10 +159,26 @@ export const crearPedido = async (req: Request, res: Response) => {
           throw new PedidoRequestError(400, `La opción elegida no pertenece a "${producto.nombre}"`);
         }
         const requiereVariante = producto.componentes.some((item) => item.varianteId !== null);
-        if (requiereVariante && !variante) {
+        if (requiereVariante && !variante && !detalle.personalizacion?.combinacion) {
           throw new PedidoRequestError(400, `Debes elegir una opción para "${producto.nombre}"`);
         }
-        const componentesAplicables = getApplicableStockComponents(producto, variante?.id);
+        let componentesAplicables;
+        try {
+          componentesAplicables = getApplicableStockComponents(
+            producto,
+            variante?.id,
+            detalle.personalizacion?.combinacion
+          );
+        } catch (error) {
+          throw new PedidoRequestError(400, error instanceof Error ? error.message : "La combinación no es válida");
+        }
+        if (detalle.personalizacion?.combinacion) {
+          const nombreCantidad = (cantidad: number, nombre: string) =>
+            cantidad === 1 ? nombre : `${cantidad} × ${nombre}`;
+          detalle.personalizacion.combinacion.nombre = componentesAplicables
+            .map((item) => nombreCantidad(item.cantidad, item.componente.nombre))
+            .join(" + ");
+        }
 
         const subtotal = producto.precio.mul(new Decimal(detalle.cantidad));
         total = total.add(subtotal);
@@ -202,7 +238,7 @@ export const crearPedido = async (req: Request, res: Response) => {
           total,
           estado: "pendiente",
           metodoPago,
-          clienteNombre: clienteNombre?.trim() || null,
+          clienteNombre: clienteNombre.trim(),
           observacion: observacion?.trim() || null,
           detalles: {
             create: productosData.map((item) => ({
