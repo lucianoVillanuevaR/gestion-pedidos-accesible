@@ -517,7 +517,7 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
     select: { nombre: true }
   });
   for (const promo of promocionesSinComponentes) {
-    console.warn(`TODO inventario: configurar manualmente componentes para "${promo.nombre}".`);
+    console.warn(`Aviso inventario: configurar componentes para "${promo.nombre}" cuando se gestione stock real.`);
   }
 }
 

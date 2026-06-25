@@ -1,43 +1,12 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { getUploadErrorMessage, uploadProductImageMiddleware } from "../middlewares/uploadImage";
+import { validateProductComponents } from "../services/productComponentsService";
 import { deleteProductImage, uploadProductImage } from "../services/productImageService";
 import { PRODUCTO_CATALOG_INCLUDE, toProductoResponse } from "../services/productoCatalogService";
+import { RequestError } from "../utils/httpErrors";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateProductoCreate, validateProductoUpdate } from "../validations/productos.validation";
-
-async function validateComponentes(
-  productoId: number | null,
-  componentes: Array<{ componenteId: number; varianteId?: number }>
-) {
-  if (!componentes.length) return;
-  if (productoId !== null && componentes.some((item) => item.componenteId === productoId)) {
-    throw new ProductoRequestError(400, "Un producto no puede ser componente de sí mismo");
-  }
-  const validos = await prisma.producto.count({
-    where: { id: { in: componentes.map((item) => item.componenteId) }, controlaStock: true }
-  });
-  if (validos !== componentes.length) {
-    throw new ProductoRequestError(400, "Todos los componentes deben existir y controlar stock real");
-  }
-  const varianteIds = componentes.flatMap((item) => (item.varianteId ? [item.varianteId] : []));
-  if (varianteIds.length) {
-    if (productoId === null) throw new ProductoRequestError(400, "Las variantes deben pertenecer al producto editado");
-    const variantesValidas = await prisma.variante.count({ where: { id: { in: varianteIds }, productoId } });
-    if (variantesValidas !== new Set(varianteIds).size) {
-      throw new ProductoRequestError(400, "Todas las variantes deben pertenecer al producto vendido");
-    }
-  }
-}
-
-class ProductoRequestError extends Error {
-  constructor(
-    public statusCode: number,
-    message: string
-  ) {
-    super(message);
-  }
-}
 
 export const getProductos = async (req: Request, res: Response) => {
   try {
@@ -90,7 +59,7 @@ export const createProducto = async (req: Request, res: Response) => {
 
     const { categoria, componentes, controlaStock, descripcion, destacado, disponible, nombre, precio, tipo } =
       validation.data;
-    await validateComponentes(null, componentes);
+    await validateProductComponents(null, componentes);
     const producto = await prisma.producto.create({
       data: {
         descripcion,
@@ -124,7 +93,7 @@ export const createProducto = async (req: Request, res: Response) => {
 
     res.status(201).json(toProductoResponse(producto));
   } catch (error) {
-    if (error instanceof ProductoRequestError) return res.status(error.statusCode).json({ error: error.message });
+    if (error instanceof RequestError) return res.status(error.statusCode).json({ error: error.message });
     if (error instanceof Error && "code" in error && error.code === "P2002") {
       return res.status(409).json({ error: "Ya existe un producto con ese nombre" });
     }
@@ -165,7 +134,7 @@ export const updateProducto = async (req: Request, res: Response) => {
     if (cantidadComponentesFinal > 0 && controlaStockFinal) {
       return res.status(400).json({ error: "Un producto con componentes no puede controlar stock propio" });
     }
-    if (componentes) await validateComponentes(productoId, componentes);
+    if (componentes) await validateProductComponents(productoId, componentes);
     const data: Parameters<typeof prisma.producto.update>[0]["data"] = { ...productoData };
 
     if (componentes !== undefined) {
@@ -205,7 +174,7 @@ export const updateProducto = async (req: Request, res: Response) => {
 
     res.json(toProductoResponse(producto));
   } catch (error) {
-    if (error instanceof ProductoRequestError) return res.status(error.statusCode).json({ error: error.message });
+    if (error instanceof RequestError) return res.status(error.statusCode).json({ error: error.message });
     if (error instanceof Error && "code" in error && error.code === "P2002") {
       return res.status(409).json({ error: "Ya existe un producto con ese nombre" });
     }

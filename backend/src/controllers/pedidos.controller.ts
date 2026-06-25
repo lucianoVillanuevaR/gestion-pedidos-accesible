@@ -1,12 +1,14 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
+import { consumeStockRequirements } from "../services/pedidoStockService";
 import { withProductImageUrl } from "../services/productImageService";
 import {
   buildStockRequirements,
   getApplicableStockComponents,
   type StockProduct
 } from "../services/stockRequirementsService";
+import { getErrorMessage, RequestError } from "../utils/httpErrors";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import {
   validateEstadoPedido,
@@ -48,15 +50,6 @@ type PersonalizacionPedido = {
 
 interface ActualizarEstadoBody {
   estado: string;
-}
-
-class PedidoRequestError extends Error {
-  statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    super(message);
-    this.statusCode = statusCode;
-  }
 }
 
 function withPedidoProductImageUrls<
@@ -119,7 +112,7 @@ export const crearPedido = async (req: Request, res: Response) => {
     const pedido = await prisma.$transaction(async (tx) => {
       const turno = await tx.turno.findFirst({ where: { estado: "abierto" } });
       if (!turno) {
-        throw new PedidoRequestError(409, "Debes abrir turno antes de registrar un pedido");
+        throw new RequestError(409, "Debes abrir turno antes de registrar un pedido");
       }
 
       const productosData: Array<{
@@ -145,22 +138,22 @@ export const crearPedido = async (req: Request, res: Response) => {
         const producto = productos.find((item) => item.id === detalle.productoId);
 
         if (!producto) {
-          throw new PedidoRequestError(404, `Producto con ID ${detalle.productoId} no encontrado`);
+          throw new RequestError(404, `Producto con ID ${detalle.productoId} no encontrado`);
         }
 
         if (!producto.disponible) {
-          throw new PedidoRequestError(400, `Producto "${producto.nombre}" no está disponible`);
+          throw new RequestError(400, `Producto "${producto.nombre}" no está disponible`);
         }
 
         const variante = detalle.varianteId
           ? producto.variantes.find((item) => item.id === detalle.varianteId && item.disponible)
           : undefined;
         if (detalle.varianteId && !variante) {
-          throw new PedidoRequestError(400, `La opción elegida no pertenece a "${producto.nombre}"`);
+          throw new RequestError(400, `La opción elegida no pertenece a "${producto.nombre}"`);
         }
         const requiereVariante = producto.componentes.some((item) => item.varianteId !== null);
         if (requiereVariante && !variante && !detalle.personalizacion?.combinacion) {
-          throw new PedidoRequestError(400, `Debes elegir una opción para "${producto.nombre}"`);
+          throw new RequestError(400, `Debes elegir una opción para "${producto.nombre}"`);
         }
         let componentesAplicables;
         try {
@@ -170,7 +163,7 @@ export const crearPedido = async (req: Request, res: Response) => {
             detalle.personalizacion?.combinacion
           );
         } catch (error) {
-          throw new PedidoRequestError(400, error instanceof Error ? error.message : "La combinación no es válida");
+          throw new RequestError(400, getErrorMessage(error, "La combinación no es válida"));
         }
         if (detalle.personalizacion?.combinacion) {
           const nombreCantidad = (cantidad: number, nombre: string) =>
@@ -197,40 +190,7 @@ export const crearPedido = async (req: Request, res: Response) => {
       }
 
       const consumos = buildStockRequirements(productosStock);
-
-      for (const [componenteId, consumo] of consumos) {
-        const componente = await tx.producto.findUnique({ where: { id: componenteId }, include: { inventario: true } });
-        const stockActual = componente?.inventario?.stockActual ?? 0;
-        if (!componente || stockActual < consumo.cantidad) {
-          throw new PedidoRequestError(
-            400,
-            `Stock insuficiente en componente "${consumo.componenteNombre}" para "${[...consumo.productosVendidos].join(", ")}". Disponible: ${stockActual}, requerido: ${consumo.cantidad}`
-          );
-        }
-      }
-
-      for (const [componenteId, consumo] of consumos) {
-        const inventarioActualizado = await tx.inventario.updateMany({
-          data: {
-            stockActual: {
-              decrement: consumo.cantidad
-            }
-          },
-          where: {
-            productoId: componenteId,
-            stockActual: {
-              gte: consumo.cantidad
-            }
-          }
-        });
-
-        if (inventarioActualizado.count === 0) {
-          throw new PedidoRequestError(
-            409,
-            `Stock insuficiente en componente "${consumo.componenteNombre}". El stock cambió; intenta nuevamente.`
-          );
-        }
-      }
+      await consumeStockRequirements(tx, consumos);
 
       return tx.pedido.create({
         data: {
@@ -257,7 +217,7 @@ export const crearPedido = async (req: Request, res: Response) => {
 
     res.status(201).json(withPedidoProductImageUrls(pedido));
   } catch (error) {
-    if (error instanceof PedidoRequestError) {
+    if (error instanceof RequestError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
 

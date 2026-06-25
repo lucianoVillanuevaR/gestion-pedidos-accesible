@@ -4,19 +4,20 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import prisma from "../config/prisma";
 import { AuthenticatedRequest } from "../middlewares/auth";
+import { validateLoginInput } from "../validations/auth.validation";
 
 function publicUser(user: { email: string; label: string; role: string; username: string }) {
   return { email: user.email, label: user.label, role: user.role, username: user.username };
 }
 
 export async function login(req: Request, res: Response) {
-  const identifier = typeof req.body?.identifier === "string" ? req.body.identifier.trim().toLowerCase() : "";
-  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  const validation = validateLoginInput(req.body);
 
-  if (!identifier || !password) {
-    return res.status(400).json({ error: "Debe completar usuario y contraseña" });
+  if (validation.error || !validation.data) {
+    return res.status(400).json({ error: validation.error });
   }
 
+  const { identifier, password } = validation.data;
   const user = await prisma.usuario.findFirst({
     where: { activo: true, OR: [{ username: identifier }, { email: identifier }] }
   });
