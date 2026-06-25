@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { getInventario, updateInventarioProducto } from "../controllers/inventario.controller";
-import { requireRole } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 
 const inventarioRoutes = Router();
 
-inventarioRoutes.get("/", getInventario);
-inventarioRoutes.patch("/:productoId", requireRole("cajero", "admin"), updateInventarioProducto);
+inventarioRoutes.get("/", requireAuth, getInventario);
+inventarioRoutes.patch("/:productoId", requireAuth, requireRole("cajero", "admin"), updateInventarioProducto);
 
 export default inventarioRoutes;

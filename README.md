@@ -5,7 +5,7 @@ Aplicación web para gestión de pedidos, productos, stock básico, preparación
 ## Levantar desde cero
 
 ```bash
-git clone <repo>
+git clone https://github.com/lucianoVillanuevaR/gestion-pedidos-accesible.git
 cd gestion-pedidos-accesible
 cp .env.example .env
 nano .env
@@ -15,16 +15,17 @@ docker compose ps
 curl http://localhost/api/health
 ```
 
-Con Docker, `DATABASE_URL` debe usar el host interno `postgres:5432`, no `localhost:5433`.
+En Docker, `DATABASE_URL` debe usar el host interno `postgres:5432`, no `localhost:5433`.
+Antes de usarlo fuera de una demo local, cambia `POSTGRES_PASSWORD`, `JWT_SECRET`, `MINIO_ACCESS_KEY` y `MINIO_SECRET_KEY`.
 
 ## Puertos
 
 ```text
-Frontend: http://localhost           puerto 80
-Backend:  http://localhost:3000      puerto 3000
-Postgres: localhost:5433             dentro de Docker: postgres:5432
-MinIO:    http://localhost:9000      API
-MinIO:    http://localhost:9001      consola web
+Frontend:       http://localhost
+Backend health: http://localhost/api/health
+Postgres:       localhost:5433    dentro de Docker: postgres:5432
+MinIO consola:  http://localhost:9001
+MinIO API:      http://localhost:9000
 ```
 
 El frontend también expone el backend por proxy en:

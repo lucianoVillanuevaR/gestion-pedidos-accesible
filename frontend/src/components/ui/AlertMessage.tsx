@@ -6,6 +6,7 @@ type AlertMessageTone = "error" | "success" | "info";
 type AlertMessageProps = {
   children?: ReactNode;
   className?: string;
+  id?: string;
   isHighContrast?: boolean;
   isLarge?: boolean;
   message?: string;
@@ -27,6 +28,7 @@ const icons = {
 function AlertMessage({
   children,
   className = "",
+  id,
   isHighContrast = false,
   isLarge = false,
   message,
@@ -37,6 +39,7 @@ function AlertMessage({
 
   return (
     <div
+      id={id}
       className={`flex items-start gap-3 rounded-2xl border p-4 ${
         isHighContrast ? "contrast-panel" : toneClasses[tone]
       } ${className}`}
