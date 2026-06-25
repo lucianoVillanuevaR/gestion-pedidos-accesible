@@ -1,7 +1,6 @@
 import {
   CalendarDays,
   Check,
-  Info,
   LockKeyhole,
   Printer,
   Search,
@@ -11,14 +10,13 @@ import {
   Volume2,
   X
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useAuthContext } from "../../contexts/AuthContext";
-import type { Producto } from "../../types";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
-import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
-import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
+import ConfirmDialog from "./ConfirmDialog";
 import { PAYMENT_OPTIONS, Toast, usesProductConfigurator } from "./PdvShared";
+import PdvProductTile from "./PdvProductTile";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvNormalView() {
@@ -531,154 +529,6 @@ function PdvNormalView() {
           </div>
         </ConfirmDialog>
       )}
-    </div>
-  );
-}
-
-function PdvProductTile({
-  producto,
-  cantidad,
-  disabled,
-  onIncrease,
-  onDecrease,
-  onAdd
-}: {
-  producto: Producto;
-  cantidad: number;
-  disabled: boolean;
-  onIncrease: () => void;
-  onDecrease: () => void;
-  onAdd: () => void;
-}) {
-  return (
-    <article
-      className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-yellow-400 hover:shadow-md"}`}
-    >
-      <button
-        type="button"
-        onClick={onAdd}
-        disabled={disabled}
-        className="block w-full text-left disabled:cursor-not-allowed"
-        aria-label={`Agregar ${producto.nombre}`}
-      >
-        <div className="relative h-[120px] overflow-hidden bg-slate-300">
-          {producto.imagen ? (
-            <img
-              src={producto.imagen}
-              alt={`Imagen de ${producto.nombre}`}
-              onError={(event) => {
-                event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
-              }}
-              className="h-full w-full object-cover transition group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-slate-300 text-center text-xs font-bold uppercase text-slate-600">
-              Producto
-            </div>
-          )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pb-1.5 pt-8">
-            <h3 className="line-clamp-2 min-h-[34px] text-sm font-black uppercase leading-tight text-white">
-              {producto.nombre}
-            </h3>
-          </div>
-          {cantidad > 0 && (
-            <span className="absolute right-2 top-2 rounded-full bg-[#FECE00] px-2 py-0.5 text-xs font-black text-slate-950">
-              {cantidad}
-            </span>
-          )}
-        </div>
-      </button>
-      <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-2 py-1.5">
-        <p className="truncate text-base font-black text-slate-800">{formatCurrency(producto.precio)}</p>
-        <button
-          type="button"
-          onClick={onAdd}
-          disabled={disabled}
-          className="rounded-full p-1 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed"
-          aria-label={`Agregar ${producto.nombre}`}
-        >
-          <Info className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </div>
-      {cantidad > 0 && (
-        <div className="grid grid-cols-2 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={onDecrease}
-            disabled={disabled}
-            className="min-h-[32px] bg-slate-50 text-lg font-black text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed"
-            aria-label={`Disminuir ${producto.nombre}`}
-          >
-            -
-          </button>
-          <button
-            type="button"
-            onClick={onIncrease}
-            disabled={disabled}
-            className="min-h-[32px] bg-[#FECE00] text-lg font-black text-slate-950 transition hover:bg-[#FFD633] disabled:cursor-not-allowed"
-            aria-label={`Aumentar ${producto.nombre}`}
-          >
-            +
-          </button>
-        </div>
-      )}
-      {disabled && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/45 px-2 text-center text-xs font-black text-slate-700">
-          Abrir turno
-        </div>
-      )}
-    </article>
-  );
-}
-
-function ConfirmDialog({
-  children,
-  description,
-  onCancel,
-  onConfirm,
-  primaryLabel,
-  title
-}: {
-  children?: ReactNode;
-  description: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-  primaryLabel: string;
-  title: string;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 no-print"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pdv-confirm-title"
-    >
-      <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white shadow-2xl">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <h2 id="pdv-confirm-title" className="text-xl font-black text-slate-950">
-            {title}
-          </h2>
-          <p className="mt-2 text-sm font-bold text-slate-600">{description}</p>
-        </div>
-        <div className="space-y-4 p-5">{children}</div>
-        <div className="grid grid-cols-2 gap-3 border-t border-slate-200 p-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className={`min-h-[46px] rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
-          >
-            {primaryLabel}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

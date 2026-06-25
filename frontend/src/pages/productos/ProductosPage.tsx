@@ -1,4 +1,3 @@
-import { LoaderCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
@@ -16,6 +15,7 @@ import { CategoriaDeleteModal, CategoriaFormModal } from "../../components/produ
 import { ProductoFormModal } from "../../components/productos/ProductoFormModal";
 import { CategoriaBlock, EmptyProductos, type CategoriaGrupo } from "../../components/productos/ProductosCatalog";
 import { ProductosToolbar } from "../../components/productos/ProductosToolbar";
+import LoadingState from "../../components/ui/LoadingState";
 import {
   CATEGORIAS_CATALOGO,
   loadCustomCategorias,
@@ -361,10 +361,7 @@ function ProductosPage() {
         {error && <ErrorAlert message={error} />}
 
         {isLoading ? (
-          <div className="flex min-h-[260px] items-center justify-center rounded-[18px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-            <LoaderCircle className="h-8 w-8 animate-spin" aria-hidden="true" />
-            <span className="ml-3 font-black">Cargando productos...</span>
-          </div>
+          <LoadingState label="Cargando productos..." />
         ) : grupos.length === 0 ? (
           <EmptyProductos />
         ) : (

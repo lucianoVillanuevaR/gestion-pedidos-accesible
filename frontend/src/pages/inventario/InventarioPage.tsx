@@ -1,8 +1,6 @@
 import {
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
-  LoaderCircle,
   PackageCheck,
   RefreshCw,
   Save,
@@ -12,6 +10,9 @@ import {
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";
+import AlertMessage from "../../components/ui/AlertMessage";
+import EmptyState from "../../components/ui/EmptyState";
+import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
@@ -302,16 +303,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
           </div>
         </section>
 
-        {message && (
-          <div
-            className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950"
-            role="status"
-            aria-live="polite"
-          >
-            <CheckCircle2 className="mt-1 h-5 w-5" aria-hidden="true" />
-            <p className="font-bold">{message}</p>
-          </div>
-        )}
+        {message && <AlertMessage message={message} tone="success" />}
 
         {error && <ErrorAlert message={error} />}
 
@@ -493,24 +485,13 @@ function InventarioRow({
   );
 }
 
-function LoadingState({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-[260px] items-center justify-center rounded-[18px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-      <LoaderCircle className="h-8 w-8 animate-spin" aria-hidden="true" />
-      <span className="ml-3 font-black">{label}</span>
-    </div>
-  );
-}
-
 function EmptyInventario() {
   return (
-    <div className="rounded-[18px] border border-slate-200 bg-white p-8 text-center shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-yellow-200 bg-[#FFF8DC] text-slate-950">
-        <Warehouse className="h-7 w-7" aria-hidden="true" />
-      </div>
-      <p className="mt-5 text-2xl font-black text-slate-950">No hay productos para mostrar</p>
-      <p className="mt-3 font-bold text-slate-600">Prueba con otra búsqueda o actualiza el inventario.</p>
-    </div>
+    <EmptyState
+      icon={Warehouse}
+      title="No hay productos para mostrar"
+      message="Prueba con otra búsqueda o actualiza el inventario."
+    />
   );
 }
 

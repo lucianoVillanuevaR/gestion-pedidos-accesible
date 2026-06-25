@@ -1,12 +1,13 @@
-import { ClipboardPlus, LoaderCircle, RefreshCw } from "lucide-react";
+import { ClipboardPlus, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";
+import ProductImage from "../../components/productos/ProductImage";
+import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
-import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
 import { CATEGORIAS_CATALOGO, type CategoriaCatalogo } from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
@@ -108,10 +109,12 @@ function ProductosFacilPage() {
         {error && <ErrorAlert isHighContrast={isHighContrast} isLarge message={error} />}
 
         {isLoading ? (
-          <div className={`flex min-h-[260px] items-center justify-center rounded-[26px] ${panelClass}`}>
-            <LoaderCircle className="h-9 w-9 animate-spin" aria-hidden="true" />
-            <span className="ml-3 text-xl font-black">Cargando productos...</span>
-          </div>
+          <LoadingState
+            className={`rounded-[26px] ${panelClass}`}
+            iconClassName="h-9 w-9"
+            label="Cargando productos..."
+            labelClassName="text-xl font-black"
+          />
         ) : productosFiltrados.length === 0 ? (
           <EmptyProductosFacil onShowAll={() => setSelectedCategory("Todos")} isHighContrast={isHighContrast} />
         ) : (
@@ -219,20 +222,12 @@ function ProductoFacilCard({
       aria-label={`${producto.nombre}. ${producto.categoria}. ${formatCurrency(producto.precio)}. ${availabilityLabel}.`}
     >
       <div className="flex flex-1 flex-col gap-5 sm:flex-row">
-        {producto.imagen ? (
-          <img
-            src={producto.imagen}
-            alt={producto.altText ?? producto.nombre}
-            onError={(event) => {
-              event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
-            }}
-            className="h-36 w-full rounded-2xl border-2 border-slate-200 object-cover sm:h-40 sm:w-44"
-          />
-        ) : (
-          <div className="flex h-36 w-full items-center justify-center rounded-2xl border-2 border-slate-300 bg-[#FFF8DC] text-xl font-black text-slate-950 sm:h-40 sm:w-44">
-            Sin imagen
-          </div>
-        )}
+        <ProductImage
+          src={producto.imagen}
+          alt={producto.altText ?? producto.nombre}
+          className="h-36 w-full rounded-2xl border-2 border-slate-200 object-cover sm:h-40 sm:w-44"
+          emptyClassName="flex h-36 w-full items-center justify-center rounded-2xl border-2 border-slate-300 bg-[#FFF8DC] text-xl font-black text-slate-950 sm:h-40 sm:w-44"
+        />
         <div className="min-w-0 flex-1">
           <p className="text-lg font-black text-slate-600">{producto.categoria}</p>
           <h3 className="mt-1 text-3xl font-black leading-tight text-slate-950">{producto.nombre}</h3>
@@ -306,16 +301,13 @@ function ProductoDetailModal({
         <h2 id="producto-facil-title" className="text-4xl font-black leading-tight text-slate-950">
           {producto.nombre}
         </h2>
-        {producto.imagen && (
-          <img
-            src={producto.imagen}
-            alt={producto.altText ?? producto.nombre}
-            onError={(event) => {
-              event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
-            }}
-            className="mt-5 h-56 w-full rounded-2xl border-2 border-slate-200 object-cover"
-          />
-        )}
+        <ProductImage
+          src={producto.imagen}
+          alt={producto.altText ?? producto.nombre}
+          className="mt-5 h-56 w-full rounded-2xl border-2 border-slate-200 object-cover"
+          emptyClassName="hidden"
+          emptyLabel=""
+        />
         <div className="mt-5 rounded-2xl border-2 border-slate-300 bg-slate-50 p-5">
           <p className="text-xl font-black text-slate-700">Categoría: {producto.categoria}</p>
           {producto.destacado && <p className="mt-2 text-xl font-black text-yellow-700">Producto destacado</p>}

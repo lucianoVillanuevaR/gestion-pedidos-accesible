@@ -1,9 +1,10 @@
 import { ChevronDown, Eye, EyeOff, Pencil, Plus, Utensils } from "lucide-react";
 import type { ProductoConCategoria } from "../../utils/pdv";
 import { formatCurrency } from "../../utils/pdv";
-import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 import { FOCUS_VISIBLE_CLASS } from "../../pages/pedidos/PedidosShared";
 import type { CategoriaCatalogo } from "../../pages/productos/ProductosShared";
+import EmptyState from "../ui/EmptyState";
+import ProductImage from "./ProductImage";
 
 export type CategoriaGrupo = {
   label: string;
@@ -114,20 +115,13 @@ function ProductoRow({
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400">
           <Utensils className="h-4 w-4" aria-hidden="true" />
         </span>
-        {producto.imagen ? (
-          <img
-            src={producto.imagen}
-            alt={producto.altText ?? producto.nombre}
-            onError={(event) => {
-              event.currentTarget.src = PRODUCT_IMAGE_PLACEHOLDER;
-            }}
-            className="h-11 w-11 shrink-0 rounded-lg border border-slate-200 object-cover"
-          />
-        ) : (
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-[#FFF8DC] text-slate-700">
-            <Utensils className="h-5 w-5" aria-hidden="true" />
-          </span>
-        )}
+        <ProductImage
+          src={producto.imagen}
+          alt={producto.altText ?? producto.nombre}
+          className="h-11 w-11 shrink-0 rounded-lg border border-slate-200 object-cover"
+          emptyClassName="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-[#FFF8DC] text-slate-700"
+          emptyLabel="icon"
+        />
         <div className="min-w-0">
           <p className="truncate text-sm font-black text-slate-950">{producto.nombre}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">
@@ -172,12 +166,10 @@ function ProductoRow({
 
 export function EmptyProductos() {
   return (
-    <div className="rounded-[18px] border border-slate-200 bg-white p-8 text-center shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-yellow-200 bg-[#FFF8DC] text-slate-950">
-        <Utensils className="h-7 w-7" aria-hidden="true" />
-      </div>
-      <p className="mt-5 text-2xl font-black text-slate-950">No hay productos para mostrar</p>
-      <p className="mt-3 font-bold text-slate-600">Prueba con otra búsqueda o actualiza el catálogo.</p>
-    </div>
+    <EmptyState
+      icon={Utensils}
+      title="No hay productos para mostrar"
+      message="Prueba con otra búsqueda o actualiza el catálogo."
+    />
   );
 }

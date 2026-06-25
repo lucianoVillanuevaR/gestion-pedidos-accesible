@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import AlertMessage from "./ui/AlertMessage";
 
 type ErrorAlertProps = {
   isHighContrast?: boolean;
@@ -7,15 +7,7 @@ type ErrorAlertProps = {
 };
 
 function ErrorAlert({ isHighContrast = false, isLarge = false, message }: ErrorAlertProps) {
-  return (
-    <div
-      className={`flex items-start gap-3 rounded-2xl border p-4 ${isHighContrast ? "contrast-panel" : "border-red-800 bg-red-700 text-white"}`}
-      role="alert"
-    >
-      <AlertTriangle className={`mt-1 shrink-0 ${isLarge ? "h-6 w-6" : "h-5 w-5"}`} aria-hidden="true" />
-      <p className={isLarge ? "text-lg font-black" : "font-bold"}>{message}</p>
-    </div>
-  );
+  return <AlertMessage isHighContrast={isHighContrast} isLarge={isLarge} message={message} tone="error" />;
 }
 
 export default ErrorAlert;
