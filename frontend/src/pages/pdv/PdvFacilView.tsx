@@ -1,9 +1,10 @@
-import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, LockKeyhole, UnlockKeyhole, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency } from "../../utils/pdv";
 import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
+import PdvFeedbackMessage from "./PdvFeedbackMessage";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvFacilView() {
@@ -147,22 +148,7 @@ function PdvFacilView() {
       </header>
 
       {feedback && (
-        <div
-          className={`rounded-2xl ${cardBorder} p-4 ${feedback.type === "success" ? "bg-emerald-50 border-emerald-300" : "bg-red-50 border-red-300"}`}
-          role={feedback.type === "success" ? "status" : "alert"}
-          aria-live="polite"
-        >
-          <div className="flex items-center justify-center gap-3">
-            <span className={`shrink-0 ${feedback.type === "success" ? "text-emerald-600" : "text-red-600"}`}>
-              {feedback.type === "success" ? (
-                <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
-              ) : (
-                <XCircle className="h-6 w-6" aria-hidden="true" />
-              )}
-            </span>
-            <p className="font-bold text-lg">{feedback.message}</p>
-          </div>
-        </div>
+        <PdvFeedbackMessage feedback={feedback} isAccessible isHighContrast={isHighContrast} className={cardBorder} />
       )}
 
       {!isTurnoOpen && (

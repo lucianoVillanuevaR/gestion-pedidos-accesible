@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, ChevronDown, Eye, EyeOff } from "lucide-react";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fondoR from "../assets/fondoR.webp";
@@ -7,6 +7,7 @@ import { DEMO_USERS, getDefaultRouteForRole } from "../constants/auth";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
 import useVoice from "../hooks/useVoice";
+import AlertMessage from "./ui/AlertMessage";
 
 type FeedbackState = {
   type: "" | "success" | "error";
@@ -212,29 +213,15 @@ function Login() {
             </form>
 
             {feedback.message && (
-              <div
+              <AlertMessage
                 id="login-feedback"
-                role="status"
-                aria-live="polite"
-                className={`flex items-start gap-3 rounded-xl p-4 ${
-                  feedback.type === "success"
-                    ? isAccessible
-                      ? "border border-emerald-700 bg-emerald-100 text-emerald-950"
-                      : "border border-emerald-200 bg-emerald-50 text-emerald-900"
-                    : isAccessible
-                      ? "border border-red-700 bg-red-100 text-red-950"
-                      : "border border-red-200 bg-red-50 text-red-900"
-                }`}
+                className="rounded-xl"
+                isHighContrast={isHighContrast}
+                isLarge={isAccessible}
+                tone={feedback.type === "success" ? "success" : "error"}
               >
-                <span aria-hidden="true" className="mt-0.5">
-                  {feedback.type === "success" ? (
-                    <CheckCircle2 className="h-5 w-5" />
-                  ) : (
-                    <AlertTriangle className="h-5 w-5" />
-                  )}
-                </span>
-                <p className={isAccessible ? "text-lg font-semibold" : "text-sm font-semibold"}>{feedback.message}</p>
-              </div>
+                {feedback.message}
+              </AlertMessage>
             )}
 
             {DEMO_USERS.length > 0 && (

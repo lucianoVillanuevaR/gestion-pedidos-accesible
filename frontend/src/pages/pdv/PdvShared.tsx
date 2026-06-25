@@ -1,11 +1,13 @@
-import { ArrowLeftRight, Banknote, CheckCircle2, CreditCard, XCircle } from "lucide-react";
+import { ArrowLeftRight, Banknote, CreditCard } from "lucide-react";
 import type { Producto } from "../../types";
 import { detectCategoria, formatCurrency, getCategoriaLabel, type ProductoCategoriaCatalogo } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 
 export type FeedbackState = {
-  type: "success" | "error";
+  type: "success" | "error" | "info";
+  title?: string;
   message: string;
+  details?: string;
 };
 
 export type SoundCue = "add" | "decrease" | "remove" | "clear" | "success" | "error";
@@ -51,52 +53,6 @@ export const SOUND_CUES: Record<SoundCue, ToneStep[]> = {
     { frequency: 220, durationMs: 140, delayMs: 75, type: "sawtooth", volume: 0.062 }
   ]
 };
-
-export function Toast({
-  feedback,
-  isAccessible,
-  isHighContrast,
-  className = ""
-}: {
-  feedback: FeedbackState | null;
-  isAccessible: boolean;
-  isHighContrast: boolean;
-  className?: string;
-}) {
-  if (!feedback) return null;
-
-  const isSuccess = feedback.type === "success";
-  const bgClass = isHighContrast
-    ? `contrast-panel-soft ${isSuccess ? "border-emerald-300" : "border-red-300"}`
-    : isAccessible
-      ? "bg-white border-4 border-slate-900 text-slate-950 shadow-lg"
-      : isSuccess
-        ? "bg-emerald-50 border border-emerald-300 text-emerald-950"
-        : "bg-red-50 border border-red-300 text-red-950";
-
-  return (
-    <div
-      className={`rounded-2xl px-4 py-3 ${bgClass} animate-in fade-in slide-in-from-right-4 duration-300 ${className}`}
-    >
-      <div className="flex items-start gap-3">
-        <span className={`shrink-0 ${isAccessible ? "" : isSuccess ? "text-emerald-600" : "text-red-600"}`}>
-          {isSuccess ? (
-            <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
-          ) : (
-            <XCircle className="h-6 w-6" aria-hidden="true" />
-          )}
-        </span>
-        <div className="min-w-0">
-          <p
-            className={`font-bold ${isAccessible ? "text-lg" : "text-base"} ${isHighContrast ? "contrast-important" : ""}`}
-          >
-            {feedback.message}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function ProductCard({
   producto,
