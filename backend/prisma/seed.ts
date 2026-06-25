@@ -1,12 +1,15 @@
 /// <reference types="node" />
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { ensureProductBucket } from "../src/config/minio";
 
 const prisma = new PrismaClient();
 
 const DEFAULT_STOCK_ACTUAL = 50;
 const DEFAULT_STOCK_MINIMO = 10;
 const DEFAULT_DEMO_PASSWORD = "123456";
+const MINIO_RETRY_ATTEMPTS = 12;
+const MINIO_RETRY_DELAY_MS = 2500;
 
 type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos" | "sandwich";
 
@@ -518,7 +521,31 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
   }
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function ensureProductBucketWithRetry() {
+  for (let attempt = 1; attempt <= MINIO_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      await ensureProductBucket();
+      return;
+    } catch (error) {
+      if (attempt === MINIO_RETRY_ATTEMPTS) {
+        throw error;
+      }
+
+      console.warn(
+        `MinIO no está listo para crear/verificar el bucket. Reintento ${attempt}/${MINIO_RETRY_ATTEMPTS}...`
+      );
+      await wait(MINIO_RETRY_DELAY_MS);
+    }
+  }
+}
+
 async function main() {
+  await ensureProductBucketWithRetry();
+
   // Los usuarios demo facilitan exclusivamente el entorno local y nunca se crean en producción.
   const shouldSeedDemoUsers = process.env.NODE_ENV !== "production";
   const demoPassword = process.env.SEED_DEMO_PASSWORD?.trim() || DEFAULT_DEMO_PASSWORD;
