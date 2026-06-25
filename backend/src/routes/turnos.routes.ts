@@ -3,9 +3,8 @@ import { abrirTurno, cerrarTurno, getCierres, getTurnoActual } from "../controll
 import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router = Router();
-router.use(requireAuth);
-router.get("/actual", getTurnoActual);
-router.get("/cierres", getCierres);
-router.post("/abrir", requireRole("cajero", "admin"), abrirTurno);
-router.post("/:id/cerrar", requireRole("cajero", "admin"), cerrarTurno);
+router.get("/actual", requireAuth, getTurnoActual);
+router.get("/cierres", requireAuth, getCierres);
+router.post("/abrir", requireAuth, requireRole("cajero", "admin"), abrirTurno);
+router.post("/:id/cerrar", requireAuth, requireRole("cajero", "admin"), cerrarTurno);
 export default router;
