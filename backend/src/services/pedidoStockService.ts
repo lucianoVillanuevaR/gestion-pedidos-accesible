@@ -4,10 +4,7 @@ import type { StockRequirement } from "./stockRequirementsService";
 
 type StockTransaction = Prisma.TransactionClient;
 
-export async function consumeStockRequirements(
-  tx: StockTransaction,
-  consumos: Map<number, StockRequirement>
-) {
+export async function consumeStockRequirements(tx: StockTransaction, consumos: Map<number, StockRequirement>) {
   for (const [componenteId, consumo] of consumos) {
     const componente = await tx.producto.findUnique({ where: { id: componenteId }, include: { inventario: true } });
     const stockActual = componente?.inventario?.stockActual ?? 0;

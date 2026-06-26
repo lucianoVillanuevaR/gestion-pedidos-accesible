@@ -18,6 +18,33 @@ curl http://localhost/api/health
 En Docker, `DATABASE_URL` debe usar el host interno `postgres:5432`, no `localhost:5433`.
 Antes de usarlo fuera de una demo local, cambia `POSTGRES_PASSWORD`, `JWT_SECRET`, `MINIO_ACCESS_KEY` y `MINIO_SECRET_KEY`.
 
+## Preparar servidor
+
+Para subirlo a un servidor con el `docker-compose.yml` incluido:
+
+1. Apunta el dominio al servidor y deja el proxy externo o firewall exponiendo solo HTTP/HTTPS públicos.
+2. Copia `.env.example` a `.env` en el servidor y cambia todos los secretos de demo.
+3. Configura `CLIENT_URL` con la URL pública del frontend, por ejemplo `https://tudominio.cl`.
+4. Si el frontend y backend van juntos detrás del Nginx incluido, deja `VITE_API_URL=/api`.
+5. Configura `MINIO_PUBLIC_URL` y `VITE_MINIO_PUBLIC_URL` con la URL pública desde donde el navegador cargará imágenes. Si no vas a exponer MinIO directamente, ponlo detrás de HTTPS con proxy.
+6. Levanta con `docker compose up -d --build` y ejecuta `docker compose run --rm seed` solo cuando quieras crear o sincronizar datos base.
+7. Verifica `docker compose ps`, `curl https://tudominio.cl/health` y `curl https://tudominio.cl/api/health`.
+
+Para producción puedes usar el override incluido, que deja públicos solo los puertos del frontend y mantiene backend, Postgres y MinIO dentro de la red Docker:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm seed
+```
+
+Recomendaciones antes de producción real:
+
+- No publiques los puertos `3000`, `5433`, `9000` ni `9001` a internet salvo que tengas una razón clara y reglas de firewall.
+- Usa contraseñas largas para Postgres, JWT y MinIO.
+- Activa backups de los volúmenes `postgres_data` y `minio_data`.
+- Configura HTTPS con el proxy del servidor, por ejemplo Nginx Proxy Manager, Caddy, Traefik o Nginx del host.
+- Guarda el `.env` fuera de git y conserva una copia segura de recuperación.
+
 ## Puertos
 
 ```text

@@ -1,9 +1,4 @@
-import {
-  CalendarDays,
-  LockKeyhole,
-  UnlockKeyhole,
-  User
-} from "lucide-react";
+import { CalendarDays, LockKeyhole, UnlockKeyhole, User } from "lucide-react";
 import { useState } from "react";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
@@ -188,11 +183,7 @@ function PdvNormalView() {
         )}
 
         {feedback && !isCloseTurnoBlockedFeedback && (
-          <div
-            ref={feedbackRef}
-            tabIndex={-1}
-            className="mx-3 mt-3 min-w-0 outline-none"
-          >
+          <div ref={feedbackRef} tabIndex={-1} className="mx-3 mt-3 min-w-0 outline-none">
             <PdvFeedbackMessage feedback={feedback} isHighContrast={isHighContrast} className="w-full" />
           </div>
         )}

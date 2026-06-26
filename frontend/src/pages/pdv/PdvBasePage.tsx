@@ -33,11 +33,7 @@ import {
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
 import PdvFacilView from "./PdvFacilView";
-import {
-  buildPedidoCreateErrorFeedback,
-  buildPedidoValidationFeedback,
-  isStockError
-} from "./PdvFeedbackHelpers";
+import { buildPedidoCreateErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
 import PdvNormalView from "./PdvNormalView";
 import PdvPageStatus from "./PdvPageStatus";
 import PdvPrintTicket from "./PdvPrintTicket";
@@ -631,12 +627,15 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       showFeedback(buildPedidoCreateErrorFeedback(message || "Error al registrar"));
       playSoundCue("error");
-      announce(isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido", {
-        priority: "high",
-        dedupeKey: "pedido-registrado-error",
-        cooldownMs: 3000,
-        interrupt: true
-      });
+      announce(
+        isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido",
+        {
+          priority: "high",
+          dedupeKey: "pedido-registrado-error",
+          cooldownMs: 3000,
+          interrupt: true
+        }
+      );
     } finally {
       setSending(false);
 

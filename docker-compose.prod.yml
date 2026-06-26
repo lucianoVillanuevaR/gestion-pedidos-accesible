@@ -1,0 +1,19 @@
+services:
+  frontend:
+    ports:
+      - "80:80"
+
+  backend:
+    ports: !reset []
+    environment:
+      NODE_ENV: production
+
+  seed:
+    environment:
+      NODE_ENV: production
+
+  postgres:
+    ports: !reset []
+
+  minio:
+    ports: !reset []

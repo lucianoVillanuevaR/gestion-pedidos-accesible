@@ -155,7 +155,8 @@ export default function PdvProductConfigurator({
                         nombre: variante.nombre,
                         selected: selectedVariantId === variante.id,
                         select: () => setSelectedVariantId(variante.id)
-                      }))).map((opcion) => {
+                      }))
+                  ).map((opcion) => {
                     const isSelected = opcion.selected;
                     return (
                       <button
@@ -451,7 +452,8 @@ export default function PdvProductConfigurator({
                     nombre: variante.nombre,
                     selected: selectedVariantId === variante.id,
                     select: () => setSelectedVariantId(variante.id)
-                  }))).map((opcion) => {
+                  }))
+              ).map((opcion) => {
                 const isSelected = opcion.selected;
                 return (
                   <button
