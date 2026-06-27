@@ -1,7 +1,7 @@
 import { Accessibility, CheckCircle2, ChevronDown, Eye, EyeOff, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import fondoR from "../assets/fondoR.webp";
+import fondoR from "../assets/fondoR.png";
 import logoRiq from "../assets/logoRiq.png";
 import { getEasyRoute } from "../config/navigation";
 import { DEMO_USERS, getDefaultRouteForRole } from "../constants/auth";
@@ -16,6 +16,7 @@ type FeedbackState = {
 };
 
 const LOGIN_HELP_MESSAGE = "Ingrese su correo y contraseña. Luego presione Ingresar al sistema.";
+const EASY_MODE_TOAST_DURATION_MS = 4000;
 
 function Login() {
   const navigate = useNavigate();
@@ -61,7 +62,8 @@ function Login() {
 
       easyModeToastTimerRef.current = window.setTimeout(() => {
         setShowEasyModeToast(false);
-      }, 4000);
+        easyModeToastTimerRef.current = null;
+      }, EASY_MODE_TOAST_DURATION_MS);
     }
 
     if (!isAccessible) {
@@ -138,13 +140,15 @@ function Login() {
     ? "w-full min-h-[72px] px-6 py-4 text-2xl font-bold bg-[#FECE00] text-slate-950 rounded-xl border border-yellow-300 hover:bg-[#FFD633] focus:outline-none focus:ring-4 focus:ring-yellow-200 transition"
     : "w-full min-h-[60px] px-6 py-3 text-lg font-bold bg-[#FECE00] text-slate-950 rounded-lg border border-yellow-300 hover:bg-[#FFD633] focus:outline-none focus:ring-2 focus:ring-yellow-300 transition";
 
+  const normalSupportButtonClass =
+    "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/95 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-yellow-200";
   const accessibilityButtonClass = isAccessible
     ? "inline-flex min-h-[58px] items-center justify-center gap-2 rounded-xl border-2 border-yellow-400 bg-[#FECE00] px-4 text-base font-bold text-slate-950 transition hover:bg-[#FFD633] focus:outline-none focus:ring-4 focus:ring-yellow-300"
-    : "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/95 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-yellow-200";
+    : normalSupportButtonClass;
 
   const supportButtonClass = isAccessible
     ? "inline-flex min-h-[58px] items-center justify-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-bold text-slate-900 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-yellow-300"
-    : "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/95 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-yellow-200";
+    : normalSupportButtonClass;
 
   const toastClass = isHighContrast
     ? "contrast-panel border-2 border-yellow-400 text-white"
@@ -308,7 +312,6 @@ function Login() {
                   <span>Leer ayuda</span>
                 </button>
               </div>
-
             </form>
 
             {feedback.message && (
