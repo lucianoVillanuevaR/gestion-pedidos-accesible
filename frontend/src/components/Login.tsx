@@ -1,4 +1,4 @@
-import { Accessibility, ChevronDown, Eye, EyeOff, Volume2 } from "lucide-react";
+import { Accessibility, CheckCircle2, ChevronDown, Eye, EyeOff, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fondoR from "../assets/fondoR.webp";
@@ -15,8 +15,7 @@ type FeedbackState = {
   message: string;
 };
 
-const LOGIN_HELP_MESSAGE =
-  "Ingrese su correo y contraseña. Luego presione Ingresar al sistema.";
+const LOGIN_HELP_MESSAGE = "Ingrese su correo y contraseña. Luego presione Ingresar al sistema.";
 
 function Login() {
   const navigate = useNavigate();
@@ -25,7 +24,10 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>({ type: "", message: "" });
+  const [showEasyModeToast, setShowEasyModeToast] = useState(false);
   const navigateTimerRef = useRef<number | null>(null);
+  const easyModeToastTimerRef = useRef<number | null>(null);
+  const previousAccessibleRef = useRef<boolean | null>(null);
   const { login } = useAuthContext();
   const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } =
     useAccessibilityContext();
@@ -37,8 +39,42 @@ function Login() {
       if (navigateTimerRef.current) {
         window.clearTimeout(navigateTimerRef.current);
       }
+
+      if (easyModeToastTimerRef.current) {
+        window.clearTimeout(easyModeToastTimerRef.current);
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (previousAccessibleRef.current === null) {
+      previousAccessibleRef.current = isAccessible;
+      return;
+    }
+
+    if (!previousAccessibleRef.current && isAccessible) {
+      setShowEasyModeToast(true);
+
+      if (easyModeToastTimerRef.current) {
+        window.clearTimeout(easyModeToastTimerRef.current);
+      }
+
+      easyModeToastTimerRef.current = window.setTimeout(() => {
+        setShowEasyModeToast(false);
+      }, 4000);
+    }
+
+    if (!isAccessible) {
+      setShowEasyModeToast(false);
+
+      if (easyModeToastTimerRef.current) {
+        window.clearTimeout(easyModeToastTimerRef.current);
+        easyModeToastTimerRef.current = null;
+      }
+    }
+
+    previousAccessibleRef.current = isAccessible;
+  }, [isAccessible]);
 
   const resetFeedback = () => {
     setFeedback({ type: "", message: "" });
@@ -102,9 +138,17 @@ function Login() {
     ? "w-full min-h-[72px] px-6 py-4 text-2xl font-bold bg-[#FECE00] text-slate-950 rounded-xl border border-yellow-300 hover:bg-[#FFD633] focus:outline-none focus:ring-4 focus:ring-yellow-200 transition"
     : "w-full min-h-[60px] px-6 py-3 text-lg font-bold bg-[#FECE00] text-slate-950 rounded-lg border border-yellow-300 hover:bg-[#FFD633] focus:outline-none focus:ring-2 focus:ring-yellow-300 transition";
 
+  const accessibilityButtonClass = isAccessible
+    ? "inline-flex min-h-[58px] items-center justify-center gap-2 rounded-xl border-2 border-yellow-400 bg-[#FECE00] px-4 text-base font-bold text-slate-950 transition hover:bg-[#FFD633] focus:outline-none focus:ring-4 focus:ring-yellow-300"
+    : "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/95 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-yellow-200";
+
   const supportButtonClass = isAccessible
     ? "inline-flex min-h-[58px] items-center justify-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-4 text-base font-bold text-slate-900 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-yellow-300"
     : "inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white/95 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-yellow-200";
+
+  const toastClass = isHighContrast
+    ? "contrast-panel border-2 border-yellow-400 text-white"
+    : "border border-yellow-300 bg-[#FFF8DC] text-slate-950 shadow-xl shadow-slate-900/15";
 
   const passwordInputClass = `${inputClass} ${isAccessible ? "pr-16" : "pr-14"}`;
 
@@ -132,6 +176,20 @@ function Login() {
               }
         }
       >
+        {showEasyModeToast && (
+          <div
+            role="status"
+            aria-live="polite"
+            className={`fixed right-4 top-4 z-[210] max-w-[min(360px,calc(100vw-2rem))] rounded-2xl px-4 py-3 ${toastClass}`}
+          >
+            <p className="flex items-center gap-2 text-sm font-black">
+              <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
+              Modo fácil activado.
+            </p>
+            <p className="mt-1 text-sm font-semibold leading-snug">Al iniciar sesión entrarás al modo fácil.</p>
+          </div>
+        )}
+
         <section className={`relative w-full max-w-md ${cardClass}`}>
           <div className={isAccessible ? "space-y-8" : "space-y-7"}>
             <header className={isAccessible ? "space-y-5 text-center" : "space-y-4 text-center"}>
@@ -235,10 +293,14 @@ function Login() {
                   onClick={openAccessibilityPanel}
                   aria-haspopup="dialog"
                   aria-expanded={isPanelOpen}
-                  className={supportButtonClass}
+                  className={accessibilityButtonClass}
                 >
-                  <Accessibility className={isAccessible ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
-                  <span>Accesibilidad</span>
+                  {isAccessible ? (
+                    <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                  ) : (
+                    <Accessibility className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  <span>{isAccessible ? "Modo fácil activo" : "Accesibilidad"}</span>
                 </button>
 
                 <button type="button" onClick={handleReadHelp} className={supportButtonClass}>
@@ -246,6 +308,7 @@ function Login() {
                   <span>Leer ayuda</span>
                 </button>
               </div>
+
             </form>
 
             {feedback.message && (
