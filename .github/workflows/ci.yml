@@ -96,6 +96,3 @@ jobs:
 
       - name: Revisar formato con Prettier
         run: npx prettier . --check
-
-
-        
