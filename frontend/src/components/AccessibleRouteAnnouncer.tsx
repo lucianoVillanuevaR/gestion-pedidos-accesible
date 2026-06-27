@@ -15,6 +15,7 @@ const ROUTE_MESSAGES: Record<string, string> = {
   "/productos": "Productos. Revisa el catalogo, disponibilidad, precios y categorias.",
   "/productos/facil":
     "Productos en modo fácil. Revisa productos con tarjetas grandes y puedes enviarlos a nuevo pedido.",
+  "/inventario/facil": "Inventario en modo fácil. Revisa productos disponibles, bajo stock o agotados.",
   "/clientes": "Clientes. Revisa registro, segmentos y estado de clientes.",
   "/cocina": "Cocina. Vista general para preparar y organizar comandas.",
   "/preparacion/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",
@@ -24,7 +25,7 @@ const ROUTE_MESSAGES: Record<string, string> = {
   "/configuracion": "Configuracion. Ajustes del sistema, usuarios y permisos."
 };
 
-function getRouteMessage(pathname: string) {
+export function getRouteMessage(pathname: string) {
   const explicitMessage = ROUTE_MESSAGES[pathname];
 
   if (explicitMessage) {
