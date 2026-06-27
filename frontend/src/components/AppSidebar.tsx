@@ -2,6 +2,7 @@ import { Accessibility, LogOut, ShieldCheck, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logoRiq from "../assets/logoRiq.png";
 import {
+  getEasyRoute,
   getSidebarNavigation,
   isClientesRoute,
   isHistorialPedidosRoute,
@@ -178,23 +179,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
               <SidebarNavItem
                 key={item.path}
                 item={item}
-                pathOverride={
-                  isAccessible && item.path === "/pdv"
-                    ? "/pdv/facil"
-                    : isAccessible && item.path === "/pedidos"
-                      ? "/pedidos/facil"
-                      : isAccessible && item.path === "/preparacion"
-                        ? "/preparacion/facil"
-                        : isAccessible && item.path === "/productos"
-                          ? "/productos/facil"
-                          : isAccessible && item.path === "/inventario"
-                            ? "/inventario/facil"
-                            : isAccessible && item.path === "/cierre-turno"
-                              ? "/cierre-turno/facil"
-                              : isAccessible && item.path === "/cocina"
-                                ? "/cocina/facil"
-                                : undefined
-                }
+                pathOverride={isAccessible ? getEasyRoute(item.path) : undefined}
                 isAccessible={isAccessible}
                 isHighContrast={isHighContrast}
                 onNavigate={() => handleSidebarNavigate(item.label)}

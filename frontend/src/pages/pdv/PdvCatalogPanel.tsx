@@ -103,14 +103,15 @@ function PdvCatalogPanel() {
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {!isTurnoOpen && (
-            <div
-              className={`mb-4 rounded-xl border px-4 py-3 text-sm font-black ${
-                isHighContrast ? "contrast-panel-soft border-yellow-400" : "border-red-300 bg-red-50 text-red-900"
-              }`}
-              role="alert"
-            >
-              Turno cerrado. Abre turno para registrar pedidos.
-            </div>
+            <PdvFeedbackMessage
+              className="mb-4"
+              feedback={{
+                type: "error",
+                title: "Turno cerrado",
+                message: "Abre turno para registrar pedidos."
+              }}
+              isHighContrast={isHighContrast}
+            />
           )}
           {isCloseTurnoBlockedFeedback && feedback && (
             <div ref={feedbackRef} tabIndex={-1} className="mb-4 outline-none">

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LoaderCircle } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
@@ -11,7 +10,6 @@ import {
 } from "../../services/cierresTurno";
 import { createPedido, getPedidos } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
-import TicketComanda from "../../components/TicketComanda";
 import type {
   CreatePedidoPayload,
   MetodoPago,
@@ -35,8 +33,10 @@ import {
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
 import PdvFacilView from "./PdvFacilView";
-import PdvFeedbackMessage from "./PdvFeedbackMessage";
+import { buildPedidoCreateErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
 import PdvNormalView from "./PdvNormalView";
+import PdvPageStatus from "./PdvPageStatus";
+import PdvPrintTicket from "./PdvPrintTicket";
 import PdvProductConfigurator from "./PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
 
@@ -627,12 +627,15 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       showFeedback(buildPedidoCreateErrorFeedback(message || "Error al registrar"));
       playSoundCue("error");
-      announce(isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido", {
-        priority: "high",
-        dedupeKey: "pedido-registrado-error",
-        cooldownMs: 3000,
-        interrupt: true
-      });
+      announce(
+        isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido",
+        {
+          priority: "high",
+          dedupeKey: "pedido-registrado-error",
+          cooldownMs: 3000,
+          interrupt: true
+        }
+      );
     } finally {
       setSending(false);
 
@@ -900,36 +903,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           className={`w-full print:px-0 print:py-0 ${isAccessible ? "mx-auto max-w-[1520px] px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6" : "px-0 py-0"}`}
           style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}
         >
-          {loadingProductos && (
-            <div
-              role="status"
-              aria-live="polite"
-              className={`mb-6 flex items-center gap-4 rounded-2xl p-6 ${
-                isAccessible ? "bg-white border-2 border-slate-900" : "bg-[#FFF8DC] border border-[#FFF4BF]"
-              }`}
-            >
-              <LoaderCircle className="h-10 w-10 animate-spin" aria-hidden="true" />
-              <p className={`font-bold ${isAccessible ? "text-xl" : "text-lg"}`}>Cargando productos...</p>
-            </div>
-          )}
-
-          {loadingError && (
-            <PdvFeedbackMessage
-              className="mb-6"
-              feedback={{
-                type: "error",
-                title: "No se pudieron cargar los productos",
-                message: loadingError,
-                details: "Revisa la conexión e intenta nuevamente."
-              }}
-              isAccessible={isAccessible}
-              isHighContrast={isHighContrast}
-              onRetry={() => {
-                setLoadingError(null);
-                loadProductos();
-              }}
-            />
-          )}
+          <PdvPageStatus
+            isAccessible={isAccessible}
+            isHighContrast={isHighContrast}
+            loadingError={loadingError}
+            loadingProductos={loadingProductos}
+            onRetryProducts={() => {
+              setLoadingError(null);
+              loadProductos();
+            }}
+          />
 
           {isAccessible ? <PdvFacilView /> : <PdvNormalView />}
 
@@ -943,64 +926,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
             />
           )}
 
-          <div className="hidden print:block" ref={ticketRef}>
-            <TicketComanda
-              pedidoDetalles={pedidoDetalles}
-              total={total}
-              metodoPago={metodoPago}
-              observacion={observacion}
-              numeroPedido={undefined}
-            />
-          </div>
+          <PdvPrintTicket
+            metodoPago={metodoPago}
+            observacion={observacion}
+            pedidoDetalles={pedidoDetalles}
+            ticketRef={ticketRef}
+            total={total}
+          />
         </div>
       </main>
     </PdvViewProvider>
   );
-}
-
-function buildPedidoValidationFeedback(message: string): FeedbackState {
-  if (message === "No hay productos seleccionados") {
-    return {
-      type: "error",
-      title: "Pedido vacío",
-      message: "Agrega al menos un producto antes de aceptar el pedido."
-    };
-  }
-
-  if (message === "Selecciona método de pago") {
-    return {
-      type: "error",
-      title: "Falta método de pago",
-      message: "Selecciona efectivo, tarjeta o transferencia para registrar el pedido."
-    };
-  }
-
-  return {
-    type: "error",
-    title: "Revisa el pedido",
-    message
-  };
-}
-
-function buildPedidoCreateErrorFeedback(message: string): FeedbackState {
-  if (isStockError(message)) {
-    return {
-      type: "error",
-      title: "Stock insuficiente",
-      message,
-      details: "Actualiza el inventario o cambia los productos del pedido antes de intentar nuevamente."
-    };
-  }
-
-  return {
-    type: "error",
-    title: "No se pudo registrar el pedido",
-    message
-  };
-}
-
-function isStockError(message: string) {
-  return message.toLowerCase().includes("stock insuficiente");
 }
 
 export default PdvBasePage;

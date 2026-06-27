@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import logoRiq from "../assets/logoRiq.png";
 import {
+  getEasyRoute,
   getRouteMeta,
+  getStandardRoute,
   isClientesRoute,
   isCocinaRoute,
+  isEasyRoute,
   isHistorialPedidosRoute,
   isInventarioRoute,
   isPdvRoute,
@@ -22,23 +25,17 @@ function AppLayout() {
   const { isAccessible, isHighContrast } = useAccessibilityContext();
 
   const currentRoute = getRouteMeta(location.pathname);
-  const isModoFacilPage = location.pathname === "/modo-facil";
+  const isEasyPage = isEasyRoute(location.pathname);
   const isPdvPage = isPdvRoute(location.pathname);
   const isPdvNormalPage = location.pathname === "/pdv" && !isAccessible;
-  const isPdvFacilPage = location.pathname === "/pdv/facil";
   const isPedidosPage = isPedidosRoute(location.pathname);
-  const isPedidosFacilPage = location.pathname === "/pedidos/facil";
-  const isCierreTurnoFacilPage = location.pathname === "/cierre-turno/facil";
   const isProductosPage = isProductosRoute(location.pathname);
-  const isProductosFacilPage = location.pathname === "/productos/facil";
   const isInventarioPage = isInventarioRoute(location.pathname);
-  const isInventarioFacilPage = location.pathname === "/inventario/facil";
   const isCocinaPage = isCocinaRoute(location.pathname);
-  const isCocinaFacilPage = location.pathname === "/cocina/facil" || location.pathname === "/preparacion/facil";
   const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname);
   const isClientesPage = isClientesRoute(location.pathname);
   const isFullWidthPage =
-    isModoFacilPage ||
+    isEasyPage ||
     isPdvPage ||
     isPedidosPage ||
     isProductosPage ||
@@ -55,16 +52,7 @@ function AppLayout() {
       isCocinaPage ||
       isHistorialPedidosPage ||
       isClientesPage);
-  const hideSidebar =
-    isModoFacilPage ||
-    (location.pathname === "/pdv" && isAccessible) ||
-    isPdvFacilPage ||
-    isPedidosFacilPage ||
-    isCierreTurnoFacilPage ||
-    isProductosFacilPage ||
-    isInventarioFacilPage ||
-    isCocinaFacilPage ||
-    (isAccessible && isHistorialPedidosPage);
+  const hideSidebar = isEasyPage || (isAccessible && (location.pathname === "/pdv" || isHistorialPedidosPage));
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[368px]" : "lg:pl-[240px]";
   const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]";
   const mainContentClass = isFullWidthPage
@@ -83,68 +71,12 @@ function AppLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (isAccessible) {
-      if (location.pathname === "/pdv") {
-        navigate("/modo-facil", { replace: true });
-      }
+    const nextPath = isAccessible
+      ? getEasyRoute(location.pathname, { useEasyHome: true })
+      : getStandardRoute(location.pathname);
 
-      if (location.pathname === "/pedidos") {
-        navigate("/pedidos/facil", { replace: true });
-      }
-
-      if (location.pathname === "/cierre-turno") {
-        navigate("/cierre-turno/facil", { replace: true });
-      }
-
-      if (location.pathname === "/preparacion") {
-        navigate("/preparacion/facil", { replace: true });
-      }
-
-      if (location.pathname === "/productos") {
-        navigate("/productos/facil", { replace: true });
-      }
-
-      if (location.pathname === "/inventario") {
-        navigate("/inventario/facil", { replace: true });
-      }
-
-      if (location.pathname === "/cocina") {
-        navigate("/cocina/facil", { replace: true });
-      }
-
-      return;
-    }
-
-    if (location.pathname === "/modo-facil") {
-      navigate("/pdv", { replace: true });
-    }
-
-    if (location.pathname === "/pdv/facil") {
-      navigate("/pdv", { replace: true });
-    }
-
-    if (location.pathname === "/pedidos/facil") {
-      navigate("/pedidos", { replace: true });
-    }
-
-    if (location.pathname === "/cierre-turno/facil") {
-      navigate("/cierre-turno", { replace: true });
-    }
-
-    if (location.pathname === "/preparacion/facil") {
-      navigate("/preparacion", { replace: true });
-    }
-
-    if (location.pathname === "/productos/facil") {
-      navigate("/productos", { replace: true });
-    }
-
-    if (location.pathname === "/inventario/facil") {
-      navigate("/inventario", { replace: true });
-    }
-
-    if (location.pathname === "/cocina/facil") {
-      navigate("/cocina", { replace: true });
+    if (nextPath) {
+      navigate(nextPath, { replace: true });
     }
   }, [isAccessible, location.pathname, navigate]);
 

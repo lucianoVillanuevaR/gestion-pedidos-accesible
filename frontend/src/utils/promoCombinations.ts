@@ -22,8 +22,7 @@ export function buildPromoCombinations(producto: Producto): CombinacionPromocion
   const totalUnidades = usaVariantes ? primero.cantidad : primero.cantidad + segundo.cantidad;
   if (totalUnidades < 2 || totalUnidades > 10) return [];
 
-  const nombreCantidad = (cantidad: number, nombre: string) =>
-    cantidad === 1 ? nombre : `${cantidad} × ${nombre}`;
+  const nombreCantidad = (cantidad: number, nombre: string) => (cantidad === 1 ? nombre : `${cantidad} × ${nombre}`);
 
   return Array.from({ length: totalUnidades + 1 }, (_, index) => {
     const cantidadPrimero = totalUnidades - index;

@@ -12,7 +12,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, RefObject } from "react";
-import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
@@ -340,14 +339,7 @@ function CocinaFacilView({
                 ? "La preparación se actualiza sola cada pocos segundos."
                 : "La preparación está en actualización manual."}
             </p>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Link
-                to="/cocina"
-                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black no-underline transition ${secondaryButtonClass} ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <ChefHat className="h-6 w-6" aria-hidden="true" />
-                Modo normal
-              </Link>
+            <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={onFullscreenToggle}

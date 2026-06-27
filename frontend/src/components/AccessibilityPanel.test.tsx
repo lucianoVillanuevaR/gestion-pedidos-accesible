@@ -72,4 +72,14 @@ describe("AccessibilityPanel", () => {
 
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it("expone controles claros cuando modo fácil está activo", () => {
+    render(<AccessibilityPanel {...defaultProps} isAccessible isHighContrast isVoiceEnabled isSoundEnabled />);
+
+    expect(screen.getByRole("dialog", { name: "Panel de opciones simples" }).getAttribute("aria-modal")).toBe("true");
+    expect(screen.getByRole("button", { name: "Desactivar modo fácil" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Cerrar panel de opciones" })).toBeTruthy();
+    expect(screen.getByText("MODO FÁCIL")).toBeTruthy();
+    expect(screen.getAllByText("ACTIVADO")).toHaveLength(4);
+  });
 });

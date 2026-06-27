@@ -46,11 +46,11 @@ export function toProductoResponse<
               : componentes.reduce((total, item) => total + item.cantidad, 0))
         )
       : varianteIds.length
-      ? Math.max(
-          ...varianteIds.map((varianteId) =>
-            getStockDisponible(componentes.filter((item) => !item.varianteId || item.varianteId === varianteId))
+        ? Math.max(
+            ...varianteIds.map((varianteId) =>
+              getStockDisponible(componentes.filter((item) => !item.varianteId || item.varianteId === varianteId))
+            )
           )
-        )
         : getStockDisponible(componentes)
     : producto.controlaStock
       ? (producto.inventario?.stockActual ?? 0)

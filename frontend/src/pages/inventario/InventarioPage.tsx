@@ -1,12 +1,4 @@
-import {
-  ChevronDown,
-  ChevronUp,
-  PackageCheck,
-  RefreshCw,
-  Save,
-  Search,
-  Warehouse
-} from "lucide-react";
+import { ChevronDown, ChevronUp, PackageCheck, RefreshCw, Save, Search, Warehouse } from "lucide-react";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";

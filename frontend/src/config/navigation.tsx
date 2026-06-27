@@ -78,6 +78,32 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
   }
 ];
 
+const EASY_ROUTE_BY_STANDARD_PATH: Record<string, string> = {
+  "/pdv": "/pdv/facil",
+  "/pedidos": "/pedidos/facil",
+  "/cierre-turno": "/cierre-turno/facil",
+  "/preparacion": "/preparacion/facil",
+  "/productos": "/productos/facil",
+  "/inventario": "/inventario/facil",
+  "/cocina": "/cocina/facil"
+};
+
+const EASY_HOME_ROUTE_BY_STANDARD_PATH: Record<string, string> = {
+  ...EASY_ROUTE_BY_STANDARD_PATH,
+  "/pdv": "/modo-facil"
+};
+
+const STANDARD_ROUTE_BY_EASY_PATH: Record<string, string> = {
+  "/modo-facil": "/pdv",
+  "/pdv/facil": "/pdv",
+  "/pedidos/facil": "/pedidos",
+  "/cierre-turno/facil": "/cierre-turno",
+  "/preparacion/facil": "/preparacion",
+  "/productos/facil": "/productos",
+  "/inventario/facil": "/inventario",
+  "/cocina/facil": "/cocina"
+};
+
 export function getSidebarNavigation(role: UserRole) {
   return APP_NAVIGATION_ITEMS.filter((item) => {
     const roles = item.sidebarRoles ?? item.allowedRoles;
@@ -89,6 +115,19 @@ export function getRouteMeta(pathname: string) {
   return [...APP_NAVIGATION_ITEMS]
     .sort((left, right) => right.path.length - left.path.length)
     .find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
+}
+
+export function getEasyRoute(pathname: string, { useEasyHome = false }: { useEasyHome?: boolean } = {}) {
+  const routeMap = useEasyHome ? EASY_HOME_ROUTE_BY_STANDARD_PATH : EASY_ROUTE_BY_STANDARD_PATH;
+  return routeMap[pathname];
+}
+
+export function getStandardRoute(pathname: string) {
+  return STANDARD_ROUTE_BY_EASY_PATH[pathname];
+}
+
+export function isEasyRoute(pathname: string) {
+  return pathname === "/modo-facil" || Object.values(EASY_ROUTE_BY_STANDARD_PATH).includes(pathname);
 }
 
 export function isPdvRoute(pathname: string) {
