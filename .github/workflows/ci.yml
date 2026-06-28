@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feature/**"
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-check:
+    name: Build, test, lint and Docker check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Crear archivo .env para CI
+        run: |
+          cat > .env <<'EOF'
+          PORT=3000
+          CLIENT_URL=http://localhost
+          JWT_SECRET=ci_jwt_secret_para_validacion_automatica_123456789
+
+          DATABASE_URL=postgresql://admin:admin123@postgres:5432/sistema_pedidos
+          POSTGRES_DB=sistema_pedidos
+          POSTGRES_USER=admin
+          POSTGRES_PASSWORD=admin123
+
+          MINIO_ENDPOINT=minio
+          MINIO_PORT=9000
+          MINIO_ACCESS_KEY=minioadmin
+          MINIO_SECRET_KEY=minioadmin123
+          MINIO_BUCKET_PRODUCTOS=productos
+          MINIO_USE_SSL=false
+          MINIO_PUBLIC_URL=http://localhost:9000
+          MINIO_PUBLIC_READ=true
+
+          VITE_API_URL=/api
+          VITE_MINIO_PUBLIC_URL=http://localhost:9000
+          VITE_MINIO_BUCKET_PRODUCTOS=productos
+          EOF
+
+      - name: Validar Docker Compose
+        run: docker compose --env-file .env config
+
+      - name: Instalar dependencias backend
+        working-directory: backend
+        run: npm ci
+
+      - name: Generar Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Revisar backend con ESLint
+        working-directory: backend
+        run: npm run lint
+
+      - name: Ejecutar tests backend
+        working-directory: backend
+        run: npm run test
+
+      - name: Compilar backend
+        working-directory: backend
+        run: npm run build
+
+      - name: Instalar dependencias frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Revisar frontend con ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Ejecutar tests frontend
+        working-directory: frontend
+        run: npm run test
+
+      - name: Compilar frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Revisar formato con Prettier
+        working-directory: backend
+        run: npm exec prettier -- ../ --check

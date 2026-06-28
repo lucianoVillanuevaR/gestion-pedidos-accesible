@@ -1,8 +1,9 @@
 import { FileSpreadsheet, Filter, MoreVertical, Plus, Search, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { normalizeSearchText } from "../../utils/formatters";
-import { FOCUS_VISIBLE_CLASS, formatCurrency, usePedidosController } from "../pedidos/PedidosShared";
+import { formatCurrency, usePedidosController } from "../pedidos/PedidosShared";
 
 type SegmentFilter = "todos" | "elite" | "top" | "frecuente" | "comprador" | "sin_pedidos";
 

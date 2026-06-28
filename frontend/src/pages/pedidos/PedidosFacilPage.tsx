@@ -2,6 +2,7 @@ import { AlertTriangle, Check, ClipboardPlus, LoaderCircle, RefreshCw, Search, V
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { ESTADOS_PEDIDO_ACTIVOS } from "../../domain/pedidoRules";
 import useVoice from "../../hooks/useVoice";
@@ -9,7 +10,6 @@ import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "..
 import type { EstadoPedido, PedidoResponse } from "../../types";
 import {
   ESTADO_META,
-  FOCUS_VISIBLE_CLASS,
   formatCurrency,
   formatMetodoPago,
   formatTime,

@@ -31,6 +31,7 @@ function PdvFacilView() {
     items,
     metodoPago,
     navigate,
+    nextPedidoNumber,
     panelBg,
     pedidoDetalles,
     puedeRegistrar,
@@ -100,7 +101,7 @@ function PdvFacilView() {
             <p
               className={`mt-2 max-w-2xl text-lg font-bold ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}
             >
-              Sigue los pasos para registrar un pedido.
+              Pedido #{nextPedidoNumber}. Sigue los pasos para registrar un pedido.
             </p>
           </div>
 

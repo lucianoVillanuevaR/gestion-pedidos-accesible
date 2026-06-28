@@ -1,7 +1,7 @@
 import { ChevronDown, Eye, EyeOff, Pencil, Plus, Utensils } from "lucide-react";
 import type { ProductoConCategoria } from "../../utils/pdv";
 import { formatCurrency } from "../../utils/pdv";
-import { FOCUS_VISIBLE_CLASS } from "../../pages/pedidos/PedidosShared";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import type { CategoriaCatalogo } from "../../pages/productos/ProductosShared";
 import EmptyState from "../ui/EmptyState";
 import ProductImage from "./ProductImage";

@@ -8,7 +8,7 @@ import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
-import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { CATEGORIAS_CATALOGO, type CategoriaCatalogo } from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
 

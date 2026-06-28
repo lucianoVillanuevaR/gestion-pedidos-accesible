@@ -9,9 +9,7 @@ import {
 } from "../../utils/pdv";
 
 export type CategoriaCatalogo = ProductoCategoriaCatalogo | "Destacados";
-export type CategoriaCatalogoOption = { label: string; value: CategoriaCatalogo };
-
-const CUSTOM_CATEGORIES_STORAGE_KEY = "riquisimo-custom-product-categories";
+export type CategoriaCatalogoOption = { id?: number; label: string; value: CategoriaCatalogo };
 
 export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { label: "Destacados", value: "Destacados" },
@@ -32,32 +30,6 @@ export function normalizeCategoriaCatalogo(categoria: string): CategoriaCatalogo
   return CATEGORIA_ALIASES[cleanCategoria] ?? (cleanCategoria as CategoriaCatalogo);
 }
 
-export function loadCustomCategorias(): CategoriaCatalogoOption[] {
-  try {
-    const storedCategorias = window.localStorage.getItem(CUSTOM_CATEGORIES_STORAGE_KEY);
-
-    if (!storedCategorias) {
-      return [];
-    }
-
-    const parsedCategorias = JSON.parse(storedCategorias) as CategoriaCatalogoOption[];
-
-    if (!Array.isArray(parsedCategorias)) {
-      return [];
-    }
-
-    return parsedCategorias.filter(
-      (categoria) => typeof categoria?.label === "string" && typeof categoria?.value === "string"
-    );
-  } catch {
-    return [];
-  }
-}
-
-export function saveCustomCategorias(categorias: CategoriaCatalogoOption[]) {
-  window.localStorage.setItem(CUSTOM_CATEGORIES_STORAGE_KEY, JSON.stringify(categorias));
-}
-
 export function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
   const categoriaMap = new Map<CategoriaCatalogo, CategoriaCatalogoOption>();
 
@@ -67,7 +39,7 @@ export function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
     const normalizedLabel = CATEGORIA_ALIASES[label] ?? label;
 
     if (label && value && !categoriaMap.has(value)) {
-      categoriaMap.set(value, { label: normalizedLabel, value });
+      categoriaMap.set(value, { id: categoria.id, label: normalizedLabel, value });
     }
   });
 

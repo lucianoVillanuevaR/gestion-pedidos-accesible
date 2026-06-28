@@ -5,13 +5,21 @@ import type { PdvViewContextValue } from "./PdvViewContext";
 
 type PdvPrintTicketProps = {
   metodoPago: MetodoPago | "";
+  nextPedidoNumber: number;
   observacion: string;
   pedidoDetalles: PdvViewContextValue["pedidoDetalles"];
   ticketRef: RefObject<HTMLDivElement>;
   total: number;
 };
 
-function PdvPrintTicket({ metodoPago, observacion, pedidoDetalles, ticketRef, total }: PdvPrintTicketProps) {
+function PdvPrintTicket({
+  metodoPago,
+  nextPedidoNumber,
+  observacion,
+  pedidoDetalles,
+  ticketRef,
+  total
+}: PdvPrintTicketProps) {
   return (
     <div className="hidden print:block" ref={ticketRef}>
       <TicketComanda
@@ -19,7 +27,7 @@ function PdvPrintTicket({ metodoPago, observacion, pedidoDetalles, ticketRef, to
         total={total}
         metodoPago={metodoPago}
         observacion={observacion}
-        numeroPedido={undefined}
+        numeroPedido={nextPedidoNumber}
       />
     </div>
   );

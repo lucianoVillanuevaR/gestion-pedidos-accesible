@@ -1,5 +1,5 @@
 import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
-import { FOCUS_VISIBLE_CLASS } from "../../pages/pedidos/PedidosShared";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import type { CategoriaCatalogo } from "../../pages/productos/ProductosShared";
 import type { CategoriaGrupo } from "./ProductosCatalog";
 

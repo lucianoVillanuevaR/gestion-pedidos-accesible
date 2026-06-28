@@ -45,6 +45,7 @@ export type PdvViewContextValue = {
   loadProductos: () => void;
   metodoPago: MetodoPago | "";
   navigate: NavigateFunction;
+  nextPedidoNumber: number;
   observacion: string;
   openAccessibilityPanel: () => void;
   openResetConfirm: () => void;
