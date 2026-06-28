@@ -25,6 +25,7 @@ function PdvNormalView() {
     isTurnoOpen,
     clienteNombre,
     metodoPago,
+    nextPedidoNumber,
     puedeRegistrar,
     quickActionButtonClass,
     resetPedido,
@@ -91,7 +92,7 @@ function PdvNormalView() {
         <div className="bg-[#FECE00] text-slate-950 no-print print:hidden">
           <div className="flex min-h-[42px] items-center justify-between gap-2 px-3">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="text-2xl font-light leading-none">#1</span>
+              <span className="text-2xl font-light leading-none">#{nextPedidoNumber}</span>
               <span className="rounded-full border border-white/70 px-2 py-0.5 text-xs font-bold">En el local</span>
               <span className="text-sm font-bold">{getPaymentLabel(metodoPago)}</span>
             </div>

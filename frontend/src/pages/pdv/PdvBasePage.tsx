@@ -22,6 +22,15 @@ import PdvPrintTicket from "./PdvPrintTicket";
 import PdvProductConfigurator from "./PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
 
+function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
+  const maxPedidoNumber = withPedidoNumerosTurno(pedidos).reduce((maxNumber, pedido) => {
+    const displayNumber = Number(getPedidoDisplayNumber(pedido));
+    return Number.isFinite(displayNumber) ? Math.max(maxNumber, displayNumber) : maxNumber;
+  }, 0);
+
+  return maxPedidoNumber + 1;
+}
+
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,6 +55,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const [sending, setSending] = useState(false);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
+  const [nextPedidoNumber, setNextPedidoNumber] = useState(1);
 
   const initialProductHandledRef = useRef(false);
   const ticketRef = useRef<HTMLDivElement | null>(null);
@@ -75,6 +85,23 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     playSoundCue,
     showFeedback
   });
+
+  const refreshNextPedidoNumber = useCallback(async () => {
+    if (!isTurnoOpen) {
+      setNextPedidoNumber(1);
+      return;
+    }
+
+    try {
+      setNextPedidoNumber(getNextPedidoNumberFromPedidos(await getPedidos()));
+    } catch {
+      setNextPedidoNumber(1);
+    }
+  }, [isTurnoOpen]);
+
+  useEffect(() => {
+    void refreshNextPedidoNumber();
+  }, [refreshNextPedidoNumber]);
 
   const notifyTurnoClosed = useCallback(() => {
     const message = "Debe abrir turno antes de registrar pedidos.";
@@ -170,7 +197,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
 
     const parts = [
-      "Pedido número 1.",
+      `Pedido número ${nextPedidoNumber}.`,
       `Contiene ${totalItems} ${totalItems === 1 ? "producto" : "productos"}.`,
       `Detalle: ${itemLines.join(", ")}.`,
       `Total a pagar ${formatCurrency(total)}.`
@@ -202,6 +229,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     isAccessible,
     isTurnoOpen,
     metodoPago,
+    nextPedidoNumber,
     observacion,
     pedidoDetalles,
     speakOnDemand,
@@ -294,6 +322,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       setSending(true);
       const pedidoCreado = (await createPedido(payload)) as PedidoResponse;
       const numeroPedido = await getNumeroTurnoPedidoCreado(pedidoCreado);
+      setNextPedidoNumber((currentNumber) =>
+        typeof numeroPedido === "number" && Number.isFinite(numeroPedido) ? numeroPedido + 1 : currentNumber + 1
+      );
       const successMsg = numeroPedido ? `Pedido #${numeroPedido} registrado` : "Pedido registrado";
       showFeedback({
         type: "success",
@@ -312,6 +343,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         }
       );
       shouldResetAccessibleFlow = isAccessible;
+      void refreshNextPedidoNumber();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       showFeedback(buildPedidoCreateErrorFeedback(message || "Error al registrar"));
@@ -556,6 +588,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     loadProductos,
     metodoPago,
     navigate,
+    nextPedidoNumber,
     observacion,
     openAccessibilityPanel,
     openResetConfirm,
@@ -617,6 +650,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
           <PdvPrintTicket
             metodoPago={metodoPago}
+            nextPedidoNumber={nextPedidoNumber}
             observacion={observacion}
             pedidoDetalles={pedidoDetalles}
             ticketRef={ticketRef}
