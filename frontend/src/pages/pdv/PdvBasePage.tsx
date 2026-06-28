@@ -1,22 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { createPedido, getPedidos } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
-import type {
-  CreatePedidoPayload,
-  MetodoPago,
-  PedidoResponse,
-  PersonalizacionProducto,
-  Producto,
-  VarianteProducto
-} from "../../types";
-import { buildPedidoSummary, formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
-import { PEDIDO_MAX_CANTIDAD_DETALLE, validatePedidoSubmit } from "../../validations/pedido.validation";
-import { ACCESSIBLE_STEP_COUNT, usesProductConfigurator } from "./PdvShared";
+import type { CreatePedidoPayload, MetodoPago, PedidoResponse } from "../../types";
+import { formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
+import { validatePedidoSubmit } from "../../validations/pedido.validation";
+import { ACCESSIBLE_STEP_COUNT } from "./PdvShared";
 import { getPedidoDisplayNumber, withPedidoNumerosTurno } from "../pedidos/PedidosShared";
 import { usePdvFeedback } from "./hooks/usePdvFeedback";
+import { usePdvOrderDraft } from "./hooks/usePdvOrderDraft";
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
 import { usePdvTurno } from "./hooks/usePdvTurno";
@@ -50,16 +44,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setLoadingError
   } = usePdvProducts({ searchTerm, selectedCategory });
 
-  const [items, setItems] = useState<Record<string, number>>({});
-  const [personalizaciones, setPersonalizaciones] = useState<Record<string, PersonalizacionProducto>>({});
-  const [pendingVariantProduct, setPendingVariantProduct] = useState<Producto | null>(null);
-  const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
-  const [clienteNombre, setClienteNombre] = useState("");
-  const [observacion, setObservacion] = useState("");
-  const [accessibleObservationType, setAccessibleObservationType] = useState<"cocina" | "cliente">("cocina");
   const [sending, setSending] = useState(false);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const initialProductHandledRef = useRef(false);
   const ticketRef = useRef<HTMLDivElement | null>(null);
@@ -73,20 +59,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
     setAccessibleStep(1);
   }, [isAccessible]);
-
-  const {
-    detalles: pedidoDetalles,
-    total,
-    cantidad: totalItems
-  } = useMemo(() => {
-    return buildPedidoSummary(items, productos, personalizaciones);
-  }, [items, personalizaciones, productos]);
-
-  useEffect(() => {
-    if (pedidoDetalles.length === 0) {
-      setShowResetConfirm(false);
-    }
-  }, [pedidoDetalles.length]);
 
   const announce = useCallback(
     (message: string, options = {}) => {
@@ -104,15 +76,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     showFeedback
   });
 
-  const submitValidationError = validatePedidoSubmit({
-    clienteNombre,
-    isTurnoOpen,
-    metodoPago,
-    observacion,
-    totalProductos: pedidoDetalles.length
-  });
-  const puedeRegistrar = !submitValidationError && !sending;
-
   const notifyTurnoClosed = useCallback(() => {
     const message = "Debe abrir turno antes de registrar pedidos.";
     playSoundCue("error");
@@ -123,6 +86,56 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       interrupt: true
     });
   }, [announce, playSoundCue]);
+
+  const {
+    accessibleObservationType,
+    addProduct,
+    clearPedidoForm,
+    clienteNombre,
+    decreaseProduct,
+    increaseProduct,
+    items,
+    metodoPago,
+    observacion,
+    openResetConfirm,
+    pedidoDetalles,
+    pendingVariantProduct,
+    removeProduct,
+    resetPedido,
+    selectMetodoPago,
+    selectPendingVariant,
+    setAccessibleObservationType,
+    setClienteNombre,
+    setObservacion,
+    setPendingVariantProduct,
+    setShowResetConfirm,
+    showResetConfirm,
+    total,
+    totalItems
+  } = usePdvOrderDraft({
+    announce,
+    isTurnoOpen,
+    notifyTurnoClosed,
+    playSoundCue,
+    productos,
+    setFeedback,
+    showFeedback
+  });
+
+  const submitValidationError = validatePedidoSubmit({
+    clienteNombre,
+    isTurnoOpen,
+    metodoPago,
+    observacion,
+    totalProductos: pedidoDetalles.length
+  });
+  const puedeRegistrar = !submitValidationError && !sending;
+
+  useEffect(() => {
+    if (pedidoDetalles.length === 0) {
+      setShowResetConfirm(false);
+    }
+  }, [pedidoDetalles.length, setShowResetConfirm]);
 
   const handleReadPedidoSummary = useCallback(() => {
     if (!isTurnoOpen) {
@@ -209,126 +222,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     return () => window.removeEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
   }, [handleReadPedidoSummary]);
 
-  const setItemQuantity = useCallback(
-    (producto: Producto, nextQuantity: number) => {
-      if (!isTurnoOpen) {
-        notifyTurnoClosed();
-        return;
-      }
-
-      if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) {
-        const message = `La cantidad máxima por producto es ${PEDIDO_MAX_CANTIDAD_DETALLE}.`;
-        showFeedback({
-          type: "error",
-          title: "Cantidad máxima alcanzada",
-          message
-        });
-        playSoundCue("error");
-        announce(message, {
-          priority: "high",
-          dedupeKey: `quantity-max:${producto.id}`,
-          cooldownMs: 1800,
-          interrupt: true
-        });
-        return;
-      }
-
-      setItems((currentItems) => {
-        if (nextQuantity <= 0) {
-          const nextItems = { ...currentItems };
-          delete nextItems[producto.id];
-          return nextItems;
-        }
-
-        return {
-          ...currentItems,
-          [producto.id]: nextQuantity
-        };
-      });
-    },
-    [announce, isTurnoOpen, notifyTurnoClosed, playSoundCue, showFeedback]
-  );
-
-  const clearPedidoForm = () => {
-    setItems({});
-    setPersonalizaciones({});
-    setPendingVariantProduct(null);
-    setMetodoPago("");
-    setClienteNombre("");
-    setObservacion("");
-    setAccessibleObservationType("cocina");
-  };
-
-  const commitAddProduct = useCallback(
-    (
-      producto: Producto,
-      variante?: VarianteProducto,
-      cantidadAgregar = 1,
-      personalizacion: PersonalizacionProducto = { aderezos: [] }
-    ) => {
-      if (!isTurnoOpen) {
-        notifyTurnoClosed();
-        return;
-      }
-
-      const signature = encodeURIComponent(JSON.stringify(personalizacion));
-      const itemKey = `${producto.id}:${variante?.id ?? "base"}:${signature}`;
-      const nextQuantity = (items[itemKey] || 0) + cantidadAgregar;
-
-      if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) {
-        const message = `La cantidad máxima por producto es ${PEDIDO_MAX_CANTIDAD_DETALLE}.`;
-        showFeedback({
-          type: "error",
-          title: "Cantidad máxima alcanzada",
-          message
-        });
-        playSoundCue("error");
-        return;
-      }
-
-      setItems((currentItems) => ({
-        ...currentItems,
-        [itemKey]: (currentItems[itemKey] || 0) + cantidadAgregar
-      }));
-      setPersonalizaciones((current) => ({ ...current, [itemKey]: personalizacion }));
-      playSoundCue("add");
-      announce(`${producto.nombre}${variante ? `, ${variante.nombre}` : ""} agregado. Cantidad ${nextQuantity}.`, {
-        priority: "normal",
-        dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
-        cooldownMs: 1800
-      });
-    },
-    [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue, showFeedback]
-  );
-
-  const addProduct = useCallback(
-    (producto: Producto) => {
-      if (usesProductConfigurator(producto)) {
-        setPendingVariantProduct(producto);
-        announce(`Elige una opción para ${producto.nombre}.`, {
-          priority: "high",
-          dedupeKey: `variant-required:${producto.id}`,
-          cooldownMs: 1500,
-          interrupt: true
-        });
-        return;
-      }
-      commitAddProduct(producto);
-    },
-    [announce, commitAddProduct]
-  );
-
-  const selectPendingVariant = (
-    variante: VarianteProducto | undefined,
-    cantidad: number,
-    personalizacion: PersonalizacionProducto
-  ) => {
-    if (!pendingVariantProduct) return;
-    const producto = pendingVariantProduct;
-    setPendingVariantProduct(null);
-    commitAddProduct(producto, variante, cantidad, personalizacion);
-  };
-
   useEffect(() => {
     if (!isAccessible || initialProductHandledRef.current || loadingProductos) {
       return;
@@ -352,105 +245,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setAccessibleStep(3);
     navigate(location.pathname, { replace: true, state: null });
   }, [addProduct, isAccessible, loadingProductos, location.pathname, location.state, navigate, productos]);
-
-  const increaseProduct = (producto: Producto) => {
-    if (!isTurnoOpen) {
-      notifyTurnoClosed();
-      return;
-    }
-
-    const nextQuantity = (items[producto.id] || 0) + 1;
-    setItemQuantity(producto, nextQuantity);
-    playSoundCue("add");
-    announce(`${producto.nombre}. Cantidad ${nextQuantity}.`, {
-      priority: "low",
-      dedupeKey: `quantity-up:${producto.id}:${nextQuantity}`,
-      cooldownMs: 1500
-    });
-  };
-
-  const decreaseProduct = (producto: Producto) => {
-    if (!isTurnoOpen) {
-      notifyTurnoClosed();
-      return;
-    }
-
-    const currentQuantity = items[producto.id] || 0;
-    setItemQuantity(producto, currentQuantity - 1);
-
-    if (currentQuantity <= 1) {
-      playSoundCue("remove");
-      announce(`${producto.nombre} quitado del pedido.`, {
-        priority: "low",
-        dedupeKey: `product-removed:${producto.id}`,
-        cooldownMs: 1500
-      });
-      return;
-    }
-
-    playSoundCue("decrease");
-    announce(`${producto.nombre}. Cantidad ${currentQuantity - 1}.`, {
-      priority: "low",
-      dedupeKey: `quantity-down:${producto.id}:${currentQuantity - 1}`,
-      cooldownMs: 1500
-    });
-  };
-
-  const removeProduct = (itemKey: string) => {
-    setItems((prevItems) => {
-      const newItems = { ...prevItems };
-      delete newItems[itemKey];
-      return newItems;
-    });
-    setPersonalizaciones((current) => {
-      const next = { ...current };
-      delete next[itemKey];
-      return next;
-    });
-
-    playSoundCue("remove");
-    announce("Producto eliminado del pedido.", {
-      priority: "normal",
-      dedupeKey: "product-removed",
-      cooldownMs: 1500
-    });
-  };
-
-  const resetPedido = () => {
-    clearPedidoForm();
-    setFeedback(null);
-    setShowResetConfirm(false);
-    playSoundCue("clear");
-    announce("Pedido cancelado.", {
-      priority: "high",
-      dedupeKey: "pedido-reset",
-      cooldownMs: 2000,
-      interrupt: true
-    });
-  };
-
-  const openResetConfirm = () => {
-    setShowResetConfirm(true);
-    announce("¿Seguro que quieres borrar?", {
-      priority: "high",
-      dedupeKey: "confirm-reset",
-      cooldownMs: 1800,
-      interrupt: true
-    });
-  };
-
-  const selectMetodoPago = (value: MetodoPago) => {
-    setMetodoPago(value);
-
-    const voiceMessage =
-      value === "efectivo" ? "Pago en efectivo" : value === "tarjeta" ? "Pago con tarjeta" : "Pago por transferencia";
-
-    announce(voiceMessage, {
-      priority: "normal",
-      dedupeKey: `payment-${value}`,
-      cooldownMs: 1400
-    });
-  };
 
   async function getNumeroTurnoPedidoCreado(pedidoCreado: PedidoResponse) {
     if (!pedidoCreado.id) {
