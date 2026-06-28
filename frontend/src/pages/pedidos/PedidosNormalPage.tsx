@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import type { EstadoPedido, PedidoResponse } from "../../types";
@@ -20,7 +21,6 @@ import {
   EmptyPedidosMessage,
   ESTADO_META,
   ESTADO_OPTIONS,
-  FOCUS_VISIBLE_CLASS,
   formatCurrency,
   formatElapsedTime,
   formatMetodoPago,

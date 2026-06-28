@@ -5,12 +5,14 @@ import pedidosRoutes from "./pedidos.routes";
 import inventarioRoutes from "./inventario.routes";
 import authRoutes from "./auth.routes";
 import turnosRoutes from "./turnos.routes";
+import categoriasRoutes from "./categorias.routes";
 
 const router = Router();
 
 router.use("/health", healthRoutes);
 router.use("/auth", authRoutes);
 router.use("/turnos", turnosRoutes);
+router.use("/categorias", categoriasRoutes);
 router.use("/productos", productosRoutes);
 router.use("/pedidos", pedidosRoutes);
 router.use("/inventario", inventarioRoutes);

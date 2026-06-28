@@ -10,12 +10,7 @@ import {
   setTurnoAbierto,
   setTurnoFechaInicio
 } from "../pages/pedidos/PedidosShared";
-import {
-  abrirTurnoRemoto,
-  guardarCierreTurno,
-  obtenerCierresTurno,
-  obtenerPedidoIdsCerrados
-} from "../services/cierresTurno";
+import { abrirTurnoRemoto, guardarCierreTurno, obtenerCierresTurno } from "../services/cierresTurno";
 import { createPedido, getPedidos, updatePedidoEstado } from "../services/pedidos";
 import type { CreatePedidoPayload, EstadoPedido, PedidoResponse } from "../types";
 
@@ -185,7 +180,6 @@ describe("flujo operativo principal", () => {
       pedidosEntregados: 1,
       totalVendido: 5000
     });
-    expect(obtenerPedidoIdsCerrados().has(101)).toBe(true);
     const closeRequest = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/api/turnos/1/cerrar"));
     expect(closeRequest?.[1]?.body).toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(9);

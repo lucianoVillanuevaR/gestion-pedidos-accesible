@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   buildCategoriasCatalogo,
   groupProductosByCategoria,
-  loadCustomCategorias,
   withProductoCategoria
 } from "../../productos/ProductosShared";
+import type { CategoriaCatalogoOption, CategoriaCatalogo } from "../../productos/ProductosShared";
+import { getCategorias } from "../../../services/categorias";
 import { getProductos } from "../../../services/productos";
 import type { Producto } from "../../../types";
 import {
@@ -22,6 +23,7 @@ export function usePdvProducts({
   selectedCategory: FiltroCategoria;
 }) {
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<CategoriaCatalogoOption[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
@@ -69,7 +71,29 @@ export function usePdvProducts({
     };
   }, []);
 
-  const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, loadCustomCategorias()), [productos]);
+  useEffect(() => {
+    let isMounted = true;
+
+    getCategorias()
+      .then((list) => {
+        if (isMounted) {
+          setCategorias(
+            list.map((categoria) => ({
+              id: categoria.id,
+              label: categoria.nombre,
+              value: categoria.nombre as CategoriaCatalogo
+            }))
+          );
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, categorias), [categorias, productos]);
 
   const productosDisponibles = useMemo(
     () => productos.filter((producto) => producto.disponible !== false),

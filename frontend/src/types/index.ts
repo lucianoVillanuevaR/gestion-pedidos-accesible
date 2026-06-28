@@ -19,6 +19,11 @@ export interface Producto {
   requiereSeleccionVariante?: boolean;
 }
 
+export interface Categoria {
+  id: number;
+  nombre: string;
+}
+
 export type TipoProducto = "producto" | "promo" | "combo";
 
 export interface ProductoComponente {

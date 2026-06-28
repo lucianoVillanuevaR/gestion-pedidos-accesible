@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
@@ -26,7 +27,6 @@ import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "..
 import type { CierreProductoResumen } from "../../types";
 import { validateTurnoClose } from "../../validations/turno.validation";
 import {
-  FOCUS_VISIBLE_CLASS,
   formatCurrency,
   formatDateTime,
   formatMetodoPago,

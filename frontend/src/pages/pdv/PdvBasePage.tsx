@@ -2,12 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import {
-  abrirTurnoRemoto,
-  guardarCierreTurno,
-  obtenerPedidoIdsCerrados,
-  sincronizarTurnoActual
-} from "../../services/cierresTurno";
 import { createPedido, getPedidos } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
 import type {
@@ -20,18 +14,12 @@ import type {
 } from "../../types";
 import { buildPedidoSummary, formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
 import { PEDIDO_MAX_CANTIDAD_DETALLE, validatePedidoSubmit } from "../../validations/pedido.validation";
-import { validateTurnoClose } from "../../validations/turno.validation";
-import { ACCESSIBLE_STEP_COUNT, type FeedbackState, usesProductConfigurator } from "./PdvShared";
-import {
-  getPedidoDisplayNumber,
-  readTurnoAbierto,
-  setTurnoAbierto,
-  setTurnoFechaInicio,
-  TURNO_ABIERTO_STORAGE_KEY,
-  withPedidoNumerosTurno
-} from "../pedidos/PedidosShared";
+import { ACCESSIBLE_STEP_COUNT, usesProductConfigurator } from "./PdvShared";
+import { getPedidoDisplayNumber, withPedidoNumerosTurno } from "../pedidos/PedidosShared";
+import { usePdvFeedback } from "./hooks/usePdvFeedback";
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
+import { usePdvTurno } from "./hooks/usePdvTurno";
 import PdvFacilView from "./PdvFacilView";
 import { buildPedidoCreateErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
 import PdvNormalView from "./PdvNormalView";
@@ -70,47 +58,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [observacion, setObservacion] = useState("");
   const [accessibleObservationType, setAccessibleObservationType] = useState<"cocina" | "cliente">("cocina");
   const [sending, setSending] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
 
-  useEffect(() => {
-    void sincronizarTurnoActual()
-      .then((turno) => {
-        setTurnoAbierto(Boolean(turno));
-        if (turno) setTurnoFechaInicio(turno.fechaInicio);
-        setIsTurnoOpen(Boolean(turno));
-      })
-      .catch(() => undefined);
-  }, []);
-
-  const feedbackRef = useRef<HTMLDivElement | null>(null);
   const initialProductHandledRef = useRef(false);
   const ticketRef = useRef<HTMLDivElement | null>(null);
   const playSoundCue = usePdvSoundCue(isSoundEnabled);
-
-  const showFeedback = useCallback((nextFeedback: FeedbackState) => {
-    setFeedback(nextFeedback);
-  }, []);
-
-  useEffect(() => {
-    if (feedback && feedbackRef.current) {
-      feedbackRef.current.focus();
-    }
-  }, [feedback]);
-
-  useEffect(() => {
-    if (!feedback) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setFeedback((currentFeedback) => (currentFeedback === feedback ? null : currentFeedback));
-    }, 5000);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [feedback]);
+  const { feedback, feedbackRef, setFeedback, showFeedback } = usePdvFeedback();
 
   useEffect(() => {
     if (!isAccessible) {
@@ -134,15 +88,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
   }, [pedidoDetalles.length]);
 
-  const submitValidationError = validatePedidoSubmit({
-    clienteNombre,
-    isTurnoOpen,
-    metodoPago,
-    observacion,
-    totalProductos: pedidoDetalles.length
-  });
-  const puedeRegistrar = !submitValidationError && !sending;
-
   const announce = useCallback(
     (message: string, options = {}) => {
       if (isVoiceEnabled) {
@@ -151,6 +96,22 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     },
     [isVoiceEnabled, speak]
   );
+
+  const { handleToggleTurno, isTurnoOpen } = usePdvTurno({
+    announce,
+    onTurnoStateChange: () => setAccessibleStep(1),
+    playSoundCue,
+    showFeedback
+  });
+
+  const submitValidationError = validatePedidoSubmit({
+    clienteNombre,
+    isTurnoOpen,
+    metodoPago,
+    observacion,
+    totalProductos: pedidoDetalles.length
+  });
+  const puedeRegistrar = !submitValidationError && !sending;
 
   const notifyTurnoClosed = useCallback(() => {
     const message = "Debe abrir turno antes de registrar pedidos.";
@@ -468,70 +429,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === TURNO_ABIERTO_STORAGE_KEY) {
-        setIsTurnoOpen(readTurnoAbierto());
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
-
-  const handleToggleTurno = async () => {
-    if (isTurnoOpen) {
-      const closeError = validateTurnoClose(isTurnoOpen);
-      if (closeError) {
-        showFeedback({ type: "error", title: "No se pudo cerrar el turno", message: closeError });
-        return;
-      }
-
-      try {
-        await guardarCierreTurno();
-        setTurnoAbierto(false);
-        setIsTurnoOpen(false);
-        setAccessibleStep(1);
-        const message = "Turno cerrado correctamente.";
-        showFeedback({ type: "success", title: "Turno cerrado", message });
-        playSoundCue("success");
-        announce(message, {
-          priority: "high",
-          dedupeKey: "pdv-turno-cerrado",
-          cooldownMs: 2200,
-          interrupt: true
-        });
-      } catch (error) {
-        showFeedback({
-          type: "error",
-          title: "No se pudo cerrar el turno",
-          message: error instanceof Error ? error.message : "No fue posible cerrar el turno"
-        });
-      }
-      return;
-    }
-
-    try {
-      const turno = await abrirTurnoRemoto();
-      setTurnoAbierto(true);
-      setTurnoFechaInicio(turno.fechaInicio);
-      setIsTurnoOpen(true);
-      setAccessibleStep(1);
-      const message = "Turno abierto correctamente.";
-      announce(message, { priority: "high", dedupeKey: "pdv-turno-abierto", cooldownMs: 2200, interrupt: true });
-    } catch (error) {
-      showFeedback({
-        type: "error",
-        title: "No se pudo abrir el turno",
-        message: error instanceof Error ? error.message : "No fue posible abrir el turno"
-      });
-    }
-  };
-
   const openResetConfirm = () => {
     setShowResetConfirm(true);
     announce("¿Seguro que quieres borrar?", {
@@ -561,9 +458,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
 
     try {
-      const pedidoIdsCerrados = obtenerPedidoIdsCerrados();
-      const pedidosActivos = (await getPedidos()).filter((pedido) => !pedidoIdsCerrados.has(pedido.id));
-      const pedidoActivo = withPedidoNumerosTurno(pedidosActivos).find((pedido) => pedido.id === pedidoCreado.id);
+      const pedidoActivo = withPedidoNumerosTurno(await getPedidos()).find((pedido) => pedido.id === pedidoCreado.id);
 
       return pedidoActivo ? getPedidoDisplayNumber(pedidoActivo) : pedidoCreado.id;
     } catch {

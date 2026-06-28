@@ -25,10 +25,6 @@ export function obtenerCierresTurno() {
   return readStoredCierresTurno();
 }
 
-export function obtenerPedidoIdsCerrados() {
-  return new Set(readStoredCierresTurno().flatMap((cierre) => (cierre.pedidos ?? []).map((pedido) => pedido.id)));
-}
-
 export async function guardarCierreTurno() {
   if (typeof window === "undefined") {
     throw new Error("No es posible cerrar un turno fuera del navegador");

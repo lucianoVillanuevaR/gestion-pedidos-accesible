@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 
 type ConfirmDialogProps = {
   children?: ReactNode;

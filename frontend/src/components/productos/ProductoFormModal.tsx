@@ -13,7 +13,7 @@ import {
 } from "../../validations/producto.validation";
 import type { ProductoConCategoria } from "../../utils/pdv";
 import { PRODUCT_IMAGE_PLACEHOLDER, resolveProductImage } from "../../utils/productImages";
-import { FOCUS_VISIBLE_CLASS } from "../../pages/pedidos/PedidosShared";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import type { CategoriaCatalogo, CategoriaCatalogoOption } from "../../pages/productos/ProductosShared";
 
 export function ProductoFormModal({

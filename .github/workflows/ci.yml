@@ -95,4 +95,5 @@ jobs:
         run: npm run build
 
       - name: Revisar formato con Prettier
-        run: npx prettier . --check
+        working-directory: backend
+        run: npm exec prettier -- ../ --check

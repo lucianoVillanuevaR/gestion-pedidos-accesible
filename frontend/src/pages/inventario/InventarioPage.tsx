@@ -8,7 +8,7 @@ import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
-import { FOCUS_VISIBLE_CLASS } from "../pedidos/PedidosShared";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 
 type InventarioFilter = InventarioEstado | "todos";
 

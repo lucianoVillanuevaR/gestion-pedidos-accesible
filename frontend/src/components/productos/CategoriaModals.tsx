@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { PRODUCTO_CATEGORIA_MAX_LENGTH } from "../../validations/producto.validation";
-import { FOCUS_VISIBLE_CLASS } from "../../pages/pedidos/PedidosShared";
+import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import type { CategoriaCatalogo, CategoriaCatalogoOption } from "../../pages/productos/ProductosShared";
 
 export function CategoriaFormModal({

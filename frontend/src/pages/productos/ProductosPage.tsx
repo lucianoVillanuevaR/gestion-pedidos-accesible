@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
@@ -9,6 +9,7 @@ import {
   updateProducto,
   uploadProductImage
 } from "../../services/productos";
+import { createCategoria, deleteCategoria, getCategorias } from "../../services/categorias";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { CategoriaDeleteModal, CategoriaFormModal } from "../../components/productos/CategoriaModals";
@@ -18,9 +19,7 @@ import { ProductosToolbar } from "../../components/productos/ProductosToolbar";
 import LoadingState from "../../components/ui/LoadingState";
 import {
   CATEGORIAS_CATALOGO,
-  loadCustomCategorias,
   mergeCategorias,
-  saveCustomCategorias,
   type CategoriaCatalogo,
   type CategoriaCatalogoOption
 } from "./ProductosShared";
@@ -30,13 +29,17 @@ function ProductosPage() {
   const { isVoiceEnabled } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
-  const [customCategorias, setCustomCategorias] = useState<CategoriaCatalogoOption[]>(loadCustomCategorias);
+  const [remoteCategorias, setRemoteCategorias] = useState<CategoriaCatalogoOption[]>([]);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
-  const categoriasCatalogo = useMemo(() => mergeCategorias(customCategorias), [customCategorias]);
+  const categoriasCatalogo = useMemo(() => mergeCategorias(remoteCategorias), [remoteCategorias]);
+  const categoriasEliminables = useMemo(
+    () => remoteCategorias.filter((categoria) => !CATEGORIAS_CATALOGO.some((base) => base.value === categoria.value)),
+    [remoteCategorias]
+  );
   const {
     activeCategory,
     error,
@@ -50,6 +53,27 @@ function ProductosPage() {
     setSearchTerm,
     productosConCategoria
   } = useProductosCatalog({ categorias: categoriasCatalogo, includeUnavailable: true });
+
+  const loadCategorias = useCallback(() => {
+    getCategorias()
+      .then((categorias) =>
+        setRemoteCategorias(
+          categorias.map((categoria) => ({
+            id: categoria.id,
+            label: categoria.nombre,
+            value: categoria.nombre as CategoriaCatalogo
+          }))
+        )
+      )
+      .catch((requestError) => {
+        const message = requestError instanceof Error ? requestError.message : "No fue posible cargar categorías";
+        setError(message);
+      });
+  }, [setError]);
+
+  useEffect(() => {
+    loadCategorias();
+  }, [loadCategorias]);
 
   const sortProductos = (productos: Producto[]) => {
     return [...productos].sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
@@ -246,21 +270,39 @@ function ProductosPage() {
     );
   };
 
-  const handleCreateCategory = (nombreCategoria: string) => {
+  const handleCreateCategory = async (nombreCategoria: string) => {
     const label = nombreCategoria.trim();
-    const value = label as CategoriaCatalogo;
-    const nextCategorias = mergeCategorias([...customCategorias, { label, value }]).filter(
-      (categoria) => !CATEGORIAS_CATALOGO.some((baseCategoria) => baseCategoria.value === categoria.value)
-    );
+    try {
+      setError(null);
+      const categoriaCreada = await createCategoria(label);
+      const value = categoriaCreada.nombre as CategoriaCatalogo;
 
-    setCustomCategorias(nextCategorias);
-    saveCustomCategorias(nextCategorias);
-    setActiveCategory(value);
-    setIsCreatingCategory(false);
-    speakAction(`Categoria creada. ${label}.`, `producto-category-created:${label}`, {
-      cooldownMs: 1800,
-      priority: "normal"
-    });
+      setRemoteCategorias((currentCategorias) =>
+        mergeCategorias([
+          ...currentCategorias,
+          {
+            id: categoriaCreada.id,
+            label: categoriaCreada.nombre,
+            value
+          }
+        ]).filter((categoria) => !CATEGORIAS_CATALOGO.some((baseCategoria) => baseCategoria.value === categoria.value))
+      );
+      setActiveCategory(value);
+      setIsCreatingCategory(false);
+      speakAction(`Categoria creada. ${categoriaCreada.nombre}.`, `producto-category-created:${categoriaCreada.id}`, {
+        cooldownMs: 1800,
+        priority: "normal"
+      });
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "No fue posible crear la categoría";
+      setError(message);
+      speak(`No fue posible crear la categoría. ${message}`, {
+        priority: "high",
+        dedupeKey: `producto-category-create-error:${label}`,
+        cooldownMs: 3000,
+        interrupt: true
+      });
+    }
   };
 
   const handleOpenEditProduct = (producto: ProductoConCategoria) => {
@@ -303,10 +345,22 @@ function ProductosPage() {
   };
 
   const handleDeleteCategory = (categoryValue: CategoriaCatalogo) => {
-    const categoria = customCategorias.find((item) => item.value === categoryValue);
+    const categoria = remoteCategorias.find((item) => item.value === categoryValue);
     const grupo = grupos.find((item) => item.value === categoryValue);
 
     if (!categoria || !grupo) return;
+
+    if (!categoria.id) {
+      const message = "No se puede eliminar una categoría sin registro en el servidor.";
+      setError(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: `producto-category-delete-missing-id:${grupo.value}`,
+        cooldownMs: 2500,
+        interrupt: true
+      });
+      return;
+    }
 
     if (grupo.productos.length > 0) {
       const message = "Primero elimina o cambia de categoría los productos antes de borrar esta categoría.";
@@ -320,16 +374,29 @@ function ProductosPage() {
       return;
     }
 
-    const nextCategorias = customCategorias.filter((categoria) => categoria.value !== grupo.value);
-    setCustomCategorias(nextCategorias);
-    saveCustomCategorias(nextCategorias);
-    setActiveCategory("Destacados");
-    setIsDeletingCategory(false);
-    setError(null);
-    speakAction(`Categoria eliminada. ${grupo.label}.`, `producto-category-deleted:${grupo.value}`, {
-      cooldownMs: 1800,
-      priority: "normal"
-    });
+    deleteCategoria(categoria.id)
+      .then(() => {
+        setRemoteCategorias((currentCategorias) =>
+          currentCategorias.filter((currentCategoria) => currentCategoria.value !== grupo.value)
+        );
+        setActiveCategory("Destacados");
+        setIsDeletingCategory(false);
+        setError(null);
+        speakAction(`Categoria eliminada. ${grupo.label}.`, `producto-category-deleted:${categoria.id}`, {
+          cooldownMs: 1800,
+          priority: "normal"
+        });
+      })
+      .catch((requestError) => {
+        const message = requestError instanceof Error ? requestError.message : "No fue posible eliminar la categoría";
+        setError(message);
+        speak(`No fue posible eliminar la categoría. ${message}`, {
+          priority: "high",
+          dedupeKey: `producto-category-delete-error:${categoria.id}`,
+          cooldownMs: 3000,
+          interrupt: true
+        });
+      });
   };
 
   const handleToggleCategoryBlock = (grupo: CategoriaGrupo) => {
@@ -427,7 +494,7 @@ function ProductosPage() {
 
         {isDeletingCategory && (
           <CategoriaDeleteModal
-            categorias={customCategorias.map((categoria) => ({
+            categorias={categoriasEliminables.map((categoria) => ({
               ...categoria,
               productosCount: grupos.find((grupo) => grupo.value === categoria.value)?.productos.length ?? 0
             }))}
