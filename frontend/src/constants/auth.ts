@@ -38,5 +38,5 @@ export function getDefaultRouteForRole(role: UserRole) {
     return "/pdv";
   }
 
-  return "/pdv";
+  return "/admin";
 }

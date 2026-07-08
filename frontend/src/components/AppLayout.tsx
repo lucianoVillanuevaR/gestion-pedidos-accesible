@@ -13,7 +13,8 @@ import {
   isInventarioRoute,
   isPdvRoute,
   isPedidosRoute,
-  isProductosRoute
+  isProductosRoute,
+  isAdminRoute
 } from "../config/navigation";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import AppSidebar from "./AppSidebar";
@@ -34,6 +35,7 @@ function AppLayout() {
   const isCocinaPage = isCocinaRoute(location.pathname);
   const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname);
   const isClientesPage = isClientesRoute(location.pathname);
+  const isAdminPage = isAdminRoute(location.pathname);
   const isFullWidthPage =
     isEasyPage ||
     isPdvPage ||
@@ -42,7 +44,8 @@ function AppLayout() {
     isInventarioPage ||
     isCocinaPage ||
     isHistorialPedidosPage ||
-    isClientesPage;
+    isClientesPage ||
+    isAdminPage;
   const showBrandTopBar =
     !isAccessible &&
     (isPdvPage ||
@@ -51,7 +54,8 @@ function AppLayout() {
       isInventarioPage ||
       isCocinaPage ||
       isHistorialPedidosPage ||
-      isClientesPage);
+      isClientesPage ||
+      isAdminPage);
   const hideSidebar = isEasyPage || (isAccessible && (location.pathname === "/pdv" || isHistorialPedidosPage));
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[368px]" : "lg:pl-[240px]";
   const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]";
@@ -62,7 +66,13 @@ function AppLayout() {
     ? "bg-black text-white"
     : isAccessible
       ? "bg-[#F3F4F6] text-slate-950"
-      : isPedidosPage || isProductosPage || isInventarioPage || isCocinaPage || isHistorialPedidosPage || isClientesPage
+      : isPedidosPage ||
+          isProductosPage ||
+          isInventarioPage ||
+          isCocinaPage ||
+          isHistorialPedidosPage ||
+          isClientesPage ||
+          isAdminPage
         ? "bg-slate-50 text-slate-950"
         : "bg-[radial-gradient(circle_at_top_left,#fff3bf_0%,#f8fafc_38%,#ffffff_100%)] text-slate-950";
 

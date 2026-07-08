@@ -8,6 +8,7 @@ import type { UserRole } from "../types";
 
 const ClientesPage = lazy(() => import("../pages/clientes/ClientesPage"));
 const CocinaPage = lazy(() => import("../pages/cocina/CocinaPage"));
+const AdminPage = lazy(() => import("../pages/admin/AdminPage"));
 const CocinaFacilPage = lazy(() =>
   import("../pages/cocina/CocinaPage").then((module) => ({ default: module.CocinaFacilPage }))
 );
@@ -23,7 +24,6 @@ const PedidosPage = lazy(() => import("../pages/pedidos/PedidosNormalPage"));
 const PdvBasePage = lazy(() => import("../pages/pdv/PdvBasePage"));
 const ProductosFacilPage = lazy(() => import("../pages/productos/ProductosFacilPage"));
 const ProductosPage = lazy(() => import("../pages/productos/ProductosPage"));
-const PortalPage = lazy(() => import("../pages/PortalPage"));
 
 function RequireAuth() {
   const { isAuthenticated } = useAuthContext();
@@ -87,36 +87,12 @@ function AppRoutes() {
           </Route>
 
           <Route element={<RequireRole allowedRoles={["admin"]} />}>
-            <Route
-              path="/configuracion"
-              element={
-                <PortalPage
-                  accent="slate"
-                  title="Configuración"
-                  description="Organiza ajustes del sistema en una vista sencilla, sin menús enredados ni lenguaje técnico."
-                  badge="Ajustes"
-                  actions={[
-                    {
-                      title: "Usuarios y permisos",
-                      description: "Centraliza roles y accesos con una estructura clara para cada perfil del negocio.",
-                      button: "Gestionar"
-                    },
-                    {
-                      title: "Operación del local",
-                      description: "Agrupa horarios, mensajes internos y reglas del sistema en un solo lugar.",
-                      button: "Abrir ajustes"
-                    },
-                    {
-                      title: "Parámetros del pedido",
-                      description: "Define opciones futuras de cocina, tickets y cobro sin perder simplicidad.",
-                      button: "Revisar"
-                    }
-                  ]}
-                  noteTitle="Configuración sin complejidad"
-                  note="La meta es que incluso ajustes más delicados se sientan claros y guiados, no técnicos ni intimidantes."
-                />
-              }
-            />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/usuarios" element={<AdminPage mode="usuarios" />} />
+            <Route path="/admin/productos" element={<ProductosPage />} />
+            <Route path="/admin/inventario" element={<InventarioPage />} />
+            <Route path="/admin/pedidos" element={<PedidosPage />} />
+            <Route path="/admin/reportes" element={<CocinaHistorialPage />} />
           </Route>
         </Route>
 

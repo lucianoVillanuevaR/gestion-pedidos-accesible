@@ -20,8 +20,10 @@ export interface Producto {
 }
 
 export interface Categoria {
+  descripcion?: string | null;
   id: number;
   nombre: string;
+  orden?: number;
 }
 
 export type TipoProducto = "producto" | "promo" | "combo";
@@ -76,6 +78,22 @@ export interface AuthUser {
   role: UserRole;
   username: string;
 }
+
+export interface AdminUser extends AuthUser {
+  activo: boolean;
+  id: number;
+}
+
+export type CreateUserPayload = {
+  activo?: boolean;
+  email: string;
+  label: string;
+  password: string;
+  role: UserRole;
+  username: string;
+};
+
+export type UpdateUserPayload = Partial<Omit<CreateUserPayload, "password">> & { password?: string };
 
 export interface DemoUser extends AuthUser {
   password: string;

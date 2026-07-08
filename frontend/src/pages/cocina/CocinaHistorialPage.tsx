@@ -1,5 +1,6 @@
 import { Check, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
@@ -21,6 +22,8 @@ import {
 } from "./cocinaHistoryUtils";
 
 export default function CocinaHistorialPage() {
+  const location = useLocation();
+  const isAdminView = location.pathname.startsWith("/admin/");
   const { isAccessible, isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const [cierres, setCierres] = useState<CierreTurno[]>(() => obtenerCierresTurno());
@@ -46,6 +49,9 @@ export default function CocinaHistorialPage() {
     [dateFilter, estadoFilter, metodoFilter, searchTerm, turnosHistorial]
   );
   const easyPedidos = useMemo(() => getPedidosRecientes(filteredTurnos), [filteredTurnos]);
+  const totalVendido = filteredTurnos.reduce((total, turno) => total + turno.totalVendido, 0);
+  const pedidosEntregados = filteredTurnos.reduce((total, turno) => total + turno.pedidosEntregados, 0);
+  const pedidosCancelados = filteredTurnos.reduce((total, turno) => total + turno.pedidosCancelados, 0);
 
   const handleRefresh = () => {
     speak("Actualizando historial de pedidos cerrados.", {
@@ -166,6 +172,15 @@ export default function CocinaHistorialPage() {
           searchTerm={searchTerm}
         />
 
+        {isAdminView && (
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <HistoryStat label="Total vendido" value={formatKitchenCurrency(String(totalVendido))} />
+            <HistoryStat label="Turnos cerrados" value={filteredTurnos.length} />
+            <HistoryStat label="Pedidos entregados" value={pedidosEntregados} />
+            <HistoryStat label="Pedidos cancelados" value={pedidosCancelados} />
+          </section>
+        )}
+
         <p className="rounded-xl border border-yellow-200 bg-[#FFF8DC] px-4 py-3 text-sm font-bold text-slate-700">
           Los filtros ajustan los pedidos visibles. Los totales de cada turno se mantienen como resumen histórico del
           cierre.
@@ -202,5 +217,14 @@ export default function CocinaHistorialPage() {
         {selectedPedido && <HistorialPedidoModal pedido={selectedPedido} onClose={() => setSelectedPedido(null)} />}
       </section>
     </div>
+  );
+}
+
+function HistoryStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="text-xs font-black uppercase text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
+    </article>
   );
 }
