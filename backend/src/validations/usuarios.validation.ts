@@ -78,7 +78,8 @@ export function validateUsuarioUpdate(input: UsuarioInput): { data?: UsuarioData
   if (input.password !== undefined) {
     const passwordError = validateText(input.password, "La contraseña", { required: true, max: 120 });
     if (passwordError) return { error: passwordError };
-    if ((input.password as string).trim().length < 6) return { error: "La contraseña debe tener al menos 6 caracteres" };
+    if ((input.password as string).trim().length < 6)
+      return { error: "La contraseña debe tener al menos 6 caracteres" };
     data.password = (input.password as string).trim();
   }
 

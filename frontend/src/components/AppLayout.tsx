@@ -64,8 +64,8 @@ function AppLayout() {
     : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isAccessible ? "lg:px-10" : ""}`;
   const appBackgroundClass = isHighContrast
     ? "bg-black text-white"
-      : isAccessible
-        ? "bg-[#F3F4F6] text-slate-950"
+    : isAccessible
+      ? "bg-[#F3F4F6] text-slate-950"
       : isPedidosPage ||
           isProductosPage ||
           isInventarioPage ||

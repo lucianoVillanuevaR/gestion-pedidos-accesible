@@ -1,11 +1,4 @@
-import {
-  Check,
-  Plus,
-  Save,
-  Search,
-  Users,
-  X
-} from "lucide-react";
+import { Check, Plus, Save, Search, Users, X } from "lucide-react";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
@@ -117,15 +110,25 @@ function AdminDashboardPage() {
   const load = () => {
     setIsLoading(true);
     setError(null);
-    Promise.all([getPedidos(), getProductos({ includeUnavailable: true }), getInventario(), getUsuarios(), cargarCierresTurno()])
+    Promise.all([
+      getPedidos(),
+      getProductos({ includeUnavailable: true }),
+      getInventario(),
+      getUsuarios(),
+      cargarCierresTurno()
+    ])
       .then(([pedidosData, productosData, inventarioData, usuariosData, cierres]) => {
         setPedidos(pedidosData);
         setProductos(productosData);
         setInventario(inventarioData);
         setUsuarios(usuariosData);
-        setTotalVendido(cierres[0]?.totalVendido ?? pedidosData.reduce((total, pedido) => total + Number(pedido.total), 0));
+        setTotalVendido(
+          cierres[0]?.totalVendido ?? pedidosData.reduce((total, pedido) => total + Number(pedido.total), 0)
+        );
       })
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el dashboard"))
+      .catch((requestError) =>
+        setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el dashboard")
+      )
       .finally(() => setIsLoading(false));
   };
 
@@ -188,7 +191,10 @@ function AdminDashboardPage() {
                 <h2 className="text-base font-black text-slate-950">Estado del sistema</h2>
               </header>
               <div className="divide-y divide-slate-100">
-                <DashboardLine label="Último turno cerrado" value={totalVendido > 0 ? formatCurrency(totalVendido) : "Sin cierre confirmado"} />
+                <DashboardLine
+                  label="Último turno cerrado"
+                  value={totalVendido > 0 ? formatCurrency(totalVendido) : "Sin cierre confirmado"}
+                />
                 <DashboardLine label="Total vendido confirmado" value={formatCurrency(totalVendido)} />
                 <DashboardLine label="Pedidos pendientes" value={pedidosPendientes} />
                 <DashboardLine label="Productos disponibles" value={`${disponibles} de ${productos.length}`} />
@@ -219,7 +225,6 @@ function AdminDashboardPage() {
               </div>
             )}
           </section>
-
         </>
       )}
     </AdminShell>
@@ -241,7 +246,9 @@ function StockRiskRow({ item }: { item: InventarioItem }) {
       </div>
       <p className="text-sm font-black text-slate-700">Stock {item.stockActual}</p>
       <p className="text-sm font-black text-slate-700">Mínimo {item.stockMinimo}</p>
-      <span className={`inline-flex min-h-[32px] items-center justify-center rounded-full border px-3 text-xs font-black ${getEstadoClass(item.estado)}`}>
+      <span
+        className={`inline-flex min-h-[32px] items-center justify-center rounded-full border px-3 text-xs font-black ${getEstadoClass(item.estado)}`}
+      >
         {getEstadoLabel(item.estado)}
       </span>
       <Link
@@ -286,7 +293,9 @@ function PendingRow({
         <p className="truncate text-sm font-black text-slate-950">{title}</p>
         <p className="mt-0.5 text-xs font-bold text-slate-500">{description}</p>
       </div>
-      <span className={`inline-flex min-h-[30px] items-center justify-center rounded-full border px-3 text-xs font-black ${badgeClass}`}>
+      <span
+        className={`inline-flex min-h-[30px] items-center justify-center rounded-full border px-3 text-xs font-black ${badgeClass}`}
+      >
         {badge}
       </span>
       <Link
@@ -309,7 +318,14 @@ function DashboardLine({ label, value }: { label: string; value: number | string
 }
 
 function AdminUsersPage() {
-  const emptyUser: CreateUserPayload = { email: "", label: "", password: "", role: "cajero", username: "", activo: true };
+  const emptyUser: CreateUserPayload = {
+    email: "",
+    label: "",
+    password: "",
+    role: "cajero",
+    username: "",
+    activo: true
+  };
   const [usuarios, setUsuarios] = useState<AdminUser[]>([]);
   const [draft, setDraft] = useState<CreateUserPayload>(emptyUser);
   const [editing, setEditing] = useState<AdminUser | null>(null);
@@ -326,7 +342,9 @@ function AdminUsersPage() {
     setError(null);
     getUsuarios()
       .then(setUsuarios)
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar usuarios"))
+      .catch((requestError) =>
+        setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar usuarios")
+      )
       .finally(() => setIsLoading(false));
   };
 
@@ -336,7 +354,14 @@ function AdminUsersPage() {
 
   const startEdit = (usuario: AdminUser) => {
     setEditing(usuario);
-    setDraft({ activo: usuario.activo, email: usuario.email, label: usuario.label, password: "", role: usuario.role, username: usuario.username });
+    setDraft({
+      activo: usuario.activo,
+      email: usuario.email,
+      label: usuario.label,
+      password: "",
+      role: usuario.role,
+      username: usuario.username
+    });
     setPassword("");
     setIsUserModalOpen(true);
   };
@@ -364,7 +389,9 @@ function AdminUsersPage() {
       const saved = editing
         ? await updateUsuario(editing.id, { ...draft, ...(password ? { password } : {}) })
         : await createUsuario(draft);
-      setUsuarios((current) => editing ? current.map((item) => (item.id === saved.id ? saved : item)) : [saved, ...current]);
+      setUsuarios((current) =>
+        editing ? current.map((item) => (item.id === saved.id ? saved : item)) : [saved, ...current]
+      );
       setDraft(emptyUser);
       setEditing(null);
       setPassword("");
@@ -378,9 +405,7 @@ function AdminUsersPage() {
   };
 
   const toggleUser = async (usuario: AdminUser) => {
-    const confirmed = window.confirm(
-      `¿${usuario.activo ? "Desactivar" : "Activar"} el usuario "${usuario.label}"?`
-    );
+    const confirmed = window.confirm(`¿${usuario.activo ? "Desactivar" : "Activar"} el usuario "${usuario.label}"?`);
 
     if (!confirmed) return;
 
@@ -408,7 +433,10 @@ function AdminUsersPage() {
   const totalInactivos = usuarios.length - totalActivos;
 
   return (
-    <AdminShell title="Gestionar mi equipo" description="Revisa los permisos por rol y administra los usuarios creados del sistema.">
+    <AdminShell
+      title="Gestionar mi equipo"
+      description="Revisa los permisos por rol y administra los usuarios creados del sistema."
+    >
       {message && <AlertMessage message={message} tone="success" />}
       {error && <ErrorAlert message={error} />}
       <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-sm">
@@ -479,7 +507,17 @@ function AdminUsersPage() {
             <Plus className="h-4 w-4" /> Agregar usuario
           </button>
         </header>
-        {isLoading ? <LoadingState label="Cargando usuarios..." /> : usuarios.length === 0 ? <EmptyState icon={Users} title="No hay usuarios registrados" message="Agrega el primer usuario del sistema." /> : filteredUsuarios.length === 0 ? <EmptyState icon={Search} title="Sin resultados" message="Prueba con otro nombre, email o rol." /> : (
+        {isLoading ? (
+          <LoadingState label="Cargando usuarios..." />
+        ) : usuarios.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No hay usuarios registrados"
+            message="Agrega el primer usuario del sistema."
+          />
+        ) : filteredUsuarios.length === 0 ? (
+          <EmptyState icon={Search} title="Sin resultados" message="Prueba con otro nombre, email o rol." />
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead>
@@ -499,15 +537,36 @@ function AdminUsersPage() {
                     <td className="px-4 py-4 font-bold text-slate-600">{usuario.email}</td>
                     <td className="px-4 py-4 font-mono text-sm font-bold text-slate-700">{usuario.username}</td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex min-h-[32px] items-center justify-center rounded-full border px-3 text-xs font-black ${roleClass(usuario.role)}`}>{ROLE_LABELS[usuario.role]}</span>
+                      <span
+                        className={`inline-flex min-h-[32px] items-center justify-center rounded-full border px-3 text-xs font-black ${roleClass(usuario.role)}`}
+                      >
+                        {ROLE_LABELS[usuario.role]}
+                      </span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex min-h-[32px] items-center justify-center rounded-full border px-3 text-xs font-black ${statusClass(usuario.activo)}`}>{usuario.activo ? "Activo" : "Inactivo"}</span>
+                      <span
+                        className={`inline-flex min-h-[32px] items-center justify-center rounded-full border px-3 text-xs font-black ${statusClass(usuario.activo)}`}
+                      >
+                        {usuario.activo ? "Activo" : "Inactivo"}
+                      </span>
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => startEdit(usuario)} className={`min-h-[38px] rounded-lg border border-slate-300 px-3 text-sm font-black ${FOCUS_VISIBLE_CLASS}`}>Editar</button>
-                        <button type="button" disabled={savingId === usuario.id} onClick={() => toggleUser(usuario)} className={`min-h-[38px] rounded-lg border border-slate-900 bg-slate-900 px-3 text-sm font-black text-white ${FOCUS_VISIBLE_CLASS}`}>{usuario.activo ? "Desactivar" : "Activar"}</button>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(usuario)}
+                          className={`min-h-[38px] rounded-lg border border-slate-300 px-3 text-sm font-black ${FOCUS_VISIBLE_CLASS}`}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={savingId === usuario.id}
+                          onClick={() => toggleUser(usuario)}
+                          className={`min-h-[38px] rounded-lg border border-slate-900 bg-slate-900 px-3 text-sm font-black text-white ${FOCUS_VISIBLE_CLASS}`}
+                        >
+                          {usuario.activo ? "Desactivar" : "Activar"}
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -534,11 +593,29 @@ function AdminUsersPage() {
   );
 }
 
-function AdminInput({ label, onChange, required = true, type = "text", value }: { label: string; onChange: (value: string) => void; required?: boolean; type?: string; value: string }) {
+function AdminInput({
+  label,
+  onChange,
+  required = true,
+  type = "text",
+  value
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  type?: string;
+  value: string;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-black text-slate-500">{label}</span>
-      <input required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} className={`min-h-[44px] w-full rounded-xl border border-slate-300 px-3 font-bold text-slate-950 ${FOCUS_VISIBLE_CLASS}`} />
+      <input
+        required={required}
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={`min-h-[44px] w-full rounded-xl border border-slate-300 px-3 font-bold text-slate-950 ${FOCUS_VISIBLE_CLASS}`}
+      />
     </label>
   );
 }
@@ -572,7 +649,9 @@ function UserFormModal({
         <header className="flex min-h-[64px] items-center justify-between gap-3 border-b border-slate-200 px-5">
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase text-slate-500">Equipo y roles</p>
-            <h2 className="truncate text-xl font-black text-slate-950">{editing ? "Editar usuario" : "Crear usuario"}</h2>
+            <h2 className="truncate text-xl font-black text-slate-950">
+              {editing ? "Editar usuario" : "Crear usuario"}
+            </h2>
           </div>
           <button
             type="button"
@@ -597,9 +676,22 @@ function UserFormModal({
               <option value="admin">Admin</option>
             </select>
           </label>
-          <AdminInput label="Nombre" value={draft.label} onChange={(value) => onDraftChange({ ...draft, label: value })} />
-          <AdminInput label="Nombre de usuario" value={draft.username} onChange={(value) => onDraftChange({ ...draft, username: value })} />
-          <AdminInput label="Correo electrónico" type="email" value={draft.email} onChange={(value) => onDraftChange({ ...draft, email: value })} />
+          <AdminInput
+            label="Nombre"
+            value={draft.label}
+            onChange={(value) => onDraftChange({ ...draft, label: value })}
+          />
+          <AdminInput
+            label="Nombre de usuario"
+            value={draft.username}
+            onChange={(value) => onDraftChange({ ...draft, username: value })}
+          />
+          <AdminInput
+            label="Correo electrónico"
+            type="email"
+            value={draft.email}
+            onChange={(value) => onDraftChange({ ...draft, email: value })}
+          />
           <AdminInput
             label={editing ? "Nueva contraseña" : "Contraseña"}
             type="password"

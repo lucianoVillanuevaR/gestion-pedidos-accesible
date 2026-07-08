@@ -1,4 +1,14 @@
-import { BarChart3, ChefHat, ClipboardList, ClipboardPlus, FileCheck2, LayoutDashboard, Package, Users, Warehouse } from "lucide-react";
+import {
+  BarChart3,
+  ChefHat,
+  ClipboardList,
+  ClipboardPlus,
+  FileCheck2,
+  LayoutDashboard,
+  Package,
+  Users,
+  Warehouse
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { UserRole } from "../types";
 
@@ -110,7 +120,7 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
     icon: FileCheck2,
     allowedRoles: ["cajero", "admin"],
     sidebarRoles: ["cajero"]
-  },
+  }
 ];
 
 const EASY_ROUTE_BY_STANDARD_PATH: Record<string, string> = {
