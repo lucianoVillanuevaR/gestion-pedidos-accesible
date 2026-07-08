@@ -21,8 +21,7 @@ const ROUTE_MESSAGES: Record<string, string> = {
   "/preparacion/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",
   "/cocina/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",
   "/historial-pedidos": "Historial de turnos. Consulta turnos cerrados, ventas confirmadas y pedidos registrados.",
-  "/inventario": "Inventario. Control de stock y disponibilidad.",
-  "/configuracion": "Configuracion. Ajustes del sistema, usuarios y permisos."
+  "/inventario": "Inventario. Control de stock y disponibilidad."
 };
 
 export function getRouteMessage(pathname: string) {

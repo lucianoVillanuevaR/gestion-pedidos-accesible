@@ -1,4 +1,4 @@
-import { ChefHat, ClipboardList, ClipboardPlus, FileCheck2, Package, Settings2, Warehouse } from "lucide-react";
+import { BarChart3, ChefHat, ClipboardList, ClipboardPlus, FileCheck2, LayoutDashboard, Package, Users, Warehouse } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { UserRole } from "../types";
 
@@ -13,39 +13,79 @@ export type AppNavigationItem = {
 
 const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
   {
+    label: "Resumen",
+    path: "/admin",
+    description: "Panel principal del administrador",
+    icon: LayoutDashboard,
+    allowedRoles: ["admin"]
+  },
+  {
+    label: "Usuarios",
+    path: "/admin/usuarios",
+    description: "Roles y accesos",
+    icon: Users,
+    allowedRoles: ["admin"]
+  },
+  {
+    label: "Productos",
+    path: "/admin/productos",
+    description: "Catálogo administrativo",
+    icon: Package,
+    allowedRoles: ["admin"]
+  },
+  {
+    label: "Inventario",
+    path: "/admin/inventario",
+    description: "Stock administrativo",
+    icon: Warehouse,
+    allowedRoles: ["admin"]
+  },
+  {
+    label: "Reportes",
+    path: "/admin/reportes",
+    description: "Historial y ventas",
+    icon: BarChart3,
+    allowedRoles: ["admin"]
+  },
+  {
     label: "Nuevo Pedido",
     path: "/pdv",
     description: "Registrar un pedido nuevo",
     icon: ClipboardPlus,
-    allowedRoles: ["cajero", "admin"]
+    allowedRoles: ["cajero", "admin"],
+    sidebarRoles: ["cajero"]
   },
   {
     label: "Pedidos activos",
     path: "/pedidos",
     description: "Ver pedidos activos",
     icon: ClipboardList,
-    allowedRoles: ["cajero", "admin"]
+    allowedRoles: ["cajero", "admin"],
+    sidebarRoles: ["cajero"]
   },
   {
     label: "Preparación",
     path: "/preparacion",
     description: "Gestionar preparación y entrega",
     icon: ChefHat,
-    allowedRoles: ["cajero", "admin"]
+    allowedRoles: ["cajero", "admin"],
+    sidebarRoles: ["cajero"]
   },
   {
     label: "Productos",
     path: "/productos",
     description: "Catálogo del menú",
     icon: Package,
-    allowedRoles: ["cajero", "admin"]
+    allowedRoles: ["cajero", "admin"],
+    sidebarRoles: ["cajero"]
   },
   {
     label: "Inventario",
     path: "/inventario",
     description: "Control de stock",
     icon: Warehouse,
-    allowedRoles: ["cajero", "admin"]
+    allowedRoles: ["cajero", "admin"],
+    sidebarRoles: ["cajero"]
   },
   {
     label: "Preparación",
@@ -60,22 +100,17 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
     path: "/historial-pedidos",
     description: "Turnos cerrados y ventas pasadas",
     icon: ClipboardList,
-    allowedRoles: ["cajero", "admin"]
+    allowedRoles: ["cajero", "admin"],
+    sidebarRoles: ["cajero"]
   },
   {
     label: "Cierre de turno",
     path: "/cierre-turno",
     description: "Resumen y cierre del turno",
     icon: FileCheck2,
-    allowedRoles: ["cajero", "admin"]
+    allowedRoles: ["cajero", "admin"],
+    sidebarRoles: ["cajero"]
   },
-  {
-    label: "Configuración",
-    path: "/configuracion",
-    description: "Ajustes del sistema",
-    icon: Settings2,
-    allowedRoles: ["admin"]
-  }
 ];
 
 const EASY_ROUTE_BY_STANDARD_PATH: Record<string, string> = {
@@ -167,4 +202,8 @@ export function isClientesRoute(pathname: string) {
 
 export function isInventarioRoute(pathname: string) {
   return pathname === "/inventario" || pathname === "/inventario/facil";
+}
+
+export function isAdminRoute(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
 }

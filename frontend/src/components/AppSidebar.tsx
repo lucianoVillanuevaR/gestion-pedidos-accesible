@@ -4,6 +4,7 @@ import logoRiq from "../assets/logoRiq.png";
 import {
   getEasyRoute,
   getSidebarNavigation,
+  isAdminRoute,
   isClientesRoute,
   isHistorialPedidosRoute,
   isInventarioRoute,
@@ -51,8 +52,15 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
   const isInventarioPage = isInventarioRoute(location.pathname);
   const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname);
   const isClientesPage = isClientesRoute(location.pathname);
+  const isAdminPage = isAdminRoute(location.pathname);
   const hasYellowHeader =
-    isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isHistorialPedidosPage || isClientesPage;
+    isPdvPage ||
+    isPedidosPage ||
+    isProductosPage ||
+    isInventarioPage ||
+    isHistorialPedidosPage ||
+    isClientesPage ||
+    isAdminPage;
   const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[82vw] max-w-[280px] lg:w-[240px]";
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"

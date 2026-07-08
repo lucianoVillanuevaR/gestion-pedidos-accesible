@@ -10,6 +10,6 @@ describe("getRouteMessage", () => {
   });
 
   it("falls back to route metadata for known standard routes", () => {
-    expect(getRouteMessage("/configuracion")).toContain("Configuracion");
+    expect(getRouteMessage("/clientes")).toContain("Clientes");
   });
 });
