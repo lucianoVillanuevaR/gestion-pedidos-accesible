@@ -201,6 +201,12 @@ const menuCatalog: CategoryDefinition[] = [
         precio: 3900,
         precioOriginal: 4857,
         descripcion: "Especial vienesa, chucrut, palta, tomate, mayonesa casera"
+      },
+      {
+        nombre: "Completo Test Docker",
+        precio: 2500,
+        precioOriginal: 3200,
+        descripcion: "Producto de prueba para validar ventas y descuento de stock en Docker"
       }
     ]
   },
@@ -235,6 +241,19 @@ const menuCatalog: CategoryDefinition[] = [
         precioOriginal: 7000,
         descripcion: "SANDWICH DE CARNE A ELECCIÓN QUESO CHOCLO TOMATE MAYONESA",
         variantes: buildVariants(["churrasco", "pollo", "lomito"])
+      },
+      {
+        nombre: "Sandwich Test Docker",
+        precio: 4200,
+        precioOriginal: 5200,
+        descripcion: "Producto de prueba para validar pedidos desde el frontend",
+        variantes: buildVariants(["churrasco", "pollo"])
+      },
+      {
+        nombre: "Barros Luco Test Docker",
+        precio: 3900,
+        precioOriginal: 4800,
+        descripcion: "Producto de prueba simple para validar catálogo, pedido e inventario"
       }
     ]
   }

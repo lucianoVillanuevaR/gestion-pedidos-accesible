@@ -15,7 +15,8 @@ services:
       VITE_MINIO_PUBLIC_URL: ${VITE_MINIO_PUBLIC_URL:-${MINIO_PUBLIC_URL}}
       VITE_MINIO_BUCKET_PRODUCTOS: ${VITE_MINIO_BUCKET_PRODUCTOS:-${MINIO_BUCKET_PRODUCTOS}}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
       interval: 10s
@@ -46,6 +47,8 @@ services:
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
       MINIO_PUBLIC_READ: ${MINIO_PUBLIC_READ:-true}
     depends_on:
+      seed:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       minio:
@@ -58,8 +61,6 @@ services:
       start_period: 20s
 
   seed:
-    profiles:
-      - seed
     build:
       context: ./backend
       dockerfile: Dockerfile
