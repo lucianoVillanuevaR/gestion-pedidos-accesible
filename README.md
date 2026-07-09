@@ -10,7 +10,6 @@ cd gestion-pedidos-accesible
 cp .env.example .env
 nano .env
 docker compose up -d --build
-docker compose run --rm seed
 docker compose ps
 curl http://localhost/api/health
 ```
@@ -27,14 +26,13 @@ Para subirlo a un servidor con el `docker-compose.yml` incluido:
 3. Configura `CLIENT_URL` con la URL pública del frontend, por ejemplo `https://tudominio.cl`.
 4. Si el frontend y backend van juntos detrás del Nginx incluido, deja `VITE_API_URL=/api`.
 5. Configura `MINIO_PUBLIC_URL` y `VITE_MINIO_PUBLIC_URL` con la URL pública desde donde el navegador cargará imágenes. Si no vas a exponer MinIO directamente, ponlo detrás de HTTPS con proxy.
-6. Levanta con `docker compose up -d --build` y ejecuta `docker compose run --rm seed` solo cuando quieras crear o sincronizar datos base.
+6. Levanta con `docker compose up -d --build`. El servicio `seed` aplica migraciones y sincroniza los datos base automáticamente antes de iniciar el backend.
 7. Verifica `docker compose ps`, `curl https://tudominio.cl/health` y `curl https://tudominio.cl/api/health`.
 
 Para producción puedes usar el override incluido, que deja públicos solo los puertos del frontend y mantiene backend, Postgres y MinIO dentro de la red Docker:
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm seed
 ```
 
 Recomendaciones antes de producción real:
@@ -72,10 +70,10 @@ Respuesta esperada:
 
 ## Seed
 
-El seed se ejecuta dentro del contenedor:
+El seed se ejecuta automáticamente dentro del contenedor al correr:
 
 ```bash
-docker compose run --rm seed
+docker compose up -d --build
 ```
 
 El proceso aplica migraciones pendientes, crea/verifica el bucket de MinIO y sincroniza datos base sin duplicar usuarios, categorías, productos, variantes ni componentes. También crea usuarios demo si no existen.
@@ -102,7 +100,7 @@ minio
 seed
 ```
 
-`postgres` tiene healthcheck obligatorio. El backend espera a `postgres` con `condition: service_healthy`. MinIO y frontend no tienen healthcheck.
+`postgres`, `backend` y `frontend` tienen healthcheck. El backend espera a que `seed` termine con éxito, para que la app quede lista al abrir `http://localhost`.
 
 ## Comandos útiles
 
@@ -137,7 +135,7 @@ Atención: `docker compose down -v` borra los volúmenes `postgres_data` y `mini
 
 ## Validación rápida
 
-Después de levantar y ejecutar el seed:
+Después de levantar:
 
 ```bash
 curl http://localhost/api/health
