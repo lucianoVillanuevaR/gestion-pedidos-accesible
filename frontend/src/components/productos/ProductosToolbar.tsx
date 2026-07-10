@@ -12,6 +12,7 @@ type ProductosToolbarProps = {
   onDeleteCategory: () => void;
   onRefresh: () => void;
   onSearchChange: (value: string) => void;
+  onSearchFocus?: () => void;
   onSelectCategory: (grupo: CategoriaGrupo) => void;
   searchTerm: string;
 };
@@ -25,6 +26,7 @@ export function ProductosToolbar({
   onDeleteCategory,
   onRefresh,
   onSearchChange,
+  onSearchFocus,
   onSelectCategory,
   searchTerm
 }: ProductosToolbarProps) {
@@ -56,6 +58,9 @@ export function ProductosToolbar({
             type="search"
             value={searchTerm}
             onChange={(event) => onSearchChange(event.target.value)}
+            onClick={onSearchFocus}
+            onFocus={onSearchFocus}
+            aria-label="Barra de búsqueda de productos"
             placeholder="Buscar producto, categoría o precio"
             className={`min-h-[44px] w-full rounded-xl border border-slate-300 bg-white py-2 pl-10 pr-4 font-bold text-slate-950 outline-none transition placeholder:text-slate-500 focus:border-slate-900 ${FOCUS_VISIBLE_CLASS}`}
           />

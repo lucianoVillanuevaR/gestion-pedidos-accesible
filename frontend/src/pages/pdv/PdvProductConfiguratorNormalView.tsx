@@ -42,7 +42,7 @@ export default function PdvProductConfiguratorNormalView({
   } = config;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/70 px-3 py-5 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto px-3 py-5">
       <section
         role="dialog"
         aria-modal="true"

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 export const turnoCloseInclude = {
-  usuario: { select: { username: true } },
+  usuario: { select: { label: true, role: true, username: true } },
   pedidos: {
     include: { detalles: { include: { producto: { select: { nombre: true } } } } },
     orderBy: { createdAt: "asc" }
@@ -36,6 +36,11 @@ export function buildResumenTurno(turno: TurnoForClose, fechaCierre: Date): Pris
     id: `turno-${turno.id}`,
     fechaInicio: turno.fechaInicio.toISOString(),
     fechaCierre: fechaCierre.toISOString(),
+    usuario: {
+      label: turno.usuario.label,
+      role: turno.usuario.role,
+      username: turno.usuario.username
+    },
     usuarioId: turno.usuario.username,
     pedidos: turno.pedidos.map((pedido, index) => ({
       id: pedido.id,

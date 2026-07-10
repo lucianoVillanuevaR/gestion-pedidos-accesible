@@ -5,18 +5,36 @@ import { AuthenticatedRequest } from "../middlewares/auth";
 import { buildResumenTurno, turnoCloseInclude } from "../services/turnoSummaryService";
 import { validateTurnoCanClose } from "../validations/turnos.validation";
 
-const turnoInclude = { usuario: { select: { username: true } }, pedidos: { select: { id: true } } } as const;
+const turnoInclude = {
+  usuario: { select: { label: true, role: true, username: true } },
+  pedidos: { select: { id: true } }
+} as const;
 type TurnoWithRelations = Prisma.TurnoGetPayload<{ include: typeof turnoInclude }>;
 
 function serializeTurno(turno: TurnoWithRelations) {
+  const usuario = {
+    label: turno.usuario.label,
+    role: turno.usuario.role,
+    username: turno.usuario.username
+  };
+  const resumen =
+    turno.resumen && typeof turno.resumen === "object" && !Array.isArray(turno.resumen)
+      ? {
+          ...turno.resumen,
+          usuario,
+          usuarioId: "usuarioId" in turno.resumen ? turno.resumen.usuarioId : turno.usuario.username
+        }
+      : turno.resumen;
+
   return {
     id: turno.id,
     estado: turno.estado,
     fechaInicio: turno.fechaInicio.toISOString(),
     fechaCierre: turno.fechaCierre?.toISOString() ?? null,
     usuarioId: turno.usuario.username,
+    usuario,
     pedidoIds: turno.pedidos.map((pedido) => pedido.id),
-    resumen: turno.resumen
+    resumen
   };
 }
 

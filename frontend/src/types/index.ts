@@ -79,6 +79,12 @@ export interface AuthUser {
   username: string;
 }
 
+export type TurnoResponsable = {
+  label?: string | null;
+  role?: UserRole | string | null;
+  username?: string | null;
+};
+
 export interface AdminUser extends AuthUser {
   activo: boolean;
   id: number;
@@ -147,6 +153,7 @@ export type CierreTurno = {
   id: string;
   fechaInicio?: string;
   fechaCierre: string;
+  usuario?: TurnoResponsable;
   usuarioId?: string;
   pedidos: CierrePedidoResumen[];
   productosVendidos: CierreProductoResumen[];

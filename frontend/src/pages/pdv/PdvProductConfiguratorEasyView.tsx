@@ -55,7 +55,7 @@ export default function PdvProductConfiguratorEasyView({
         : "Revisa y agrega";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-950/75 px-3 py-4 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto px-3 py-4">
       <section
         role="dialog"
         aria-modal="true"

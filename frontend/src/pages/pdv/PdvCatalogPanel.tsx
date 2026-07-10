@@ -7,6 +7,7 @@ import { usePdvViewContext } from "./PdvViewContext";
 function PdvCatalogPanel() {
   const {
     addProduct,
+    announceSearchBar,
     categoryFilters,
     decreaseProduct,
     feedback,
@@ -20,8 +21,8 @@ function PdvCatalogPanel() {
     productosFiltrados,
     searchTerm,
     selectedCategory,
+    selectCategory,
     setSearchTerm,
-    setSelectedCategory
   } = usePdvViewContext();
 
   const selectedCategoryLabel =
@@ -45,7 +46,7 @@ function PdvCatalogPanel() {
               <button
                 key={filtro.value}
                 type="button"
-                onClick={() => setSelectedCategory(filtro.value)}
+                onClick={() => selectCategory(filtro.value, filtro.label)}
                 className={`flex min-h-[44px] w-full items-center justify-between px-3 text-left text-sm font-bold uppercase transition ${
                   selectedCategory === filtro.value
                     ? "bg-yellow-50 text-slate-950"
@@ -77,6 +78,9 @@ function PdvCatalogPanel() {
                   placeholder="Buscar producto"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
+                  onClick={announceSearchBar}
+                  onFocus={announceSearchBar}
+                  aria-label="Barra de búsqueda de productos"
                   className="h-11 w-full rounded-md border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 contrast-input"
                 />
               </label>
@@ -88,7 +92,7 @@ function PdvCatalogPanel() {
               <button
                 key={filtro.value}
                 type="button"
-                onClick={() => setSelectedCategory(filtro.value)}
+                onClick={() => selectCategory(filtro.value, filtro.label)}
                 className={`h-9 shrink-0 rounded-full border px-3 text-xs font-black uppercase ${
                   selectedCategory === filtro.value
                     ? "border-[#FECE00] bg-[#FECE00] text-slate-950"

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
+import useVoice from "../../hooks/useVoice";
 import {
   createProducto,
   deleteProductImage,
@@ -28,6 +29,7 @@ import { useProductosCatalog } from "./hooks/useProductosCatalog";
 function ProductosPage() {
   const { isVoiceEnabled } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
+  const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
   const [remoteCategorias, setRemoteCategorias] = useState<CategoriaCatalogoOption[]>([]);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
@@ -35,6 +37,7 @@ function ProductosPage() {
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<CategoriaCatalogo>>(new Set());
   const categoriasCatalogo = useMemo(() => mergeCategorias(remoteCategorias), [remoteCategorias]);
   const categoriasEliminables = useMemo(
     () => remoteCategorias.filter((categoria) => !CATEGORIAS_CATALOGO.some((base) => base.value === categoria.value)),
@@ -74,6 +77,23 @@ function ProductosPage() {
   useEffect(() => {
     loadCategorias();
   }, [loadCategorias]);
+
+  useEffect(() => {
+    setExpandedCategories((currentCategories) => {
+      const availableCategories = new Set(grupos.map((grupo) => grupo.value));
+      const nextCategories = new Set(
+        [...currentCategories].filter((category) => availableCategories.has(category))
+      );
+
+      grupos.forEach((grupo) => {
+        if (currentCategories.size === 0 || currentCategories.has(grupo.value)) {
+          nextCategories.add(grupo.value);
+        }
+      });
+
+      return nextCategories;
+    });
+  }, [grupos]);
 
   const sortProductos = (productos: Producto[]) => {
     return [...productos].sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
@@ -123,6 +143,11 @@ function ProductosPage() {
 
       addProductoToList(productoFinal);
       setActiveCategory(payload.destacado ? "Destacados" : (payload.categoria as CategoriaCatalogo) || "Otros");
+      setExpandedCategories((currentCategories) => {
+        const nextCategories = new Set(currentCategories);
+        nextCategories.add(payload.destacado ? "Destacados" : (payload.categoria as CategoriaCatalogo) || "Otros");
+        return nextCategories;
+      });
       setAddProductCategory(null);
       speakAction(`Producto agregado. ${productoFinal.nombre}.`, `producto-created:${productoFinal.id}`, {
         cooldownMs: 2500
@@ -261,13 +286,34 @@ function ProductosPage() {
   const handleOpenCreateProduct = () => {
     setAddProductCategory(activeCategory);
     speakAction(
-      `Boton producto. Agregar producto en categoria ${activeCategory}.`,
+      `Botón producto. Agregar producto en categoría ${activeCategory}.`,
       `producto-open-create:${activeCategory}`,
       {
         cooldownMs: 1600,
         priority: "normal"
       }
     );
+  };
+
+  const handleOpenCreateCategory = () => {
+    setIsCreatingCategory(true);
+    speakOnDemand("Crear categoría.", {
+      priority: "high",
+      dedupeKey: "producto-open-create-category",
+      cooldownMs: 700,
+      interrupt: true,
+      force: true
+    });
+  };
+
+  const handleSearchFocus = () => {
+    speakOnDemand("Barra de búsqueda de productos.", {
+      priority: "high",
+      dedupeKey: "productos-search-bar",
+      cooldownMs: 700,
+      interrupt: true,
+      force: true
+    });
   };
 
   const handleCreateCategory = async (nombreCategoria: string) => {
@@ -288,10 +334,18 @@ function ProductosPage() {
         ]).filter((categoria) => !CATEGORIAS_CATALOGO.some((baseCategoria) => baseCategoria.value === categoria.value))
       );
       setActiveCategory(value);
+      setExpandedCategories((currentCategories) => {
+        const nextCategories = new Set(currentCategories);
+        nextCategories.add(value);
+        return nextCategories;
+      });
       setIsCreatingCategory(false);
-      speakAction(`Categoria creada. ${categoriaCreada.nombre}.`, `producto-category-created:${categoriaCreada.id}`, {
+      speakOnDemand(`Categoría creada. ${categoriaCreada.nombre}.`, {
+        dedupeKey: `producto-category-created:${categoriaCreada.id}`,
         cooldownMs: 1800,
-        priority: "normal"
+        priority: "high",
+        interrupt: true,
+        force: true
       });
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No fue posible crear la categoría";
@@ -334,8 +388,13 @@ function ProductosPage() {
 
   const handleSelectCategory = (grupo: CategoriaGrupo) => {
     setActiveCategory(grupo.value);
+    setExpandedCategories((currentCategories) => {
+      const nextCategories = new Set(currentCategories);
+      nextCategories.add(grupo.value);
+      return nextCategories;
+    });
     speakAction(
-      `Categoria ${grupo.label}. ${grupo.productos.length} productos.`,
+      `Categoría ${grupo.label}. ${grupo.productos.length} productos.`,
       `producto-category-button:${grupo.value}:${grupo.productos.length}`,
       {
         cooldownMs: 1200,
@@ -382,7 +441,7 @@ function ProductosPage() {
         setActiveCategory("Destacados");
         setIsDeletingCategory(false);
         setError(null);
-        speakAction(`Categoria eliminada. ${grupo.label}.`, `producto-category-deleted:${categoria.id}`, {
+        speakAction(`Categoría eliminada. ${grupo.label}.`, `producto-category-deleted:${categoria.id}`, {
           cooldownMs: 1800,
           priority: "normal"
         });
@@ -400,11 +459,22 @@ function ProductosPage() {
   };
 
   const handleToggleCategoryBlock = (grupo: CategoriaGrupo) => {
-    const isCurrentlyOpen = activeCategory === grupo.value;
-    setActiveCategory(grupo.value);
+    const isCurrentlyOpen = expandedCategories.has(grupo.value);
+    setExpandedCategories((currentCategories) => {
+      const nextCategories = new Set(currentCategories);
+
+      if (nextCategories.has(grupo.value)) {
+        nextCategories.delete(grupo.value);
+      } else {
+        nextCategories.add(grupo.value);
+        setActiveCategory(grupo.value);
+      }
+
+      return nextCategories;
+    });
     speakAction(
-      `${isCurrentlyOpen ? "Categoria abierta" : "Abriendo categoria"} ${grupo.label}. ${grupo.productos.length} productos.`,
-      `producto-category-toggle:${grupo.value}:${isCurrentlyOpen ? "already-open" : "open"}`,
+      `${isCurrentlyOpen ? "Cerrando categoría" : "Abriendo categoría"} ${grupo.label}. ${grupo.productos.length} productos.`,
+      `producto-category-toggle:${grupo.value}:${isCurrentlyOpen ? "close" : "open"}`,
       { cooldownMs: 1200, priority: "normal" }
     );
   };
@@ -416,11 +486,12 @@ function ProductosPage() {
           activeCategory={activeCategory}
           grupos={grupos}
           isLoading={isLoading}
-          onCreateCategory={() => setIsCreatingCategory(true)}
+          onCreateCategory={handleOpenCreateCategory}
           onCreateProduct={handleOpenCreateProduct}
           onDeleteCategory={() => setIsDeletingCategory(true)}
           onRefresh={handleRefreshProductos}
           onSearchChange={setSearchTerm}
+          onSearchFocus={handleSearchFocus}
           onSelectCategory={handleSelectCategory}
           searchTerm={searchTerm}
         />
@@ -436,11 +507,11 @@ function ProductosPage() {
             {grupos.map((grupo) => (
               <CategoriaBlock
                 key={grupo.value}
-                isExpanded={activeCategory === grupo.value}
+                isExpanded={expandedCategories.has(grupo.value)}
                 onAddProduct={() => {
                   setAddProductCategory(grupo.value);
                   speakAction(
-                    `Boton producto. Agregar producto en categoria ${grupo.label}.`,
+                    `Botón producto. Agregar producto en categoría ${grupo.label}.`,
                     `producto-open-create:${grupo.value}`,
                     {
                       cooldownMs: 1600,

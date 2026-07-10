@@ -21,6 +21,7 @@ export type PdvViewContextValue = {
   accessibleStep: number;
   accessibleStepValidation: string | null;
   addProduct: (producto: Producto) => void;
+  announceSearchBar: () => void;
   bgWrapper: string;
   cardBorder: string;
   categoryFilters: Array<{ label: string; value: FiltroCategoria }>;
@@ -58,6 +59,7 @@ export type PdvViewContextValue = {
   resetPedido: () => void;
   searchTerm: string;
   selectedCategory: FiltroCategoria;
+  selectCategory: (value: FiltroCategoria, label?: string) => void;
   selectMetodoPago: (value: MetodoPago) => void;
   sending: boolean;
   setAccessibleObservationType: Dispatch<SetStateAction<"cocina" | "cliente">>;

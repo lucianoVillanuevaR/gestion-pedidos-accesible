@@ -25,8 +25,10 @@ import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
 import type { CierreProductoResumen } from "../../types";
+import { getResponsableDisplay, type ResponsableDisplay } from "../../utils/turnoResponsable";
 import { validateTurnoClose } from "../../validations/turno.validation";
 import {
+  ESTADO_META,
   formatCurrency,
   formatDateTime,
   formatMetodoPago,
@@ -80,6 +82,10 @@ function CierreTurnoPage() {
   const fechaInicio = useMemo(() => getFechaInicioTurno(pedidos), [pedidos]);
   const productosVendidos = useMemo(() => getProductosVendidosResumen(pedidos), [pedidos]);
   const pedidosDetalle = useMemo(() => getCierrePedidosResumen(pedidos), [pedidos]);
+  const responsable = useMemo(
+    () => getResponsableDisplay(user ? { label: user.label, role: user.role, username: user.username } : undefined),
+    [user]
+  );
   const hasPedidosPendientes = summary.pedidosPendientes > 0;
 
   const handleAbrirTurno = async () => {
@@ -152,7 +158,6 @@ function CierreTurnoPage() {
         ) : (
           <CierreHeader
             buttonSizeClass={buttonSizeClass}
-            cajero={user?.label ?? user?.username ?? "No identificado"}
             fechaInicio={fechaInicio}
             isAccessible={isAccessible}
             isHighContrast={isHighContrast}
@@ -161,6 +166,7 @@ function CierreTurnoPage() {
             onAbrirTurno={handleAbrirTurno}
             onCerrarTurno={() => setIsConfirmOpen(true)}
             onPrint={() => window.print()}
+            responsable={responsable}
           />
         )}
 
@@ -182,16 +188,14 @@ function CierreTurnoPage() {
           </div>
         ) : isAccessible ? (
           <>
-            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4" aria-label="Resumen esencial de cierre">
+            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Resumen esencial de cierre">
               <MetricCard
-                helpText="Solo pedidos entregados"
                 label="Total vendido confirmado"
                 value={formatCurrency(String(summary.totalVendido))}
                 variant="strong"
               />
               <MetricCard label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
               <MetricCard label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
-              <MetricCard label="Total pendiente" value={formatCurrency(String(summary.totalPendiente))} />
             </section>
 
             <p className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-xl font-black text-slate-950">
@@ -247,11 +251,10 @@ function CierreTurnoPage() {
         ) : (
           <>
             <section
-              className="grid gap-3 md:grid-cols-2 xl:grid-cols-5"
+              className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
               aria-label="Indicadores principales de cierre"
             >
               <MetricCard
-                helpText="Solo pedidos entregados"
                 label="Total vendido confirmado"
                 value={formatCurrency(String(summary.totalVendido))}
                 variant="strong"
@@ -259,7 +262,6 @@ function CierreTurnoPage() {
               <MetricCard label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
               <MetricCard label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
               <MetricCard label="Pedidos cancelados" value={String(summary.pedidosCancelados)} />
-              <MetricCard label="Total pendiente" value={formatCurrency(String(summary.totalPendiente))} />
             </section>
 
             <section className="grid items-start gap-5 xl:grid-cols-[minmax(360px,0.72fr)_minmax(0,1.7fr)] 2xl:grid-cols-[minmax(390px,0.62fr)_minmax(0,1.85fr)]">
@@ -280,14 +282,127 @@ function CierreTurnoPage() {
             onReviewPedidos={() => navigate("/pedidos/facil")}
           />
         )}
+
+        <section className="historial-print-turno historial-print-target" aria-hidden="true">
+          <CierreTurnoPrintable
+            fechaCierre={now.toISOString()}
+            fechaInicio={fechaInicio}
+            pedidos={pedidosDetalle}
+            productosVendidos={productosVendidos}
+            responsable={responsable}
+            summary={summary}
+          />
+        </section>
       </main>
     </div>
   );
 }
 
+function CierreTurnoPrintable({
+  fechaCierre,
+  fechaInicio,
+  pedidos,
+  productosVendidos,
+  responsable,
+  summary
+}: {
+  fechaCierre: string;
+  fechaInicio?: string;
+  pedidos: ReturnType<typeof getCierrePedidosResumen>;
+  productosVendidos: CierreProductoResumen[];
+  responsable: ResponsableDisplay;
+  summary: ReturnType<typeof getTurnoSummary>;
+}) {
+  const paymentRows = [
+    { label: "Efectivo", value: summary.totalEfectivo },
+    { label: "Tarjeta", value: summary.totalTarjeta },
+    { label: "Transferencia", value: summary.totalTransferencia }
+  ];
+
+  return (
+    <section className="historial-print-only">
+      <h1>Riquísimo</h1>
+      <p>Sistema de Pedidos - Resumen de turno cerrado</p>
+
+      <div className="historial-print-grid">
+        <p>
+          <strong>Fecha del turno:</strong> {formatDateTime(fechaCierre)}
+        </p>
+        <p>
+          <strong>{responsable.primaryLabel}:</strong> {responsable.primaryValue}
+        </p>
+        {responsable.roleValue && (
+          <p>
+            <strong>Rol:</strong> {responsable.roleValue}
+          </p>
+        )}
+        <p>
+          <strong>Inicio:</strong> {fechaInicio ? formatDateTime(fechaInicio) : "Sin datos"}
+        </p>
+        <p>
+          <strong>Cierre:</strong> {formatDateTime(fechaCierre)}
+        </p>
+        <p>
+          <strong>Total vendido confirmado:</strong> {formatCurrency(String(summary.totalVendido))}
+        </p>
+        <p>
+          <strong>Pedidos entregados:</strong> {summary.pedidosEntregados}
+        </p>
+        <p>
+          <strong>Pedidos pendientes:</strong> {summary.pedidosPendientes}
+        </p>
+        <p>
+          <strong>Pedidos cancelados:</strong> {summary.pedidosCancelados}
+        </p>
+      </div>
+
+      <h2>Métodos de pago</h2>
+      {paymentRows.map((row) => (
+        <p key={row.label}>
+          <strong>{row.label}:</strong> {formatCurrency(String(row.value))}
+        </p>
+      ))}
+
+      <h2>Productos vendidos</h2>
+      {productosVendidos.length === 0 ? (
+        <p>No hay productos vendidos confirmados.</p>
+      ) : (
+        productosVendidos.map((producto) => (
+          <p key={producto.productoId}>
+            {producto.cantidad}x {producto.productoNombre} - {formatCurrency(String(producto.total))}
+          </p>
+        ))
+      )}
+
+      <h2>Pedidos del turno</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Estado</th>
+            <th>Hora</th>
+            <th>Método</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pedidos.map((pedido) => (
+            <tr key={pedido.id}>
+              <td>#{getPedidoDisplayNumber(pedido)}</td>
+              <td>{ESTADO_META[pedido.estado].label}</td>
+              <td>{formatTime(pedido.createdAt)}</td>
+              <td>{formatMetodoPago(pedido.metodoPago)}</td>
+              <td>{formatCurrency(String(pedido.total))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 function CierreHeader({
   buttonSizeClass,
-  cajero,
   fechaInicio,
   isAccessible,
   isHighContrast,
@@ -295,10 +410,10 @@ function CierreHeader({
   now,
   onAbrirTurno,
   onCerrarTurno,
-  onPrint
+  onPrint,
+  responsable
 }: {
   buttonSizeClass: string;
-  cajero: string;
   fechaInicio?: string;
   isAccessible: boolean;
   isHighContrast: boolean;
@@ -307,6 +422,7 @@ function CierreHeader({
   onAbrirTurno: () => void;
   onCerrarTurno: () => void;
   onPrint: () => void;
+  responsable: ResponsableDisplay;
 }) {
   return (
     <header
@@ -314,7 +430,6 @@ function CierreHeader({
     >
       <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.8fr)_minmax(620px,1fr)] xl:items-start">
         <div>
-          <p className="text-sm font-black uppercase text-emerald-700">Resumen administrativo</p>
           <h1 className="mt-1 text-3xl font-black leading-tight text-slate-950">Cierre de turno</h1>
           <p className="mt-1 text-base font-bold text-slate-600">Resumen y cierre del turno actual</p>
 
@@ -354,7 +469,14 @@ function CierreHeader({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
-          <HeaderInfo icon={<Store className="h-5 w-5" aria-hidden="true" />} label="Cajero actual" value={cajero} />
+          <HeaderInfo
+            icon={<Store className="h-5 w-5" aria-hidden="true" />}
+            label={responsable.primaryLabel}
+            value={responsable.primaryValue}
+          />
+          {responsable.roleValue && (
+            <HeaderInfo icon={<Store className="h-5 w-5" aria-hidden="true" />} label="Rol" value={responsable.roleValue} />
+          )}
           <HeaderInfo
             icon={<CalendarDays className="h-5 w-5" aria-hidden="true" />}
             label="Fecha"
@@ -474,7 +596,6 @@ function PaymentMethodsPanel({
       <h2 id="metodos-pago-title" className="text-xl font-black text-slate-950">
         Métodos de pago
       </h2>
-      <p className="mt-1 text-sm font-bold text-slate-600">Solo considera pedidos entregados.</p>
       <div className="mt-4 grid gap-3">
         {methods.map((method) => (
           <article
@@ -552,9 +673,6 @@ function PedidosTurnoPanel({
           <h2 id="pedidos-turno-title" className="text-xl font-black text-slate-950">
             Pedidos del turno
           </h2>
-          <p className="mt-1 text-sm font-bold text-slate-600">
-            Detalle compacto. Los cambios de estado se realizan en Pedidos activos o Preparación.
-          </p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
           {pedidos.length} pedidos
@@ -608,7 +726,7 @@ function CerrarTurnoModal({
   onReviewPedidos: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       <section
         role="dialog"
         aria-modal="true"

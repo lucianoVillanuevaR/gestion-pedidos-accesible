@@ -31,7 +31,7 @@ function AccessibilityPanel({
   onToggleVoice,
   onToggleSound
 }: AccessibilityPanelProps) {
-  const { speak } = useVoice({ enabled: true });
+  const { cancel, speak } = useVoice({ enabled: true });
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -117,7 +117,26 @@ function AccessibilityPanel({
   const spacingClass = isAccessible ? "space-y-6" : "space-y-5";
   const headerPaddingClass = isAccessible ? "px-6 py-5" : "px-5 py-4";
   const contentPaddingClass = isAccessible ? "px-6 py-6" : "px-5 py-5";
+  const announcePanelAction = (message: string, dedupeKey: string) => {
+    if (!isVoiceEnabled) {
+      return;
+    }
+
+    speak(message, {
+      priority: "high",
+      dedupeKey,
+      cooldownMs: 700,
+      force: true,
+      interrupt: true,
+      delayMs: 0
+    });
+  };
+
   const handleToggleVoice = () => {
+    if (isVoiceEnabled) {
+      cancel();
+    }
+
     if (!isVoiceEnabled) {
       speak("Ayuda por voz activada.", {
         priority: "high",
@@ -150,7 +169,7 @@ function AccessibilityPanel({
   ];
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/40 px-3 py-4 no-print sm:px-4" onClick={onClose} role="presentation">
+    <div className="fixed inset-0 z-[200] px-3 py-4 no-print sm:px-4" onClick={onClose} role="presentation">
       <aside
         ref={dialogRef}
         aria-modal="true"
@@ -206,7 +225,10 @@ function AccessibilityPanel({
             <button
               ref={closeButtonRef}
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                announcePanelAction("Cerrar panel de opciones.", "accessibility-panel-close");
+                onClose();
+              }}
               aria-label="Cerrar panel de opciones"
               className={`
                 inline-flex min-h-[56px] shrink-0 items-center justify-center whitespace-nowrap rounded-xl border px-3 font-bold transition sm:px-4
@@ -245,7 +267,13 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={onToggleAccessible}
+                  onClick={() => {
+                    announcePanelAction(
+                      isAccessible ? "Modo fácil desactivado." : "Modo fácil activado.",
+                      "accessibility-panel-accessible-mode"
+                    );
+                    onToggleAccessible();
+                  }}
                   aria-label={isAccessible ? "Desactivar modo fácil" : "Activar modo fácil"}
                   aria-pressed={isAccessible}
                   className={getButtonClass(isAccessible)}
@@ -276,6 +304,10 @@ function AccessibilityPanel({
                     key={option.value}
                     type="button"
                     onClick={() => {
+                      announcePanelAction(
+                        `Tamaño de texto ${option.name}.`,
+                        `accessibility-panel-text-size:${option.value}`
+                      );
                       onSetTextSize(option.value);
                     }}
                     aria-label={`Tamaño de texto ${option.name}`}
@@ -306,7 +338,13 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={onToggleContrast}
+                  onClick={() => {
+                    announcePanelAction(
+                      isHighContrast ? "Contraste alto desactivado." : "Contraste alto activado.",
+                      "accessibility-panel-contrast"
+                    );
+                    onToggleContrast();
+                  }}
                   aria-label={isHighContrast ? "Desactivar contraste alto" : "Activar contraste alto"}
                   aria-pressed={isHighContrast}
                   className={getButtonClass(isHighContrast)}
@@ -366,7 +404,13 @@ function AccessibilityPanel({
 
                 <button
                   type="button"
-                  onClick={onToggleSound}
+                  onClick={() => {
+                    announcePanelAction(
+                      isSoundEnabled ? "Sonidos desactivados." : "Sonidos activados.",
+                      "accessibility-panel-sound"
+                    );
+                    onToggleSound();
+                  }}
                   aria-label={isSoundEnabled ? "Desactivar sonidos" : "Activar sonidos"}
                   aria-pressed={isSoundEnabled}
                   className={getButtonClass(isSoundEnabled)}
@@ -391,10 +435,14 @@ function AccessibilityPanel({
             <button
               type="button"
               onClick={() => {
+                announcePanelAction("Restablecer ajustes.", "accessibility-panel-reset");
                 onSetTextSize("normal");
                 if (isAccessible) onToggleAccessible();
                 if (isHighContrast) onToggleContrast();
-                if (isVoiceEnabled) onToggleVoice();
+                if (isVoiceEnabled) {
+                  cancel();
+                  onToggleVoice();
+                }
                 if (isSoundEnabled) onToggleSound();
               }}
               className={`

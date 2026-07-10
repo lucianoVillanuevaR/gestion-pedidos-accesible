@@ -60,7 +60,7 @@ function AppLayout() {
   const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[368px]" : "lg:pl-[240px]";
   const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]";
   const mainContentClass = isFullWidthPage
-    ? `px-0 py-0 ${isPdvNormalPage ? "h-[calc(100dvh-48px)] overflow-hidden" : ""}`
+    ? `px-0 py-0 ${isPdvNormalPage ? "h-[calc(100dvh-56px)] overflow-hidden" : ""}`
     : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isAccessible ? "lg:px-10" : ""}`;
   const appBackgroundClass = isHighContrast
     ? "bg-black text-white"
@@ -128,14 +128,14 @@ function AppLayout() {
       </a>
 
       {showBrandTopBar && (
-        <header className="fixed inset-x-0 top-0 z-[60] hidden h-12 items-center border-b border-yellow-300 bg-[#FECE00] px-4 text-slate-950 shadow-sm lg:flex">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-yellow-300 bg-[#FFF8DC] p-1">
+        <header className="fixed inset-x-0 top-0 z-[60] hidden min-h-[56px] items-center overflow-hidden border-b border-yellow-300 bg-[#FECE00] px-4 text-slate-950 shadow-sm lg:flex">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-yellow-300 bg-[#FFF8DC] p-1">
               <img src={logoRiq} alt="Logo de Riquísimo" className="h-full w-full object-contain" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-black leading-tight">Riquísimo</p>
-              <p className="truncate text-[10px] font-medium leading-tight text-slate-700">Sistema de Pedidos</p>
+              <p className="truncate text-base font-black leading-tight">Riquísimo</p>
+              <p className="truncate text-xs font-medium leading-tight text-slate-700">Sistema de Pedidos</p>
             </div>
           </div>
         </header>
@@ -146,7 +146,7 @@ function AppLayout() {
       )}
 
       <div
-        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-12" : ""} ${isPdvNormalPage ? "h-dvh overflow-hidden" : ""}`}
+        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-14" : ""} ${isPdvNormalPage ? "h-dvh overflow-hidden" : ""}`}
       >
         {!hideSidebar && (
           <header

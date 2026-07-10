@@ -10,7 +10,7 @@ import type { HistorialPedidoDetalle } from "../cocinaHistoryUtils";
 
 export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void; pedido: HistorialPedidoDetalle }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
       <section
         role="dialog"
         aria-modal="true"

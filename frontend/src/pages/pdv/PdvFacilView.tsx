@@ -31,17 +31,16 @@ function PdvFacilView() {
     items,
     metodoPago,
     navigate,
-    nextPedidoNumber,
     panelBg,
     pedidoDetalles,
     puedeRegistrar,
     removeProduct,
     selectedCategory,
+    selectCategory,
     selectMetodoPago,
     sending,
     setAccessibleStep,
     setClienteNombre,
-    setSelectedCategory,
     total
   } = usePdvViewContext();
 
@@ -98,11 +97,6 @@ function PdvFacilView() {
                 {stepGuidance.description}
               </p>
             )}
-            <p
-              className={`mt-2 max-w-2xl text-lg font-bold ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}
-            >
-              Pedido #{nextPedidoNumber}. Sigue los pasos para registrar un pedido.
-            </p>
           </div>
 
           <div className="flex flex-col items-stretch gap-3">
@@ -184,7 +178,7 @@ function PdvFacilView() {
                 isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-800"
               }`}
             >
-              Las categorias y productos quedan bloqueados hasta abrir turno.
+              Las categorías y productos quedan bloqueados hasta abrir turno.
             </p>
           </div>
         </section>
@@ -215,7 +209,7 @@ function PdvFacilView() {
                 key={filtro.value}
                 type="button"
                 onClick={() => {
-                  setSelectedCategory(filtro.value);
+                  selectCategory(filtro.value, filtro.label);
                   setAccessibleStep(2);
                 }}
                 className={`min-h-[56px] rounded-xl font-bold text-lg flex items-center justify-center gap-2 focus:outline-none focus:ring-4 ${
@@ -277,7 +271,6 @@ function PdvFacilView() {
             Paso 2: Elige producto
           </h2>
           <p className="mb-3 text-lg font-semibold">Elige el producto y responde: ¿cuánto quieres?</p>
-          <p className="mb-4 text-base text-slate-600">Usa los botones de menos y más para ajustar la cantidad.</p>
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
             {accessibleProductos.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed p-8 text-center col-span-2">
@@ -516,7 +509,7 @@ function PdvFacilView() {
       )}
 
       {isSubmitConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
           <section
             role="dialog"
             aria-modal="true"
@@ -552,7 +545,7 @@ function PdvFacilView() {
       )}
 
       {isCloseTurnoConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
           <section
             role="dialog"
             aria-modal="true"

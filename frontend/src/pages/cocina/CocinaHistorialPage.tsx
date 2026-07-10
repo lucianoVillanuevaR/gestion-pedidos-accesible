@@ -4,11 +4,17 @@ import { useLocation } from "react-router-dom";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
+import useVoice from "../../hooks/useVoice";
 import { cargarCierresTurno, obtenerCierresTurno } from "../../services/cierresTurno";
 import type { CierreTurno } from "../../types";
 import { ESTADO_META, formatCurrency as formatKitchenCurrency, getPedidoDisplayNumber } from "../pedidos/PedidosShared";
 import { HistorialFacilView } from "./components/CocinaHistorialFacilView";
-import { HistorialFilters } from "./components/CocinaHistorialFilters";
+import {
+  HISTORIAL_DATE_FILTERS,
+  HISTORIAL_ESTADO_FILTERS,
+  HISTORIAL_METODO_FILTERS,
+  HistorialFilters
+} from "./components/CocinaHistorialFilters";
 import { HistorialPedidoModal } from "./components/CocinaHistorialPedidoModal";
 import { HistorialTurnoCard } from "./components/CocinaHistorialTurnoCard";
 import {
@@ -26,6 +32,7 @@ export default function CocinaHistorialPage() {
   const isAdminView = location.pathname.startsWith("/admin/");
   const { isAccessible, isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak } = useActionVoice(isVoiceEnabled);
+  const { speak: speakForced } = useVoice({ enabled: isVoiceEnabled });
   const [cierres, setCierres] = useState<CierreTurno[]>(() => obtenerCierresTurno());
   const [expandedTurnoIds, setExpandedTurnoIds] = useState<Set<string>>(new Set());
   const [turnoViewById, setTurnoViewById] = useState<Record<string, "pedidos" | "resumen">>({});
@@ -67,6 +74,38 @@ export default function CocinaHistorialPage() {
       .catch((error) => setLiveMessage(error instanceof Error ? error.message : "No fue posible actualizar."));
   };
 
+  const announceHistorialControl = (message: string, dedupeKey: string) => {
+    speakForced(message, {
+      priority: "high",
+      dedupeKey,
+      cooldownMs: 700,
+      interrupt: true,
+      force: true
+    });
+  };
+
+  const handleDateFilterChange = (value: HistorialDateFilter) => {
+    const label = HISTORIAL_DATE_FILTERS.find((filter) => filter.value === value)?.label ?? value;
+    setDateFilter(value);
+    announceHistorialControl(`Filtro de fecha ${label}.`, `historial-fecha:${value}`);
+  };
+
+  const handleEstadoFilterChange = (value: HistorialEstadoFilter) => {
+    const label = HISTORIAL_ESTADO_FILTERS.find((filter) => filter.value === value)?.label ?? value;
+    setEstadoFilter(value);
+    announceHistorialControl(`Filtro de estado ${label}.`, `historial-estado:${value}`);
+  };
+
+  const handleMetodoFilterChange = (value: HistorialMetodoFilter) => {
+    const label = HISTORIAL_METODO_FILTERS.find((filter) => filter.value === value)?.label ?? value;
+    setMetodoFilter(value);
+    announceHistorialControl(`Filtro de método de pago ${label}.`, `historial-metodo:${value}`);
+  };
+
+  const handleSearchFocus = () => {
+    announceHistorialControl("Barra de búsqueda.", "historial-barra-busqueda");
+  };
+
   const handleToggleTurno = (turnoId: string, view: "pedidos" | "resumen" = "resumen") => {
     setExpandedTurnoIds((currentIds) => {
       const nextIds = new Set(currentIds);
@@ -83,7 +122,14 @@ export default function CocinaHistorialPage() {
   };
 
   const handleReadEasyHistory = () => {
-    const message =
+    const availableFilters = [
+      `Barra de búsqueda para buscar pedido, producto, cajero o método de pago.`,
+      `Filtros de fecha: ${HISTORIAL_DATE_FILTERS.map((filter) => filter.label).join(", ")}.`,
+      `Filtros de estado: ${HISTORIAL_ESTADO_FILTERS.map((filter) => filter.label).join(", ")}.`,
+      `Filtros de método de pago: ${HISTORIAL_METODO_FILTERS.map((filter) => filter.label).join(", ")}.`
+    ].join(" ");
+
+    const pedidosMessage =
       easyPedidos.length === 0
         ? "No hay pedidos recientes en el historial."
         : easyPedidos
@@ -93,9 +139,10 @@ export default function CocinaHistorialPage() {
                 `Pedido ${getPedidoDisplayNumber(pedido)}, ${ESTADO_META[pedido.estado].label}, total ${formatKitchenCurrency(String(pedido.total))}.`
             )
             .join(" ");
+    const message = `Historial de turnos. ${availableFilters} ${pedidosMessage}`;
 
     setLiveMessage(message);
-    speak(message, {
+    speakForced(message, {
       priority: "high",
       dedupeKey: "historial-facil-leer",
       cooldownMs: 2500,
@@ -120,8 +167,9 @@ export default function CocinaHistorialPage() {
         dateFilter={dateFilter}
         isHighContrast={isHighContrast}
         liveMessage={liveMessage}
-        onDateFilterChange={setDateFilter}
+        onDateFilterChange={handleDateFilterChange}
         onOpenPedido={setSelectedPedido}
+        onReadAction={announceHistorialControl}
         onReadHistory={handleReadEasyHistory}
         onRefresh={handleRefresh}
         pedidos={easyPedidos}
@@ -140,8 +188,7 @@ export default function CocinaHistorialPage() {
           className={`flex flex-col gap-3 rounded-xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${isHighContrast ? "contrast-panel border-yellow-400" : "border border-slate-200 bg-white shadow-sm"}`}
         >
           <div>
-            <p className="text-xs font-black uppercase text-slate-500">Historial de pedidos</p>
-            <h1 className="mt-0.5 text-2xl font-black text-slate-950">Historial de turnos</h1>
+            <h1 className="text-2xl font-black text-slate-950">Historial de turnos</h1>
             <p className="mt-1 text-sm font-bold text-slate-600">
               Consulta turnos cerrados, ventas confirmadas y pedidos registrados.
             </p>
@@ -165,9 +212,10 @@ export default function CocinaHistorialPage() {
           estadoFilter={estadoFilter}
           isHighContrast={isHighContrast}
           metodoFilter={metodoFilter}
-          onDateFilterChange={setDateFilter}
-          onEstadoFilterChange={setEstadoFilter}
-          onMetodoFilterChange={setMetodoFilter}
+          onDateFilterChange={handleDateFilterChange}
+          onEstadoFilterChange={handleEstadoFilterChange}
+          onMetodoFilterChange={handleMetodoFilterChange}
+          onSearchFocus={handleSearchFocus}
           onSearchTermChange={setSearchTerm}
           searchTerm={searchTerm}
         />
@@ -180,11 +228,6 @@ export default function CocinaHistorialPage() {
             <HistoryStat label="Pedidos cancelados" value={pedidosCancelados} />
           </section>
         )}
-
-        <p className="rounded-xl border border-yellow-200 bg-[#FFF8DC] px-4 py-3 text-sm font-bold text-slate-700">
-          Los filtros ajustan los pedidos visibles. Los totales de cada turno se mantienen como resumen histórico del
-          cierre.
-        </p>
 
         {filteredTurnos.length === 0 ? (
           <div
@@ -206,6 +249,7 @@ export default function CocinaHistorialPage() {
                 isPrintTarget={printTurnoId === turno.id}
                 onOpenModal={setSelectedPedido}
                 onPrint={handlePrintTurno}
+                onReadAction={announceHistorialControl}
                 onToggle={(view) => handleToggleTurno(turno.id, view)}
                 selectedView={turnoViewById[turno.id] ?? "resumen"}
                 turno={turno}

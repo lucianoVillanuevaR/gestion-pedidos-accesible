@@ -1,6 +1,7 @@
 import { Eye, Printer } from "lucide-react";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import type { CierreTurno } from "../../../types";
+import { getResponsableDisplay } from "../../../utils/turnoResponsable";
 import {
   ESTADO_META,
   StatusBadge,
@@ -24,6 +25,7 @@ export function HistorialTurnoCard({
   isPrintTarget,
   onOpenModal,
   onPrint,
+  onReadAction,
   onToggle,
   selectedView,
   turno
@@ -33,15 +35,16 @@ export function HistorialTurnoCard({
   isPrintTarget: boolean;
   onOpenModal: (pedido: HistorialPedidoDetalle) => void;
   onPrint: (turnoId: string) => void;
+  onReadAction: (message: string, dedupeKey: string) => void;
   onToggle: (view: "pedidos" | "resumen") => void;
   selectedView: "pedidos" | "resumen";
   turno: HistorialTurno;
 }) {
   const productosVendidos = getTurnoProductosVendidos(turno);
-  const totalProductosVendidos = productosVendidos.reduce((total, producto) => total + producto.cantidad, 0);
   const pedidosEntregados = turno.pedidosEntregados ?? countTurnoPedidosByEstado(turno, "entregado");
   const pedidosPendientes = turno.pedidosPendientes ?? countTurnoPedidosPendientes(turno);
   const pedidosCancelados = turno.pedidosCancelados ?? countTurnoPedidosByEstado(turno, "cancelado");
+  const responsable = getResponsableDisplay(turno.usuario, turno.usuarioId);
 
   return (
     <article
@@ -52,7 +55,10 @@ export function HistorialTurnoCard({
           <p className="text-xs font-black uppercase text-slate-500">Turno cerrado</p>
           <h2 className="mt-1 text-2xl font-black text-slate-950">{formatKitchenDateTime(turno.fechaCierre)}</h2>
           <p className="mt-2 flex flex-wrap gap-3 text-sm font-bold text-slate-600">
-            <span>Cajero: {turno.usuarioId ?? "No identificado"}</span>
+            <span>
+              {responsable.primaryLabel}: {responsable.primaryValue}
+            </span>
+            {responsable.roleValue && <span>Rol: {responsable.roleValue}</span>}
             <span>Inicio: {turno.fechaInicio ? formatKitchenDateTime(turno.fechaInicio) : "Sin datos"}</span>
             <span>Cierre: {formatKitchenDateTime(turno.fechaCierre)}</span>
           </p>
@@ -69,21 +75,20 @@ export function HistorialTurnoCard({
             <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1">
               {pedidosCancelados} cancelados
             </span>
-            <span>{totalProductosVendidos} productos vendidos</span>
           </p>
         </div>
         <div className="grid gap-3 sm:min-w-[320px]">
           <div className="text-left sm:text-right">
             <p className="text-xs font-black uppercase text-slate-500">Total vendido confirmado</p>
             <p className="text-2xl font-black text-slate-950">{formatKitchenCurrency(String(turno.totalVendido))}</p>
-            <p className="mt-1 text-xs font-bold text-slate-600">
-              El total vendido confirmado considera solo pedidos entregados.
-            </p>
           </div>
           <div className="no-print grid gap-2 sm:grid-cols-3">
             <button
               type="button"
-              onClick={() => onToggle("resumen")}
+              onClick={() => {
+                onReadAction("Ver resumen del turno.", `historial-turno-resumen:${turno.id}`);
+                onToggle("resumen");
+              }}
               aria-expanded={isExpanded && selectedView === "resumen"}
               className={`min-h-[48px] rounded-xl border px-3 text-sm font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
             >
@@ -91,7 +96,10 @@ export function HistorialTurnoCard({
             </button>
             <button
               type="button"
-              onClick={() => onToggle("pedidos")}
+              onClick={() => {
+                onReadAction("Ver pedidos del turno.", `historial-turno-pedidos:${turno.id}`);
+                onToggle("pedidos");
+              }}
               aria-expanded={isExpanded && selectedView === "pedidos"}
               className={`min-h-[48px] rounded-xl border px-3 text-sm font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
             >
@@ -99,7 +107,10 @@ export function HistorialTurnoCard({
             </button>
             <button
               type="button"
-              onClick={() => onPrint(turno.id)}
+              onClick={() => {
+                onReadAction("Imprimir turno.", `historial-turno-imprimir:${turno.id}`);
+                onPrint(turno.id);
+              }}
               className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3 text-sm font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
             >
               <Printer className="h-4 w-4" aria-hidden="true" />
@@ -109,18 +120,11 @@ export function HistorialTurnoCard({
         </div>
       </div>
 
-      <div className="grid gap-3 border-t border-slate-100 px-5 py-4 sm:grid-cols-2 lg:grid-cols-4">
-        <HistorialMetric
-          label="Pendiente no vendido"
-          value={formatKitchenCurrency(String(turno.totalPendiente ?? 0))}
-        />
+      <div className="grid gap-3 border-t border-slate-100 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
         <HistorialMetric label="Pedidos entregados" value={String(pedidosEntregados)} />
         <HistorialMetric label="Pedidos pendientes" value={String(pedidosPendientes)} />
         <HistorialMetric label="Pedidos cancelados" value={String(pedidosCancelados)} />
       </div>
-      <p className="border-t border-slate-100 px-5 py-3 text-sm font-bold text-slate-600">
-        El pendiente no vendido no se suma al total vendido.
-      </p>
 
       <HistorialTurnoPrintable productosVendidos={productosVendidos} turno={turno} />
 
@@ -136,6 +140,7 @@ export function HistorialTurnoCard({
             <HistorialPedidosCompactos
               isHighContrast={isHighContrast}
               onOpenModal={onOpenModal}
+              onReadAction={onReadAction}
               pedidos={turno.pedidos}
             />
           )}
@@ -161,6 +166,7 @@ function HistorialTurnoPrintable({
   productosVendidos: NonNullable<CierreTurno["productosVendidos"]>;
   turno: HistorialTurno;
 }) {
+  const responsable = getResponsableDisplay(turno.usuario, turno.usuarioId);
   const paymentRows = [
     { label: "Efectivo", value: turno.totalEfectivo ?? 0 },
     { label: "Tarjeta", value: turno.totalTarjeta ?? 0 },
@@ -177,8 +183,13 @@ function HistorialTurnoPrintable({
           <strong>Fecha del turno:</strong> {formatKitchenDateTime(turno.fechaCierre)}
         </p>
         <p>
-          <strong>Cajero:</strong> {turno.usuarioId ?? "No identificado"}
+          <strong>{responsable.primaryLabel}:</strong> {responsable.primaryValue}
         </p>
+        {responsable.roleValue && (
+          <p>
+            <strong>Rol:</strong> {responsable.roleValue}
+          </p>
+        )}
         <p>
           <strong>Inicio:</strong> {turno.fechaInicio ? formatKitchenDateTime(turno.fechaInicio) : "Sin datos"}
         </p>
@@ -187,9 +198,6 @@ function HistorialTurnoPrintable({
         </p>
         <p>
           <strong>Total vendido confirmado:</strong> {formatKitchenCurrency(String(turno.totalVendido ?? 0))}
-        </p>
-        <p>
-          <strong>Pendiente no vendido:</strong> {formatKitchenCurrency(String(turno.totalPendiente ?? 0))}
         </p>
         <p>
           <strong>Pedidos entregados:</strong>{" "}
@@ -279,10 +287,6 @@ function HistorialTurnoResumen({
             label="Total vendido confirmado"
             value={formatKitchenCurrency(String(turno.totalVendido ?? 0))}
           />
-          <HistorialResumenRow
-            label="Pendiente no vendido"
-            value={formatKitchenCurrency(String(turno.totalPendiente ?? 0))}
-          />
           <HistorialResumenRow label="Pedidos registrados" value={String(turno.pedidos.length)} />
           <HistorialResumenRow label="Productos vendidos" value={String(totalProductosVendidos)} />
         </div>
@@ -295,7 +299,6 @@ function HistorialTurnoResumen({
         <h3 id={`metodos-${turno.id}`} className="text-lg font-black text-slate-950">
           Métodos de pago
         </h3>
-        <p className="mt-1 text-sm font-bold text-slate-600">Solo pedidos entregados.</p>
         <div className="mt-3 grid gap-2">
           {paymentRows.map((row) => (
             <div
@@ -354,10 +357,12 @@ function HistorialResumenRow({ label, value }: { label: string; value: string })
 function HistorialPedidosCompactos({
   isHighContrast,
   onOpenModal,
+  onReadAction,
   pedidos
 }: {
   isHighContrast: boolean;
   onOpenModal: (pedido: HistorialPedidoDetalle) => void;
+  onReadAction: (message: string, dedupeKey: string) => void;
   pedidos: HistorialPedidoDetalle[];
 }) {
   return (
@@ -388,7 +393,13 @@ function HistorialPedidosCompactos({
             </p>
             <button
               type="button"
-              onClick={() => onOpenModal(pedido)}
+              onClick={() => {
+                onReadAction(
+                  `Ver detalle del pedido ${getPedidoDisplayNumber(pedido)}.`,
+                  `historial-pedido-detalle:${pedido.turnoId}:${pedido.id}`
+                );
+                onOpenModal(pedido);
+              }}
               className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-4 font-black transition ${
                 isHighContrast
                   ? "contrast-button-secondary"

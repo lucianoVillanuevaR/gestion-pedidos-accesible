@@ -15,7 +15,7 @@ import {
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
 import { getDefaultRouteForRole } from "../constants/auth";
-import useActionVoice from "../hooks/useActionVoice";
+import useVoice from "../hooks/useVoice";
 import SidebarNavItem from "./SidebarNavItem";
 
 type AppSidebarProps = {
@@ -24,22 +24,13 @@ type AppSidebarProps = {
   onClose: () => void;
 };
 
-const VOICED_SIDEBAR_ITEMS = new Set([
-  "Nuevo Pedido",
-  "Pedidos activos",
-  "Preparación",
-  "Productos",
-  "Inventario",
-  "Cierre de turno"
-]);
-
 function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } =
     useAccessibilityContext();
   const { logout, user } = useAuthContext();
-  const { speakAction } = useActionVoice(isVoiceEnabled);
+  const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
 
   if (!user) {
     return null;
@@ -103,23 +94,49 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
       : "border-yellow-300 bg-white text-slate-950 hover:bg-[#FFF8DC] focus-visible:ring-yellow-400";
 
   const handleLogout = () => {
+    speakOnDemand("Cerrar sesión.", {
+      priority: "high",
+      dedupeKey: "sidebar:logout",
+      cooldownMs: 700,
+      interrupt: true,
+      force: true
+    });
     logout();
     onClose();
     navigate("/", { replace: true });
   };
 
   const handleOpenAccessibility = () => {
+    speakOnDemand("Accesibilidad. Opciones de ayuda.", {
+      priority: "high",
+      dedupeKey: "sidebar:accessibility",
+      cooldownMs: 700,
+      interrupt: true,
+      force: true
+    });
     openAccessibilityPanel();
     onClose();
   };
 
-  const handleSidebarNavigate = (label: string) => {
-    if (!VOICED_SIDEBAR_ITEMS.has(label)) {
-      onClose();
-      return;
-    }
+  const handleCloseMenu = () => {
+    speakOnDemand("Cerrar menu.", {
+      priority: "high",
+      dedupeKey: "sidebar:close",
+      cooldownMs: 700,
+      interrupt: true,
+      force: true
+    });
+    onClose();
+  };
 
-    speakAction(label, `sidebar:${label}`);
+  const handleSidebarNavigate = (label: string, description?: string) => {
+    speakOnDemand(description ? `${label}. ${description}.` : label, {
+      priority: "high",
+      dedupeKey: `sidebar:${label}`,
+      force: true,
+      interrupt: true,
+      cooldownMs: 700
+    });
     onClose();
   };
 
@@ -129,7 +146,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
         type="button"
         aria-hidden={!isOpen}
         tabIndex={isOpen ? 0 : -1}
-        className={`fixed inset-0 z-40 bg-black/55 backdrop-blur-[1px] transition lg:hidden ${
+        className={`fixed inset-0 z-40 transition lg:hidden ${
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
@@ -138,7 +155,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
       <aside
         id="main-sidebar"
         className={`fixed inset-y-0 left-0 z-50 flex ${widthClass} flex-col border-r transition-transform duration-300 lg:translate-x-0 ${
-          hasTopBrandBar ? "lg:bottom-0 lg:top-12 lg:h-[calc(100vh-48px)]" : ""
+          hasTopBrandBar ? "lg:bottom-0 lg:top-14 lg:h-[calc(100vh-56px)]" : ""
         } ${isOpen ? "translate-x-0" : "-translate-x-full"} ${
           isHighContrast
             ? "contrast-panel border-yellow-400 text-white"
@@ -173,7 +190,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleCloseMenu}
             className={`inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg border transition lg:hidden ${isAccessible ? "min-h-[52px] min-w-[52px] text-base" : ""} ${brandCloseButtonClass}`}
             aria-label="Cerrar menú"
           >
@@ -190,7 +207,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                 pathOverride={isAccessible ? getEasyRoute(item.path) : undefined}
                 isAccessible={isAccessible}
                 isHighContrast={isHighContrast}
-                onNavigate={() => handleSidebarNavigate(item.label)}
+                onNavigate={() => handleSidebarNavigate(item.label, item.description)}
               />
             ))}
           </nav>
@@ -263,6 +280,13 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             <button
               type="button"
               onClick={() => {
+                speakOnDemand("Volver al inicio.", {
+                  priority: "high",
+                  dedupeKey: "sidebar:home",
+                  cooldownMs: 700,
+                  interrupt: true,
+                  force: true
+                });
                 onClose();
                 navigate(getDefaultRouteForRole(user.role));
               }}

@@ -640,7 +640,7 @@ function UserFormModal({
   password: string;
 }) {
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3">
       <form
         onSubmit={onSubmit}
         className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-2xl"

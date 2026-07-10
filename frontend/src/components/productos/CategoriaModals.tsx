@@ -1,5 +1,6 @@
 import { AlertTriangle, Trash2, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { PRODUCTO_CATEGORIA_MAX_LENGTH } from "../../validations/producto.validation";
@@ -68,8 +69,8 @@ export function CategoriaFormModal({
     onSubmit(cleanName);
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30 p-4">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-[480px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
@@ -135,7 +136,8 @@ export function CategoriaFormModal({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -157,8 +159,8 @@ export function CategoriaDeleteModal({
     if (canDelete && selectedCategory) onSubmit(selectedCategory);
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-[2px]">
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/30 p-4">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-[520px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
@@ -247,6 +249,7 @@ export function CategoriaDeleteModal({
           </button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body
   );
 }

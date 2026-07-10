@@ -13,7 +13,7 @@ type ConfirmDialogProps = {
 function ConfirmDialog({ children, description, onCancel, onConfirm, primaryLabel, title }: ConfirmDialogProps) {
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4 no-print"
+      className="fixed inset-0 z-[80] flex items-center justify-center px-4 no-print"
       role="dialog"
       aria-modal="true"
       aria-labelledby="pdv-confirm-title"

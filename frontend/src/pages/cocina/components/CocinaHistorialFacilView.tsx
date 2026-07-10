@@ -16,6 +16,7 @@ export function HistorialFacilView({
   liveMessage,
   onDateFilterChange,
   onOpenPedido,
+  onReadAction,
   onReadHistory,
   onRefresh,
   pedidos,
@@ -26,6 +27,7 @@ export function HistorialFacilView({
   liveMessage: string;
   onDateFilterChange: (value: HistorialDateFilter) => void;
   onOpenPedido: (pedido: HistorialPedidoDetalle | null) => void;
+  onReadAction: (message: string, dedupeKey: string) => void;
   onReadHistory: () => void;
   onRefresh: () => void;
   pedidos: HistorialPedidoDetalle[];
@@ -125,7 +127,13 @@ export function HistorialFacilView({
                   </div>
                   <button
                     type="button"
-                    onClick={() => onOpenPedido(pedido)}
+                    onClick={() => {
+                      onReadAction(
+                        `Ver detalle del pedido ${getPedidoDisplayNumber(pedido)}.`,
+                        `historial-facil-pedido-detalle:${pedido.turnoId}:${pedido.id}`
+                      );
+                      onOpenPedido(pedido);
+                    }}
                     className={`min-h-[64px] rounded-2xl border-2 px-5 text-xl font-black transition ${
                       isHighContrast
                         ? "contrast-button-secondary"

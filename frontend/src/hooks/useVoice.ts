@@ -289,7 +289,21 @@ function useVoice({ enabled = false }: { enabled?: boolean } = {}) {
     [enabled]
   );
 
+  const cancel = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const speechSynthesis = window.speechSynthesis;
+    if (!speechSynthesis) {
+      return;
+    }
+
+    cancelGlobalSpeech(speechSynthesis);
+  }, []);
+
   return {
+    cancel,
     speak
   };
 }

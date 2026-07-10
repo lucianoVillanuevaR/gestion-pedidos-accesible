@@ -3,7 +3,6 @@ import {
   Check,
   Clock3,
   Eye,
-  Filter,
   LoaderCircle,
   RefreshCw,
   Search,
@@ -11,7 +10,7 @@ import {
   User,
   X
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
@@ -50,12 +49,10 @@ function PedidosNormalPage() {
     isLoading,
     loadPedidos,
     normalSummary,
-    pedidos,
     setActiveModal,
     setEstadoFilter,
     updatingPedidoId
   } = usePedidosController({ searchTerm });
-  const entregadosHoy = useMemo(() => getEntregadosHoy(pedidos), [pedidos]);
 
   const handleRefreshPedidos = () => {
     speak("Actualizando pedidos.", {
@@ -90,9 +87,7 @@ function PedidosNormalPage() {
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <section className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
-        <PedidosActivosHeader entregadosHoy={entregadosHoy} isHighContrast={isHighContrast} summary={normalSummary} />
-
-        <NormalPedidosToolbar
+        <PedidosActivosPanel
           estadoFilter={estadoFilter}
           isHighContrast={isHighContrast}
           isLoading={isLoading}
@@ -169,47 +164,6 @@ function NormalPedidosList({
   );
 }
 
-function PedidosActivosHeader({
-  entregadosHoy,
-  isHighContrast,
-  summary
-}: {
-  entregadosHoy: number;
-  isHighContrast: boolean;
-  summary: NormalSummary;
-}) {
-  const cards = [
-    { label: "Pendientes", value: summary.pendientes },
-    { label: "En preparación", value: summary.enPreparacion },
-    { label: "Listos", value: summary.listos },
-    { label: "Entregados hoy", value: entregadosHoy }
-  ];
-
-  return (
-    <header
-      className={`rounded-[10px] border px-4 py-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}
-    >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
-          <p className="mt-1 max-w-2xl text-sm font-bold text-slate-600">
-            Revisa pedidos pendientes, en preparación, listos y entregados recientemente.
-          </p>
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-4 lg:min-w-[560px]">
-          {cards.map((card) => (
-            <article key={card.label} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-xs font-black uppercase text-slate-500">{card.label}</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">{card.value}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </header>
-  );
-}
-
 function NormalPedidoRow({
   isUpdating,
   onOpenModal,
@@ -259,7 +213,6 @@ function NormalPedidoRow({
         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600">
           PDV
         </span>
-        <span className="truncate text-xs font-bold text-slate-500">{formatMetodoPago(pedido.metodoPago)}</span>
       </div>
 
       <div>
@@ -346,7 +299,7 @@ function NormalPedidoActions({
   );
 }
 
-function NormalPedidosToolbar({
+function PedidosActivosPanel({
   estadoFilter,
   isHighContrast,
   isLoading,
@@ -378,11 +331,15 @@ function NormalPedidosToolbar({
     <section
       className={`overflow-hidden rounded-[10px] ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}
     >
+      <header className="px-4 py-4">
+        <h1 className="text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
+        <p className="mt-1 max-w-2xl text-sm font-bold text-slate-600">
+          Revisa pedidos pendientes, en preparación, listos y entregados recientemente.
+        </p>
+      </header>
+
       <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
-          <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center text-slate-600">
-            <Filter className="h-5 w-5" aria-hidden="true" />
-          </span>
           {ESTADO_OPTIONS.map((option) => {
             const isActive = estadoFilter === option.value;
             const count = countsByFilter[option.value];
@@ -422,8 +379,6 @@ function NormalPedidosToolbar({
             );
           })}
         </div>
-
-        <p className="shrink-0 text-sm font-black text-slate-600">{summary.total} pedidos visibles</p>
       </div>
 
       <div className="grid gap-3 px-3 py-3 lg:grid-cols-[minmax(0,1fr)_auto]">
@@ -571,24 +526,6 @@ function getPedidoActionState(estado: EstadoPedido) {
   };
 
   return actionStateByEstado[estado];
-}
-
-function getEntregadosHoy(pedidos: PedidoResponse[]) {
-  const today = new Date();
-
-  return pedidos.filter((pedido) => {
-    if (pedido.estado !== "entregado" || !pedido.createdAt) {
-      return false;
-    }
-
-    const createdAt = new Date(pedido.createdAt);
-
-    return (
-      createdAt.getFullYear() === today.getFullYear() &&
-      createdAt.getMonth() === today.getMonth() &&
-      createdAt.getDate() === today.getDate()
-    );
-  }).length;
 }
 
 export default PedidosNormalPage;

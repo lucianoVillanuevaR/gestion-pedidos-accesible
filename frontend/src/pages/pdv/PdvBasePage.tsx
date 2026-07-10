@@ -31,6 +31,24 @@ function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
   return maxPedidoNumber + 1;
 }
 
+function buildCantidadProductoText(cantidad: number, nombre: string) {
+  if (cantidad === 1) {
+    return `1 unidad de ${nombre}`;
+  }
+
+  return `${cantidad} unidades de ${nombre}`;
+}
+
+function buildDetalleProductoText(item: PdvViewContextValue["pedidoDetalles"][number]) {
+  const opcion = item.variante
+    ? `, opción ${item.variante.nombre}`
+    : item.personalizacion?.combinacion
+      ? `, combinación ${item.personalizacion.combinacion.nombre}`
+      : "";
+
+  return `${buildCantidadProductoText(item.cantidad, item.producto.nombre)}${opcion}`;
+}
+
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,6 +103,32 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     playSoundCue,
     showFeedback
   });
+
+  const announcePdvControl = useCallback(
+    (message: string, dedupeKey: string) => {
+      speakOnDemand(message, {
+        priority: "high",
+        dedupeKey,
+        cooldownMs: 700,
+        interrupt: true,
+        force: true
+      });
+    },
+    [speakOnDemand]
+  );
+
+  const selectCategory = useCallback(
+    (value: FiltroCategoria, label?: string) => {
+      const categoryLabel = label ?? categoryFilters.find((filter) => filter.value === value)?.label ?? value;
+      setSelectedCategory(value);
+      announcePdvControl(`Categoría ${categoryLabel}.`, `pdv-category:${value}`);
+    },
+    [announcePdvControl, categoryFilters]
+  );
+
+  const announceSearchBar = useCallback(() => {
+    announcePdvControl("Barra de búsqueda de productos.", "pdv-search-bar");
+  }, [announcePdvControl]);
 
   const refreshNextPedidoNumber = useCallback(async () => {
     if (!isTurnoOpen) {
@@ -176,8 +220,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       return;
     }
 
+    const clienteText = clienteNombre.trim() ? `Cliente: ${clienteNombre.trim()}.` : "Falta nombre del cliente.";
+    const metodoPagoText =
+      metodoPago !== "" ? `Tipo de pago: ${getPaymentLabel(metodoPago)}.` : "Falta método de pago.";
+
     if (pedidoDetalles.length === 0) {
-      speakOnDemand("Pedido vacío. Agrega productos antes de aceptar.", {
+      speakOnDemand(`Pedido número ${nextPedidoNumber}. ${clienteText} Pedido vacío. ${metodoPagoText}`, {
         priority: "high",
         dedupeKey: "read-summary-empty",
         force: true,
@@ -187,34 +235,19 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       return;
     }
 
-    const itemLines = pedidoDetalles.map((item) => {
-      const opcion = item.variante
-        ? `, opción ${item.variante.nombre}`
-        : item.personalizacion?.combinacion
-          ? `, combinación ${item.personalizacion.combinacion.nombre}`
-          : "";
-      return `${item.cantidad} ${item.producto.nombre}${opcion}`;
-    });
+    const itemLines = pedidoDetalles.map(buildDetalleProductoText);
 
     const parts = [
       `Pedido número ${nextPedidoNumber}.`,
-      `Contiene ${totalItems} ${totalItems === 1 ? "producto" : "productos"}.`,
-      `Detalle: ${itemLines.join(", ")}.`,
-      `Total a pagar ${formatCurrency(total)}.`
+      clienteText,
+      `Productos del pedido: ${itemLines.join("; ")}.`,
+      `Total de productos: ${totalItems}.`,
+      metodoPagoText,
+      `Total a pagar: ${formatCurrency(total)}.`
     ];
-
-    if (metodoPago !== "") {
-      parts.push(`Método de pago: ${getPaymentLabel(metodoPago)}.`);
-    } else {
-      parts.push("Método de pago pendiente.");
-    }
 
     if (observacion.trim()) {
       parts.push(`Observación: ${observacion.trim()}.`);
-    }
-
-    if (clienteNombre.trim()) {
-      parts.push(`Cliente: ${clienteNombre.trim()}.`);
     }
 
     speakOnDemand(parts.join(" "), {
@@ -334,7 +367,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       clearPedidoForm();
       playSoundCue("success");
       announce(
-        numeroPedido ? `Pedido numero ${numeroPedido} registrado correctamente.` : "Pedido registrado correctamente.",
+        numeroPedido ? `Pedido número ${numeroPedido} registrado correctamente.` : "Pedido registrado correctamente.",
         {
           priority: "high",
           dedupeKey: "pedido-registrado",
@@ -428,7 +461,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
       switch (step) {
         case 1:
-          return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoria.`;
+          return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoría.`;
         case 2:
           return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
         case 3:
@@ -436,9 +469,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         case 4:
           return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Ingresa el nombre del comprador.`;
         case 5:
-          return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Metodo de pago.`;
+          return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Método de pago.`;
         case ACCESSIBLE_STEP_COUNT:
-          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta metodo de pago."}`;
+          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta método de pago."}`;
         default:
           return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
       }
@@ -564,6 +597,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     accessibleStep,
     accessibleStepValidation,
     addProduct,
+    announceSearchBar,
     bgWrapper,
     cardBorder,
     categoryFilters,
@@ -602,6 +636,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     resetPedido,
     searchTerm,
     selectedCategory,
+    selectCategory,
     selectMetodoPago,
     sending,
     setAccessibleObservationType,

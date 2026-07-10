@@ -496,16 +496,6 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
         >
           {isUpdating && isReady ? "Guardando..." : "Entregar"}
         </button>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenModal({ action: "detail", pedido });
-          }}
-          className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
-        >
-          Ver detalle completo
-        </button>
       </div>
     </article>
   );
@@ -620,16 +610,6 @@ function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, o
           } ${FOCUS_VISIBLE_CLASS}`}
         >
           {isUpdating && isReady ? "Guardando..." : "Entregar"}
-        </button>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenModal({ action: "detail", pedido });
-          }}
-          className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-100"} ${FOCUS_VISIBLE_CLASS}`}
-        >
-          Ver detalle completo
         </button>
       </div>
     </article>

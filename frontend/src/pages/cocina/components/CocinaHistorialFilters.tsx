@@ -9,14 +9,14 @@ export const HISTORIAL_DATE_FILTERS: Array<{ label: string; value: HistorialDate
   { label: "Todos", value: "all" }
 ];
 
-const HISTORIAL_ESTADO_FILTERS: Array<{ label: string; value: HistorialEstadoFilter }> = [
+export const HISTORIAL_ESTADO_FILTERS: Array<{ label: string; value: HistorialEstadoFilter }> = [
   { label: "Todos", value: "todos" },
   { label: "Entregado", value: "entregado" },
   { label: "Pendiente", value: "pendiente" },
   { label: "Cancelado", value: "cancelado" }
 ];
 
-const HISTORIAL_METODO_FILTERS: Array<{ label: string; value: HistorialMetodoFilter }> = [
+export const HISTORIAL_METODO_FILTERS: Array<{ label: string; value: HistorialMetodoFilter }> = [
   { label: "Todos", value: "todos" },
   { label: "Efectivo", value: "efectivo" },
   { label: "Tarjeta", value: "tarjeta" },
@@ -31,6 +31,7 @@ export function HistorialFilters({
   onDateFilterChange,
   onEstadoFilterChange,
   onMetodoFilterChange,
+  onSearchFocus,
   onSearchTermChange,
   searchTerm
 }: {
@@ -41,6 +42,7 @@ export function HistorialFilters({
   onDateFilterChange: (value: HistorialDateFilter) => void;
   onEstadoFilterChange: (value: HistorialEstadoFilter) => void;
   onMetodoFilterChange: (value: HistorialMetodoFilter) => void;
+  onSearchFocus?: () => void;
   onSearchTermChange: (value: string) => void;
   searchTerm: string;
 }) {
@@ -49,7 +51,7 @@ export function HistorialFilters({
   return (
     <section className={`grid gap-3 rounded-xl px-4 py-3 ${panelClass}`} aria-label="Filtros del historial de turnos">
       <label className="relative block">
-        <span className="sr-only">Buscar en historial</span>
+        <span className="sr-only">Barra de búsqueda</span>
         <Search
           className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500"
           aria-hidden="true"
@@ -58,6 +60,9 @@ export function HistorialFilters({
           type="search"
           value={searchTerm}
           onChange={(event) => onSearchTermChange(event.target.value)}
+          onClick={onSearchFocus}
+          onFocus={onSearchFocus}
+          aria-label="Barra de búsqueda"
           placeholder="Buscar pedido, producto, cajero o método de pago"
           className={`min-h-[48px] w-full rounded-xl border border-slate-300 bg-white py-2 pl-10 pr-4 font-bold text-slate-950 outline-none placeholder:text-slate-500 ${FOCUS_VISIBLE_CLASS}`}
         />

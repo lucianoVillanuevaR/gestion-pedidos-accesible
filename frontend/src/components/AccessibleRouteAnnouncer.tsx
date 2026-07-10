@@ -10,9 +10,9 @@ const ROUTE_MESSAGES: Record<string, string> = {
   "/pedidos": "Pedidos. Revisa pedidos activos, cambia estados y consulta detalles.",
   "/pedidos/facil":
     "Pedidos en modo fácil. Usa filtros grandes para revisar pendientes, en preparación, listos, entregados o cancelados.",
-  "/cierre-turno": "Cierre de turno. Revisa ventas confirmadas, metodos de pago, productos vendidos y cierre de caja.",
-  "/cierre-turno/facil": "Cierre de turno en modo fácil. Revisa el resumen administrativo y confirma el cierre.",
-  "/productos": "Productos. Revisa el catalogo, disponibilidad, precios y categorias.",
+  "/cierre-turno": "Cierre de turno. Revisa ventas confirmadas, métodos de pago, productos vendidos y cierre de caja.",
+  "/cierre-turno/facil": "Cierre de turno en modo fácil. Revisa el turno actual y confirma el cierre.",
+  "/productos": "Productos. Revisa el catálogo, disponibilidad, precios y categorías.",
   "/productos/facil":
     "Productos en modo fácil. Revisa productos con tarjetas grandes y puedes enviarlos a nuevo pedido.",
   "/inventario/facil": "Inventario en modo fácil. Revisa productos disponibles, bajo stock o agotados.",
