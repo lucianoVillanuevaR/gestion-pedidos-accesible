@@ -1,15 +1,4 @@
-import {
-  CalendarDays,
-  Check,
-  Clock3,
-  Eye,
-  LoaderCircle,
-  RefreshCw,
-  Search,
-  Store,
-  User,
-  X
-} from "lucide-react";
+import { CalendarDays, Check, Clock3, Eye, LoaderCircle, RefreshCw, Search, Store, User, X } from "lucide-react";
 import { useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";

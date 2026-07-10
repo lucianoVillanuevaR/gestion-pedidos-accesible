@@ -22,7 +22,7 @@ function PdvCatalogPanel() {
     searchTerm,
     selectedCategory,
     selectCategory,
-    setSearchTerm,
+    setSearchTerm
   } = usePdvViewContext();
 
   const selectedCategoryLabel =

@@ -36,7 +36,10 @@ function capitalizeWords(value: string) {
     .join(" ");
 }
 
-export function getResponsableDisplay(responsable?: TurnoResponsable, legacyUsername?: string | null): ResponsableDisplay {
+export function getResponsableDisplay(
+  responsable?: TurnoResponsable,
+  legacyUsername?: string | null
+): ResponsableDisplay {
   const label = cleanText(responsable?.label);
   const username = cleanText(responsable?.username ?? legacyUsername);
   const role = cleanText(responsable?.role);

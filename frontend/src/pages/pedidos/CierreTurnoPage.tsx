@@ -475,7 +475,11 @@ function CierreHeader({
             value={responsable.primaryValue}
           />
           {responsable.roleValue && (
-            <HeaderInfo icon={<Store className="h-5 w-5" aria-hidden="true" />} label="Rol" value={responsable.roleValue} />
+            <HeaderInfo
+              icon={<Store className="h-5 w-5" aria-hidden="true" />}
+              label="Rol"
+              value={responsable.roleValue}
+            />
           )}
           <HeaderInfo
             icon={<CalendarDays className="h-5 w-5" aria-hidden="true" />}

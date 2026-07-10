@@ -81,9 +81,7 @@ function ProductosPage() {
   useEffect(() => {
     setExpandedCategories((currentCategories) => {
       const availableCategories = new Set(grupos.map((grupo) => grupo.value));
-      const nextCategories = new Set(
-        [...currentCategories].filter((category) => availableCategories.has(category))
-      );
+      const nextCategories = new Set([...currentCategories].filter((category) => availableCategories.has(category)));
 
       grupos.forEach((grupo) => {
         if (currentCategories.size === 0 || currentCategories.has(grupo.value)) {
