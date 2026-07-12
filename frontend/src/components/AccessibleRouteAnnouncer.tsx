@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getRouteMeta } from "../config/navigation";
+import { useAccessibilityContext } from "../contexts/AccessibilityContext";
+import useActionVoice from "../hooks/useActionVoice";
 
 const ROUTE_MESSAGES: Record<string, string> = {
   "/pdv": "Nuevo pedido. Busca productos, arma el pedido, elige pago y registra la venta.",
@@ -42,13 +44,18 @@ export function getRouteMessage(pathname: string) {
 
 function AccessibleRouteAnnouncer() {
   const location = useLocation();
+  const { isAccessible, isVoiceEnabled } = useAccessibilityContext();
+  const { speakAction } = useActionVoice(isVoiceEnabled);
   const [liveMessage, setLiveMessage] = useState("");
 
   const message = useMemo(() => getRouteMessage(location.pathname), [location.pathname]);
 
   useEffect(() => {
     setLiveMessage(message);
-  }, [message]);
+    if (isAccessible) {
+      speakAction(message, `route:${location.pathname}`, { cooldownMs: 900 });
+    }
+  }, [isAccessible, location.pathname, message, speakAction]);
 
   return (
     <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">

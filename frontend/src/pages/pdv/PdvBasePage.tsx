@@ -76,6 +76,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [nextPedidoNumber, setNextPedidoNumber] = useState(1);
 
   const initialProductHandledRef = useRef(false);
+  const lastAnnouncedAccessibleStepKeyRef = useRef("");
   const ticketRef = useRef<HTMLDivElement | null>(null);
   const playSoundCue = usePdvSoundCue(isSoundEnabled);
   const { feedback, feedbackRef, setFeedback, showFeedback } = usePdvFeedback();
@@ -408,6 +409,20 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const handlePrint = useReactToPrint({
     contentRef: ticketRef,
     documentTitle: `Comanda-Riquisisimo-${new Date().getTime()}`,
+    print: async (printIframe) => {
+      const printWindow = printIframe.contentWindow;
+
+      if (!printWindow) {
+        throw new Error("No se pudo preparar la ventana de impresión");
+      }
+
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, 100);
+      });
+
+      printWindow.focus();
+      printWindow.print();
+    },
     pageStyle: `
       @page {
         size: 80mm auto;
@@ -420,13 +435,14 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         background: white;
       }
     `,
-    onAfterPrint: () => {
-      const msg = "Comanda impresa correctamente";
-      showFeedback({ type: "success", title: "Comanda lista", message: msg });
-      announce("Comanda impresa", {
-        priority: "normal",
-        dedupeKey: "print-success",
-        cooldownMs: 2500
+    onPrintError: () => {
+      const msg = "No se pudo abrir la impresión. Revisa que el navegador permita imprimir.";
+      showFeedback({ type: "error", title: "No se pudo imprimir", message: msg });
+      announce(msg, {
+        priority: "high",
+        dedupeKey: "print-error",
+        cooldownMs: 2500,
+        interrupt: true
       });
     }
   });
@@ -461,17 +477,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
       switch (step) {
         case 1:
-          return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Selecciona una categoría.`;
+          return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Elige una categoría de productos.`;
         case 2:
-          return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
+          return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto. Usa los botones grandes para agregar o cambiar cantidad.`;
         case 3:
-          return `Paso 3 de ${ACCESSIBLE_STEP_COUNT}. Revisa tu pedido. Total ${formatCurrency(total)}.`;
+          return "Paso 3: Revisa tu pedido. Confirma lo que elegiste antes de seguir al siguiente paso.";
         case 4:
           return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Ingresa el nombre del comprador.`;
         case 5:
-          return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Método de pago.`;
+          return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Selecciona el método de pago: efectivo, tarjeta o transferencia.`;
         case ACCESSIBLE_STEP_COUNT:
-          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta método de pago."}`;
+          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta método de pago."} Puedes registrar el pedido si todo está correcto.`;
         default:
           return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
       }
@@ -512,19 +528,28 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const accessibleStepValidation = getAccessibleStepValidation(accessibleStep);
 
-  const announceAccessibleStep = useCallback(
-    (step: number) => {
-      announce(getAccessibleStepMessage(step), {
-        priority: "high",
-        dedupeKey: `pdv-step-button:${step}`,
-        cooldownMs: 700,
-        delayMs: 0,
-        force: true,
-        interrupt: true
-      });
-    },
-    [announce, getAccessibleStepMessage]
-  );
+  useEffect(() => {
+    if (!isAccessible || !isVoiceEnabled) {
+      lastAnnouncedAccessibleStepKeyRef.current = "";
+      return;
+    }
+
+    const stepKey = `${isTurnoOpen ? "turno-abierto" : "turno-cerrado"}:${accessibleStep}`;
+
+    if (lastAnnouncedAccessibleStepKeyRef.current === stepKey) {
+      return;
+    }
+
+    lastAnnouncedAccessibleStepKeyRef.current = stepKey;
+    announce(getAccessibleStepMessage(accessibleStep), {
+      priority: "high",
+      dedupeKey: `pdv-accessible-step:${stepKey}`,
+      cooldownMs: 0,
+      delayMs: 120,
+      force: true,
+      interrupt: true
+    });
+  }, [accessibleStep, announce, getAccessibleStepMessage, isAccessible, isTurnoOpen, isVoiceEnabled]);
 
   const goNextAccessibleStep = useCallback(() => {
     const validationMessage = getAccessibleStepValidation(accessibleStep);
@@ -543,18 +568,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
     setAccessibleStep((currentStep) => {
       const nextStep = Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1);
-      announceAccessibleStep(nextStep);
       return nextStep;
     });
-  }, [accessibleStep, announce, announceAccessibleStep, getAccessibleStepValidation, playSoundCue, showFeedback]);
+  }, [accessibleStep, announce, getAccessibleStepValidation, playSoundCue, showFeedback]);
 
   const goPrevAccessibleStep = useCallback(() => {
     setAccessibleStep((currentStep) => {
       const nextStep = Math.max(1, currentStep - 1);
-      announceAccessibleStep(nextStep);
       return nextStep;
     });
-  }, [announceAccessibleStep]);
+  }, []);
 
   useEffect(() => {
     if (!isAccessible) {
@@ -677,6 +700,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
             <PdvProductConfigurator
               isAccessible={isAccessible}
               isHighContrast={isHighContrast}
+              isVoiceEnabled={isVoiceEnabled}
               onClose={() => setPendingVariantProduct(null)}
               onSelect={selectPendingVariant}
               producto={pendingVariantProduct}

@@ -1,6 +1,7 @@
 import { ArrowLeftCircle, HelpCircle, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
+import useActionVoice from "../hooks/useActionVoice";
 
 type EasyModeActionsProps = {
   className?: string;
@@ -23,20 +24,21 @@ function EasyModeActions({
   showHome = true
 }: EasyModeActionsProps) {
   const navigate = useNavigate();
-  const { isHighContrast, isPanelOpen, openAccessibilityPanel, setAccessibleMode } = useAccessibilityContext();
+  const { isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel, setAccessibleMode } =
+    useAccessibilityContext();
+  const { speakAction } = useActionVoice(isVoiceEnabled);
 
   const secondaryClass = isHighContrast
     ? "contrast-button-secondary"
     : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50";
-  const primaryClass = isHighContrast
-    ? "contrast-button-secondary"
-    : "border-slate-900 bg-slate-900 text-white hover:bg-black";
+  const primaryClass = secondaryClass;
 
   const goHome = () => {
     if (confirmHome && !window.confirm("Hay un pedido en proceso. ¿Deseas volver al inicio?")) {
       return;
     }
 
+    speakAction("Inicio modo fácil.", "easy-mode-home");
     navigate("/modo-facil");
   };
 
@@ -45,8 +47,14 @@ function EasyModeActions({
       return;
     }
 
+    speakAction("Salir del modo fácil.", "easy-mode-exit");
     setAccessibleMode(false);
     navigate("/pdv", { replace: true });
+  };
+
+  const openHelp = () => {
+    speakAction("Opciones de ayuda.", "easy-mode-help");
+    openAccessibilityPanel();
   };
 
   const actionCount = (showHome ? 1 : 0) + 1 + (showHelp ? 1 : 0);
@@ -79,7 +87,7 @@ function EasyModeActions({
       {showHelp && (
         <button
           type="button"
-          onClick={openAccessibilityPanel}
+          onClick={openHelp}
           aria-haspopup="dialog"
           aria-expanded={isPanelOpen}
           aria-label="Abrir opciones de ayuda"

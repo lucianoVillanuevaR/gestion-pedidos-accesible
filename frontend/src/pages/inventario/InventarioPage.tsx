@@ -6,6 +6,7 @@ import AlertMessage from "../../components/ui/AlertMessage";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import useActionVoice from "../../hooks/useActionVoice";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
@@ -52,7 +53,8 @@ function parseStockValue(value: string) {
 }
 
 function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
-  const { isHighContrast } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
+  const { speakAction } = useActionVoice(isVoiceEnabled);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
   const [draftValues, setDraftValues] = useState<Record<number, { stockActual: string; stockMinimo: string }>>({});
   const [error, setError] = useState<string | null>(null);
@@ -177,10 +179,20 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   };
 
   const toggleSection = (estado: InventarioEstado) => {
+    const willExpand = collapsedSections[estado];
+    speakAction(
+      `${willExpand ? "Mostrar" : "Ocultar"} productos ${getEstadoLabel(estado, isAccessible)}.`,
+      `inventario-seccion:${estado}:${willExpand ? "mostrar" : "ocultar"}`
+    );
     setCollapsedSections((currentSections) => ({
       ...currentSections,
       [estado]: !currentSections[estado]
     }));
+  };
+
+  const handleAccessibleRefresh = () => {
+    speakAction("Actualizar stock básico.", "inventario-facil-actualizar");
+    loadInventario();
   };
 
   if (isAccessible) {
@@ -201,7 +213,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
               <EasyModeActions />
               <button
                 type="button"
-                onClick={loadInventario}
+                onClick={handleAccessibleRefresh}
                 className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 bg-white px-5 text-xl font-black text-slate-950 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
               >
                 <RefreshCw className={`h-7 w-7 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />

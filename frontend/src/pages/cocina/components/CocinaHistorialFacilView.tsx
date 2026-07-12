@@ -1,4 +1,4 @@
-import { RefreshCw, Volume2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import EasyModeActions from "../../../components/EasyModeActions";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import {
@@ -17,7 +17,6 @@ export function HistorialFacilView({
   onDateFilterChange,
   onOpenPedido,
   onReadAction,
-  onReadHistory,
   onRefresh,
   pedidos,
   selectedPedido
@@ -28,7 +27,6 @@ export function HistorialFacilView({
   onDateFilterChange: (value: HistorialDateFilter) => void;
   onOpenPedido: (pedido: HistorialPedidoDetalle | null) => void;
   onReadAction: (message: string, dedupeKey: string) => void;
-  onReadHistory: () => void;
   onRefresh: () => void;
   pedidos: HistorialPedidoDetalle[];
   selectedPedido: HistorialPedidoDetalle | null;
@@ -52,18 +50,6 @@ export function HistorialFacilView({
             </div>
             <div className="grid gap-3 xl:min-w-[760px]">
               <EasyModeActions />
-              <button
-                type="button"
-                onClick={onReadHistory}
-                className={`inline-flex min-h-[64px] items-center justify-center gap-2 rounded-2xl border-2 px-5 text-xl font-black transition ${
-                  isHighContrast
-                    ? "contrast-button-secondary"
-                    : "border-slate-900 bg-white text-slate-950 hover:bg-slate-100"
-                } ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <Volume2 className="h-6 w-6" aria-hidden="true" />
-                Leer historial
-              </button>
               <button
                 type="button"
                 onClick={onRefresh}

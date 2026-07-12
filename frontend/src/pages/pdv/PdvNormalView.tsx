@@ -94,7 +94,6 @@ function PdvNormalView() {
             <div className="flex min-w-0 items-center gap-2">
               <span className="text-2xl font-light leading-none">#{nextPedidoNumber}</span>
               <span className="rounded-full border border-white/70 px-2 py-0.5 text-xs font-bold">En el local</span>
-              <span className="text-sm font-bold">{getPaymentLabel(metodoPago)}</span>
             </div>
             <button
               type="button"
@@ -116,8 +115,7 @@ function PdvNormalView() {
               <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
             </button>
           </div>
-          <div className="flex items-center justify-between border-t border-yellow-300 bg-yellow-50 px-4 py-1 text-xs font-bold text-slate-700">
-            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] text-slate-700">PDV</span>
+          <div className="flex items-center justify-end border-t border-yellow-300 bg-yellow-50 px-4 py-1 text-xs font-bold text-slate-700">
             <span className="inline-flex items-center gap-1">
               <CalendarDays className="h-4 w-4" aria-hidden="true" />
               {orderDate}

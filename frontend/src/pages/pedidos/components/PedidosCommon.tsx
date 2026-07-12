@@ -37,7 +37,7 @@ function ModalShell({ children, onClose, title }: { children: ReactNode; onClose
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-x-0 -top-16 bottom-0 z-[1000] flex items-center justify-center bg-black/30 px-4 py-6 pt-[5.5rem] backdrop-blur-[1px]">
       <section
         role="dialog"
         aria-modal="true"

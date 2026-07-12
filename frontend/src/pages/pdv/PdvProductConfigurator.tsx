@@ -6,12 +6,14 @@ import PdvProductConfiguratorNormalView from "./PdvProductConfiguratorNormalView
 export default function PdvProductConfigurator({
   isAccessible,
   isHighContrast,
+  isVoiceEnabled,
   onClose,
   onSelect,
   producto
 }: {
   isAccessible: boolean;
   isHighContrast: boolean;
+  isVoiceEnabled: boolean;
   onClose: () => void;
   onSelect: (
     variante: VarianteProducto | undefined,
@@ -27,6 +29,7 @@ export default function PdvProductConfigurator({
       <PdvProductConfiguratorEasyView
         config={config}
         isHighContrast={isHighContrast}
+        isVoiceEnabled={isVoiceEnabled}
         onClose={onClose}
         onSelect={onSelect}
         producto={producto}

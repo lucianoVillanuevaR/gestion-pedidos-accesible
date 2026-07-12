@@ -112,7 +112,14 @@ function PedidosFacilPage() {
 
   const handleFilterChange = (value: EstadoFilter, label: string) => {
     setEstadoFilter(value);
-    setLiveMessage(`Filtro activo: ${label}.`);
+    const message = `Filtro activo: ${label}.`;
+    setLiveMessage(message);
+    speak(message, {
+      priority: "high",
+      dedupeKey: `pedidos-facil-filtro:${value}`,
+      cooldownMs: 700,
+      interrupt: true
+    });
   };
 
   const handleReadPedido = (pedido: PedidoResponse) => {
@@ -131,17 +138,6 @@ function PedidosFacilPage() {
     speak(message, {
       priority: "high",
       dedupeKey: `leer-pedido:${pedido.id}:${pedido.estado}`,
-      cooldownMs: 2200,
-      interrupt: true
-    });
-  };
-
-  const handleReadScreen = () => {
-    const message = "Estos son los pedidos activos. Puedes ver detalles o entregar pedidos listos.";
-    setLiveMessage(message);
-    speak(message, {
-      priority: "high",
-      dedupeKey: "pedidos-facil-leer-pantalla",
       cooldownMs: 2200,
       interrupt: true
     });
@@ -226,6 +222,14 @@ function PedidosFacilPage() {
               <EasyModeActions />
               <Link
                 to="/pdv/facil"
+                onClick={() =>
+                  speak("Crear nuevo pedido.", {
+                    priority: "high",
+                    dedupeKey: "pedidos-facil-crear-pedido",
+                    cooldownMs: 700,
+                    interrupt: true
+                  })
+                }
                 className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black no-underline transition ${
                   isHighContrast
                     ? "contrast-button-primary"
@@ -235,18 +239,6 @@ function PedidosFacilPage() {
                 <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
                 Crear nuevo pedido
               </Link>
-              <button
-                type="button"
-                onClick={handleReadScreen}
-                className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black transition ${
-                  isHighContrast
-                    ? "contrast-button-secondary"
-                    : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
-                } ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <Volume2 className="h-6 w-6" aria-hidden="true" />
-                Leer ayuda
-              </button>
             </div>
           </div>
 
@@ -263,13 +255,6 @@ function PedidosFacilPage() {
               value={formatCurrency(String(normalSummary.totalPendiente))}
             />
           </div>
-          <p
-            className={`mt-4 rounded-2xl border px-4 py-3 text-lg font-black ${
-              isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-200 bg-slate-50 text-slate-900"
-            }`}
-          >
-            Las ventas entregadas consideran solo pedidos finalizados.
-          </p>
         </section>
 
         <section

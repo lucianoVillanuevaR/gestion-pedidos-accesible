@@ -7,7 +7,7 @@ import useActionVoice from "../../hooks/useActionVoice";
 import useVoice from "../../hooks/useVoice";
 import { cargarCierresTurno, obtenerCierresTurno } from "../../services/cierresTurno";
 import type { CierreTurno } from "../../types";
-import { ESTADO_META, formatCurrency as formatKitchenCurrency, getPedidoDisplayNumber } from "../pedidos/PedidosShared";
+import { formatCurrency as formatKitchenCurrency } from "../pedidos/PedidosShared";
 import { HistorialFacilView } from "./components/CocinaHistorialFacilView";
 import {
   HISTORIAL_DATE_FILTERS,
@@ -121,35 +121,6 @@ export default function CocinaHistorialPage() {
     setTurnoViewById((currentViews) => ({ ...currentViews, [turnoId]: view }));
   };
 
-  const handleReadEasyHistory = () => {
-    const availableFilters = [
-      `Barra de búsqueda para buscar pedido, producto, cajero o método de pago.`,
-      `Filtros de fecha: ${HISTORIAL_DATE_FILTERS.map((filter) => filter.label).join(", ")}.`,
-      `Filtros de estado: ${HISTORIAL_ESTADO_FILTERS.map((filter) => filter.label).join(", ")}.`,
-      `Filtros de método de pago: ${HISTORIAL_METODO_FILTERS.map((filter) => filter.label).join(", ")}.`
-    ].join(" ");
-
-    const pedidosMessage =
-      easyPedidos.length === 0
-        ? "No hay pedidos recientes en el historial."
-        : easyPedidos
-            .slice(0, 6)
-            .map(
-              (pedido) =>
-                `Pedido ${getPedidoDisplayNumber(pedido)}, ${ESTADO_META[pedido.estado].label}, total ${formatKitchenCurrency(String(pedido.total))}.`
-            )
-            .join(" ");
-    const message = `Historial de turnos. ${availableFilters} ${pedidosMessage}`;
-
-    setLiveMessage(message);
-    speakForced(message, {
-      priority: "high",
-      dedupeKey: "historial-facil-leer",
-      cooldownMs: 2500,
-      interrupt: true
-    });
-  };
-
   useEffect(() => {
     const handleAfterPrint = () => setPrintTurnoId(null);
     window.addEventListener("afterprint", handleAfterPrint);
@@ -170,7 +141,6 @@ export default function CocinaHistorialPage() {
         onDateFilterChange={handleDateFilterChange}
         onOpenPedido={setSelectedPedido}
         onReadAction={announceHistorialControl}
-        onReadHistory={handleReadEasyHistory}
         onRefresh={handleRefresh}
         pedidos={easyPedidos}
         selectedPedido={selectedPedido}

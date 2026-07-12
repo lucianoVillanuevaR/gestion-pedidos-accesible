@@ -11,7 +11,6 @@ import {
   LoaderCircle,
   Printer,
   Store,
-  Volume2,
   WalletCards,
   X
 } from "lucide-react";
@@ -126,13 +125,6 @@ function CierreTurnoPage() {
     }
   };
 
-  const handleReadSummary = () => {
-    speakAction(
-      `Este es el resumen del turno. Total vendido confirmado ${formatCurrency(String(summary.totalVendido))}. Pedidos entregados ${summary.pedidosEntregados}. Pedidos pendientes ${summary.pedidosPendientes}. El total vendido considera solo pedidos entregados.`,
-      "cierre-turno-facil-leer"
-    );
-  };
-
   const pageClass = isHighContrast ? "bg-black text-white" : "bg-[#F7F7F7] text-slate-950";
   const panelClass = isHighContrast
     ? "contrast-panel border-2 border-yellow-400"
@@ -198,24 +190,13 @@ function CierreTurnoPage() {
               <MetricCard label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
             </section>
 
-            <p className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-xl font-black text-slate-950">
-              El total vendido considera solo pedidos entregados.
-            </p>
             {hasPedidosPendientes && (
               <p className="rounded-2xl border-2 border-yellow-300 bg-[#FFF8DC] px-5 py-4 text-xl font-black text-yellow-950">
                 Hay pedidos pendientes. Puedes revisarlos antes de cerrar.
               </p>
             )}
 
-            <section className="grid gap-3 sm:grid-cols-2" aria-label="Acciones de cierre de turno">
-              <button
-                type="button"
-                onClick={handleReadSummary}
-                className={`inline-flex min-h-[64px] items-center justify-center gap-2 rounded-2xl border-2 px-5 text-xl font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:bg-slate-100"} ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <Volume2 className="h-6 w-6" aria-hidden="true" />
-                Leer resumen
-              </button>
+            <section className="grid gap-3" aria-label="Acciones de cierre de turno">
               <button
                 type="button"
                 onClick={isTurnoOpen ? () => setIsConfirmOpen(true) : handleAbrirTurno}
@@ -742,9 +723,6 @@ function CerrarTurnoModal({
             <h2 id="cerrar-turno-title" className="text-2xl font-black text-slate-950">
               ¿Deseas cerrar el turno?
             </h2>
-            <p className="mt-3 font-bold leading-relaxed text-slate-700">
-              El total vendido considera solo pedidos entregados.
-            </p>
           </div>
           <button
             type="button"

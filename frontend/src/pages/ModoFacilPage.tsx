@@ -1,13 +1,4 @@
-import {
-  Accessibility,
-  ChefHat,
-  ClipboardList,
-  ClipboardPlus,
-  FileCheck2,
-  History,
-  Volume2,
-  Warehouse
-} from "lucide-react";
+import { Accessibility, ChefHat, ClipboardList, ClipboardPlus, FileCheck2, History, Warehouse } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../components/EasyModeActions";
@@ -79,13 +70,6 @@ function ModoFacilPage() {
     : "border-2 border-slate-200 bg-slate-50";
   const focusClass =
     "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2";
-  const handleReadIntro = () => {
-    speakAction(
-      "Estás en modo fácil. Puedes crear un pedido, ver pedidos activos, revisar preparación, consultar stock básico, cerrar turno o ver pedidos recientes.",
-      "modo-facil-inicio-leer"
-    );
-  };
-
   return (
     <main className={`min-h-screen ${isHighContrast ? "bg-black text-white" : "bg-white text-slate-950"}`}>
       <div className="mx-auto w-full max-w-[1440px] space-y-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-6">
@@ -107,18 +91,6 @@ function ModoFacilPage() {
 
             <div className="grid gap-3 lg:min-w-[620px]">
               <EasyModeActions showHome={false} />
-              <button
-                type="button"
-                onClick={handleReadIntro}
-                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${
-                  isHighContrast
-                    ? "contrast-button-secondary"
-                    : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
-                } ${focusClass}`}
-              >
-                <Volume2 className="h-6 w-6" aria-hidden="true" />
-                Leer ayuda
-              </button>
             </div>
           </div>
         </header>
@@ -147,6 +119,7 @@ function ModoFacilPage() {
                 key={action.path}
                 to={action.path}
                 aria-label={action.ariaLabel}
+                onClick={() => speakAction(`${action.label}. ${action.description}`, `modo-facil:${action.path}`)}
                 className={`group flex min-h-[132px] items-center gap-4 rounded-2xl border-2 p-5 no-underline transition ${
                   isHighContrast
                     ? "contrast-button-secondary"

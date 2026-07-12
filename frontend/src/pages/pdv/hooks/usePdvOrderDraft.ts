@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MetodoPago, PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
 import { buildPedidoSummary } from "../../../utils/pdv";
 import { PEDIDO_MAX_CANTIDAD_DETALLE } from "../../../validations/pedido.validation";
@@ -6,6 +6,52 @@ import { usesProductConfigurator, type FeedbackState, type SoundCue } from "../P
 
 type Announce = (message: string, options?: Record<string, unknown>) => void;
 type PlaySoundCue = (cue: SoundCue) => void;
+type AccessibleObservationType = "cocina" | "cliente";
+
+const PDV_ORDER_DRAFT_STORAGE_KEY = "riquisimo:pdv-order-draft";
+const METODOS_PAGO_VALIDOS: Array<MetodoPago | ""> = ["", "efectivo", "tarjeta", "transferencia"];
+const ACCESSIBLE_OBSERVATION_TYPES: AccessibleObservationType[] = ["cocina", "cliente"];
+
+type StoredPdvOrderDraft = {
+  accessibleObservationType?: AccessibleObservationType;
+  clienteNombre?: string;
+  items?: Record<string, number>;
+  metodoPago?: MetodoPago | "";
+  observacion?: string;
+  personalizaciones?: Record<string, PersonalizacionProducto>;
+};
+
+function getStoredPdvOrderDraft(): StoredPdvOrderDraft {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(PDV_ORDER_DRAFT_STORAGE_KEY);
+    if (!rawValue) {
+      return {};
+    }
+
+    const parsedValue = JSON.parse(rawValue) as StoredPdvOrderDraft;
+    return parsedValue && typeof parsedValue === "object" ? parsedValue : {};
+  } catch {
+    return {};
+  }
+}
+
+function hasPedidoDraftContent(draft: StoredPdvOrderDraft) {
+  return Boolean(
+    Object.keys(draft.items ?? {}).length ||
+    Object.keys(draft.personalizaciones ?? {}).length ||
+    draft.clienteNombre?.trim() ||
+    draft.metodoPago ||
+    draft.observacion?.trim()
+  );
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
 
 export function usePdvOrderDraft({
   announce,
@@ -24,13 +70,30 @@ export function usePdvOrderDraft({
   setFeedback: (feedback: FeedbackState | null) => void;
   showFeedback: (feedback: FeedbackState) => void;
 }) {
-  const [items, setItems] = useState<Record<string, number>>({});
-  const [personalizaciones, setPersonalizaciones] = useState<Record<string, PersonalizacionProducto>>({});
+  const [storedDraft] = useState(getStoredPdvOrderDraft);
+  const [items, setItems] = useState<Record<string, number>>(() =>
+    isPlainRecord(storedDraft.items) ? (storedDraft.items as Record<string, number>) : {}
+  );
+  const [personalizaciones, setPersonalizaciones] = useState<Record<string, PersonalizacionProducto>>(() =>
+    isPlainRecord(storedDraft.personalizaciones)
+      ? (storedDraft.personalizaciones as Record<string, PersonalizacionProducto>)
+      : {}
+  );
   const [pendingVariantProduct, setPendingVariantProduct] = useState<Producto | null>(null);
-  const [metodoPago, setMetodoPago] = useState<MetodoPago | "">("");
-  const [clienteNombre, setClienteNombre] = useState("");
-  const [observacion, setObservacion] = useState("");
-  const [accessibleObservationType, setAccessibleObservationType] = useState<"cocina" | "cliente">("cocina");
+  const [metodoPago, setMetodoPago] = useState<MetodoPago | "">(() =>
+    METODOS_PAGO_VALIDOS.includes(storedDraft.metodoPago ?? "") ? (storedDraft.metodoPago ?? "") : ""
+  );
+  const [clienteNombre, setClienteNombre] = useState(() =>
+    typeof storedDraft.clienteNombre === "string" ? storedDraft.clienteNombre : ""
+  );
+  const [observacion, setObservacion] = useState(() =>
+    typeof storedDraft.observacion === "string" ? storedDraft.observacion : ""
+  );
+  const [accessibleObservationType, setAccessibleObservationType] = useState<AccessibleObservationType>(() =>
+    ACCESSIBLE_OBSERVATION_TYPES.includes(storedDraft.accessibleObservationType ?? "cocina")
+      ? (storedDraft.accessibleObservationType ?? "cocina")
+      : "cocina"
+  );
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const {
@@ -40,6 +103,28 @@ export function usePdvOrderDraft({
   } = useMemo(() => {
     return buildPedidoSummary(items, productos, personalizaciones);
   }, [items, personalizaciones, productos]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const draft: StoredPdvOrderDraft = {
+      accessibleObservationType,
+      clienteNombre,
+      items,
+      metodoPago,
+      observacion,
+      personalizaciones
+    };
+
+    if (!hasPedidoDraftContent(draft)) {
+      window.localStorage.removeItem(PDV_ORDER_DRAFT_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(PDV_ORDER_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  }, [accessibleObservationType, clienteNombre, items, metodoPago, observacion, personalizaciones]);
 
   const setItemQuantity = useCallback(
     (producto: Producto, nextQuantity: number) => {

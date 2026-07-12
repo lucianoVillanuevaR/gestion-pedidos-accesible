@@ -1,15 +1,24 @@
-import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, LockKeyhole, UnlockKeyhole } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChefHat,
+  ClipboardList,
+  Eye,
+  LockKeyhole,
+  UnlockKeyhole
+} from "lucide-react";
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
-import { formatCurrency } from "../../utils/pdv";
-import { ACCESSIBLE_STEP_COUNT, PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
+import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
+import { PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
 import PdvFeedbackMessage from "./PdvFeedbackMessage";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvFacilView() {
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [isCloseTurnoConfirmOpen, setIsCloseTurnoConfirmOpen] = useState(false);
+  const [isOrderSummaryOpen, setIsOrderSummaryOpen] = useState(false);
   const {
     accessibleProductos,
     accessibleStep,
@@ -72,7 +81,7 @@ function PdvFacilView() {
         },
         {
           title: "Registrar pedido",
-          description: "Revisa todo y presiona el botón principal para finalizar."
+          description: ""
         }
       ][accessibleStep - 1];
   const visibleStepNumber = isTurnoOpen ? accessibleStep : 1;
@@ -129,15 +138,7 @@ function PdvFacilView() {
               <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
             </button>
 
-            <div
-              className={`inline-flex min-h-[56px] items-center rounded-2xl border px-4 py-3 ${isHighContrast ? "contrast-panel-soft border-yellow-400" : "border-slate-900 bg-slate-900 text-white"}`}
-            >
-              <p className="font-black">
-                Paso {visibleStepNumber} de {ACCESSIBLE_STEP_COUNT}
-              </p>
-            </div>
-
-            <EasyModeActions confirmExit={pedidoDetalles.length > 0} confirmHome={pedidoDetalles.length > 0} />
+            <EasyModeActions />
           </div>
         </div>
       </header>
@@ -200,7 +201,7 @@ function PdvFacilView() {
 
       {isTurnoOpen && accessibleStep === 1 && (
         <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h2 id="step1" className="font-black text-2xl mb-4">
+          <h2 id="step1" className="sr-only">
             Paso 1: Elige categoría
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -210,7 +211,7 @@ function PdvFacilView() {
                 type="button"
                 onClick={() => {
                   selectCategory(filtro.value, filtro.label);
-                  setAccessibleStep(2);
+                  goNextAccessibleStep();
                 }}
                 className={`min-h-[56px] rounded-xl font-bold text-lg flex items-center justify-center gap-2 focus:outline-none focus:ring-4 ${
                   selectedCategory === filtro.value
@@ -267,10 +268,9 @@ function PdvFacilView() {
 
       {isTurnoOpen && accessibleStep === 2 && (
         <section aria-labelledby="step2" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h2 id="step2" className="font-black text-2xl mb-4">
+          <h2 id="step2" className="sr-only">
             Paso 2: Elige producto
           </h2>
-          <p className="mb-3 text-lg font-semibold">Elige el producto y responde: ¿cuánto quieres?</p>
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
             {accessibleProductos.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed p-8 text-center col-span-2">
@@ -313,7 +313,7 @@ function PdvFacilView() {
 
       {isTurnoOpen && accessibleStep === 3 && (
         <section aria-labelledby="step3" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h2 id="step3" className="font-black text-2xl mb-4">
+          <h2 id="step3" className="sr-only">
             Paso 3: Revisa tu pedido
           </h2>
           {pedidoDetalles.length === 0 ? (
@@ -379,7 +379,7 @@ function PdvFacilView() {
 
       {isTurnoOpen && accessibleStep === 4 && (
         <section aria-labelledby="step4" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h2 id="step4" className="font-black text-2xl mb-4">
+          <h2 id="step4" className="sr-only">
             Paso 4: Datos del comprador
           </h2>
 
@@ -411,7 +411,7 @@ function PdvFacilView() {
 
       {isTurnoOpen && accessibleStep === 5 && (
         <section aria-labelledby="step5" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h2 id="step5" className="font-black text-2xl mb-4">
+          <h2 id="step5" className="sr-only">
             Paso 5: Método de pago
           </h2>
           <div className="space-y-3">
@@ -461,10 +461,9 @@ function PdvFacilView() {
 
       {isTurnoOpen && accessibleStep === 6 && (
         <section aria-labelledby="step6" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
-          <h2 id="step6" className="font-black text-2xl mb-4">
+          <h2 id="step6" className="sr-only">
             Paso 6: Confirmar pedido
           </h2>
-          <p className="mb-4">Verifica y confirma. Luego presiona Registrar pedido.</p>
 
           <div className="rounded-xl bg-white border-2 border-slate-300 p-4 mb-4">
             <p className="font-bold">Total a pagar</p>
@@ -480,6 +479,24 @@ function PdvFacilView() {
               Atrás
             </button>
             <div className="ml-auto flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsOrderSummaryOpen(true)}
+                disabled={pedidoDetalles.length === 0}
+                className={`rounded-lg border-2 py-4 px-6 font-bold text-lg transition ${
+                  pedidoDetalles.length === 0
+                    ? "border-slate-300 bg-slate-200 text-slate-500 cursor-not-allowed"
+                    : isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
+                }`}
+                style={{ minHeight: 64 }}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Eye className="h-6 w-6" aria-hidden="true" />
+                  Ver resumen
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={handlePrint}
@@ -506,6 +523,96 @@ function PdvFacilView() {
             </div>
           </div>
         </section>
+      )}
+
+      {isOrderSummaryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resumen-pedido-title"
+            className={`max-h-[90vh] w-full max-w-3xl overflow-auto rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="resumen-pedido-title" className="text-3xl font-black text-slate-950">
+                  Resumen del pedido
+                </h2>
+                <p className="mt-2 text-lg font-bold text-slate-700">
+                  Revisa productos, pago y total antes de registrar.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOrderSummaryOpen(false)}
+                aria-label="Cerrar resumen del pedido"
+                className={`min-h-[48px] rounded-2xl border-2 px-4 text-xl font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"}`}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-3">
+              {pedidoDetalles.map((item) => (
+                <article
+                  key={item.itemKey}
+                  className={`rounded-2xl border-2 p-4 ${isHighContrast ? "border-yellow-400" : "border-slate-300 bg-white"}`}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xl font-black text-slate-950">{item.producto.nombre}</p>
+                      {item.variante && (
+                        <p className="mt-1 text-base font-black text-yellow-700">Opción: {item.variante.nombre}</p>
+                      )}
+                      {item.personalizacion?.combinacion && (
+                        <p className="mt-1 text-base font-black text-yellow-700">
+                          Combinación: {item.personalizacion.combinacion.nombre}
+                        </p>
+                      )}
+                      {item.personalizacion?.aderezos.length ? (
+                        <p className="mt-1 text-base font-bold text-slate-600">
+                          Aderezos: {item.personalizacion.aderezos.join(", ")}
+                        </p>
+                      ) : null}
+                      {item.personalizacion?.comentario && (
+                        <p className="mt-1 text-base italic text-slate-600">“{item.personalizacion.comentario}”</p>
+                      )}
+                      <p className="mt-2 text-base font-bold text-slate-600">
+                        {item.cantidad} x {formatCurrency(item.producto.precio)}
+                      </p>
+                    </div>
+                    <p className="text-xl font-black text-slate-950">{formatCurrency(item.subtotal)}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-6 grid gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50 p-4 text-lg font-black text-slate-950">
+              <div className="flex items-center justify-between gap-3">
+                <span>Cliente</span>
+                <span>{clienteNombre.trim() || "Sin nombre"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Método de pago</span>
+                <span>{metodoPago ? getPaymentLabel(metodoPago) : "Sin seleccionar"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-slate-300 pt-3 text-2xl">
+                <span>Total</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsOrderSummaryOpen(false)}
+                className={`min-h-[56px] rounded-2xl border-2 px-6 text-lg font-black transition ${isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"}`}
+              >
+                Listo
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       {isSubmitConfirmOpen && (

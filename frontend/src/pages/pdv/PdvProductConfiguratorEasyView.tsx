@@ -1,6 +1,8 @@
+import { useEffect, useRef } from "react";
 import { Check, Minus, Plus, X } from "lucide-react";
 import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../types";
 import { formatCurrency } from "../../utils/pdv";
+import useVoice from "../../hooks/useVoice";
 import {
   ADEREZOS_DISPONIBLES,
   PRODUCT_COMMENT_MAX_LENGTH,
@@ -10,12 +12,14 @@ import {
 export default function PdvProductConfiguratorEasyView({
   config,
   isHighContrast,
+  isVoiceEnabled,
   onClose,
   onSelect,
   producto
 }: {
   config: PdvProductConfiguratorState;
   isHighContrast: boolean;
+  isVoiceEnabled: boolean;
   onClose: () => void;
   onSelect: (
     variante: VarianteProducto | undefined,
@@ -45,6 +49,8 @@ export default function PdvProductConfiguratorEasyView({
     comentario
   } = config;
   const isLastStep = easyConfigStep === easySteps.length - 1;
+  const { speak } = useVoice({ enabled: isVoiceEnabled });
+  const lastAnnouncedStepRef = useRef("");
   const stageTitle =
     easyStage === "opcion"
       ? esSandwich
@@ -54,21 +60,52 @@ export default function PdvProductConfiguratorEasyView({
         ? "Elige los aderezos"
         : "Revisa y agrega";
 
+  useEffect(() => {
+    if (!isVoiceEnabled) {
+      lastAnnouncedStepRef.current = "";
+      return;
+    }
+
+    const stepKey = `${producto.id}:${easyConfigStep}:${easyStage}`;
+    if (lastAnnouncedStepRef.current === stepKey) {
+      return;
+    }
+
+    lastAnnouncedStepRef.current = stepKey;
+    const totalSteps = easySteps.length;
+    const stepNumber = easyConfigStep + 1;
+    const message =
+      easyStage === "opcion"
+        ? `Paso ${stepNumber} de ${totalSteps}. ${esSandwich ? "Elige la carne" : "Elige una opción"} para ${producto.nombre}.`
+        : easyStage === "aderezos"
+          ? `Paso ${stepNumber} de ${totalSteps}. Elige un aderezo si quieres. Puedes elegir hasta 3, o continuar sin aderezos.`
+          : `Paso ${stepNumber} de ${totalSteps}. Revisa y agrega. Ajusta la cantidad y agrega un comentario opcional para cocina si lo necesitas.`;
+
+    speak(message, {
+      priority: "high",
+      dedupeKey: `pdv-product-config:${stepKey}`,
+      cooldownMs: 0,
+      delayMs: 120,
+      force: true,
+      interrupt: true
+    });
+  }, [easyConfigStep, easyStage, easySteps.length, esSandwich, isVoiceEnabled, producto.id, producto.nombre, speak]);
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto px-3 py-4">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto px-3 py-4 sm:items-center">
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="easy-config-title"
-        className={`w-full max-w-4xl overflow-hidden rounded-[28px] border-4 shadow-2xl ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-900 bg-white"}`}
+        className={`my-auto flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[24px] border-4 shadow-2xl ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-900 bg-white"}`}
       >
         <header
-          className={`border-b-2 px-5 py-4 sm:px-7 ${isHighContrast ? "border-yellow-400" : "border-slate-900 bg-white"}`}
+          className={`shrink-0 border-b-2 px-4 py-3 sm:px-6 ${isHighContrast ? "border-yellow-400" : "border-slate-900 bg-white"}`}
         >
           <div className="flex items-start justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <p
-                className={`text-base font-black uppercase tracking-[0.12em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-600"}`}
+                className={`text-sm font-black uppercase tracking-[0.12em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-600"}`}
               >
                 Paso {easyConfigStep + 1} de {easySteps.length}
               </p>
@@ -76,7 +113,7 @@ export default function PdvProductConfiguratorEasyView({
                 id="easy-config-title"
                 ref={easyHeadingRef}
                 tabIndex={-1}
-                className="mt-1 text-3xl font-black leading-tight text-slate-950 outline-none sm:text-4xl"
+                className="mt-1 text-2xl font-black leading-tight text-slate-950 outline-none sm:text-3xl"
               >
                 Paso {easyConfigStep + 1}: {stageTitle}
               </h2>
@@ -84,10 +121,10 @@ export default function PdvProductConfiguratorEasyView({
             <button
               type="button"
               onClick={onClose}
-              className={`inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border-2 text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white hover:bg-slate-100"}`}
+              className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white hover:bg-slate-100"}`}
               aria-label="Cerrar y volver a productos"
             >
-              <X className="h-8 w-8" aria-hidden="true" />
+              <X className="h-7 w-7" aria-hidden="true" />
             </button>
           </div>
           <div
@@ -105,26 +142,28 @@ export default function PdvProductConfiguratorEasyView({
         </header>
 
         <div
-          className={`flex items-center gap-4 border-b-2 px-5 py-4 sm:px-7 ${isHighContrast ? "border-yellow-400" : "border-slate-200 bg-slate-50"}`}
+          className={`flex shrink-0 items-center gap-4 border-b-2 px-4 py-3 sm:px-6 ${isHighContrast ? "border-yellow-400" : "border-slate-200 bg-slate-50"}`}
         >
           {producto.imagen ? (
             <img
               src={producto.imagen}
               alt=""
-              className="h-24 w-28 shrink-0 rounded-2xl border-2 border-slate-300 object-cover"
+              className="h-20 w-24 shrink-0 rounded-2xl border-2 border-slate-300 object-cover"
             />
           ) : (
-            <div className="flex h-24 w-28 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-300 bg-yellow-50 font-black text-yellow-800">
+            <div className="flex h-20 w-24 shrink-0 items-center justify-center rounded-2xl border-2 border-slate-300 bg-yellow-50 font-black text-yellow-800">
               Riquísimo
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-2xl font-black leading-tight text-slate-950">{producto.nombre}</p>
-            <p className="mt-2 text-2xl font-black text-slate-950">{formatCurrency(producto.precio)}</p>
+            <p className="line-clamp-2 text-xl font-black leading-tight text-slate-950 sm:text-2xl">
+              {producto.nombre}
+            </p>
+            <p className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">{formatCurrency(producto.precio)}</p>
           </div>
         </div>
 
-        <div className="min-h-[310px] px-5 py-6 sm:px-7">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           {easyStage === "opcion" && (
             <div>
               <p className="text-xl font-bold text-slate-700">Toca una opción. Debes elegir una para continuar.</p>
@@ -223,9 +262,9 @@ export default function PdvProductConfiguratorEasyView({
 
           {easyStage === "confirmar" && (
             <div
-              className={`rounded-2xl border-2 p-5 ${isHighContrast ? "border-yellow-400" : "border-slate-300 bg-slate-50"}`}
+              className={`rounded-2xl border-2 p-4 sm:p-5 ${isHighContrast ? "border-yellow-400" : "border-slate-300 bg-slate-50"}`}
             >
-              <h3 className="text-xl font-black text-slate-950">Tu selección</h3>
+              <h3 className="text-2xl font-black text-slate-950">Tu selección</h3>
               {varianteSeleccionada && (
                 <p className="mt-3 text-lg font-bold text-slate-700">Opción: {varianteSeleccionada.nombre}</p>
               )}
@@ -237,26 +276,26 @@ export default function PdvProductConfiguratorEasyView({
               </p>
               <div className="mt-5">
                 <p className="text-lg font-black text-slate-700">Cantidad</p>
-                <div className="mt-3 grid grid-cols-[minmax(88px,1fr)_auto_minmax(88px,1fr)] items-center gap-3 rounded-2xl border-4 border-slate-900 bg-white p-3">
+                <div className="mt-3 grid grid-cols-[1fr_84px_1fr] items-center gap-3 rounded-2xl border-4 border-slate-900 bg-white p-3">
                   <button
                     type="button"
                     onClick={decreaseCantidad}
                     disabled={cantidad <= 1}
-                    className="inline-flex min-h-[84px] items-center justify-center rounded-xl border-2 border-slate-900 bg-white text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400"
+                    className="inline-flex h-16 items-center justify-center rounded-xl border-2 border-slate-900 bg-white text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 sm:h-20"
                     aria-label="Quitar uno"
                   >
-                    <Minus className="h-10 w-10" strokeWidth={3} aria-hidden="true" />
+                    <Minus className="h-9 w-9" strokeWidth={3} aria-hidden="true" />
                   </button>
-                  <span className="min-w-24 rounded-xl bg-slate-100 px-4 py-4 text-center text-5xl font-black text-slate-950">
+                  <span className="flex h-16 items-center justify-center rounded-xl bg-slate-100 text-center text-4xl font-black text-slate-950 sm:h-20 sm:text-5xl">
                     {cantidad}
                   </span>
                   <button
                     type="button"
                     onClick={increaseCantidad}
-                    className="inline-flex min-h-[84px] items-center justify-center rounded-xl border-2 border-slate-900 bg-[#FECE00] text-slate-950 transition hover:bg-[#FFD633] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400"
+                    className="inline-flex h-16 items-center justify-center rounded-xl border-2 border-slate-900 bg-[#FECE00] text-slate-950 transition hover:bg-[#FFD633] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 sm:h-20"
                     aria-label="Agregar uno"
                   >
-                    <Plus className="h-10 w-10" strokeWidth={3} aria-hidden="true" />
+                    <Plus className="h-9 w-9" strokeWidth={3} aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -283,7 +322,7 @@ export default function PdvProductConfiguratorEasyView({
         </div>
 
         <footer
-          className={`grid gap-3 border-t-2 p-4 sm:grid-cols-2 ${isHighContrast ? "border-yellow-400" : "border-slate-200 bg-slate-50"}`}
+          className={`grid shrink-0 gap-3 border-t-2 p-4 sm:grid-cols-2 ${isHighContrast ? "border-yellow-400" : "border-slate-200 bg-slate-50"}`}
         >
           <button
             type="button"

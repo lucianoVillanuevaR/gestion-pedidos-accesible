@@ -84,13 +84,9 @@ function AdminShell({ children, title, description }: { children: ReactNode; tit
       <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
         <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase text-slate-500">Administración</p>
-            <h1 className="mt-1 text-2xl font-black text-slate-950">{title}</h1>
+            <h1 className="text-2xl font-black text-slate-950">{title}</h1>
             <p className="mt-1 max-w-3xl text-sm font-semibold text-slate-600">{description}</p>
           </div>
-          <span className="inline-flex min-h-[36px] shrink-0 items-center justify-center rounded-full border border-yellow-300 bg-[#FECE00] px-3 text-xs font-black text-slate-950">
-            Rol admin
-          </span>
         </div>
       </section>
       {children}
@@ -102,7 +98,6 @@ function AdminDashboardPage() {
   const [pedidos, setPedidos] = useState<PedidoResponse[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
-  const [usuarios, setUsuarios] = useState<AdminUser[]>([]);
   const [totalVendido, setTotalVendido] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,18 +105,11 @@ function AdminDashboardPage() {
   const load = () => {
     setIsLoading(true);
     setError(null);
-    Promise.all([
-      getPedidos(),
-      getProductos({ includeUnavailable: true }),
-      getInventario(),
-      getUsuarios(),
-      cargarCierresTurno()
-    ])
-      .then(([pedidosData, productosData, inventarioData, usuariosData, cierres]) => {
+    Promise.all([getPedidos(), getProductos({ includeUnavailable: true }), getInventario(), cargarCierresTurno()])
+      .then(([pedidosData, productosData, inventarioData, cierres]) => {
         setPedidos(pedidosData);
         setProductos(productosData);
         setInventario(inventarioData);
-        setUsuarios(usuariosData);
         setTotalVendido(
           cierres[0]?.totalVendido ?? pedidosData.reduce((total, pedido) => total + Number(pedido.total), 0)
         );
@@ -138,7 +126,6 @@ function AdminDashboardPage() {
 
   const disponibles = productos.filter((producto) => producto.disponible !== false).length;
   const stockCritico = inventario.filter((item) => item.estado === "bajo_stock" || item.estado === "sin_stock");
-  const activos = usuarios.filter((usuario) => usuario.activo).length;
   const pedidosPendientes = pedidos.filter((pedido) => pedido.estado === "pendiente").length;
   const lastUpdated = new Intl.DateTimeFormat("es-CL", {
     dateStyle: "short",
@@ -152,39 +139,7 @@ function AdminDashboardPage() {
         <LoadingState label="Cargando panel admin..." />
       ) : (
         <>
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
-            <article className="rounded-[10px] border border-slate-200 bg-white shadow-sm">
-              <header className="border-b border-slate-100 px-4 py-3">
-                <div>
-                  <p className="text-[11px] font-black uppercase text-slate-500">Trabajo pendiente</p>
-                  <h2 className="text-base font-black text-slate-950">Pendientes administrativos</h2>
-                </div>
-              </header>
-              <div className="divide-y divide-slate-100">
-                <PendingRow
-                  badge="Historial"
-                  description="Consultar ventas y pedidos del último cierre disponible"
-                  path="/admin/reportes"
-                  title="Ver historial del último turno"
-                  tone="neutral"
-                />
-                <PendingRow
-                  badge={`${disponibles}/${productos.length}`}
-                  description="Confirmar productos visibles para venta"
-                  path="/admin/productos"
-                  title="Revisar productos disponibles"
-                  tone="neutral"
-                />
-                <PendingRow
-                  badge={`${activos} activos`}
-                  description="Mantener roles y accesos actualizados"
-                  path="/admin/usuarios"
-                  title="Gestionar usuarios activos"
-                  tone="neutral"
-                />
-              </div>
-            </article>
-
+          <section className="grid gap-4">
             <article className="rounded-[10px] border border-slate-200 bg-white shadow-sm">
               <header className="border-b border-slate-100 px-4 py-3">
                 <p className="text-[11px] font-black uppercase text-slate-500">Local</p>
@@ -265,47 +220,6 @@ function getEstadoLabel(estado: InventarioItem["estado"]) {
   if (estado === "sin_stock") return "Sin stock";
   if (estado === "bajo_stock") return "Bajo stock";
   return "Disponible";
-}
-
-function PendingRow({
-  badge,
-  description,
-  path,
-  title,
-  tone
-}: {
-  badge: string;
-  description: string;
-  path: string;
-  title: string;
-  tone: "neutral" | "success" | "warning";
-}) {
-  const badgeClass =
-    tone === "warning"
-      ? "border-yellow-200 bg-[#FFF8DC] text-yellow-800"
-      : tone === "success"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-        : "border-slate-200 bg-slate-100 text-slate-700";
-
-  return (
-    <div className="grid gap-3 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-black text-slate-950">{title}</p>
-        <p className="mt-0.5 text-xs font-bold text-slate-500">{description}</p>
-      </div>
-      <span
-        className={`inline-flex min-h-[30px] items-center justify-center rounded-full border px-3 text-xs font-black ${badgeClass}`}
-      >
-        {badge}
-      </span>
-      <Link
-        to={path}
-        className={`inline-flex min-h-[34px] items-center justify-center rounded-lg border border-slate-300 px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
-      >
-        Revisar
-      </Link>
-    </div>
-  );
 }
 
 function DashboardLine({ label, value }: { label: string; value: number | string }) {

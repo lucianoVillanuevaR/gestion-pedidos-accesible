@@ -57,6 +57,13 @@ function normalizeMessage(message: string) {
     .toLowerCase();
 }
 
+export function expandCurrencyForSpeech(message: string) {
+  return message.replace(/\$\s?(\d+(?:\.\d{3})*)/g, (_match, rawAmount: string) => {
+    const amount = rawAmount.replace(/\./g, "");
+    return `${amount} pesos chilenos`;
+  });
+}
+
 function cleanupRecentMessages(now: number) {
   for (const [key, timestamp] of recentMessages.entries()) {
     if (now - timestamp > RECENT_MESSAGES_TTL_MS) {
@@ -177,7 +184,7 @@ function useVoice({ enabled = false }: { enabled?: boolean } = {}) {
         return Promise.resolve(false);
       }
 
-      const text = String(message || "").trim();
+      const text = expandCurrencyForSpeech(String(message || "").trim());
       if (!text) {
         return Promise.resolve(false);
       }

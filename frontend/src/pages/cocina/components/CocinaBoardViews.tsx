@@ -6,7 +6,6 @@ import {
   Maximize2,
   Minimize2,
   RefreshCw,
-  Settings,
   UtensilsCrossed
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -102,13 +101,6 @@ export function CocinaNormalView({
               isHighContrast={isHighContrast}
             />
             <IconButton label="Actualizar" onClick={onRefresh} icon={RefreshCw} isHighContrast={isHighContrast} />
-            <IconButton
-              label="Cocinas"
-              onClick={onRefresh}
-              icon={Settings}
-              isHighContrast={isHighContrast}
-              text="Cocinas"
-            />
           </div>
         </div>
 
