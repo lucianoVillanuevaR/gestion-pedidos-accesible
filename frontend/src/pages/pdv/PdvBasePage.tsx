@@ -55,7 +55,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } =
     useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
-  const { speak: speakOnDemand } = useVoice({ enabled: true });
+  const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
+  const { speak: speakManualRead } = useVoice({ enabled: true });
 
   const [selectedCategory, setSelectedCategory] = useState<FiltroCategoria>("Destacados");
 
@@ -211,7 +212,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const handleReadPedidoSummary = useCallback(() => {
     if (!isTurnoOpen) {
-      speakOnDemand("Turno cerrado. Abre turno para registrar pedidos.", {
+      speakManualRead("Turno cerrado. Abre turno para registrar pedidos.", {
         priority: "high",
         dedupeKey: "read-summary-turno-cerrado",
         force: true,
@@ -226,7 +227,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       metodoPago !== "" ? `Tipo de pago: ${getPaymentLabel(metodoPago)}.` : "Falta método de pago.";
 
     if (pedidoDetalles.length === 0) {
-      speakOnDemand(`Pedido número ${nextPedidoNumber}. ${clienteText} Pedido vacío. ${metodoPagoText}`, {
+      speakManualRead(`Pedido número ${nextPedidoNumber}. ${clienteText} Pedido vacío. ${metodoPagoText}`, {
         priority: "high",
         dedupeKey: "read-summary-empty",
         force: true,
@@ -251,7 +252,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       parts.push(`Observación: ${observacion.trim()}.`);
     }
 
-    speakOnDemand(parts.join(" "), {
+    speakManualRead(parts.join(" "), {
       priority: "high",
       dedupeKey: "read-summary",
       force: true,
@@ -266,7 +267,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     nextPedidoNumber,
     observacion,
     pedidoDetalles,
-    speakOnDemand,
+    speakManualRead,
     total,
     totalItems
   ]);
