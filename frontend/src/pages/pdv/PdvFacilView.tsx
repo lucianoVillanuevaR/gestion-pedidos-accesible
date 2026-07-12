@@ -1,12 +1,4 @@
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChefHat,
-  ClipboardList,
-  Eye,
-  LockKeyhole,
-  UnlockKeyhole
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChefHat, ClipboardList, Eye, LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";

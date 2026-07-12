@@ -1,13 +1,4 @@
-import {
-  Check,
-  ChefHat,
-  Clock3,
-  LoaderCircle,
-  Maximize2,
-  Minimize2,
-  RefreshCw,
-  UtensilsCrossed
-} from "lucide-react";
+import { Check, ChefHat, Clock3, LoaderCircle, Maximize2, Minimize2, RefreshCw, UtensilsCrossed } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import EasyModeActions from "../../../components/EasyModeActions";
 import ErrorAlert from "../../../components/ErrorAlert";
