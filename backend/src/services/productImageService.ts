@@ -41,9 +41,12 @@ function buildProductImageUrl(objectName: string | null | undefined) {
   return `${minioPublicUrl}/${productBucket}/${objectName}`;
 }
 
-export function withProductImageUrl<T extends { categorias?: Array<{ nombre: string }>; imagenUrl?: string | null }>(
-  producto: T
-) {
+export function withProductImageUrl<
+  T extends {
+    categorias?: Array<{ nombre: string }>;
+    imagenUrl?: string | null;
+  }
+>(producto: T) {
   return {
     ...producto,
     categoria: producto.categorias?.[0]?.nombre,
@@ -88,7 +91,10 @@ function ensureProducto<T>(producto: T | null) {
 
 export async function uploadProductImage(productId: number, file: ProductImageFile) {
   const producto = ensureProducto(
-    await prisma.producto.findUnique({ include: PRODUCTO_IMAGE_INCLUDE, where: { id: productId } })
+    await prisma.producto.findUnique({
+      include: PRODUCTO_IMAGE_INCLUDE,
+      where: { id: productId }
+    })
   );
   const extension = getExtension(file);
   const objectName = `producto-${productId}-${Date.now()}.${extension}`;
@@ -114,7 +120,10 @@ export async function uploadProductImage(productId: number, file: ProductImageFi
 
 export async function deleteProductImage(productId: number) {
   const producto = ensureProducto(
-    await prisma.producto.findUnique({ include: PRODUCTO_IMAGE_INCLUDE, where: { id: productId } })
+    await prisma.producto.findUnique({
+      include: PRODUCTO_IMAGE_INCLUDE,
+      where: { id: productId }
+    })
   );
 
   await deleteObjectIfNeeded(producto.imagenUrl);

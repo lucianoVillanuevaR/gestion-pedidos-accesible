@@ -24,7 +24,9 @@ function toUsuarioResponse(user: {
 
 export async function getUsuarios(_req: Request, res: Response) {
   try {
-    const usuarios = await prisma.usuario.findMany({ orderBy: [{ activo: "desc" }, { label: "asc" }] });
+    const usuarios = await prisma.usuario.findMany({
+      orderBy: [{ activo: "desc" }, { label: "asc" }]
+    });
     res.json(usuarios.map(toUsuarioResponse));
   } catch (error) {
     console.error("Error al obtener usuarios:", error);

@@ -20,7 +20,9 @@ export type StockProduct = {
 export function getApplicableStockComponents(
   producto: StockProduct,
   varianteId?: number,
-  combinacion?: { componentes: Array<{ componenteId: number; cantidad: number }> }
+  combinacion?: {
+    componentes: Array<{ componenteId: number; cantidad: number }>;
+  }
 ) {
   const requiereVariante = producto.componentes.some((item) => item.varianteId != null);
   const [primerComponente, segundoComponente] = producto.componentes;
@@ -83,7 +85,13 @@ export function buildStockRequirements(
           cantidad: cantidadVendida * item.cantidad
         }))
       : producto.controlaStock
-        ? [{ componenteId: producto.id, componenteNombre: producto.nombre, cantidad: cantidadVendida }]
+        ? [
+            {
+              componenteId: producto.id,
+              componenteNombre: producto.nombre,
+              cantidad: cantidadVendida
+            }
+          ]
         : [];
 
     for (const requerimiento of requerimientos) {

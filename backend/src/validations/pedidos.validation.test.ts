@@ -36,19 +36,40 @@ describe("validaciones de pedidos", () => {
   it("valida aderezos y comentarios por detalle", () => {
     expect(
       validatePedidoDetalles([
-        { cantidad: 1, productoId: 4, personalizacion: { aderezos: ["Mostaza", "Mayonesa"], comentario: "Sin sal" } }
+        {
+          cantidad: 1,
+          productoId: 4,
+          personalizacion: {
+            aderezos: ["Mostaza", "Mayonesa"],
+            comentario: "Sin sal"
+          }
+        }
       ])
     ).toBeNull();
     expect(
-      validatePedidoDetalles([{ cantidad: 1, productoId: 4, personalizacion: { aderezos: ["A", "B", "C", "D"] } }])
+      validatePedidoDetalles([
+        {
+          cantidad: 1,
+          productoId: 4,
+          personalizacion: { aderezos: ["A", "B", "C", "D"] }
+        }
+      ])
     ).toContain("hasta 3 aderezos");
   });
 
   it("permite el mismo producto con personalizaciones diferentes", () => {
     expect(
       validatePedidoDetalles([
-        { cantidad: 1, productoId: 4, personalizacion: { aderezos: ["Mostaza"] } },
-        { cantidad: 1, productoId: 4, personalizacion: { aderezos: ["Ketchup"] } }
+        {
+          cantidad: 1,
+          productoId: 4,
+          personalizacion: { aderezos: ["Mostaza"] }
+        },
+        {
+          cantidad: 1,
+          productoId: 4,
+          personalizacion: { aderezos: ["Ketchup"] }
+        }
       ])
     ).toBeNull();
   });

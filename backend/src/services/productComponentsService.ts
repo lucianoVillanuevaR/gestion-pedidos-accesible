@@ -14,7 +14,10 @@ export async function validateProductComponents(
   }
 
   const validos = await prisma.producto.count({
-    where: { id: { in: componentes.map((item) => item.componenteId) }, controlaStock: true }
+    where: {
+      id: { in: componentes.map((item) => item.componenteId) },
+      controlaStock: true
+    }
   });
 
   if (validos !== componentes.length) {
@@ -31,7 +34,9 @@ export async function validateProductComponents(
     throw new RequestError(400, "Las variantes deben pertenecer al producto editado");
   }
 
-  const variantesValidas = await prisma.variante.count({ where: { id: { in: varianteIds }, productoId } });
+  const variantesValidas = await prisma.variante.count({
+    where: { id: { in: varianteIds }, productoId }
+  });
 
   if (variantesValidas !== new Set(varianteIds).size) {
     throw new RequestError(400, "Todas las variantes deben pertenecer al producto vendido");

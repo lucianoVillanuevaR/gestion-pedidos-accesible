@@ -105,9 +105,26 @@ model Pedido {
   updatedAt     DateTime        @updatedAt
   turnoId       Int?
   detalles      DetallePedido[]
+  historial     PedidoHistorial[]
   turno         Turno?          @relation(fields: [turnoId], references: [id])
 
   @@index([turnoId])
+}
+
+model PedidoHistorial {
+  id         Int      @id @default(autoincrement())
+  pedidoId   Int      @map("pedido_id")
+  usuarioId  Int?     @map("usuario_id")
+  accion     String
+  cambios    Json?
+  createdAt  DateTime @default(now())
+
+  pedido  Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([pedidoId, createdAt])
+  @@index([usuarioId])
+  @@map("pedido_historial")
 }
 
 model DetallePedido {
@@ -140,6 +157,7 @@ model Usuario {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   turnos       Turno[]
+  historialPedidos PedidoHistorial[]
 }
 
 model Turno {

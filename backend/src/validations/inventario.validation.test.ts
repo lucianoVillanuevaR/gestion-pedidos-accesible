@@ -12,6 +12,8 @@ describe("validateInventarioUpdate", () => {
     expect(validateInventarioUpdate({ stockActual: -1 })).toEqual({
       error: "stockActual debe ser un número entero mayor o igual a 0"
     });
-    expect(validateInventarioUpdate({})).toEqual({ error: "Debe enviar stockActual o stockMinimo" });
+    expect(validateInventarioUpdate({})).toEqual({
+      error: "Debe enviar stockActual o stockMinimo"
+    });
   });
 });

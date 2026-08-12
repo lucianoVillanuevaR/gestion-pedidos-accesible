@@ -5,8 +5,16 @@ import type { StockRequirement } from "./stockRequirementsService";
 type StockTransaction = Prisma.TransactionClient;
 
 export async function consumeStockRequirements(tx: StockTransaction, consumos: Map<number, StockRequirement>) {
+  if (consumos.size === 0) return;
+
+  const componentes = await tx.producto.findMany({
+    where: { id: { in: [...consumos.keys()] } },
+    include: { inventario: true }
+  });
+  const componentesById = new Map(componentes.map((componente) => [componente.id, componente]));
+
   for (const [componenteId, consumo] of consumos) {
-    const componente = await tx.producto.findUnique({ where: { id: componenteId }, include: { inventario: true } });
+    const componente = componentesById.get(componenteId);
     const stockActual = componente?.inventario?.stockActual ?? 0;
 
     if (!componente || stockActual < consumo.cantidad) {

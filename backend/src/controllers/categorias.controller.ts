@@ -72,7 +72,9 @@ export async function deleteCategoria(req: Request, res: Response) {
     }
 
     if (categoria._count.productos > 0) {
-      return res.status(409).json({ error: "No se puede eliminar una categoría con productos asociados" });
+      return res.status(409).json({
+        error: "No se puede eliminar una categoría con productos asociados"
+      });
     }
 
     await prisma.categoria.delete({ where: { id: categoriaId } });

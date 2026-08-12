@@ -27,14 +27,29 @@ function validateText(value: unknown, field: string, { required = false, max = 8
   return null;
 }
 
-export function validateUsuarioCreate(input: UsuarioInput): { data?: Required<UsuarioData>; error?: string } {
-  const usernameError = validateText(input.username, "El usuario", { required: true, max: 40 });
+export function validateUsuarioCreate(input: UsuarioInput): {
+  data?: Required<UsuarioData>;
+  error?: string;
+} {
+  const usernameError = validateText(input.username, "El usuario", {
+    required: true,
+    max: 40
+  });
   if (usernameError) return { error: usernameError };
-  const emailError = validateText(input.email, "El email", { required: true, max: 120 });
+  const emailError = validateText(input.email, "El email", {
+    required: true,
+    max: 120
+  });
   if (emailError) return { error: emailError };
-  const labelError = validateText(input.label, "El nombre", { required: true, max: 80 });
+  const labelError = validateText(input.label, "El nombre", {
+    required: true,
+    max: 80
+  });
   if (labelError) return { error: labelError };
-  const passwordError = validateText(input.password, "La contraseña", { required: true, max: 120 });
+  const passwordError = validateText(input.password, "La contraseña", {
+    required: true,
+    max: 120
+  });
   if (passwordError) return { error: passwordError };
   if (typeof input.password === "string" && input.password.trim().length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres" };
@@ -58,7 +73,10 @@ export function validateUsuarioCreate(input: UsuarioInput): { data?: Required<Us
   };
 }
 
-export function validateUsuarioUpdate(input: UsuarioInput): { data?: UsuarioData; error?: string } {
+export function validateUsuarioUpdate(input: UsuarioInput): {
+  data?: UsuarioData;
+  error?: string;
+} {
   const data: UsuarioData = {};
 
   for (const [key, field, max] of [
@@ -76,7 +94,10 @@ export function validateUsuarioUpdate(input: UsuarioInput): { data?: UsuarioData
   if (data.username) data.username = data.username.toLowerCase();
 
   if (input.password !== undefined) {
-    const passwordError = validateText(input.password, "La contraseña", { required: true, max: 120 });
+    const passwordError = validateText(input.password, "La contraseña", {
+      required: true,
+      max: 120
+    });
     if (passwordError) return { error: passwordError };
     if ((input.password as string).trim().length < 6)
       return { error: "La contraseña debe tener al menos 6 caracteres" };

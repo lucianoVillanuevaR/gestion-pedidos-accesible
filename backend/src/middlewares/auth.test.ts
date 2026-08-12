@@ -40,24 +40,34 @@ describe("middleware de autenticación", () => {
       role: "admin",
       username: "actual"
     } as never);
-    const request = { header: vi.fn().mockReturnValue(`Bearer ${token}`) } as unknown as AuthenticatedRequest;
+    const request = {
+      header: vi.fn().mockReturnValue(`Bearer ${token}`)
+    } as unknown as AuthenticatedRequest;
     const next = vi.fn();
 
     await requireAuth(request, responseStub() as never, next);
 
-    expect(request.authUser).toEqual({ id: 7, role: "admin", username: "actual" });
+    expect(request.authUser).toEqual({
+      id: 7,
+      role: "admin",
+      username: "actual"
+    });
     expect(next).toHaveBeenCalledOnce();
   });
 
   it("rechaza un usuario desactivado aunque su token sea válido", async () => {
     const token = jwt.sign({}, "test-secret", { subject: "7" });
-    vi.mocked(prisma.usuario.findUnique).mockResolvedValue({ activo: false } as never);
+    vi.mocked(prisma.usuario.findUnique).mockResolvedValue({
+      activo: false
+    } as never);
     const response = responseStub();
 
     await requireAuth({ header: vi.fn().mockReturnValue(`Bearer ${token}`) } as never, response as never, vi.fn());
 
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ error: "Usuario no disponible" });
+    expect(response.json).toHaveBeenCalledWith({
+      error: "Usuario no disponible"
+    });
   });
 
   it("aplica roles usando el usuario autenticado", () => {

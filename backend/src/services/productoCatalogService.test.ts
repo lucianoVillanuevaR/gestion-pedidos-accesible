@@ -28,8 +28,16 @@ describe("respuesta del catálogo de productos", () => {
     const response = toProductoResponse({
       ...productoBase,
       componentes: [
-        { cantidad: 2, varianteId: 10, componente: { inventario: { stockActual: 4 } } },
-        { cantidad: 2, varianteId: 20, componente: { inventario: { stockActual: 8 } } }
+        {
+          cantidad: 2,
+          varianteId: 10,
+          componente: { inventario: { stockActual: 4 } }
+        },
+        {
+          cantidad: 2,
+          varianteId: 20,
+          componente: { inventario: { stockActual: 8 } }
+        }
       ]
     });
 
@@ -64,8 +72,16 @@ describe("respuesta del catálogo de productos", () => {
     const response = toProductoResponse({
       ...productoBase,
       componentes: [
-        { cantidad: 2, varianteId: 10, componente: { inventario: { stockActual: 1 } } },
-        { cantidad: 2, varianteId: 20, componente: { inventario: { stockActual: 3 } } }
+        {
+          cantidad: 2,
+          varianteId: 10,
+          componente: { inventario: { stockActual: 1 } }
+        },
+        {
+          cantidad: 2,
+          varianteId: 20,
+          componente: { inventario: { stockActual: 3 } }
+        }
       ]
     });
 

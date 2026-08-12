@@ -18,7 +18,12 @@ describe("validaciones de productos", () => {
   });
 
   it("normaliza un producto nuevo y aplica valores predeterminados", () => {
-    expect(validateProductoCreate({ nombre: "  Completo italiano  ", precio: "2500" })).toEqual({
+    expect(
+      validateProductoCreate({
+        nombre: "  Completo italiano  ",
+        precio: "2500"
+      })
+    ).toEqual({
       data: {
         categoria: "Otros",
         descripcion: null,
@@ -34,7 +39,13 @@ describe("validaciones de productos", () => {
   });
 
   it("rechaza categorías con caracteres no permitidos", () => {
-    expect(validateProductoCreate({ categoria: "Completos!", nombre: "Completo", precio: 2500 })).toEqual({
+    expect(
+      validateProductoCreate({
+        categoria: "Completos!",
+        nombre: "Completo",
+        precio: 2500
+      })
+    ).toEqual({
       error: "La categoría solo puede incluir letras, números, espacios, guiones y guiones bajos"
     });
   });
@@ -44,7 +55,9 @@ describe("validaciones de productos", () => {
   });
 
   it("exige al menos un campo al actualizar", () => {
-    expect(validateProductoUpdate({})).toEqual({ error: "Debe enviar al menos un campo para actualizar" });
+    expect(validateProductoUpdate({})).toEqual({
+      error: "Debe enviar al menos un campo para actualizar"
+    });
   });
 
   it("no permite borrar el nombre al actualizar", () => {
@@ -63,14 +76,20 @@ describe("validaciones de productos", () => {
         componentes: [{ componenteId: "7", cantidad: "2" }]
       })
     ).toMatchObject({
-      data: { tipo: "promo", controlaStock: false, componentes: [{ componenteId: 7, cantidad: 2 }] }
+      data: {
+        tipo: "promo",
+        controlaStock: false,
+        componentes: [{ componenteId: 7, cantidad: 2 }]
+      }
     });
   });
 
   it("rechaza cantidades inválidas y stock propio en promos", () => {
-    expect(validateProductoUpdate({ componentes: [{ componenteId: 7, cantidad: 0 }] }).error).toContain(
-      "entero positivo"
-    );
+    expect(
+      validateProductoUpdate({
+        componentes: [{ componenteId: 7, cantidad: 0 }]
+      }).error
+    ).toContain("entero positivo");
     expect(validateProductoUpdate({ tipo: "combo", controlaStock: true })).toEqual({
       error: "Las promociones y combos no pueden controlar stock propio"
     });
@@ -78,8 +97,12 @@ describe("validaciones de productos", () => {
 
   it("mantiene los límites de producto centralizados", () => {
     expect(validateProductoCreate({ nombre: "A".repeat(81), precio: 2500 }).error).toContain("80 caracteres");
-    expect(validateProductoCreate({ descripcion: "A".repeat(301), nombre: "Completo", precio: 2500 }).error).toContain(
-      "300 caracteres"
-    );
+    expect(
+      validateProductoCreate({
+        descripcion: "A".repeat(301),
+        nombre: "Completo",
+        precio: 2500
+      }).error
+    ).toContain("300 caracteres");
   });
 });

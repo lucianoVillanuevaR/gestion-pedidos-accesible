@@ -7,7 +7,12 @@ import { AuthenticatedRequest } from "../middlewares/auth";
 import { validateLoginInput } from "../validations/auth.validation";
 
 function publicUser(user: { email: string; label: string; role: string; username: string }) {
-  return { email: user.email, label: user.label, role: user.role, username: user.username };
+  return {
+    email: user.email,
+    label: user.label,
+    role: user.role,
+    username: user.username
+  };
 }
 
 export async function login(req: Request, res: Response) {
@@ -19,7 +24,10 @@ export async function login(req: Request, res: Response) {
 
   const { identifier, password } = validation.data;
   const user = await prisma.usuario.findFirst({
-    where: { activo: true, OR: [{ username: identifier }, { email: identifier }] }
+    where: {
+      activo: true,
+      OR: [{ username: identifier }, { email: identifier }]
+    }
   });
 
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {

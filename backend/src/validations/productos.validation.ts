@@ -18,7 +18,11 @@ type ProductoInput = {
   componentes?: unknown;
 };
 
-export type ProductoComponenteInput = { componenteId: number; cantidad: number; varianteId?: number };
+type ProductoComponenteInput = {
+  componenteId: number;
+  cantidad: number;
+  varianteId?: number;
+};
 
 type ProductoValidationResult = {
   categoria?: string;
@@ -66,17 +70,25 @@ function validateTipoYComponentes(input: ProductoInput, partial: boolean) {
       const varianteRaw = (raw as { varianteId?: unknown }).varianteId;
       const varianteId = varianteRaw === undefined || varianteRaw === null ? undefined : Number(varianteRaw);
       if (!Number.isInteger(componenteId) || componenteId <= 0) {
-        return { error: "Cada componente debe tener un componenteId entero positivo" };
+        return {
+          error: "Cada componente debe tener un componenteId entero positivo"
+        };
       }
       if (!Number.isInteger(cantidad) || cantidad <= 0) {
-        return { error: "La cantidad de cada componente debe ser un entero positivo" };
+        return {
+          error: "La cantidad de cada componente debe ser un entero positivo"
+        };
       }
       if (varianteId !== undefined && (!Number.isInteger(varianteId) || varianteId <= 0)) {
         return { error: "varianteId debe ser un entero positivo" };
       }
       if (ids.has(componenteId)) return { error: "No se puede repetir un componente" };
       ids.add(componenteId);
-      componentes.push({ componenteId, cantidad, ...(varianteId !== undefined && { varianteId }) });
+      componentes.push({
+        componenteId,
+        cantidad,
+        ...(varianteId !== undefined && { varianteId })
+      });
     }
     data.componentes = componentes;
   } else if (!partial) {
@@ -84,11 +96,15 @@ function validateTipoYComponentes(input: ProductoInput, partial: boolean) {
   }
 
   if ((data.tipo === "promo" || data.tipo === "combo") && data.controlaStock === true) {
-    return { error: "Las promociones y combos no pueden controlar stock propio" };
+    return {
+      error: "Las promociones y combos no pueden controlar stock propio"
+    };
   }
   if (data.tipo === "promo" || data.tipo === "combo") data.controlaStock = false;
   if (data.componentes?.length && data.controlaStock) {
-    return { error: "Un producto con componentes no puede controlar stock propio" };
+    return {
+      error: "Un producto con componentes no puede controlar stock propio"
+    };
   }
   return { data };
 }
@@ -210,7 +226,10 @@ export function validateProductoCreate(input: ProductoInput): ProductoCreateResu
   };
 }
 
-export function validateProductoUpdate(input: ProductoInput): { data?: ProductoValidationResult; error?: string } {
+export function validateProductoUpdate(input: ProductoInput): {
+  data?: ProductoValidationResult;
+  error?: string;
+} {
   const data: ProductoValidationResult = {};
   const composition = validateTipoYComponentes(input, true);
   if (composition.error || !composition.data) return { error: composition.error };

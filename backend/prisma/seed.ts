@@ -444,8 +444,12 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
       update: {
         ...(product.descripcion && { descripcion: product.descripcion }),
         precio: product.precio,
-        ...(product.precioOriginal && { precioOriginal: product.precioOriginal }),
-        ...(product.descuentoPorcentaje && { descuentoPorcentaje: product.descuentoPorcentaje }),
+        ...(product.precioOriginal && {
+          precioOriginal: product.precioOriginal
+        }),
+        ...(product.descuentoPorcentaje && {
+          descuentoPorcentaje: product.descuentoPorcentaje
+        }),
         disponible: true,
         destacado: product.destacado,
         promocion: product.promocion,
@@ -459,8 +463,12 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
         nombre: product.nombre,
         ...(product.descripcion && { descripcion: product.descripcion }),
         precio: product.precio,
-        ...(product.precioOriginal && { precioOriginal: product.precioOriginal }),
-        ...(product.descuentoPorcentaje && { descuentoPorcentaje: product.descuentoPorcentaje }),
+        ...(product.precioOriginal && {
+          precioOriginal: product.precioOriginal
+        }),
+        ...(product.descuentoPorcentaje && {
+          descuentoPorcentaje: product.descuentoPorcentaje
+        }),
         disponible: true,
         destacado: product.destacado,
         promocion: product.promocion,
@@ -482,7 +490,10 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
           stockMinimo: DEFAULT_STOCK_MINIMO
         }
       });
-    else await tx.inventario.deleteMany({ where: { productoId: savedProduct.id } });
+    else
+      await tx.inventario.deleteMany({
+        where: { productoId: savedProduct.id }
+      });
 
     await tx.variante.deleteMany({
       where: {
@@ -507,27 +518,51 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
     where: { nombre: "2x1 Completo Italiano o Alemán" },
     include: { variantes: true }
   });
-  const completoItaliano = await tx.producto.findUnique({ where: { nombre: "Completo Italiano" } });
-  const completoAleman = await tx.producto.findUnique({ where: { nombre: "Completo Alemán" } });
+  const completoItaliano = await tx.producto.findUnique({
+    where: { nombre: "Completo Italiano" }
+  });
+  const completoAleman = await tx.producto.findUnique({
+    where: { nombre: "Completo Alemán" }
+  });
   if (promoCompleto && completoItaliano && completoAleman) {
     const italianos = promoCompleto.variantes.find((item) => item.nombre === "Italianos");
     const alemanes = promoCompleto.variantes.find((item) => item.nombre === "Alemanes");
     if (italianos && alemanes) {
-      await tx.productoComponente.deleteMany({ where: { productoId: promoCompleto.id } });
+      await tx.productoComponente.deleteMany({
+        where: { productoId: promoCompleto.id }
+      });
       await tx.productoComponente.createMany({
         data: [
-          { productoId: promoCompleto.id, componenteId: completoItaliano.id, cantidad: 2, varianteId: italianos.id },
-          { productoId: promoCompleto.id, componenteId: completoAleman.id, cantidad: 2, varianteId: alemanes.id }
+          {
+            productoId: promoCompleto.id,
+            componenteId: completoItaliano.id,
+            cantidad: 2,
+            varianteId: italianos.id
+          },
+          {
+            productoId: promoCompleto.id,
+            componenteId: completoAleman.id,
+            cantidad: 2,
+            varianteId: alemanes.id
+          }
         ]
       });
     }
   }
 
-  const promoCuatro = await tx.producto.findUnique({ where: { nombre: "4 Completos Alemanes" } });
+  const promoCuatro = await tx.producto.findUnique({
+    where: { nombre: "4 Completos Alemanes" }
+  });
   if (promoCuatro && completoAleman) {
-    await tx.productoComponente.deleteMany({ where: { productoId: promoCuatro.id } });
+    await tx.productoComponente.deleteMany({
+      where: { productoId: promoCuatro.id }
+    });
     await tx.productoComponente.create({
-      data: { productoId: promoCuatro.id, componenteId: completoAleman.id, cantidad: 4 }
+      data: {
+        productoId: promoCuatro.id,
+        componenteId: completoAleman.id,
+        cantidad: 4
+      }
     });
   }
 
@@ -573,9 +608,24 @@ async function main() {
   await prisma.$transaction(async (tx) => {
     if (passwordHash) {
       for (const user of [
-        { username: "cajero", email: "cajero@demo.cl", role: "cajero", label: "Cajero" },
-        { username: "cocina", email: "cocina@demo.cl", role: "cocina", label: "Cocina" },
-        { username: "admin", email: "admin@demo.cl", role: "admin", label: "Administrador" }
+        {
+          username: "cajero",
+          email: "cajero@demo.cl",
+          role: "cajero",
+          label: "Cajero"
+        },
+        {
+          username: "cocina",
+          email: "cocina@demo.cl",
+          role: "cocina",
+          label: "Cocina"
+        },
+        {
+          username: "admin",
+          email: "admin@demo.cl",
+          role: "admin",
+          label: "Administrador"
+        }
       ]) {
         await tx.usuario.upsert({
           where: { username: user.username },
@@ -596,7 +646,9 @@ async function main() {
       data: { productos: { connect: completos } }
     });
     await tx.categoria.deleteMany({
-      where: { nombre: { in: ["Completos / Hot Dogs", "Completos / Hot dogs"] } }
+      where: {
+        nombre: { in: ["Completos / Hot Dogs", "Completos / Hot dogs"] }
+      }
     });
   });
 

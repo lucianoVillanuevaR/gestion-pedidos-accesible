@@ -9,6 +9,8 @@ describe("validación de login", () => {
   });
 
   it("rechaza credenciales incompletas", () => {
-    expect(validateLoginInput({ identifier: "admin" })).toEqual({ error: "Debe completar usuario y contraseña" });
+    expect(validateLoginInput({ identifier: "admin" })).toEqual({
+      error: "Debe completar usuario y contraseña"
+    });
   });
 });

@@ -3,18 +3,30 @@ import { Prisma } from "@prisma/client";
 export const turnoCloseInclude = {
   usuario: { select: { label: true, role: true, username: true } },
   pedidos: {
-    include: { detalles: { include: { producto: { select: { nombre: true } } } } },
+    include: {
+      detalles: { include: { producto: { select: { nombre: true } } } }
+    },
     orderBy: { createdAt: "asc" }
   }
 } as const;
 
-type TurnoForClose = Prisma.TurnoGetPayload<{ include: typeof turnoCloseInclude }>;
+type TurnoForClose = Prisma.TurnoGetPayload<{
+  include: typeof turnoCloseInclude;
+}>;
 
 export function buildResumenTurno(turno: TurnoForClose, fechaCierre: Date): Prisma.InputJsonValue {
   const pedidosEntregados = turno.pedidos.filter((pedido) => pedido.estado === "entregado");
   const pedidosCancelados = turno.pedidos.filter((pedido) => pedido.estado === "cancelado");
   const totalPorMetodo = { efectivo: 0, tarjeta: 0, transferencia: 0 };
-  const productos = new Map<number, { cantidad: number; productoId: number; productoNombre: string; total: number }>();
+  const productos = new Map<
+    number,
+    {
+      cantidad: number;
+      productoId: number;
+      productoNombre: string;
+      total: number;
+    }
+  >();
 
   for (const pedido of pedidosEntregados) {
     if (pedido.metodoPago in totalPorMetodo) {

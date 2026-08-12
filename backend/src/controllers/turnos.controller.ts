@@ -9,7 +9,9 @@ const turnoInclude = {
   usuario: { select: { label: true, role: true, username: true } },
   pedidos: { select: { id: true } }
 } as const;
-type TurnoWithRelations = Prisma.TurnoGetPayload<{ include: typeof turnoInclude }>;
+type TurnoWithRelations = Prisma.TurnoGetPayload<{
+  include: typeof turnoInclude;
+}>;
 
 function serializeTurno(turno: TurnoWithRelations) {
   const usuario = {
@@ -39,20 +41,32 @@ function serializeTurno(turno: TurnoWithRelations) {
 }
 
 export async function getTurnoActual(_req: Request, res: Response) {
-  const turno = await prisma.turno.findFirst({ where: { estado: "abierto" }, include: turnoInclude });
+  const turno = await prisma.turno.findFirst({
+    where: { estado: "abierto" },
+    include: turnoInclude
+  });
   return res.json({ turno: turno ? serializeTurno(turno) : null });
 }
 
 export async function abrirTurno(req: Request, res: Response) {
   const auth = (req as AuthenticatedRequest).authUser;
-  const existing = await prisma.turno.findFirst({ where: { estado: "abierto" }, include: turnoInclude });
+  const existing = await prisma.turno.findFirst({
+    where: { estado: "abierto" },
+    include: turnoInclude
+  });
 
   if (existing) {
-    return res.status(409).json({ error: "Ya existe un turno abierto", turno: serializeTurno(existing) });
+    return res.status(409).json({
+      error: "Ya existe un turno abierto",
+      turno: serializeTurno(existing)
+    });
   }
 
   try {
-    const turno = await prisma.turno.create({ data: { usuarioId: auth.id }, include: turnoInclude });
+    const turno = await prisma.turno.create({
+      data: { usuarioId: auth.id },
+      include: turnoInclude
+    });
     return res.status(201).json({ turno: serializeTurno(turno) });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

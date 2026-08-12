@@ -128,14 +128,20 @@ export const updateProducto = async (req: Request, res: Response) => {
     const tipoFinal = productoData.tipo ?? productoActual.tipo;
     const controlaStockFinal = productoData.controlaStock ?? productoActual.controlaStock;
     if ((tipoFinal === "promo" || tipoFinal === "combo") && controlaStockFinal) {
-      return res.status(400).json({ error: "Las promociones y combos no pueden controlar stock propio" });
+      return res.status(400).json({
+        error: "Las promociones y combos no pueden controlar stock propio"
+      });
     }
     const cantidadComponentesFinal = componentes?.length ?? productoActual._count.componentes;
     if (cantidadComponentesFinal > 0 && controlaStockFinal) {
-      return res.status(400).json({ error: "Un producto con componentes no puede controlar stock propio" });
+      return res.status(400).json({
+        error: "Un producto con componentes no puede controlar stock propio"
+      });
     }
     if (componentes) await validateProductComponents(productoId, componentes);
-    const data: Parameters<typeof prisma.producto.update>[0]["data"] = { ...productoData };
+    const data: Parameters<typeof prisma.producto.update>[0]["data"] = {
+      ...productoData
+    };
 
     if (componentes !== undefined) {
       data.componentes = { deleteMany: {}, create: componentes };
@@ -169,7 +175,10 @@ export const updateProducto = async (req: Request, res: Response) => {
       } else {
         await tx.inventario.deleteMany({ where: { productoId } });
       }
-      return tx.producto.findUniqueOrThrow({ include: PRODUCTO_CATALOG_INCLUDE, where: { id: productoId } });
+      return tx.producto.findUniqueOrThrow({
+        include: PRODUCTO_CATALOG_INCLUDE,
+        where: { id: productoId }
+      });
     });
 
     res.json(toProductoResponse(producto));

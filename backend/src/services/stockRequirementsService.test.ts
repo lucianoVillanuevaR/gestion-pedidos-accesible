@@ -6,7 +6,13 @@ const promo = {
   nombre: "2x1 Completo Italiano",
   tipo: "promo" as const,
   controlaStock: false,
-  componentes: [{ componenteId: 1, cantidad: 2, componente: { nombre: "Completo Italiano" } }]
+  componentes: [
+    {
+      componenteId: 1,
+      cantidad: 2,
+      componente: { nombre: "Completo Italiano" }
+    }
+  ]
 };
 
 describe("requerimientos de stock por componentes", () => {
@@ -22,7 +28,11 @@ describe("requerimientos de stock por componentes", () => {
       tipo: "combo" as const,
       controlaStock: false,
       componentes: [
-        { componenteId: 1, cantidad: 3, componente: { nombre: "Completo Italiano" } },
+        {
+          componenteId: 1,
+          cantidad: 3,
+          componente: { nombre: "Completo Italiano" }
+        },
         { componenteId: 2, cantidad: 2, componente: { nombre: "Bebida" } }
       ]
     };
@@ -35,8 +45,20 @@ describe("requerimientos de stock por componentes", () => {
   });
 
   it("usa stock propio para productos normales e ignora productos sin control", () => {
-    const normal = { id: 3, nombre: "Papas", tipo: "producto" as const, controlaStock: true, componentes: [] };
-    const servicio = { id: 4, nombre: "Despacho", tipo: "producto" as const, controlaStock: false, componentes: [] };
+    const normal = {
+      id: 3,
+      nombre: "Papas",
+      tipo: "producto" as const,
+      controlaStock: true,
+      componentes: []
+    };
+    const servicio = {
+      id: 4,
+      nombre: "Despacho",
+      tipo: "producto" as const,
+      controlaStock: false,
+      componentes: []
+    };
     const consumos = buildStockRequirements([
       { producto: normal, cantidadVendida: 3 },
       { producto: servicio, cantidadVendida: 1 }
@@ -49,8 +71,18 @@ describe("requerimientos de stock por componentes", () => {
     const promoConOpciones = {
       ...promo,
       componentes: [
-        { componenteId: 1, cantidad: 2, varianteId: 20, componente: { nombre: "Completo Italiano" } },
-        { componenteId: 2, cantidad: 2, varianteId: 21, componente: { nombre: "Completo Alemán" } }
+        {
+          componenteId: 1,
+          cantidad: 2,
+          varianteId: 20,
+          componente: { nombre: "Completo Italiano" }
+        },
+        {
+          componenteId: 2,
+          cantidad: 2,
+          varianteId: 21,
+          componente: { nombre: "Completo Alemán" }
+        }
       ]
     };
     const componentes = getApplicableStockComponents(promoConOpciones, 21);
@@ -63,8 +95,16 @@ describe("requerimientos de stock por componentes", () => {
     const promoCombinable = {
       ...promo,
       componentes: [
-        { componenteId: 1, cantidad: 1, componente: { nombre: "Completo Italiano" } },
-        { componenteId: 2, cantidad: 1, componente: { nombre: "Completo Dinámico" } }
+        {
+          componenteId: 1,
+          cantidad: 1,
+          componente: { nombre: "Completo Italiano" }
+        },
+        {
+          componenteId: 2,
+          cantidad: 1,
+          componente: { nombre: "Completo Dinámico" }
+        }
       ]
     };
     const componentes = getApplicableStockComponents(promoCombinable, undefined, {
@@ -80,8 +120,16 @@ describe("requerimientos de stock por componentes", () => {
     const promoCombinable = {
       ...promo,
       componentes: [
-        { componenteId: 1, cantidad: 1, componente: { nombre: "Completo Italiano" } },
-        { componenteId: 2, cantidad: 1, componente: { nombre: "Completo Dinámico" } }
+        {
+          componenteId: 1,
+          cantidad: 1,
+          componente: { nombre: "Completo Italiano" }
+        },
+        {
+          componenteId: 2,
+          cantidad: 1,
+          componente: { nombre: "Completo Dinámico" }
+        }
       ]
     };
 
@@ -96,8 +144,18 @@ describe("requerimientos de stock por componentes", () => {
     const promoConOpciones = {
       ...promo,
       componentes: [
-        { componenteId: 1, cantidad: 2, varianteId: 20, componente: { nombre: "Completo Italiano" } },
-        { componenteId: 2, cantidad: 2, varianteId: 21, componente: { nombre: "Completo Alemán" } }
+        {
+          componenteId: 1,
+          cantidad: 2,
+          varianteId: 20,
+          componente: { nombre: "Completo Italiano" }
+        },
+        {
+          componenteId: 2,
+          cantidad: 2,
+          varianteId: 21,
+          componente: { nombre: "Completo Alemán" }
+        }
       ]
     };
     const componentes = getApplicableStockComponents(promoConOpciones, undefined, {

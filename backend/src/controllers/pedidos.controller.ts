@@ -1,14 +1,16 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
-import { Decimal } from "@prisma/client/runtime/library";
-import { consumeStockRequirements } from "../services/pedidoStockService";
+import type { AuthenticatedRequest } from "../middlewares/auth";
 import { withProductImageUrl } from "../services/productImageService";
 import {
-  buildStockRequirements,
-  getApplicableStockComponents,
-  type StockProduct
-} from "../services/stockRequirementsService";
-import { getErrorMessage, RequestError } from "../utils/httpErrors";
+  assertPedidoCanBeUpdated,
+  normalizePedidoDetalles,
+  preparePedidoWrite,
+  restorePedidoStock,
+  shouldRestoreStockOnStateChange,
+  type PedidoDetalleInput
+} from "../services/pedidoWriteService";
+import { RequestError } from "../utils/httpErrors";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import {
   validateEstadoPedido,
@@ -28,38 +30,54 @@ const PEDIDO_WITH_DETALLES_INCLUDE = {
 } as const;
 
 interface CrearPedidoBody {
-  detalles: Array<{
-    productoId: number;
-    cantidad: number;
-    varianteId?: number;
-    personalizacion?: PersonalizacionPedido;
-  }>;
+  detalles: PedidoDetalleInput[];
   metodoPago: string;
   clienteNombre: string;
   observacion?: string;
 }
 
-type PersonalizacionPedido = {
-  aderezos: string[];
-  comentario?: string;
-  combinacion?: {
-    nombre: string;
-    componentes: Array<{ componenteId: number; cantidad: number }>;
-  };
-};
-
 interface ActualizarEstadoBody {
   estado: string;
 }
 
+type ActualizarPedidoBody = CrearPedidoBody & { expectedUpdatedAt: string };
+
 function withPedidoProductImageUrls<
-  T extends { detalles?: Array<{ producto?: { imagenUrl?: string | null } | null }> }
+  T extends {
+    detalles?: Array<{ producto?: { imagenUrl?: string | null } | null }>;
+  }
 >(pedido: T) {
   return {
     ...pedido,
     detalles: pedido.detalles?.map((detalle) => ({
       ...detalle,
       producto: detalle.producto ? withProductImageUrl(detalle.producto) : detalle.producto
+    }))
+  };
+}
+
+function pedidoAuditSnapshot(pedido: {
+  clienteNombre: string | null;
+  metodoPago: string;
+  observacion: string | null;
+  total: { toString(): string };
+  detalles: Array<{
+    productoId: number;
+    cantidad: number;
+    varianteId: number | null;
+    personalizacion: unknown;
+  }>;
+}) {
+  return {
+    clienteNombre: pedido.clienteNombre,
+    metodoPago: pedido.metodoPago,
+    observacion: pedido.observacion,
+    total: pedido.total.toString(),
+    detalles: pedido.detalles.map(({ cantidad, personalizacion, productoId, varianteId }) => ({
+      cantidad,
+      personalizacion,
+      productoId,
+      varianteId
     }))
   };
 }
@@ -86,28 +104,7 @@ export const crearPedido = async (req: Request, res: Response) => {
       return res.status(400).json({ error: detallesError });
     }
 
-    const detallesNormalizados = detalles.map((detalle) => ({
-      cantidad: Number(detalle.cantidad),
-      productoId: Number(detalle.productoId),
-      varianteId: detalle.varianteId === undefined ? undefined : Number(detalle.varianteId),
-      personalizacion: detalle.personalizacion
-        ? {
-            aderezos: detalle.personalizacion.aderezos.map((item) => item.trim()),
-            ...(detalle.personalizacion.comentario?.trim() && {
-              comentario: detalle.personalizacion.comentario.trim()
-            }),
-            ...(detalle.personalizacion.combinacion && {
-              combinacion: {
-                nombre: detalle.personalizacion.combinacion.nombre.trim(),
-                componentes: detalle.personalizacion.combinacion.componentes.map((item) => ({
-                  componenteId: Number(item.componenteId),
-                  cantidad: Number(item.cantidad)
-                }))
-              }
-            })
-          }
-        : undefined
-    }));
+    const detallesNormalizados = normalizePedidoDetalles(detalles);
 
     const pedido = await prisma.$transaction(async (tx) => {
       const turno = await tx.turno.findFirst({ where: { estado: "abierto" } });
@@ -115,82 +112,7 @@ export const crearPedido = async (req: Request, res: Response) => {
         throw new RequestError(409, "Debes abrir turno antes de registrar un pedido");
       }
 
-      const productosData: Array<{
-        producto: { id: number; nombre: string; precio: Decimal };
-        cantidad: number;
-        subtotal: Decimal;
-        varianteId?: number;
-        personalizacion?: PersonalizacionPedido;
-      }> = [];
-      const productosStock: Array<{ producto: StockProduct; cantidadVendida: number }> = [];
-      let total = new Decimal(0);
-
-      const productos = await tx.producto.findMany({
-        where: { id: { in: detallesNormalizados.map((item) => item.productoId) } },
-        include: {
-          inventario: true,
-          variantes: true,
-          componentes: { include: { componente: { include: { inventario: true } } } }
-        }
-      });
-
-      for (const detalle of detallesNormalizados) {
-        const producto = productos.find((item) => item.id === detalle.productoId);
-
-        if (!producto) {
-          throw new RequestError(404, `Producto con ID ${detalle.productoId} no encontrado`);
-        }
-
-        if (!producto.disponible) {
-          throw new RequestError(400, `Producto "${producto.nombre}" no está disponible`);
-        }
-
-        const variante = detalle.varianteId
-          ? producto.variantes.find((item) => item.id === detalle.varianteId && item.disponible)
-          : undefined;
-        if (detalle.varianteId && !variante) {
-          throw new RequestError(400, `La opción elegida no pertenece a "${producto.nombre}"`);
-        }
-        const requiereVariante = producto.componentes.some((item) => item.varianteId !== null);
-        if (requiereVariante && !variante && !detalle.personalizacion?.combinacion) {
-          throw new RequestError(400, `Debes elegir una opción para "${producto.nombre}"`);
-        }
-        let componentesAplicables;
-        try {
-          componentesAplicables = getApplicableStockComponents(
-            producto,
-            variante?.id,
-            detalle.personalizacion?.combinacion
-          );
-        } catch (error) {
-          throw new RequestError(400, getErrorMessage(error, "La combinación no es válida"));
-        }
-        if (detalle.personalizacion?.combinacion) {
-          const nombreCantidad = (cantidad: number, nombre: string) =>
-            cantidad === 1 ? nombre : `${cantidad} × ${nombre}`;
-          detalle.personalizacion.combinacion.nombre = componentesAplicables
-            .map((item) => nombreCantidad(item.cantidad, item.componente.nombre))
-            .join(" + ");
-        }
-
-        const subtotal = producto.precio.mul(new Decimal(detalle.cantidad));
-        total = total.add(subtotal);
-
-        productosData.push({
-          producto,
-          cantidad: detalle.cantidad,
-          subtotal,
-          varianteId: variante?.id,
-          personalizacion: detalle.personalizacion
-        });
-        productosStock.push({
-          producto: { ...producto, componentes: componentesAplicables },
-          cantidadVendida: detalle.cantidad
-        });
-      }
-
-      const consumos = buildStockRequirements(productosStock);
-      await consumeStockRequirements(tx, consumos);
+      const { detallesData, total } = await preparePedidoWrite(tx, detallesNormalizados);
 
       return tx.pedido.create({
         data: {
@@ -201,14 +123,7 @@ export const crearPedido = async (req: Request, res: Response) => {
           clienteNombre: clienteNombre.trim(),
           observacion: observacion?.trim() || null,
           detalles: {
-            create: productosData.map((item) => ({
-              productoId: item.producto.id,
-              cantidad: item.cantidad,
-              precioUnitario: item.producto.precio,
-              subtotal: item.subtotal,
-              varianteId: item.varianteId,
-              personalizacion: item.personalizacion
-            }))
+            create: detallesData
           }
         },
         include: PEDIDO_WITH_DETALLES_INCLUDE
@@ -228,7 +143,10 @@ export const crearPedido = async (req: Request, res: Response) => {
 
 export const getPedidos = async (_req: Request, res: Response) => {
   try {
-    const turno = await prisma.turno.findFirst({ where: { estado: "abierto" }, select: { id: true } });
+    const turno = await prisma.turno.findFirst({
+      where: { estado: "abierto" },
+      select: { id: true }
+    });
     if (!turno) {
       return res.json([]);
     }
@@ -264,10 +182,41 @@ export const getPedidoById = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Pedido no encontrado" });
     }
 
-    res.json(withPedidoProductImageUrls(pedido));
+    const numeroTurno = await prisma.pedido.count({
+      where: {
+        turnoId: pedido.turnoId,
+        OR: [{ createdAt: { lt: pedido.createdAt } }, { createdAt: pedido.createdAt, id: { lte: pedido.id } }]
+      }
+    });
+
+    res.json(withPedidoProductImageUrls({ ...pedido, numeroTurno }));
   } catch (error) {
     console.error("Error al obtener pedido:", error);
     res.status(500).json({ error: "Error al obtener pedido" });
+  }
+};
+
+export const getPedidoHistorial = async (req: Request, res: Response) => {
+  try {
+    const idError = validatePositiveIntegerId(req.params.id, "ID de pedido");
+    if (idError) return res.status(400).json({ error: idError });
+
+    const pedidoId = parsePositiveIntegerId(req.params.id);
+    const pedidoExiste = await prisma.pedido.findUnique({
+      where: { id: pedidoId },
+      select: { id: true }
+    });
+    if (!pedidoExiste) return res.status(404).json({ error: "Pedido no encontrado" });
+
+    const historial = await prisma.pedidoHistorial.findMany({
+      where: { pedidoId },
+      include: { usuario: { select: { label: true, username: true } } },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json(historial);
+  } catch (error) {
+    console.error("Error al obtener historial del pedido:", error);
+    res.status(500).json({ error: "Error al obtener historial del pedido" });
   }
 };
 
@@ -288,29 +237,142 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
     }
 
     const pedidoId = parsePositiveIntegerId(id);
-    const pedido = await prisma.pedido.findUnique({
-      where: { id: pedidoId }
-    });
+    const usuarioId = (req as AuthenticatedRequest).authUser.id;
+    const pedidoActualizado = await prisma.$transaction(async (tx) => {
+      const pedido = await tx.pedido.findUnique({
+        where: { id: pedidoId },
+        include: { detalles: true }
+      });
+      if (!pedido) throw new RequestError(404, "Pedido no encontrado");
 
-    if (!pedido) {
-      return res.status(404).json({ error: "Pedido no encontrado" });
-    }
+      const transicionError = validateTransicionEstadoPedido(pedido.estado, estado);
+      if (transicionError) throw new RequestError(400, transicionError);
+      if (pedido.estado === estado) {
+        return tx.pedido.findUniqueOrThrow({
+          where: { id: pedidoId },
+          include: PEDIDO_WITH_DETALLES_INCLUDE
+        });
+      }
 
-    const transicionError = validateTransicionEstadoPedido(pedido.estado, estado);
+      if (shouldRestoreStockOnStateChange(pedido.estado, estado)) {
+        await restorePedidoStock(tx, pedido.detalles);
+      }
 
-    if (transicionError) {
-      return res.status(400).json({ error: transicionError });
-    }
+      const updateResult = await tx.pedido.updateMany({
+        where: {
+          id: pedidoId,
+          estado: pedido.estado,
+          updatedAt: pedido.updatedAt
+        },
+        data: { estado }
+      });
+      if (updateResult.count === 0) {
+        throw new RequestError(409, "El pedido cambió mientras lo revisabas. Actualiza e intenta nuevamente");
+      }
 
-    const pedidoActualizado = await prisma.pedido.update({
-      where: { id: pedidoId },
-      data: { estado },
-      include: PEDIDO_WITH_DETALLES_INCLUDE
+      if (pedido.estado !== estado) {
+        await tx.pedidoHistorial.create({
+          data: {
+            pedidoId,
+            usuarioId,
+            accion: "estado_modificado",
+            cambios: { anterior: pedido.estado, nuevo: estado }
+          }
+        });
+      }
+      return tx.pedido.findUniqueOrThrow({
+        where: { id: pedidoId },
+        include: PEDIDO_WITH_DETALLES_INCLUDE
+      });
     });
 
     res.json(withPedidoProductImageUrls(pedidoActualizado));
   } catch (error) {
+    if (error instanceof RequestError) return res.status(error.statusCode).json({ error: error.message });
     console.error("Error al actualizar estado del pedido:", error);
     res.status(500).json({ error: "Error al actualizar estado del pedido" });
+  }
+};
+
+export const actualizarPedido = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { clienteNombre, detalles, expectedUpdatedAt, metodoPago, observacion } = req.body as ActualizarPedidoBody;
+    const idError = validatePositiveIntegerId(id, "ID de pedido");
+
+    if (idError) return res.status(400).json({ error: idError });
+
+    const validationError =
+      validateMetodoPago(metodoPago) ||
+      validatePedidoTextFields(clienteNombre, observacion) ||
+      validatePedidoDetalles(detalles);
+
+    if (validationError) return res.status(400).json({ error: validationError });
+    const expectedUpdatedAtDate = new Date(expectedUpdatedAt);
+    if (!expectedUpdatedAt || Number.isNaN(expectedUpdatedAtDate.getTime())) {
+      return res.status(400).json({ error: "La versión del pedido es requerida" });
+    }
+
+    const pedidoId = parsePositiveIntegerId(id);
+    const usuarioId = (req as AuthenticatedRequest).authUser.id;
+    const detallesNormalizados = normalizePedidoDetalles(detalles);
+
+    const pedidoActualizado = await prisma.$transaction(async (tx) => {
+      const pedidoActual = await tx.pedido.findUnique({
+        where: { id: pedidoId },
+        include: { detalles: true }
+      });
+
+      if (!pedidoActual) throw new RequestError(404, "Pedido no encontrado");
+      assertPedidoCanBeUpdated(pedidoActual.estado, pedidoActual.updatedAt, expectedUpdatedAtDate);
+
+      const versionLock = await tx.pedido.updateMany({
+        where: {
+          id: pedidoId,
+          estado: "pendiente",
+          updatedAt: expectedUpdatedAtDate
+        },
+        data: { updatedAt: new Date() }
+      });
+      if (versionLock.count === 0) {
+        throw new RequestError(409, "El pedido fue modificado por otra persona. Recarga antes de guardar");
+      }
+
+      await restorePedidoStock(tx, pedidoActual.detalles);
+      const { detallesData, total } = await preparePedidoWrite(tx, detallesNormalizados);
+      await tx.detallePedido.deleteMany({ where: { pedidoId } });
+
+      const actualizado = await tx.pedido.update({
+        where: { id: pedidoId },
+        data: {
+          clienteNombre: clienteNombre.trim(),
+          metodoPago,
+          observacion: observacion?.trim() || null,
+          total,
+          detalles: { create: detallesData }
+        },
+        include: PEDIDO_WITH_DETALLES_INCLUDE
+      });
+      await tx.pedidoHistorial.create({
+        data: {
+          pedidoId,
+          usuarioId,
+          accion: "pedido_modificado",
+          cambios: JSON.parse(
+            JSON.stringify({
+              anterior: pedidoAuditSnapshot(pedidoActual),
+              nuevo: pedidoAuditSnapshot(actualizado)
+            })
+          )
+        }
+      });
+      return actualizado;
+    });
+
+    res.json(withPedidoProductImageUrls(pedidoActualizado));
+  } catch (error) {
+    if (error instanceof RequestError) return res.status(error.statusCode).json({ error: error.message });
+    console.error("Error al modificar pedido:", error);
+    res.status(500).json({ error: "Error al modificar pedido" });
   }
 };
