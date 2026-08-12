@@ -5,8 +5,18 @@ import { buildCategoriasCatalogo, withProductoCategoria } from "./ProductosShare
 describe("categorías del catálogo", () => {
   it("unifica la categoría antigua de hot dogs bajo Completos", () => {
     const productos: Producto[] = [
-      { id: 1, nombre: "Completo Italiano", precio: 3900, categoria: "Completos / Hot Dogs" },
-      { id: 2, nombre: "Completo Alemán", precio: 2900, categoria: "Completos" }
+      {
+        id: 1,
+        nombre: "Completo Italiano",
+        precio: 3900,
+        categoria: "Completos / Hot Dogs"
+      },
+      {
+        id: 2,
+        nombre: "Completo Alemán",
+        precio: 2900,
+        categoria: "Completos"
+      }
     ];
 
     const categorias = buildCategoriasCatalogo(productos);

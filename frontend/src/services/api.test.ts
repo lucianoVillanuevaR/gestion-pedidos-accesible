@@ -26,7 +26,9 @@ describe("apiRequest", () => {
     const fetchMock = vi.fn().mockResolvedValue(successfulResponse());
     vi.stubGlobal("fetch", fetchMock);
 
-    await apiRequest<{ ok: boolean }>("/api/pedidos", { fallbackMessage: "Error" });
+    await apiRequest<{ ok: boolean }>("/api/pedidos", {
+      fallbackMessage: "Error"
+    });
 
     expect(fetchMock).toHaveBeenCalledWith("/api/pedidos", expect.any(Object));
   });

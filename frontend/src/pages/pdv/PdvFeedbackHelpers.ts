@@ -24,7 +24,7 @@ export function buildPedidoValidationFeedback(message: string): FeedbackState {
   };
 }
 
-export function buildPedidoCreateErrorFeedback(message: string): FeedbackState {
+export function buildPedidoSaveErrorFeedback(message: string, isEditing = false): FeedbackState {
   if (isStockError(message)) {
     return {
       type: "error",
@@ -34,9 +34,18 @@ export function buildPedidoCreateErrorFeedback(message: string): FeedbackState {
     };
   }
 
+  if (message.includes("modificado por otra persona") || message.includes("cambió mientras")) {
+    return {
+      type: "error",
+      title: "El pedido cambió",
+      message,
+      details: "Vuelve a Pedidos activos, abre la versión actual y aplica nuevamente tu cambio."
+    };
+  }
+
   return {
     type: "error",
-    title: "No se pudo registrar el pedido",
+    title: isEditing ? "No se pudo modificar el pedido" : "No se pudo registrar el pedido",
     message
   };
 }

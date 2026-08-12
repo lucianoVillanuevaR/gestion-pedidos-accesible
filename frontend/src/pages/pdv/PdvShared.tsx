@@ -41,16 +41,40 @@ export const SOUND_CUES: Record<SoundCue, ToneStep[]> = {
   ],
   clear: [
     { frequency: 660, durationMs: 60, type: "triangle", volume: 0.055 },
-    { frequency: 520, durationMs: 75, delayMs: 60, type: "triangle", volume: 0.062 },
-    { frequency: 380, durationMs: 110, delayMs: 135, type: "sine", volume: 0.07 }
+    {
+      frequency: 520,
+      durationMs: 75,
+      delayMs: 60,
+      type: "triangle",
+      volume: 0.062
+    },
+    {
+      frequency: 380,
+      durationMs: 110,
+      delayMs: 135,
+      type: "sine",
+      volume: 0.07
+    }
   ],
   success: [
     { frequency: 880, durationMs: 75, type: "triangle", volume: 0.062 },
-    { frequency: 1040, durationMs: 120, delayMs: 70, type: "triangle", volume: 0.075 }
+    {
+      frequency: 1040,
+      durationMs: 120,
+      delayMs: 70,
+      type: "triangle",
+      volume: 0.075
+    }
   ],
   error: [
     { frequency: 260, durationMs: 90, type: "sawtooth", volume: 0.055 },
-    { frequency: 220, durationMs: 140, delayMs: 75, type: "sawtooth", volume: 0.062 }
+    {
+      frequency: 220,
+      durationMs: 140,
+      delayMs: 75,
+      type: "sawtooth",
+      volume: 0.062
+    }
   ]
 };
 

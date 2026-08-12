@@ -55,7 +55,10 @@ function ProductosPage() {
     setProductos,
     setSearchTerm,
     productosConCategoria
-  } = useProductosCatalog({ categorias: categoriasCatalogo, includeUnavailable: true });
+  } = useProductosCatalog({
+    categorias: categoriasCatalogo,
+    includeUnavailable: true
+  });
 
   const loadCategorias = useCallback(() => {
     getCategorias()
@@ -107,7 +110,10 @@ function ProductosPage() {
     );
     setEditingProducto((currentProducto) =>
       currentProducto?.id === productoActualizado.id
-        ? ({ ...currentProducto, ...productoActualizado } as ProductoConCategoria)
+        ? ({
+            ...currentProducto,
+            ...productoActualizado
+          } as ProductoConCategoria)
         : currentProducto
     );
   };
@@ -125,7 +131,10 @@ function ProductosPage() {
 
       if (imageFile) {
         try {
-          productoFinal = { ...(await uploadProductImage(producto.id, imageFile)), categoria: payload.categoria };
+          productoFinal = {
+            ...(await uploadProductImage(producto.id, imageFile)),
+            categoria: payload.categoria
+          };
           speakAction("Imagen subida correctamente.", `producto-image-uploaded:${producto.id}`, { cooldownMs: 2200 });
         } catch (imageError) {
           const message = imageError instanceof Error ? imageError.message : "No se pudo subir la imagen.";
@@ -277,7 +286,10 @@ function ProductosPage() {
   };
 
   const handleRefreshProductos = () => {
-    speakAction("Actualizando productos.", "productos-normal-refresh", { cooldownMs: 1200, priority: "normal" });
+    speakAction("Actualizando productos.", "productos-normal-refresh", {
+      cooldownMs: 1200,
+      priority: "normal"
+    });
     loadProductos();
   };
 

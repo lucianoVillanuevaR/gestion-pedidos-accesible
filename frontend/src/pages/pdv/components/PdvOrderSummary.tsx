@@ -1,5 +1,5 @@
-import { formatCurrency } from "../../utils/pdv";
-import { usePdvViewContext } from "./PdvViewContext";
+import { formatCurrency } from "../../../utils/pdv";
+import { usePdvViewContext } from "../PdvViewContext";
 
 function PdvOrderSummary() {
   const { pedidoDetalles, removeProduct } = usePdvViewContext();

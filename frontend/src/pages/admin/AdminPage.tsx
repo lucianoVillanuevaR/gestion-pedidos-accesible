@@ -22,7 +22,10 @@ const ROLE_LABELS: Record<UserRole, string> = {
   cocina: "Cocina"
 };
 
-const ROLE_PERMISSIONS: Array<{ role: UserRole; permissions: Record<string, boolean> }> = [
+const ROLE_PERMISSIONS: Array<{
+  role: UserRole;
+  permissions: Record<string, boolean>;
+}> = [
   {
     role: "admin",
     permissions: {
@@ -301,7 +304,10 @@ function AdminUsersPage() {
     try {
       setSavingId(editing?.id ?? "new");
       const saved = editing
-        ? await updateUsuario(editing.id, { ...draft, ...(password ? { password } : {}) })
+        ? await updateUsuario(editing.id, {
+            ...draft,
+            ...(password ? { password } : {})
+          })
         : await createUsuario(draft);
       setUsuarios((current) =>
         editing ? current.map((item) => (item.id === saved.id ? saved : item)) : [saved, ...current]
@@ -326,7 +332,9 @@ function AdminUsersPage() {
     setSavingId(usuario.id);
     setError(null);
     try {
-      const saved = await updateUsuario(usuario.id, { activo: !usuario.activo });
+      const saved = await updateUsuario(usuario.id, {
+        activo: !usuario.activo
+      });
       setUsuarios((current) => current.map((item) => (item.id === saved.id ? saved : item)));
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar estado");
@@ -582,7 +590,12 @@ function UserFormModal({
             <span className="mb-1 block text-sm font-black text-slate-700">Rol</span>
             <select
               value={draft.role}
-              onChange={(event) => onDraftChange({ ...draft, role: event.target.value as UserRole })}
+              onChange={(event) =>
+                onDraftChange({
+                  ...draft,
+                  role: event.target.value as UserRole
+                })
+              }
               className={`min-h-[46px] w-full rounded-xl border border-slate-300 bg-white px-3 font-bold text-slate-950 ${FOCUS_VISIBLE_CLASS}`}
             >
               <option value="cajero">Cajero</option>

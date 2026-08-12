@@ -9,7 +9,11 @@ import {
 } from "../../utils/pdv";
 
 export type CategoriaCatalogo = ProductoCategoriaCatalogo | "Destacados";
-export type CategoriaCatalogoOption = { id?: number; label: string; value: CategoriaCatalogo };
+export type CategoriaCatalogoOption = {
+  id?: number;
+  label: string;
+  value: CategoriaCatalogo;
+};
 
 export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { label: "Destacados", value: "Destacados" },
@@ -25,7 +29,7 @@ const CATEGORIA_ALIASES: Record<string, CategoriaCatalogo> = {
   "Completos / Hot dogs": "Completos"
 };
 
-export function normalizeCategoriaCatalogo(categoria: string): CategoriaCatalogo {
+function normalizeCategoriaCatalogo(categoria: string): CategoriaCatalogo {
   const cleanCategoria = categoria.trim();
   return CATEGORIA_ALIASES[cleanCategoria] ?? (cleanCategoria as CategoriaCatalogo);
 }
@@ -39,7 +43,11 @@ export function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
     const normalizedLabel = CATEGORIA_ALIASES[label] ?? label;
 
     if (label && value && !categoriaMap.has(value)) {
-      categoriaMap.set(value, { id: categoria.id, label: normalizedLabel, value });
+      categoriaMap.set(value, {
+        id: categoria.id,
+        label: normalizedLabel,
+        value
+      });
     }
   });
 

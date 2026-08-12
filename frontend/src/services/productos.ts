@@ -51,7 +51,10 @@ export async function updateProducto(id: number, payload: UpdateProductoPayload)
 }
 
 export async function deleteProducto(id: number): Promise<void> {
-  await apiRequest<void>(`/productos/${id}`, { fallbackMessage: "Error eliminando producto", method: "DELETE" });
+  await apiRequest<void>(`/productos/${id}`, {
+    fallbackMessage: "Error eliminando producto",
+    method: "DELETE"
+  });
 }
 
 export async function uploadProductImage(productId: number, file: File): Promise<Producto> {

@@ -3,7 +3,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { PedidoDetalleResponse } from "../../types";
-import { DetalleSeleccion } from "./PedidosShared";
+import { DetalleSeleccion, getPedidoDisplayNumber } from "./PedidosShared";
 
 function makeDetalle(personalizacion: PedidoDetalleResponse["personalizacion"]): PedidoDetalleResponse {
   return {
@@ -23,7 +23,10 @@ describe("DetalleSeleccion", () => {
   it("muestra un comentario aunque no existan variante ni aderezos", () => {
     render(
       <DetalleSeleccion
-        detalle={makeDetalle({ aderezos: [], comentario: "Sin cebolla y bien tostado" })}
+        detalle={makeDetalle({
+          aderezos: [],
+          comentario: "Sin cebolla y bien tostado"
+        })}
         isAccessible={false}
       />
     );
@@ -38,5 +41,11 @@ describe("DetalleSeleccion", () => {
     );
 
     expect(container.innerHTML).toBe("");
+  });
+});
+
+describe("número visible del pedido", () => {
+  it("usa el correlativo del turno y no el ID interno al anunciar una modificación", () => {
+    expect(getPedidoDisplayNumber({ id: 2, numeroTurno: 3 })).toBe(3);
   });
 });

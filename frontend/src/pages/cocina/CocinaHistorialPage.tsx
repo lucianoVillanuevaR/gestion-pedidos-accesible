@@ -52,7 +52,13 @@ export default function CocinaHistorialPage() {
 
   const turnosHistorial = useMemo(() => getTurnosHistorial(cierres), [cierres]);
   const filteredTurnos = useMemo(
-    () => filterTurnosHistorial(turnosHistorial, { dateFilter, estadoFilter, metodoFilter, searchTerm }),
+    () =>
+      filterTurnosHistorial(turnosHistorial, {
+        dateFilter,
+        estadoFilter,
+        metodoFilter,
+        searchTerm
+      }),
     [dateFilter, estadoFilter, metodoFilter, searchTerm, turnosHistorial]
   );
   const easyPedidos = useMemo(() => getPedidosRecientes(filteredTurnos), [filteredTurnos]);

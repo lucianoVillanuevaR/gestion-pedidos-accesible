@@ -1,7 +1,7 @@
 import { Info } from "lucide-react";
-import ProductImage from "../../components/productos/ProductImage";
-import type { Producto } from "../../types";
-import { formatCurrency } from "../../utils/pdv";
+import ProductImage from "../../../components/productos/ProductImage";
+import type { Producto } from "../../../types";
+import { formatCurrency } from "../../../utils/pdv";
 
 type PdvProductTileProps = {
   cantidad: number;

@@ -10,10 +10,14 @@ const ClientesPage = lazy(() => import("../pages/clientes/ClientesPage"));
 const CocinaPage = lazy(() => import("../pages/cocina/CocinaPage"));
 const AdminPage = lazy(() => import("../pages/admin/AdminPage"));
 const CocinaFacilPage = lazy(() =>
-  import("../pages/cocina/CocinaPage").then((module) => ({ default: module.CocinaFacilPage }))
+  import("../pages/cocina/CocinaPage").then((module) => ({
+    default: module.CocinaFacilPage
+  }))
 );
 const CocinaHistorialPage = lazy(() =>
-  import("../pages/cocina/CocinaPage").then((module) => ({ default: module.CocinaHistorialPage }))
+  import("../pages/cocina/CocinaPage").then((module) => ({
+    default: module.CocinaHistorialPage
+  }))
 );
 const HomePage = lazy(() => import("../pages/HomePage"));
 const InventarioPage = lazy(() => import("../pages/inventario/InventarioPage"));

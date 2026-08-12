@@ -10,13 +10,24 @@ describe("combinaciones automáticas de promociones", () => {
       precio: 2090,
       tipo: "promo",
       componentes: [
-        { componenteId: 1, cantidad: 1, componente: { id: 1, nombre: "Completo Italiano" } },
-        { componenteId: 2, cantidad: 1, componente: { id: 2, nombre: "Completo Dinámico" } }
+        {
+          componenteId: 1,
+          cantidad: 1,
+          componente: { id: 1, nombre: "Completo Italiano" }
+        },
+        {
+          componenteId: 2,
+          cantidad: 1,
+          componente: { id: 2, nombre: "Completo Dinámico" }
+        }
       ]
     };
 
     expect(buildPromoCombinations(producto)).toEqual([
-      { nombre: "2 × Completo Italiano", componentes: [{ componenteId: 1, cantidad: 2 }] },
+      {
+        nombre: "2 × Completo Italiano",
+        componentes: [{ componenteId: 1, cantidad: 2 }]
+      },
       {
         nombre: "Completo Italiano + Completo Dinámico",
         componentes: [
@@ -24,7 +35,10 @@ describe("combinaciones automáticas de promociones", () => {
           { componenteId: 2, cantidad: 1 }
         ]
       },
-      { nombre: "2 × Completo Dinámico", componentes: [{ componenteId: 2, cantidad: 2 }] }
+      {
+        nombre: "2 × Completo Dinámico",
+        componentes: [{ componenteId: 2, cantidad: 2 }]
+      }
     ]);
   });
 

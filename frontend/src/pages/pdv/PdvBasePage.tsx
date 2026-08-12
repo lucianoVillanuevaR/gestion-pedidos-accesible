@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { createPedido, getPedidos } from "../../services/pedidos";
+import { createPedido, getPedidos, updatePedido } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
 import type { CreatePedidoPayload, MetodoPago, PedidoResponse } from "../../types";
 import { formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
@@ -11,15 +11,16 @@ import { ACCESSIBLE_STEP_COUNT } from "./PdvShared";
 import { getPedidoDisplayNumber, withPedidoNumerosTurno } from "../pedidos/PedidosShared";
 import { usePdvFeedback } from "./hooks/usePdvFeedback";
 import { usePdvOrderDraft } from "./hooks/usePdvOrderDraft";
+import { usePdvPedidoEditing } from "./hooks/usePdvPedidoEditing";
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
 import { usePdvTurno } from "./hooks/usePdvTurno";
 import PdvFacilView from "./PdvFacilView";
-import { buildPedidoCreateErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
+import { buildPedidoSaveErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
 import PdvNormalView from "./PdvNormalView";
-import PdvPageStatus from "./PdvPageStatus";
-import PdvPrintTicket from "./PdvPrintTicket";
-import PdvProductConfigurator from "./PdvProductConfigurator";
+import PdvPageStatus from "./components/PdvPageStatus";
+import PdvPrintTicket from "./components/PdvPrintTicket";
+import PdvProductConfigurator from "./components/PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
 
 function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
@@ -168,6 +169,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     decreaseProduct,
     increaseProduct,
     items,
+    loadPedidoForEditing,
     metodoPago,
     observacion,
     openResetConfirm,
@@ -194,6 +196,22 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setFeedback,
     showFeedback
   });
+
+  const { cancelEditingPedido, editingPedido } = usePdvPedidoEditing({
+    clearPedidoForm,
+    isAccessible,
+    loadPedidoForEditing,
+    loadingProductos,
+    navigate,
+    search: location.search,
+    showFeedback
+  });
+
+  useEffect(() => {
+    if (editingPedido) {
+      setNextPedidoNumber(Number(getPedidoDisplayNumber(editingPedido)) || editingPedido.id);
+    }
+  }, [editingPedido]);
 
   const submitValidationError = validatePedidoSubmit({
     clienteNombre,
@@ -355,21 +373,38 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
     try {
       setSending(true);
-      const pedidoCreado = (await createPedido(payload)) as PedidoResponse;
-      const numeroPedido = await getNumeroTurnoPedidoCreado(pedidoCreado);
+      const pedidoCreado = (
+        editingPedido
+          ? await updatePedido(editingPedido.id, {
+              ...payload,
+              expectedUpdatedAt: editingPedido.updatedAt ?? ""
+            })
+          : await createPedido(payload)
+      ) as PedidoResponse;
+      const numeroPedido = editingPedido
+        ? getPedidoDisplayNumber(editingPedido)
+        : await getNumeroTurnoPedidoCreado(pedidoCreado);
       setNextPedidoNumber((currentNumber) =>
         typeof numeroPedido === "number" && Number.isFinite(numeroPedido) ? numeroPedido + 1 : currentNumber + 1
       );
-      const successMsg = numeroPedido ? `Pedido #${numeroPedido} registrado` : "Pedido registrado";
+      const successMsg = editingPedido
+        ? `Pedido #${numeroPedido} modificado`
+        : numeroPedido
+          ? `Pedido #${numeroPedido} registrado`
+          : "Pedido registrado";
       showFeedback({
         type: "success",
-        title: "Pedido creado correctamente",
+        title: editingPedido ? "Pedido modificado correctamente" : "Pedido creado correctamente",
         message: successMsg
       });
       clearPedidoForm();
       playSoundCue("success");
       announce(
-        numeroPedido ? `Pedido número ${numeroPedido} registrado correctamente.` : "Pedido registrado correctamente.",
+        editingPedido
+          ? `Pedido número ${numeroPedido} modificado correctamente.`
+          : numeroPedido
+            ? `Pedido número ${numeroPedido} registrado correctamente.`
+            : "Pedido registrado correctamente.",
         {
           priority: "high",
           dedupeKey: "pedido-registrado",
@@ -377,11 +412,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           interrupt: true
         }
       );
+      if (editingPedido) {
+        navigate(isAccessible ? "/pedidos/facil" : "/pedidos", {
+          replace: true
+        });
+        return;
+      }
       shouldResetAccessibleFlow = isAccessible;
       void refreshNextPedidoNumber();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
-      showFeedback(buildPedidoCreateErrorFeedback(message || "Error al registrar"));
+      showFeedback(buildPedidoSaveErrorFeedback(message || "Error al registrar", Boolean(editingPedido)));
       playSoundCue("error");
       announce(
         isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido",
@@ -428,17 +469,29 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       @page {
         size: 80mm auto;
         margin: 0;
-        padding: 0;
       }
+      html,
       body {
+        width: 80mm !important;
+        min-width: 80mm !important;
         margin: 0;
         padding: 0;
         background: white;
       }
+      .ticket-print {
+        width: 80mm !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+      }
     `,
     onPrintError: () => {
       const msg = "No se pudo abrir la impresión. Revisa que el navegador permita imprimir.";
-      showFeedback({ type: "error", title: "No se pudo imprimir", message: msg });
+      showFeedback({
+        type: "error",
+        title: "No se pudo imprimir",
+        message: msg
+      });
       announce(msg, {
         priority: "high",
         dedupeKey: "print-error",
@@ -488,12 +541,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         case 5:
           return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Selecciona el método de pago: efectivo, tarjeta o transferencia.`;
         case ACCESSIBLE_STEP_COUNT:
-          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Registrar pedido. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta método de pago."} Puedes registrar el pedido si todo está correcto.`;
+          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. ${editingPedido ? "Guardar cambios" : "Registrar pedido"}. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta método de pago."} Puedes ${editingPedido ? "guardar los cambios" : "registrar el pedido"} si todo está correcto.`;
         default:
           return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
       }
     },
-    [isTurnoOpen, metodoPago, total]
+    [editingPedido, isTurnoOpen, metodoPago, total]
   );
 
   const getAccessibleStepValidation = useCallback(
@@ -624,6 +677,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     announceSearchBar,
     bgWrapper,
     cardBorder,
+    cancelEditingPedido,
     categoryFilters,
     clienteNombre,
     decreaseProduct,
@@ -637,6 +691,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     handleToggleTurno,
     increaseProduct,
     isAccessible,
+    isEditingPedido: Boolean(editingPedido),
+    editingPedidoNumber: editingPedido ? getPedidoDisplayNumber(editingPedido) : null,
     isHighContrast,
     isPanelOpen,
     isTurnoOpen,
@@ -682,7 +738,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
         <div
           className={`w-full print:px-0 print:py-0 ${isAccessible ? "mx-auto max-w-[1520px] px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6" : "px-0 py-0"}`}
-          style={{ backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7" }}
+          style={{
+            backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7"
+          }}
         >
           <PdvPageStatus
             isAccessible={isAccessible}
@@ -709,6 +767,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           )}
 
           <PdvPrintTicket
+            clienteNombre={clienteNombre}
             metodoPago={metodoPago}
             nextPedidoNumber={nextPedidoNumber}
             observacion={observacion}

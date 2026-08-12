@@ -2,21 +2,30 @@ import { Search } from "lucide-react";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import type { HistorialDateFilter, HistorialEstadoFilter, HistorialMetodoFilter } from "../cocinaHistoryUtils";
 
-export const HISTORIAL_DATE_FILTERS: Array<{ label: string; value: HistorialDateFilter }> = [
+export const HISTORIAL_DATE_FILTERS: Array<{
+  label: string;
+  value: HistorialDateFilter;
+}> = [
   { label: "Hoy", value: "today" },
   { label: "Esta semana", value: "week" },
   { label: "Este mes", value: "month" },
   { label: "Todos", value: "all" }
 ];
 
-export const HISTORIAL_ESTADO_FILTERS: Array<{ label: string; value: HistorialEstadoFilter }> = [
+export const HISTORIAL_ESTADO_FILTERS: Array<{
+  label: string;
+  value: HistorialEstadoFilter;
+}> = [
   { label: "Todos", value: "todos" },
   { label: "Entregado", value: "entregado" },
   { label: "Pendiente", value: "pendiente" },
   { label: "Cancelado", value: "cancelado" }
 ];
 
-export const HISTORIAL_METODO_FILTERS: Array<{ label: string; value: HistorialMetodoFilter }> = [
+export const HISTORIAL_METODO_FILTERS: Array<{
+  label: string;
+  value: HistorialMetodoFilter;
+}> = [
   { label: "Todos", value: "todos" },
   { label: "Efectivo", value: "efectivo" },
   { label: "Tarjeta", value: "tarjeta" },

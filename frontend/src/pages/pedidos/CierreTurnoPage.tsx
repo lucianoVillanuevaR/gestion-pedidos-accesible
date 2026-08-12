@@ -27,7 +27,6 @@ import type { CierreProductoResumen } from "../../types";
 import { getResponsableDisplay, type ResponsableDisplay } from "../../utils/turnoResponsable";
 import { validateTurnoClose } from "../../validations/turno.validation";
 import {
-  ESTADO_META,
   formatCurrency,
   formatDateTime,
   formatMetodoPago,
@@ -43,6 +42,7 @@ import {
   StatusBadge,
   usePedidosController
 } from "./PedidosShared";
+import CierreTurnoPrintable from "./components/CierreTurnoPrintable";
 
 function CierreTurnoPage() {
   const { isAccessible, isHighContrast, isVoiceEnabled } = useAccessibilityContext();
@@ -209,21 +209,36 @@ function CierreTurnoPage() {
 
             <EasyDisclosure
               isExpanded={expandedEasySections.metodos}
-              onToggle={() => setExpandedEasySections((current) => ({ ...current, metodos: !current.metodos }))}
+              onToggle={() =>
+                setExpandedEasySections((current) => ({
+                  ...current,
+                  metodos: !current.metodos
+                }))
+              }
               title="Ver métodos de pago"
             >
               <PaymentMethodsPanel panelClass={panelClass} summary={summary} />
             </EasyDisclosure>
             <EasyDisclosure
               isExpanded={expandedEasySections.productos}
-              onToggle={() => setExpandedEasySections((current) => ({ ...current, productos: !current.productos }))}
+              onToggle={() =>
+                setExpandedEasySections((current) => ({
+                  ...current,
+                  productos: !current.productos
+                }))
+              }
               title="Ver productos vendidos"
             >
               <ProductosVendidosPanel panelClass={panelClass} productosVendidos={productosVendidos} />
             </EasyDisclosure>
             <EasyDisclosure
               isExpanded={expandedEasySections.pedidos}
-              onToggle={() => setExpandedEasySections((current) => ({ ...current, pedidos: !current.pedidos }))}
+              onToggle={() =>
+                setExpandedEasySections((current) => ({
+                  ...current,
+                  pedidos: !current.pedidos
+                }))
+              }
               title="Ver pedidos del turno"
             >
               <PedidosTurnoPanel panelClass={panelClass} pedidos={pedidosDetalle} />
@@ -260,7 +275,7 @@ function CierreTurnoPage() {
             isSaving={isSaving}
             onClose={() => setIsConfirmOpen(false)}
             onConfirm={handleCerrarTurno}
-            onReviewPedidos={() => navigate("/pedidos/facil")}
+            onReviewPedidos={() => navigate(isAccessible ? "/pedidos/facil" : "/pedidos")}
           />
         )}
 
@@ -276,109 +291,6 @@ function CierreTurnoPage() {
         </section>
       </main>
     </div>
-  );
-}
-
-function CierreTurnoPrintable({
-  fechaCierre,
-  fechaInicio,
-  pedidos,
-  productosVendidos,
-  responsable,
-  summary
-}: {
-  fechaCierre: string;
-  fechaInicio?: string;
-  pedidos: ReturnType<typeof getCierrePedidosResumen>;
-  productosVendidos: CierreProductoResumen[];
-  responsable: ResponsableDisplay;
-  summary: ReturnType<typeof getTurnoSummary>;
-}) {
-  const paymentRows = [
-    { label: "Efectivo", value: summary.totalEfectivo },
-    { label: "Tarjeta", value: summary.totalTarjeta },
-    { label: "Transferencia", value: summary.totalTransferencia }
-  ];
-
-  return (
-    <section className="historial-print-only">
-      <h1>Riquísimo</h1>
-      <p>Sistema de Pedidos - Resumen de turno cerrado</p>
-
-      <div className="historial-print-grid">
-        <p>
-          <strong>Fecha del turno:</strong> {formatDateTime(fechaCierre)}
-        </p>
-        <p>
-          <strong>{responsable.primaryLabel}:</strong> {responsable.primaryValue}
-        </p>
-        {responsable.roleValue && (
-          <p>
-            <strong>Rol:</strong> {responsable.roleValue}
-          </p>
-        )}
-        <p>
-          <strong>Inicio:</strong> {fechaInicio ? formatDateTime(fechaInicio) : "Sin datos"}
-        </p>
-        <p>
-          <strong>Cierre:</strong> {formatDateTime(fechaCierre)}
-        </p>
-        <p>
-          <strong>Total vendido confirmado:</strong> {formatCurrency(String(summary.totalVendido))}
-        </p>
-        <p>
-          <strong>Pedidos entregados:</strong> {summary.pedidosEntregados}
-        </p>
-        <p>
-          <strong>Pedidos pendientes:</strong> {summary.pedidosPendientes}
-        </p>
-        <p>
-          <strong>Pedidos cancelados:</strong> {summary.pedidosCancelados}
-        </p>
-      </div>
-
-      <h2>Métodos de pago</h2>
-      {paymentRows.map((row) => (
-        <p key={row.label}>
-          <strong>{row.label}:</strong> {formatCurrency(String(row.value))}
-        </p>
-      ))}
-
-      <h2>Productos vendidos</h2>
-      {productosVendidos.length === 0 ? (
-        <p>No hay productos vendidos confirmados.</p>
-      ) : (
-        productosVendidos.map((producto) => (
-          <p key={producto.productoId}>
-            {producto.cantidad}x {producto.productoNombre} - {formatCurrency(String(producto.total))}
-          </p>
-        ))
-      )}
-
-      <h2>Pedidos del turno</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Pedido</th>
-            <th>Estado</th>
-            <th>Hora</th>
-            <th>Método</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pedidos.map((pedido) => (
-            <tr key={pedido.id}>
-              <td>#{getPedidoDisplayNumber(pedido)}</td>
-              <td>{ESTADO_META[pedido.estado].label}</td>
-              <td>{formatTime(pedido.createdAt)}</td>
-              <td>{formatMetodoPago(pedido.metodoPago)}</td>
-              <td>{formatCurrency(String(pedido.total))}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
   );
 }
 
@@ -567,8 +479,16 @@ function PaymentMethodsPanel({
   summary: ReturnType<typeof getTurnoSummary>;
 }) {
   const methods = [
-    { icon: <Banknote className="h-5 w-5" aria-hidden="true" />, label: "Efectivo", value: summary.totalEfectivo },
-    { icon: <CreditCard className="h-5 w-5" aria-hidden="true" />, label: "Tarjeta", value: summary.totalTarjeta },
+    {
+      icon: <Banknote className="h-5 w-5" aria-hidden="true" />,
+      label: "Efectivo",
+      value: summary.totalEfectivo
+    },
+    {
+      icon: <CreditCard className="h-5 w-5" aria-hidden="true" />,
+      label: "Tarjeta",
+      value: summary.totalTarjeta
+    },
     {
       icon: <WalletCards className="h-5 w-5" aria-hidden="true" />,
       label: "Transferencia",
@@ -711,7 +631,7 @@ function CerrarTurnoModal({
   onReviewPedidos: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-[1px]">
       <section
         role="dialog"
         aria-modal="true"
@@ -726,7 +646,7 @@ function CerrarTurnoModal({
           </div>
           <button
             type="button"
-            onClick={hasPedidosPendientes ? onReviewPedidos : onClose}
+            onClick={onClose}
             aria-label="Cancelar cierre de turno"
             className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
           >
@@ -747,10 +667,10 @@ function CerrarTurnoModal({
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
-            onClick={onClose}
+            onClick={hasPedidosPendientes ? onReviewPedidos : onClose}
             className={`min-h-[52px] rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
           >
-            Revisar pedidos
+            {hasPedidosPendientes ? "Revisar pedidos" : "Volver"}
           </button>
           <button
             type="button"

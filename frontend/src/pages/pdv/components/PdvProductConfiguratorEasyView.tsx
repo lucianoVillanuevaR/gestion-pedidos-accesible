@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Check, Minus, Plus, X } from "lucide-react";
-import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../types";
-import { formatCurrency } from "../../utils/pdv";
-import useVoice from "../../hooks/useVoice";
+import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
+import useVoice from "../../../hooks/useVoice";
+import { formatCurrency } from "../../../utils/pdv";
 import {
   ADEREZOS_DISPONIBLES,
   PRODUCT_COMMENT_MAX_LENGTH,
   type PdvProductConfiguratorState
-} from "./hooks/usePdvProductConfigurator";
+} from "../hooks/usePdvProductConfigurator";
 
 export default function PdvProductConfiguratorEasyView({
   config,
@@ -129,7 +129,9 @@ export default function PdvProductConfiguratorEasyView({
           </div>
           <div
             className="mt-4 grid gap-2"
-            style={{ gridTemplateColumns: `repeat(${easySteps.length}, minmax(0, 1fr))` }}
+            style={{
+              gridTemplateColumns: `repeat(${easySteps.length}, minmax(0, 1fr))`
+            }}
             aria-hidden="true"
           >
             {easySteps.map((_, index) => (

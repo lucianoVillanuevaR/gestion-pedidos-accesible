@@ -37,13 +37,12 @@ export async function guardarCierreTurno() {
     throw new Error("No hay un turno abierto para cerrar");
   }
 
-  const closeBody = await apiRequest<{ turno: { resumen: CierreTurno | null } }>(
-    `/turnos/${actualBody.turno.id}/cerrar`,
-    {
-      fallbackMessage: "No fue posible cerrar el turno",
-      method: "POST"
-    }
-  );
+  const closeBody = await apiRequest<{
+    turno: { resumen: CierreTurno | null };
+  }>(`/turnos/${actualBody.turno.id}/cerrar`, {
+    fallbackMessage: "No fue posible cerrar el turno",
+    method: "POST"
+  });
 
   if (!closeBody.turno.resumen) {
     throw new Error("El servidor no devolvió el resumen del turno cerrado");
@@ -73,7 +72,9 @@ export async function sincronizarTurnoActual() {
 export async function cargarCierresTurno() {
   const body = await apiRequest<{
     turnos?: Array<{ resumen: CierreTurno | null }>;
-  }>("/turnos/cierres", { fallbackMessage: "No fue posible cargar los cierres" });
+  }>("/turnos/cierres", {
+    fallbackMessage: "No fue posible cargar los cierres"
+  });
   const cierres = (body.turnos ?? []).flatMap((turno) => (turno.resumen ? [turno.resumen] : []));
   window.localStorage.setItem(CIERRES_TURNO_STORAGE_KEY, JSON.stringify(cierres));
   return cierres;

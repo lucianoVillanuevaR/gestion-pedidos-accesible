@@ -1,5 +1,5 @@
 import { Printer, Trash2, Volume2 } from "lucide-react";
-import { usePdvViewContext } from "./PdvViewContext";
+import { usePdvViewContext } from "../PdvViewContext";
 
 function PdvReceiptActions() {
   const {

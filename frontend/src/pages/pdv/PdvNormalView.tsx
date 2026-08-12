@@ -3,12 +3,12 @@ import { useState } from "react";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
-import ConfirmDialog from "./ConfirmDialog";
-import PdvCatalogPanel from "./PdvCatalogPanel";
-import PdvFeedbackMessage from "./PdvFeedbackMessage";
-import PdvOrderSummary from "./PdvOrderSummary";
-import PdvPaymentSection from "./PdvPaymentSection";
-import PdvReceiptActions from "./PdvReceiptActions";
+import ConfirmDialog from "./components/ConfirmDialog";
+import PdvCatalogPanel from "./components/PdvCatalogPanel";
+import PdvFeedbackMessage from "./components/PdvFeedbackMessage";
+import PdvOrderSummary from "./components/PdvOrderSummary";
+import PdvPaymentSection from "./components/PdvPaymentSection";
+import PdvReceiptActions from "./components/PdvReceiptActions";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvNormalView() {
@@ -22,6 +22,8 @@ function PdvNormalView() {
     handleSubmit,
     handleToggleTurno,
     isHighContrast,
+    isEditingPedido,
+    editingPedidoNumber,
     isTurnoOpen,
     clienteNombre,
     metodoPago,
@@ -92,8 +94,9 @@ function PdvNormalView() {
         <div className="bg-[#FECE00] text-slate-950 no-print print:hidden">
           <div className="flex min-h-[42px] items-center justify-between gap-2 px-3">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="text-2xl font-light leading-none">#{nextPedidoNumber}</span>
+              <span className="text-2xl font-light leading-none">#{editingPedidoNumber ?? nextPedidoNumber}</span>
               <span className="rounded-full border border-white/70 px-2 py-0.5 text-xs font-bold">En el local</span>
+              {isEditingPedido && <span className="text-sm font-black">Modificando pedido</span>}
             </div>
             <button
               type="button"
@@ -225,9 +228,19 @@ function PdvNormalView() {
 
       {showSubmitConfirm && (
         <ConfirmDialog
-          title="Registrar pedido"
-          description="¿Deseas registrar este pedido?"
-          primaryLabel={sending ? "Registrando..." : "Aceptar pedido"}
+          title={isEditingPedido ? "Guardar cambios" : "Registrar pedido"}
+          description={
+            isEditingPedido ? "¿Deseas guardar los cambios de este pedido?" : "¿Deseas registrar este pedido?"
+          }
+          primaryLabel={
+            sending
+              ? isEditingPedido
+                ? "Guardando..."
+                : "Registrando..."
+              : isEditingPedido
+                ? "Guardar cambios"
+                : "Aceptar pedido"
+          }
           onCancel={() => setShowSubmitConfirm(false)}
           onConfirm={handleConfirmSubmit}
         >

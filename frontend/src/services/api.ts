@@ -37,7 +37,11 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions): P
 
   if (!response.ok) {
     if ((response.status === 401 || response.status === 403) && typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("riquisimo:authorization-error", { detail: response.status }));
+      window.dispatchEvent(
+        new CustomEvent("riquisimo:authorization-error", {
+          detail: response.status
+        })
+      );
     }
 
     await throwApiError(response, fallbackMessage);

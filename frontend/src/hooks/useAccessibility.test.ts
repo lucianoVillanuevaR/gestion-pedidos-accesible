@@ -38,7 +38,10 @@ function installMatchMedia(initialMatches = false) {
   return {
     setMatches(value: boolean) {
       matches = value;
-      const event = { matches: value, media: mediaQueryList.media } as MediaQueryListEvent;
+      const event = {
+        matches: value,
+        media: mediaQueryList.media
+      } as MediaQueryListEvent;
       listeners.forEach((listener) => listener(event));
     }
   };

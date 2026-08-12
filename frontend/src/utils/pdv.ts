@@ -4,7 +4,9 @@ export { formatCurrency } from "./formatters";
 export type ProductoCategoria = "Sandwich" | "Completos" | "Bebidas" | "Otros";
 export type ProductoCategoriaCatalogo = ProductoCategoria | (string & {});
 export type FiltroCategoria = ProductoCategoriaCatalogo | "Destacados" | "Todos";
-export type ProductoConCategoria = Producto & { categoria: ProductoCategoriaCatalogo };
+export type ProductoConCategoria = Producto & {
+  categoria: ProductoCategoriaCatalogo;
+};
 
 interface PedidoDetalleCalculado {
   itemKey: string;

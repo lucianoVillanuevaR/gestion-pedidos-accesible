@@ -1,8 +1,8 @@
 import { Search } from "lucide-react";
 import PdvFeedbackMessage from "./PdvFeedbackMessage";
-import { usesProductConfigurator } from "./PdvShared";
+import { usesProductConfigurator } from "../PdvShared";
 import PdvProductTile from "./PdvProductTile";
-import { usePdvViewContext } from "./PdvViewContext";
+import { usePdvViewContext } from "../PdvViewContext";
 
 function PdvCatalogPanel() {
   const {

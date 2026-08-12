@@ -157,7 +157,10 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
       setUpdatingProductoId(item.productoId);
       setError(null);
       setMessage(null);
-      const updatedItem = await updateInventario(item.productoId, { stockActual, stockMinimo });
+      const updatedItem = await updateInventario(item.productoId, {
+        stockActual,
+        stockMinimo
+      });
       setInventario((currentItems) =>
         currentItems.map((currentItem) =>
           currentItem.productoId === updatedItem.productoId ? updatedItem : currentItem

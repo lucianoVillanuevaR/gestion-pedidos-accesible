@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
-import { formatCurrency } from "../../utils/pdv";
-import { PAYMENT_OPTIONS } from "./PdvShared";
-import { usePdvViewContext } from "./PdvViewContext";
+import { formatCurrency } from "../../../utils/pdv";
+import { PAYMENT_OPTIONS } from "../PdvShared";
+import { usePdvViewContext } from "../PdvViewContext";
 
 type PdvPaymentSectionProps = {
   onAccept: () => void;
@@ -9,7 +9,9 @@ type PdvPaymentSectionProps = {
 
 function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
   const {
+    cancelEditingPedido,
     isHighContrast,
+    isEditingPedido,
     metodoPago,
     openResetConfirm,
     pedidoDetalles,
@@ -66,12 +68,12 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
       <div className="grid grid-cols-[1fr_1.1fr] gap-1.5 p-3 no-print print:hidden">
         <button
           type="button"
-          onClick={openResetConfirm}
+          onClick={isEditingPedido ? cancelEditingPedido : openResetConfirm}
           disabled={pedidoDetalles.length === 0}
           className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-md border border-red-500 bg-white px-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45"
         >
           <X className="h-4 w-4" aria-hidden="true" />
-          Cancelar
+          {isEditingPedido ? "Cancelar modificación" : "Cancelar"}
         </button>
         <button
           type="button"
@@ -84,7 +86,7 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
           } ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`}
         >
           <Check className="h-4 w-4" aria-hidden="true" />
-          {sending ? "Aceptando..." : "Aceptar"}
+          {sending ? (isEditingPedido ? "Guardando..." : "Aceptando...") : isEditingPedido ? "Guardar" : "Aceptar"}
         </button>
       </div>
     </>

@@ -4,7 +4,7 @@ import EasyModeActions from "../../components/EasyModeActions";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
 import { PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
-import PdvFeedbackMessage from "./PdvFeedbackMessage";
+import PdvFeedbackMessage from "./components/PdvFeedbackMessage";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvFacilView() {
@@ -17,6 +17,7 @@ function PdvFacilView() {
     accessibleStepValidation,
     addProduct,
     cardBorder,
+    cancelEditingPedido,
     categoryFilters,
     clienteNombre,
     decreaseProduct,
@@ -28,6 +29,8 @@ function PdvFacilView() {
     handleToggleTurno,
     increaseProduct,
     isHighContrast,
+    isEditingPedido,
+    editingPedidoNumber,
     isTurnoOpen,
     items,
     metodoPago,
@@ -72,7 +75,7 @@ function PdvFacilView() {
           description: "Escoge un método de pago con una sola pulsación."
         },
         {
-          title: "Registrar pedido",
+          title: isEditingPedido ? "Guardar cambios" : "Registrar pedido",
           description: ""
         }
       ][accessibleStep - 1];
@@ -91,6 +94,9 @@ function PdvFacilView() {
             <h1 className="mt-3 font-black tracking-tight text-[2rem] sm:text-[2.35rem]">
               Paso {visibleStepNumber}: {stepGuidance.title}
             </h1>
+            {isEditingPedido && (
+              <p className="mt-3 text-xl font-black text-yellow-700">Modificando pedido #{editingPedidoNumber}</p>
+            )}
             {stepGuidance.description && (
               <p
                 className={`mt-3 max-w-2xl text-lg leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}
@@ -101,6 +107,17 @@ function PdvFacilView() {
           </div>
 
           <div className="flex flex-col items-stretch gap-3">
+            {isEditingPedido && (
+              <button
+                type="button"
+                onClick={cancelEditingPedido}
+                className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black ${
+                  isHighContrast ? "contrast-button-secondary" : "border-red-700 bg-white text-red-800"
+                }`}
+              >
+                Cancelar modificación
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -510,7 +527,13 @@ function PdvFacilView() {
                 className={`rounded-lg border-2 py-4 px-6 font-black text-lg ${puedeRegistrar ? "border-emerald-900 bg-emerald-700 text-white hover:bg-emerald-800" : "border-slate-300 bg-slate-300 text-slate-500"} ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`}
                 style={{ minHeight: 64 }}
               >
-                {sending ? "Registrando..." : "Registrar pedido"}
+                {sending
+                  ? isEditingPedido
+                    ? "Guardando..."
+                    : "Registrando..."
+                  : isEditingPedido
+                    ? "Guardar cambios"
+                    : "Registrar pedido"}
               </button>
             </div>
           </div>
@@ -616,7 +639,7 @@ function PdvFacilView() {
             className={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
           >
             <h2 id="confirmar-pedido-title" className="text-3xl font-black text-slate-950">
-              ¿Deseas registrar este pedido?
+              {isEditingPedido ? "¿Deseas guardar los cambios?" : "¿Deseas registrar este pedido?"}
             </h2>
             <p className="mt-3 text-xl font-bold text-slate-700">Total a pagar: {formatCurrency(total)}</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -636,7 +659,7 @@ function PdvFacilView() {
                 disabled={!puedeRegistrar}
                 className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${isHighContrast ? "contrast-button-success" : "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800"}`}
               >
-                Registrar pedido
+                {isEditingPedido ? "Guardar cambios" : "Registrar pedido"}
               </button>
             </div>
           </section>

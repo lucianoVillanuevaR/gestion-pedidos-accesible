@@ -31,7 +31,12 @@ function installPedidosApi() {
     if (url.endsWith("/api/auth/login") && init?.method === "POST") {
       return jsonResponse({
         token: "token-prueba",
-        user: { email: "cajero@demo.cl", label: "Cajero", role: "cajero", username: "cajero" }
+        user: {
+          email: "cajero@demo.cl",
+          label: "Cajero",
+          role: "cajero",
+          username: "cajero"
+        }
       });
     }
 
@@ -41,7 +46,9 @@ function installPedidosApi() {
     }
 
     if (url.endsWith("/api/turnos/actual") && (!init?.method || init.method === "GET")) {
-      return jsonResponse({ turno: turnoAbierto ? { id: 1, fechaInicio: "2026-06-20T11:55:00.000Z" } : null });
+      return jsonResponse({
+        turno: turnoAbierto ? { id: 1, fechaInicio: "2026-06-20T11:55:00.000Z" } : null
+      });
     }
 
     if (url.endsWith("/api/turnos/1/cerrar") && init?.method === "POST") {
@@ -101,7 +108,9 @@ function installPedidosApi() {
     }
 
     if (url.endsWith("/api/pedidos/101/estado") && init?.method === "PATCH" && pedido) {
-      const { estado } = JSON.parse(String(init.body)) as { estado: EstadoPedido };
+      const { estado } = JSON.parse(String(init.body)) as {
+        estado: EstadoPedido;
+      };
       pedido = { ...pedido, estado };
       return jsonResponse(pedido);
     }
@@ -127,14 +136,22 @@ describe("flujo operativo principal", () => {
 
   it("inicia sesión, abre turno, entrega un pedido y guarda el cierre", async () => {
     const fetchMock = installPedidosApi();
-    const { result } = renderHook(() => useAuthContext(), { wrapper: AuthProvider });
+    const { result } = renderHook(() => useAuthContext(), {
+      wrapper: AuthProvider
+    });
 
     await act(async () => {
-      const loginResult = await result.current.login({ identifier: "cajero", password: "123456" });
+      const loginResult = await result.current.login({
+        identifier: "cajero",
+        password: "123456"
+      });
       expect(loginResult.ok).toBe(true);
     });
 
-    expect(result.current.user).toMatchObject({ username: "cajero", role: "cajero" });
+    expect(result.current.user).toMatchObject({
+      username: "cajero",
+      role: "cajero"
+    });
     expect(JSON.parse(window.sessionStorage.getItem(AUTH_STORAGE_KEY) ?? "null")).toMatchObject({
       username: "cajero"
     });
@@ -151,7 +168,11 @@ describe("flujo operativo principal", () => {
       metodoPago: "efectivo",
       observacion: "Sin tomate"
     });
-    expect(pedidoCreado).toMatchObject({ id: 101, estado: "pendiente", total: "5000" });
+    expect(pedidoCreado).toMatchObject({
+      id: 101,
+      estado: "pendiente",
+      total: "5000"
+    });
 
     const enPreparacion = await updatePedidoEstado(pedidoCreado.id, "en_preparacion");
     expect(enPreparacion.estado).toBe("en_preparacion");

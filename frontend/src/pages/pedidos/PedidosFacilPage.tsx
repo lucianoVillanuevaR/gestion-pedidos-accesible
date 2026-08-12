@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, ClipboardPlus, LoaderCircle, RefreshCw, Search, Volume2 } from "lucide-react";
+import { AlertTriangle, Check, ClipboardPlus, LoaderCircle, Pencil, RefreshCw, Search, Volume2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
@@ -372,6 +372,15 @@ function PedidosFacilPage() {
           <AccessiblePedidosList
             isHighContrast={isHighContrast}
             onOpenModal={setActiveModal}
+            onEditPedido={(pedido) => {
+              const message = `Modificar pedido ${getPedidoDisplayNumber(pedido)}.`;
+              setLiveMessage(message);
+              speak(message, {
+                priority: "high",
+                interrupt: true,
+                dedupeKey: `modificar:${pedido.id}`
+              });
+            }}
             onReadPedido={handleReadPedido}
             pedidos={pedidosMostrados}
             updatingPedidoId={updatingPedidoId}
@@ -416,12 +425,14 @@ function SummaryCard({ isHighContrast, label, value }: { isHighContrast: boolean
 
 function AccessiblePedidosList({
   isHighContrast,
+  onEditPedido,
   onOpenModal,
   onReadPedido,
   pedidos,
   updatingPedidoId
 }: {
   isHighContrast: boolean;
+  onEditPedido: (pedido: PedidoResponse) => void;
   onOpenModal: (modal: ActiveModal) => void;
   onReadPedido: (pedido: PedidoResponse) => void;
   pedidos: PedidoResponse[];
@@ -447,6 +458,7 @@ function AccessiblePedidosList({
           key={pedido.id}
           isHighContrast={isHighContrast}
           isUpdating={updatingPedidoId === pedido.id}
+          onEditPedido={onEditPedido}
           onOpenModal={onOpenModal}
           onReadPedido={onReadPedido}
           pedido={pedido}
@@ -460,12 +472,14 @@ function AccessiblePedidoCard({
   isHighContrast,
   isUpdating,
   onOpenModal,
+  onEditPedido,
   onReadPedido,
   pedido
 }: {
   isHighContrast: boolean;
   isUpdating: boolean;
   onOpenModal: (modal: ActiveModal) => void;
+  onEditPedido: (pedido: PedidoResponse) => void;
   onReadPedido: (pedido: PedidoResponse) => void;
   pedido: PedidoResponse;
 }) {
@@ -528,6 +542,18 @@ function AccessiblePedidoCard({
           >
             Ver detalle
           </button>
+          {pedido.estado === "pendiente" && (
+            <Link
+              to={`/pdv/facil?editar=${pedido.id}`}
+              onClick={() => onEditPedido(pedido)}
+              className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black no-underline transition ${
+                isHighContrast ? "contrast-button-secondary" : EASY_SECONDARY_BUTTON_CLASS
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              <Pencil className="h-6 w-6" aria-hidden="true" />
+              Modificar pedido
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => onOpenModal({ action: "state", pedido })}

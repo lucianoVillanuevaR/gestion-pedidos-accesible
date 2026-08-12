@@ -10,7 +10,7 @@ import type { HistorialPedidoDetalle } from "../cocinaHistoryUtils";
 
 export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void; pedido: HistorialPedidoDetalle }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-[1px]">
       <section
         role="dialog"
         aria-modal="true"
@@ -18,14 +18,9 @@ export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void;
         className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[26px] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="historial-pedido-title" className="text-2xl font-black text-slate-950">
-              Pedido #{getPedidoDisplayNumber(pedido)}
-            </h2>
-            <p className="mt-1 text-sm font-bold text-slate-600">
-              Turno cerrado: {formatKitchenDateTime(pedido.fechaCierre)}
-            </p>
-          </div>
+          <h2 id="historial-pedido-title" className="text-2xl font-black text-slate-950">
+            Pedido #{getPedidoDisplayNumber(pedido)}
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -82,10 +77,6 @@ export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void;
               {pedido.observacion}
             </p>
           )}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-black uppercase text-slate-500">Historial de estado</p>
-            <p className="mt-1 font-bold text-slate-600">No hay historial de cambios disponible para este pedido.</p>
-          </div>
           <p className="text-right text-2xl font-black text-slate-950">
             Total {formatKitchenCurrency(String(pedido.total))}
           </p>

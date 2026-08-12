@@ -138,20 +138,6 @@ export function PedidoModal({
     );
   }
 
-  if (action === "history") {
-    return (
-      <ModalShell onClose={onClose} title={`Historial del pedido #${getPedidoDisplayNumber(pedido)}`}>
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-          <p className="font-black text-slate-950">Historial no disponible</p>
-          <p className="mt-2 text-sm font-bold leading-relaxed text-slate-600">
-            Este proyecto todavía no tiene un endpoint o registro real de cambios de estado. Cuando exista, aquí se
-            podrá mostrar estado anterior, estado nuevo, hora del cambio y usuario responsable.
-          </p>
-        </div>
-      </ModalShell>
-    );
-  }
-
   if (action === "state") {
     const allowedOptions = getAllowedEstadoOptions(pedido.estado);
     const unavailableMessage =

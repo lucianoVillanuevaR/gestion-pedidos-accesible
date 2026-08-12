@@ -2,7 +2,7 @@ import { TRANSICIONES_ESTADO_PERMITIDAS } from "../../../domain/pedidoRules";
 import type { EstadoPedido, PedidoResponse } from "../../../types";
 
 export type EstadoFilter = EstadoPedido | "todos";
-type ModalAction = "detail" | "state" | "finish" | "cancel" | "history";
+type ModalAction = "detail" | "state" | "finish" | "cancel";
 export type SortOption = "recent" | "oldest" | "highest_total" | "state";
 
 export const TURNO_ABIERTO_STORAGE_KEY = "riquisimo:turno-abierto";

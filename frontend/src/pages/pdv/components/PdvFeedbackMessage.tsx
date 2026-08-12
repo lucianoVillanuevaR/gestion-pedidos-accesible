@@ -1,5 +1,5 @@
-import AlertMessage from "../../components/ui/AlertMessage";
-import type { FeedbackState } from "./PdvShared";
+import AlertMessage from "../../../components/ui/AlertMessage";
+import type { FeedbackState } from "../PdvShared";
 
 type PdvFeedbackMessageProps = {
   className?: string;

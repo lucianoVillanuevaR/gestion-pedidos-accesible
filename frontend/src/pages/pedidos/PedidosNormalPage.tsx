@@ -1,5 +1,18 @@
-import { CalendarDays, Check, Clock3, Eye, LoaderCircle, RefreshCw, Search, Store, User, X } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Clock3,
+  Eye,
+  LoaderCircle,
+  Pencil,
+  RefreshCw,
+  Search,
+  Store,
+  User,
+  X
+} from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
@@ -28,6 +41,7 @@ function PedidosNormalPage() {
   const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   const {
     activeModal,
@@ -97,6 +111,7 @@ function PedidosNormalPage() {
         ) : (
           <NormalPedidosList
             pedidos={filteredPedidos}
+            onEditPedido={(pedido) => navigate(`/pdv?editar=${pedido.id}`)}
             onOpenModal={setActiveModal}
             updatingPedidoId={updatingPedidoId}
           />
@@ -117,10 +132,12 @@ function PedidosNormalPage() {
 }
 
 function NormalPedidosList({
+  onEditPedido,
   onOpenModal,
   pedidos,
   updatingPedidoId
 }: {
+  onEditPedido: (pedido: PedidoResponse) => void;
   onOpenModal: (modal: ActiveModal) => void;
   pedidos: PedidoResponse[];
   updatingPedidoId: number | null;
@@ -131,7 +148,7 @@ function NormalPedidosList({
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-      <div className="hidden border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase text-slate-400 md:grid md:grid-cols-[170px_170px_130px_minmax(0,1fr)_210px] xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_240px]">
+      <div className="hidden border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase text-slate-400 md:grid md:grid-cols-[170px_170px_130px_minmax(0,1fr)_300px] xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_340px]">
         <span>Fecha</span>
         <span>Estado</span>
         <span>Total</span>
@@ -144,6 +161,7 @@ function NormalPedidosList({
           <NormalPedidoRow
             key={pedido.id}
             isUpdating={updatingPedidoId === pedido.id}
+            onEditPedido={onEditPedido}
             onOpenModal={onOpenModal}
             pedido={pedido}
           />
@@ -155,10 +173,12 @@ function NormalPedidosList({
 
 function NormalPedidoRow({
   isUpdating,
+  onEditPedido,
   onOpenModal,
   pedido
 }: {
   isUpdating: boolean;
+  onEditPedido: (pedido: PedidoResponse) => void;
   onOpenModal: (modal: ActiveModal) => void;
   pedido: PedidoResponse;
 }) {
@@ -169,7 +189,7 @@ function NormalPedidoRow({
 
   return (
     <article
-      className={`grid gap-4 border-l-4 px-4 py-4 transition md:grid-cols-[170px_170px_130px_minmax(0,1fr)_210px] md:items-center xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_240px] ${
+      className={`grid gap-4 border-l-4 px-4 py-4 transition md:grid-cols-[170px_170px_130px_minmax(0,1fr)_300px] md:items-center xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_340px] ${
         isCancelled ? "border-red-300 bg-slate-50 hover:bg-slate-50" : "border-[#FECE00] hover:bg-[#FFFDF3]"
       }`}
     >
@@ -216,17 +236,24 @@ function NormalPedidoRow({
         <p className="mt-2 text-xs font-bold text-slate-500">{getProductCount(pedido)} productos</p>
       </div>
 
-      <NormalPedidoActions isUpdating={isUpdating} onOpenModal={onOpenModal} pedido={pedido} />
+      <NormalPedidoActions
+        isUpdating={isUpdating}
+        onEditPedido={onEditPedido}
+        onOpenModal={onOpenModal}
+        pedido={pedido}
+      />
     </article>
   );
 }
 
 function NormalPedidoActions({
   isUpdating,
+  onEditPedido,
   onOpenModal,
   pedido
 }: {
   isUpdating: boolean;
+  onEditPedido: (pedido: PedidoResponse) => void;
   onOpenModal: (modal: ActiveModal) => void;
   pedido: PedidoResponse;
 }) {
@@ -251,11 +278,21 @@ function NormalPedidoActions({
         />
       )}
 
+      {pedido.estado === "pendiente" && (
+        <BoardActionButton
+          disabled={isUpdating}
+          icon={<Pencil className="h-5 w-5" aria-hidden="true" />}
+          label="Modificar"
+          onClick={() => onEditPedido(pedido)}
+          tone="info"
+        />
+      )}
+
       {actions.showState && (
         <BoardActionButton
           disabled={isUpdating}
           icon={<RefreshCw className="h-5 w-5" aria-hidden="true" />}
-          label="Cambiar"
+          label="Estado"
           onClick={() => onOpenModal({ action: "state", pedido })}
           tone="info"
         />

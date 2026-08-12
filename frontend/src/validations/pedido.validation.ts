@@ -6,7 +6,7 @@ import {
   PEDIDO_OBSERVACION_MAX_LENGTH
 } from "../domain/pedidoRules";
 
-export { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, PEDIDO_MAX_CANTIDAD_DETALLE, PEDIDO_OBSERVACION_MAX_LENGTH };
+export { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, PEDIDO_MAX_CANTIDAD_DETALLE };
 
 type ValidatePedidoSubmitParams = {
   clienteNombre?: string;

@@ -71,7 +71,10 @@ function AuthProvider({ children }: PropsWithChildren) {
           setUser(nextUser);
           return { ok: true, user: nextUser };
         } catch (error) {
-          return { ok: false, message: error instanceof Error ? error.message : "No fue posible iniciar sesión" };
+          return {
+            ok: false,
+            message: error instanceof Error ? error.message : "No fue posible iniciar sesión"
+          };
         }
       },
       logout: () => {

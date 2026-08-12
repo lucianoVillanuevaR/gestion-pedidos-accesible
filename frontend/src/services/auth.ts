@@ -16,7 +16,9 @@ export async function loginRequest(identifier: string, password: string) {
 }
 
 export async function getCurrentUser() {
-  const body = await apiRequest<AuthResponse>("/auth/me", { fallbackMessage: "Sesión inválida" });
+  const body = await apiRequest<AuthResponse>("/auth/me", {
+    fallbackMessage: "Sesión inválida"
+  });
   if (!body.user) throw new Error("Sesión inválida");
   return body.user;
 }

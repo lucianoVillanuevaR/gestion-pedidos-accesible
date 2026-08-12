@@ -50,7 +50,11 @@ export function usePdvTurno({
     if (isTurnoOpen) {
       const closeError = validateTurnoClose(isTurnoOpen);
       if (closeError) {
-        showFeedback({ type: "error", title: "No se pudo cerrar el turno", message: closeError });
+        showFeedback({
+          type: "error",
+          title: "No se pudo cerrar el turno",
+          message: closeError
+        });
         return;
       }
 
@@ -85,7 +89,12 @@ export function usePdvTurno({
       setIsTurnoOpen(true);
       onTurnoStateChange();
       const message = "Turno abierto correctamente.";
-      announce(message, { priority: "high", dedupeKey: "pdv-turno-abierto", cooldownMs: 2200, interrupt: true });
+      announce(message, {
+        priority: "high",
+        dedupeKey: "pdv-turno-abierto",
+        cooldownMs: 2200,
+        interrupt: true
+      });
     } catch (error) {
       showFeedback({
         type: "error",

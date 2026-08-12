@@ -1,11 +1,11 @@
 import { Check, Minus, Plus, X } from "lucide-react";
-import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../types";
-import { formatCurrency } from "../../utils/pdv";
+import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
+import { formatCurrency } from "../../../utils/pdv";
 import {
   ADEREZOS_DISPONIBLES,
   PRODUCT_COMMENT_MAX_LENGTH,
   type PdvProductConfiguratorState
-} from "./hooks/usePdvProductConfigurator";
+} from "../hooks/usePdvProductConfigurator";
 
 export default function PdvProductConfiguratorNormalView({
   config,

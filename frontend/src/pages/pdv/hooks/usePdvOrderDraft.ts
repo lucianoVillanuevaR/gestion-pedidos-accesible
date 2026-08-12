@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { MetodoPago, PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
+import { METODOS_PAGO_VALIDOS } from "../../../domain/pedidoRules";
+import type { MetodoPago, PedidoResponse, PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
 import { buildPedidoSummary } from "../../../utils/pdv";
 import { PEDIDO_MAX_CANTIDAD_DETALLE } from "../../../validations/pedido.validation";
 import { usesProductConfigurator, type FeedbackState, type SoundCue } from "../PdvShared";
@@ -9,7 +10,6 @@ type PlaySoundCue = (cue: SoundCue) => void;
 type AccessibleObservationType = "cocina" | "cliente";
 
 const PDV_ORDER_DRAFT_STORAGE_KEY = "riquisimo:pdv-order-draft";
-const METODOS_PAGO_VALIDOS: Array<MetodoPago | ""> = ["", "efectivo", "tarjeta", "transferencia"];
 const ACCESSIBLE_OBSERVATION_TYPES: AccessibleObservationType[] = ["cocina", "cliente"];
 
 type StoredPdvOrderDraft = {
@@ -81,7 +81,7 @@ export function usePdvOrderDraft({
   );
   const [pendingVariantProduct, setPendingVariantProduct] = useState<Producto | null>(null);
   const [metodoPago, setMetodoPago] = useState<MetodoPago | "">(() =>
-    METODOS_PAGO_VALIDOS.includes(storedDraft.metodoPago ?? "") ? (storedDraft.metodoPago ?? "") : ""
+    storedDraft.metodoPago && METODOS_PAGO_VALIDOS.includes(storedDraft.metodoPago) ? storedDraft.metodoPago : ""
   );
   const [clienteNombre, setClienteNombre] = useState(() =>
     typeof storedDraft.clienteNombre === "string" ? storedDraft.clienteNombre : ""
@@ -176,6 +176,25 @@ export function usePdvOrderDraft({
     setAccessibleObservationType("cocina");
   }, []);
 
+  const loadPedidoForEditing = useCallback((pedido: PedidoResponse) => {
+    const nextItems: Record<string, number> = {};
+    const nextPersonalizaciones: Record<string, PersonalizacionProducto> = {};
+
+    for (const detalle of pedido.detalles ?? []) {
+      const personalizacion = detalle.personalizacion ?? { aderezos: [] };
+      const signature = encodeURIComponent(JSON.stringify(personalizacion));
+      const itemKey = `${detalle.productoId}:${detalle.varianteId ?? "base"}:${signature}`;
+      nextItems[itemKey] = detalle.cantidad;
+      nextPersonalizaciones[itemKey] = personalizacion;
+    }
+
+    setItems(nextItems);
+    setPersonalizaciones(nextPersonalizaciones);
+    setClienteNombre(pedido.clienteNombre ?? "");
+    setMetodoPago(pedido.metodoPago);
+    setObservacion(pedido.observacion ?? "");
+  }, []);
+
   const commitAddProduct = useCallback(
     (
       producto: Producto,
@@ -207,7 +226,10 @@ export function usePdvOrderDraft({
         ...currentItems,
         [itemKey]: (currentItems[itemKey] || 0) + cantidadAgregar
       }));
-      setPersonalizaciones((current) => ({ ...current, [itemKey]: personalizacion }));
+      setPersonalizaciones((current) => ({
+        ...current,
+        [itemKey]: personalizacion
+      }));
       playSoundCue("add");
       announce(`${producto.nombre}${variante ? `, ${variante.nombre}` : ""} agregado. Cantidad ${nextQuantity}.`, {
         priority: "normal",
@@ -368,6 +390,7 @@ export function usePdvOrderDraft({
     decreaseProduct,
     increaseProduct,
     items,
+    loadPedidoForEditing,
     metodoPago,
     observacion,
     openResetConfirm,

@@ -146,7 +146,11 @@ export function ProductoFormModal({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const precioNumerico = Number(precio);
-    const validationError = validateProductoForm({ descripcion, nombre, precio });
+    const validationError = validateProductoForm({
+      descripcion,
+      nombre,
+      precio
+    });
 
     if (validationError) {
       setFormError(validationError);
@@ -383,7 +387,12 @@ export function ProductoFormModal({
                           onChange={(event) =>
                             setComponentes((current) =>
                               current.map((row, rowIndex) =>
-                                rowIndex === index ? { ...row, componenteId: Number(event.target.value) } : row
+                                rowIndex === index
+                                  ? {
+                                      ...row,
+                                      componenteId: Number(event.target.value)
+                                    }
+                                  : row
                               )
                             )
                           }
@@ -407,7 +416,12 @@ export function ProductoFormModal({
                           onChange={(event) =>
                             setComponentes((current) =>
                               current.map((row, rowIndex) =>
-                                rowIndex === index ? { ...row, cantidad: Number(event.target.value) } : row
+                                rowIndex === index
+                                  ? {
+                                      ...row,
+                                      cantidad: Number(event.target.value)
+                                    }
+                                  : row
                               )
                             )
                           }

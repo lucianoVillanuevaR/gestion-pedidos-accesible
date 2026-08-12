@@ -65,7 +65,11 @@ export interface CreateProductoPayload {
   precio: number;
   tipo?: TipoProducto;
   controlaStock?: boolean;
-  componentes?: Array<{ componenteId: number; cantidad: number; varianteId?: number }>;
+  componentes?: Array<{
+    componenteId: number;
+    cantidad: number;
+    varianteId?: number;
+  }>;
 }
 
 export type UpdateProductoPayload = Partial<CreateProductoPayload>;
@@ -99,7 +103,9 @@ export type CreateUserPayload = {
   username: string;
 };
 
-export type UpdateUserPayload = Partial<Omit<CreateUserPayload, "password">> & { password?: string };
+export type UpdateUserPayload = Partial<Omit<CreateUserPayload, "password">> & {
+  password?: string;
+};
 
 export interface DemoUser extends AuthUser {
   password: string;
@@ -122,6 +128,10 @@ export interface CreatePedidoPayload {
   metodoPago: MetodoPago;
   observacion?: string;
 }
+
+export type UpdatePedidoPayload = CreatePedidoPayload & {
+  expectedUpdatedAt: string;
+};
 
 export interface PedidoDetalleResponse {
   id: number;

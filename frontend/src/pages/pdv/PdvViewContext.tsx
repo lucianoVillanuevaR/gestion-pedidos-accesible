@@ -24,6 +24,7 @@ export type PdvViewContextValue = {
   announceSearchBar: () => void;
   bgWrapper: string;
   cardBorder: string;
+  cancelEditingPedido: () => void;
   categoryFilters: Array<{ label: string; value: FiltroCategoria }>;
   clienteNombre: string;
   decreaseProduct: (producto: Producto) => void;
@@ -38,6 +39,8 @@ export type PdvViewContextValue = {
   increaseProduct: (producto: Producto) => void;
   isAccessible: boolean;
   isHighContrast: boolean;
+  isEditingPedido: boolean;
+  editingPedidoNumber: number | string | null;
   isPanelOpen: boolean;
   isTurnoOpen: boolean;
   items: Record<string, number>;

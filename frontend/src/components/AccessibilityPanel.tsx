@@ -150,7 +150,11 @@ function AccessibilityPanel({
     onToggleVoice();
   };
 
-  const sizeOptions: Array<{ value: AccessibilityTextSize; label: string; name: string }> = [
+  const sizeOptions: Array<{
+    value: AccessibilityTextSize;
+    label: string;
+    name: string;
+  }> = [
     {
       value: "small",
       label: isAccessible ? " CHICA" : "A-",

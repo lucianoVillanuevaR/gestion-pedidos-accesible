@@ -2,7 +2,9 @@ import type { AdminUser, CreateUserPayload, UpdateUserPayload } from "../types";
 import { apiRequest } from "./api";
 
 export async function getUsuarios(): Promise<AdminUser[]> {
-  return apiRequest<AdminUser[]>("/usuarios", { fallbackMessage: "Error cargando usuarios" });
+  return apiRequest<AdminUser[]>("/usuarios", {
+    fallbackMessage: "Error cargando usuarios"
+  });
 }
 
 export async function createUsuario(payload: CreateUserPayload): Promise<AdminUser> {

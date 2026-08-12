@@ -29,16 +29,31 @@ export function buildPromoCombinations(producto: Producto): CombinacionPromocion
     const cantidadSegundo = index;
     const seleccion = [
       ...(cantidadPrimero
-        ? [{ componenteId: primero.componenteId, cantidad: cantidadPrimero, nombre: primero.componente!.nombre }]
+        ? [
+            {
+              componenteId: primero.componenteId,
+              cantidad: cantidadPrimero,
+              nombre: primero.componente!.nombre
+            }
+          ]
         : []),
       ...(cantidadSegundo
-        ? [{ componenteId: segundo.componenteId, cantidad: cantidadSegundo, nombre: segundo.componente!.nombre }]
+        ? [
+            {
+              componenteId: segundo.componenteId,
+              cantidad: cantidadSegundo,
+              nombre: segundo.componente!.nombre
+            }
+          ]
         : [])
     ];
 
     return {
       nombre: seleccion.map((item) => nombreCantidad(item.cantidad, item.nombre)).join(" + "),
-      componentes: seleccion.map(({ componenteId, cantidad }) => ({ componenteId, cantidad }))
+      componentes: seleccion.map(({ componenteId, cantidad }) => ({
+        componenteId,
+        cantidad
+      }))
     };
   });
 }

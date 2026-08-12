@@ -2,7 +2,9 @@ import type { Categoria } from "../types";
 import { apiRequest } from "./api";
 
 export async function getCategorias(): Promise<Categoria[]> {
-  return apiRequest<Categoria[]>("/categorias", { fallbackMessage: "Error cargando categorías" });
+  return apiRequest<Categoria[]>("/categorias", {
+    fallbackMessage: "Error cargando categorías"
+  });
 }
 
 export async function createCategoria(nombre: string): Promise<Categoria> {

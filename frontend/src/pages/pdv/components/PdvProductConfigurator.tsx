@@ -1,5 +1,5 @@
-import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../types";
-import { usePdvProductConfigurator } from "./hooks/usePdvProductConfigurator";
+import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
+import { usePdvProductConfigurator } from "../hooks/usePdvProductConfigurator";
 import PdvProductConfiguratorEasyView from "./PdvProductConfiguratorEasyView";
 import PdvProductConfiguratorNormalView from "./PdvProductConfiguratorNormalView";
 

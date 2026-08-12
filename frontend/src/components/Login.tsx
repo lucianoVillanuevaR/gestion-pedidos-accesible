@@ -24,7 +24,10 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
-  const [feedback, setFeedback] = useState<FeedbackState>({ type: "", message: "" });
+  const [feedback, setFeedback] = useState<FeedbackState>({
+    type: "",
+    message: ""
+  });
   const [showEasyModeToast, setShowEasyModeToast] = useState(false);
   const navigateTimerRef = useRef<number | null>(null);
   const easyModeToastTimerRef = useRef<number | null>(null);
