@@ -1,6 +1,8 @@
 import path from "node:path";
 import prisma from "../config/prisma";
-import { minioClient, minioPublicUrl, productBucket } from "../config/minio";
+import { minioClient, productBucket } from "../config/minio";
+import { withProductImageUrl } from "./productImageUrl";
+export { withProductImageUrl } from "./productImageUrl";
 
 const EXTENSION_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -29,31 +31,6 @@ const PRODUCTO_IMAGE_INCLUDE = {
   variantes: { where: { disponible: true }, orderBy: { orden: "asc" } }
 } as const;
 
-function buildProductImageUrl(objectName: string | null | undefined) {
-  if (!objectName) {
-    return null;
-  }
-
-  if (objectName.startsWith("http") || objectName.startsWith("/")) {
-    return objectName;
-  }
-
-  return `${minioPublicUrl}/${productBucket}/${objectName}`;
-}
-
-export function withProductImageUrl<
-  T extends {
-    categorias?: Array<{ nombre: string }>;
-    imagenUrl?: string | null;
-  }
->(producto: T) {
-  return {
-    ...producto,
-    categoria: producto.categorias?.[0]?.nombre,
-    imagenPublicUrl: buildProductImageUrl(producto.imagenUrl)
-  };
-}
-
 function getExtension(file: ProductImageFile) {
   const extensionByMime = EXTENSION_BY_MIME[file.mimetype];
 
@@ -69,7 +46,7 @@ function isMinioObjectName(imagenUrl: string | null | undefined): imagenUrl is s
   return Boolean(imagenUrl && !imagenUrl.startsWith("http") && !imagenUrl.startsWith("/"));
 }
 
-async function deleteObjectIfNeeded(imagenUrl: string | null | undefined) {
+export async function deleteProductImageObject(imagenUrl: string | null | undefined) {
   if (!isMinioObjectName(imagenUrl)) {
     return;
   }
@@ -103,17 +80,23 @@ export async function uploadProductImage(productId: number, file: ProductImageFi
     "Content-Type": file.mimetype
   });
 
-  const productoActualizado = await prisma.producto.update({
-    data: {
-      imagenUrl: objectName
-    },
-    include: PRODUCTO_IMAGE_INCLUDE,
-    where: {
-      id: productId
-    }
-  });
+  let productoActualizado;
+  try {
+    productoActualizado = await prisma.producto.update({
+      data: {
+        imagenUrl: objectName
+      },
+      include: PRODUCTO_IMAGE_INCLUDE,
+      where: {
+        id: productId
+      }
+    });
+  } catch (error) {
+    await deleteProductImageObject(objectName);
+    throw error;
+  }
 
-  await deleteObjectIfNeeded(producto.imagenUrl);
+  await deleteProductImageObject(producto.imagenUrl);
 
   return withProductImageUrl(productoActualizado);
 }
@@ -126,8 +109,6 @@ export async function deleteProductImage(productId: number) {
     })
   );
 
-  await deleteObjectIfNeeded(producto.imagenUrl);
-
   const productoActualizado = await prisma.producto.update({
     data: {
       imagenUrl: null
@@ -137,6 +118,8 @@ export async function deleteProductImage(productId: number) {
       id: productId
     }
   });
+
+  await deleteProductImageObject(producto.imagenUrl);
 
   return withProductImageUrl(productoActualizado);
 }

@@ -1,15 +1,12 @@
 /// <reference types="node" />
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { ensureProductBucket } from "../src/config/minio";
 
 const prisma = new PrismaClient();
 
 const DEFAULT_STOCK_ACTUAL = 50;
 const DEFAULT_STOCK_MINIMO = 10;
 const DEFAULT_DEMO_PASSWORD = "123456";
-const MINIO_RETRY_ATTEMPTS = 12;
-const MINIO_RETRY_DELAY_MS = 2500;
 
 type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos" | "sandwich";
 
@@ -201,12 +198,6 @@ const menuCatalog: CategoryDefinition[] = [
         precio: 3900,
         precioOriginal: 4857,
         descripcion: "Especial vienesa, chucrut, palta, tomate, mayonesa casera"
-      },
-      {
-        nombre: "Completo Test Docker",
-        precio: 2500,
-        precioOriginal: 3200,
-        descripcion: "Producto de prueba para validar ventas y descuento de stock en Docker"
       }
     ]
   },
@@ -241,19 +232,6 @@ const menuCatalog: CategoryDefinition[] = [
         precioOriginal: 7000,
         descripcion: "SANDWICH DE CARNE A ELECCIÓN QUESO CHOCLO TOMATE MAYONESA",
         variantes: buildVariants(["churrasco", "pollo", "lomito"])
-      },
-      {
-        nombre: "Sandwich Test Docker",
-        precio: 4200,
-        precioOriginal: 5200,
-        descripcion: "Producto de prueba para validar pedidos desde el frontend",
-        variantes: buildVariants(["churrasco", "pollo"])
-      },
-      {
-        nombre: "Barros Luco Test Docker",
-        precio: 3900,
-        precioOriginal: 4800,
-        descripcion: "Producto de prueba simple para validar catálogo, pedido e inventario"
       }
     ]
   }
@@ -386,10 +364,7 @@ async function seedCategories(tx: SeedTransaction) {
     menuCatalog.map((category) =>
       tx.categoria.upsert({
         where: { nombre: category.nombre },
-        update: {
-          descripcion: category.descripcion,
-          orden: category.orden
-        },
+        update: {},
         create: {
           nombre: category.nombre,
           descripcion: category.descripcion,
@@ -413,21 +388,6 @@ async function seedCategories(tx: SeedTransaction) {
 }
 
 async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, number>) {
-  const visibleProductNames = products.map((product) => product.nombre);
-
-  await tx.producto.updateMany({
-    where: {
-      nombre: {
-        notIn: visibleProductNames
-      }
-    },
-    data: {
-      disponible: false,
-      destacado: false,
-      promocion: false
-    }
-  });
-
   for (const product of products) {
     const categoryConnections = product.categorias.map((categoryKey) => {
       const categoryId = categoryMap.get(categoryKey);
@@ -439,27 +399,16 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
       return { id: categoryId };
     });
 
-    const savedProduct = await tx.producto.upsert({
+    const existingProduct = await tx.producto.findUnique({
       where: { nombre: product.nombre },
-      update: {
-        ...(product.descripcion && { descripcion: product.descripcion }),
-        precio: product.precio,
-        ...(product.precioOriginal && {
-          precioOriginal: product.precioOriginal
-        }),
-        ...(product.descuentoPorcentaje && {
-          descuentoPorcentaje: product.descuentoPorcentaje
-        }),
-        disponible: true,
-        destacado: product.destacado,
-        promocion: product.promocion,
-        tipo: product.promocion ? "promo" : "producto",
-        controlaStock: !product.promocion,
-        categorias: {
-          set: categoryConnections
-        }
-      },
-      create: {
+      select: { id: true }
+    });
+    if (existingProduct) {
+      continue;
+    }
+
+    const savedProduct = await tx.producto.create({
+      data: {
         nombre: product.nombre,
         ...(product.descripcion && { descripcion: product.descripcion }),
         precio: product.precio,
@@ -480,26 +429,15 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
       }
     });
 
-    if (!product.promocion)
-      await tx.inventario.upsert({
-        where: { productoId: savedProduct.id },
-        update: {},
-        create: {
+    if (!product.promocion) {
+      await tx.inventario.create({
+        data: {
           productoId: savedProduct.id,
           stockActual: DEFAULT_STOCK_ACTUAL,
           stockMinimo: DEFAULT_STOCK_MINIMO
         }
       });
-    else
-      await tx.inventario.deleteMany({
-        where: { productoId: savedProduct.id }
-      });
-
-    await tx.variante.deleteMany({
-      where: {
-        productoId: savedProduct.id
-      }
-    });
+    }
 
     if (product.variantes?.length) {
       await tx.variante.createMany({
@@ -514,9 +452,11 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
     }
   }
 
+  // Las relaciones iniciales se crean solo cuando todavía no existen. Nunca se
+  // reemplazan componentes administrados desde la aplicación.
   const promoCompleto = await tx.producto.findUnique({
     where: { nombre: "2x1 Completo Italiano o Alemán" },
-    include: { variantes: true }
+    include: { variantes: true, componentes: true }
   });
   const completoItaliano = await tx.producto.findUnique({
     where: { nombre: "Completo Italiano" }
@@ -524,13 +464,10 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
   const completoAleman = await tx.producto.findUnique({
     where: { nombre: "Completo Alemán" }
   });
-  if (promoCompleto && completoItaliano && completoAleman) {
+  if (promoCompleto && completoItaliano && completoAleman && promoCompleto.componentes.length === 0) {
     const italianos = promoCompleto.variantes.find((item) => item.nombre === "Italianos");
     const alemanes = promoCompleto.variantes.find((item) => item.nombre === "Alemanes");
     if (italianos && alemanes) {
-      await tx.productoComponente.deleteMany({
-        where: { productoId: promoCompleto.id }
-      });
       await tx.productoComponente.createMany({
         data: [
           {
@@ -551,12 +488,10 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
   }
 
   const promoCuatro = await tx.producto.findUnique({
-    where: { nombre: "4 Completos Alemanes" }
+    where: { nombre: "4 Completos Alemanes" },
+    include: { componentes: true }
   });
-  if (promoCuatro && completoAleman) {
-    await tx.productoComponente.deleteMany({
-      where: { productoId: promoCuatro.id }
-    });
+  if (promoCuatro && completoAleman && promoCuatro.componentes.length === 0) {
     await tx.productoComponente.create({
       data: {
         productoId: promoCuatro.id,
@@ -565,41 +500,14 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, n
       }
     });
   }
-
-  const promocionesSinComponentes = await tx.producto.findMany({
-    where: { tipo: "promo", componentes: { none: {} } },
-    select: { nombre: true }
-  });
-  for (const promo of promocionesSinComponentes) {
-    console.warn(`Aviso inventario: configurar componentes para "${promo.nombre}" cuando se gestione stock real.`);
-  }
 }
 
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function ensureProductBucketWithRetry() {
-  for (let attempt = 1; attempt <= MINIO_RETRY_ATTEMPTS; attempt += 1) {
-    try {
-      await ensureProductBucket();
-      return;
-    } catch (error) {
-      if (attempt === MINIO_RETRY_ATTEMPTS) {
-        throw error;
-      }
-
-      console.warn(
-        `MinIO no está listo para crear/verificar el bucket. Reintento ${attempt}/${MINIO_RETRY_ATTEMPTS}...`
-      );
-      await wait(MINIO_RETRY_DELAY_MS);
-    }
-  }
-}
+/*
+ * Este seed es una importación inicial no destructiva: si una categoría,
+ * producto o usuario ya existe, respeta todos sus datos comerciales.
+ */
 
 async function main() {
-  await ensureProductBucketWithRetry();
-
   // Los usuarios demo facilitan exclusivamente el entorno local y nunca se crean en producción.
   const shouldSeedDemoUsers = process.env.NODE_ENV !== "production";
   const demoPassword = process.env.SEED_DEMO_PASSWORD?.trim() || DEFAULT_DEMO_PASSWORD;
@@ -629,7 +537,7 @@ async function main() {
       ]) {
         await tx.usuario.upsert({
           where: { username: user.username },
-          update: { ...user, passwordHash, activo: true },
+          update: {},
           create: { ...user, passwordHash }
         });
       }
@@ -637,27 +545,9 @@ async function main() {
 
     const categoryMap = await seedCategories(tx);
     await seedProducts(tx, categoryMap);
-    const completos = await tx.producto.findMany({
-      where: { nombre: { contains: "Completo", mode: "insensitive" } },
-      select: { id: true }
-    });
-    await tx.categoria.update({
-      where: { nombre: "Completos" },
-      data: { productos: { connect: completos } }
-    });
-    await tx.categoria.deleteMany({
-      where: {
-        nombre: { in: ["Completos / Hot Dogs", "Completos / Hot dogs"] }
-      }
-    });
   });
 
-  console.log(`${menuCatalog.length} categorías sincronizadas exitosamente.`);
-  console.log(`${products.length} productos sincronizados exitosamente.`);
-  console.log(shouldSeedDemoUsers ? "Usuarios demo sincronizados para desarrollo." : "Usuarios demo omitidos.");
-  console.log(
-    `${products.filter((product) => product.variantes?.length).length} productos con variantes sincronizados.`
-  );
+  console.log("Importación inicial terminada sin sobrescribir datos existentes.");
 }
 
 main()

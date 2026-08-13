@@ -43,8 +43,7 @@ async function startServer() {
   try {
     await ensureProductBucket();
   } catch (error) {
-    console.error("No se pudo conectar a MinIO. Revisa variables de entorno o servicio Docker.", error);
-    process.exit(1);
+    console.warn("MinIO no está disponible al iniciar; las imágenes funcionarán en modo degradado.", error);
   }
 
   app.listen(env.port, () => {

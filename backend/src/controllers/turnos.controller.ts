@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { AuthenticatedRequest } from "../middlewares/auth";
+import { lockTurnOperations } from "../services/databaseLocks";
 import { buildResumenTurno, turnoCloseInclude } from "../services/turnoSummaryService";
 import { validateTurnoCanClose } from "../validations/turnos.validation";
 
@@ -50,25 +51,31 @@ export async function getTurnoActual(_req: Request, res: Response) {
 
 export async function abrirTurno(req: Request, res: Response) {
   const auth = (req as AuthenticatedRequest).authUser;
-  const existing = await prisma.turno.findFirst({
-    where: { estado: "abierto" },
-    include: turnoInclude
-  });
-
-  if (existing) {
-    return res.status(409).json({
-      error: "Ya existe un turno abierto",
-      turno: serializeTurno(existing)
-    });
-  }
-
   try {
-    const turno = await prisma.turno.create({
-      data: { usuarioId: auth.id },
-      include: turnoInclude
+    const turno = await prisma.$transaction(async (tx) => {
+      await lockTurnOperations(tx);
+      const existing = await tx.turno.findFirst({
+        where: { estado: "abierto" },
+        include: turnoInclude
+      });
+      if (existing) {
+        throw Object.assign(new Error("Ya existe un turno abierto"), {
+          existing
+        });
+      }
+      return tx.turno.create({
+        data: { usuarioId: auth.id },
+        include: turnoInclude
+      });
     });
     return res.status(201).json({ turno: serializeTurno(turno) });
   } catch (error) {
+    if (error instanceof Error && "existing" in error) {
+      return res.status(409).json({
+        error: error.message,
+        turno: serializeTurno(error.existing as TurnoWithRelations)
+      });
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return res.status(409).json({ error: "Ya existe un turno abierto" });
     }
@@ -82,26 +89,29 @@ export async function cerrarTurno(req: Request, res: Response) {
     return res.status(400).json({ error: "ID de turno inválido" });
   }
 
-  const turno = await prisma.turno.findUnique({
-    where: { id },
-    include: turnoCloseInclude
+  const result = await prisma.$transaction(async (tx) => {
+    await lockTurnOperations(tx);
+    const turno = await tx.turno.findUnique({
+      where: { id },
+      include: turnoCloseInclude
+    });
+    if (!turno) return { status: 404 as const, error: "Turno no encontrado" };
+    const closeError = validateTurnoCanClose(
+      turno.estado,
+      turno.pedidos.map((pedido) => pedido.estado)
+    );
+    if (closeError) return { status: 409 as const, error: closeError };
+    const fechaCierre = new Date();
+    const resumen = buildResumenTurno(turno, fechaCierre);
+    const cerrado = await tx.turno.update({
+      where: { id },
+      data: { estado: "cerrado", fechaCierre, resumen },
+      include: turnoInclude
+    });
+    return { turno: cerrado };
   });
-  if (!turno) return res.status(404).json({ error: "Turno no encontrado" });
-
-  const closeError = validateTurnoCanClose(
-    turno.estado,
-    turno.pedidos.map((pedido) => pedido.estado)
-  );
-  if (closeError) return res.status(409).json({ error: closeError });
-
-  const fechaCierre = new Date();
-  const resumen = buildResumenTurno(turno, fechaCierre);
-  const cerrado = await prisma.turno.update({
-    where: { id },
-    data: { estado: "cerrado", fechaCierre, resumen },
-    include: turnoInclude
-  });
-  return res.json({ turno: serializeTurno(cerrado) });
+  if ("error" in result && result.status) return res.status(result.status).json({ error: result.error });
+  return res.json({ turno: serializeTurno(result.turno) });
 }
 
 export async function getCierres(_req: Request, res: Response) {

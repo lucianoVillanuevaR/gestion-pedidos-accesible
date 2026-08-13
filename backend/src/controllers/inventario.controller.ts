@@ -52,26 +52,21 @@ export const getInventario = async (_req: Request, res: Response) => {
       orderBy: { nombre: "asc" }
     });
 
-    const inventario = await Promise.all(
-      productos.map(async (producto) => {
-        const item =
-          producto.inventario ??
-          (await prisma.inventario.create({
-            data: {
-              productoId: producto.id,
-              stockActual: DEFAULT_STOCK_ACTUAL,
-              stockMinimo: DEFAULT_STOCK_MINIMO
-            }
-          }));
+    const inventario = productos.flatMap((producto) => {
+      if (!producto.inventario) {
+        console.warn(`Inventario faltante para el producto ${producto.id}; ejecutar npm run inventory:repair.`);
+        return [];
+      }
 
-        return toInventarioResponse({
+      return [
+        toInventarioResponse({
           producto,
           productoId: producto.id,
-          stockActual: item.stockActual,
-          stockMinimo: item.stockMinimo
-        });
-      })
-    );
+          stockActual: producto.inventario.stockActual,
+          stockMinimo: producto.inventario.stockMinimo
+        })
+      ];
+    });
 
     res.json(inventario);
   } catch (error) {

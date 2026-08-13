@@ -1,4 +1,7 @@
 const ROLES = ["cajero", "cocina", "admin"] as const;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_PATTERN = /^[a-z0-9._-]+$/;
+const MIN_PASSWORD_LENGTH = 8;
 
 type UsuarioInput = {
   activo?: unknown;
@@ -41,6 +44,8 @@ export function validateUsuarioCreate(input: UsuarioInput): {
     max: 120
   });
   if (emailError) return { error: emailError };
+  const cleanEmail = (input.email as string).trim().toLowerCase();
+  if (!EMAIL_PATTERN.test(cleanEmail)) return { error: "El email no tiene un formato válido" };
   const labelError = validateText(input.label, "El nombre", {
     required: true,
     max: 80
@@ -51,8 +56,17 @@ export function validateUsuarioCreate(input: UsuarioInput): {
     max: 120
   });
   if (passwordError) return { error: passwordError };
-  if (typeof input.password === "string" && input.password.trim().length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres" };
+  if (typeof input.password === "string" && input.password.length < MIN_PASSWORD_LENGTH) {
+    return {
+      error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`
+    };
+  }
+  const cleanUsername = (input.username as string).trim().toLowerCase();
+  if (cleanUsername.length < 3) return { error: "El usuario debe tener al menos 3 caracteres" };
+  if (!USERNAME_PATTERN.test(cleanUsername)) {
+    return {
+      error: "El usuario solo puede contener letras minúsculas, números, punto, guion y guion bajo"
+    };
   }
   if (typeof input.role !== "string" || !ROLES.includes(input.role as (typeof ROLES)[number])) {
     return { error: "El rol debe ser cajero, cocina o admin" };
@@ -64,11 +78,11 @@ export function validateUsuarioCreate(input: UsuarioInput): {
   return {
     data: {
       activo: typeof input.activo === "boolean" ? input.activo : true,
-      email: (input.email as string).trim().toLowerCase(),
+      email: cleanEmail,
       label: (input.label as string).trim(),
-      password: (input.password as string).trim(),
+      password: input.password as string,
       role: input.role as (typeof ROLES)[number],
-      username: (input.username as string).trim().toLowerCase()
+      username: cleanUsername
     }
   };
 }
@@ -92,6 +106,12 @@ export function validateUsuarioUpdate(input: UsuarioInput): {
 
   if (data.email) data.email = data.email.toLowerCase();
   if (data.username) data.username = data.username.toLowerCase();
+  if (data.email && !EMAIL_PATTERN.test(data.email)) return { error: "El email no tiene un formato válido" };
+  if (data.username && (data.username.length < 3 || !USERNAME_PATTERN.test(data.username))) {
+    return {
+      error: "El usuario debe tener al menos 3 caracteres y usar solo letras, números, punto o guion"
+    };
+  }
 
   if (input.password !== undefined) {
     const passwordError = validateText(input.password, "La contraseña", {
@@ -99,9 +119,11 @@ export function validateUsuarioUpdate(input: UsuarioInput): {
       max: 120
     });
     if (passwordError) return { error: passwordError };
-    if ((input.password as string).trim().length < 6)
-      return { error: "La contraseña debe tener al menos 6 caracteres" };
-    data.password = (input.password as string).trim();
+    if ((input.password as string).length < MIN_PASSWORD_LENGTH)
+      return {
+        error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres`
+      };
+    data.password = input.password as string;
   }
 
   if (input.role !== undefined) {
@@ -114,6 +136,10 @@ export function validateUsuarioUpdate(input: UsuarioInput): {
   if (input.activo !== undefined) {
     if (typeof input.activo !== "boolean") return { error: "activo debe ser verdadero o falso" };
     data.activo = input.activo;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return { error: "Debe enviar al menos un campo para actualizar" };
   }
 
   return { data };

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import type { AuthenticatedRequest } from "../middlewares/auth";
+import { lockTurnOperations } from "../services/databaseLocks";
 import { withProductImageUrl } from "../services/productImageService";
 import {
   assertPedidoCanBeUpdated,
@@ -107,6 +108,7 @@ export const crearPedido = async (req: Request, res: Response) => {
     const detallesNormalizados = normalizePedidoDetalles(detalles);
 
     const pedido = await prisma.$transaction(async (tx) => {
+      await lockTurnOperations(tx);
       const turno = await tx.turno.findFirst({ where: { estado: "abierto" } });
       if (!turno) {
         throw new RequestError(409, "Debes abrir turno antes de registrar un pedido");

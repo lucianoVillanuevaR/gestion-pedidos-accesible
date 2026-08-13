@@ -109,6 +109,7 @@ model Pedido {
   turno         Turno?          @relation(fields: [turnoId], references: [id])
 
   @@index([turnoId])
+  @@index([turnoId, createdAt])
 }
 
 model PedidoHistorial {
@@ -171,5 +172,6 @@ model Turno {
   pedidos     Pedido[]
 
   @@index([estado])
+  @@index([estado, fechaCierre])
   @@index([usuarioId])
 }

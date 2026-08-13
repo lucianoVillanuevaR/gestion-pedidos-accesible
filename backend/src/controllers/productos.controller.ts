@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import prisma from "../config/prisma";
 import { getUploadErrorMessage, uploadProductImageMiddleware } from "../middlewares/uploadImage";
 import { validateProductComponents } from "../services/productComponentsService";
-import { deleteProductImage, uploadProductImage } from "../services/productImageService";
+import { deleteProductImage, deleteProductImageObject, uploadProductImage } from "../services/productImageService";
 import { PRODUCTO_CATALOG_INCLUDE, toProductoResponse } from "../services/productoCatalogService";
 import { RequestError } from "../utils/httpErrors";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateProductoCreate, validateProductoUpdate } from "../validations/productos.validation";
+import { hasValidProductImageSignature } from "../validations/productImage.validation";
 
 export const getProductos = async (req: Request, res: Response) => {
   try {
@@ -122,11 +123,21 @@ export const updateProducto = async (req: Request, res: Response) => {
     const productoId = parsePositiveIntegerId(id);
     const productoActual = await prisma.producto.findUnique({
       where: { id: productoId },
-      include: { _count: { select: { componentes: true } } }
+      include: {
+        _count: { select: { componenteDe: true, componentes: true } }
+      }
     });
     if (!productoActual) return res.status(404).json({ error: "Producto no encontrado" });
     const tipoFinal = productoData.tipo ?? productoActual.tipo;
     const controlaStockFinal = productoData.controlaStock ?? productoActual.controlaStock;
+    if (
+      productoActual._count.componenteDe > 0 &&
+      (!controlaStockFinal || tipoFinal === "promo" || tipoFinal === "combo")
+    ) {
+      return res.status(409).json({
+        error: "Este producto se utiliza como componente de una promoción o combo y no puede dejar de controlar stock."
+      });
+    }
     if ((tipoFinal === "promo" || tipoFinal === "combo") && controlaStockFinal) {
       return res.status(400).json({
         error: "Las promociones y combos no pueden controlar stock propio"
@@ -149,7 +160,6 @@ export const updateProducto = async (req: Request, res: Response) => {
 
     if (categoria !== undefined) {
       data.categorias = {
-        set: [],
         connectOrCreate: {
           create: {
             descripcion: `Productos de ${categoria}`,
@@ -208,30 +218,33 @@ export const deleteProducto = async (req: Request, res: Response) => {
 
     const productoId = parsePositiveIntegerId(id);
     const producto = await prisma.producto.findUnique({
-      where: { id: productoId }
+      where: { id: productoId },
+      include: {
+        _count: { select: { componenteDe: true, detallesPedido: true } }
+      }
     });
 
     if (!producto) {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
 
-    const pedidosConProducto = await prisma.detallePedido.count({
-      where: { productoId }
-    });
-
-    if (pedidosConProducto > 0) {
+    if (producto._count.detallesPedido > 0) {
       return res.status(409).json({
         error: "No se puede eliminar un producto con pedidos registrados. Puedes ocultarlo para que no se venda."
       });
     }
 
-    if (producto.imagenUrl) {
-      await deleteProductImage(productoId);
+    if (producto._count.componenteDe > 0) {
+      return res.status(409).json({
+        error: "No se puede eliminar porque este producto se utiliza como componente de una promoción o combo."
+      });
     }
 
     await prisma.producto.delete({
       where: { id: productoId }
     });
+
+    await deleteProductImageObject(producto.imagenUrl);
 
     res.status(204).send();
   } catch (error) {
@@ -266,6 +279,11 @@ export const uploadProductoImagen = (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ error: "Debe seleccionar una imagen." });
     }
+    if (!hasValidProductImageSignature(req.file.buffer, req.file.mimetype)) {
+      return res.status(400).json({
+        error: "El contenido del archivo no corresponde a una imagen JPG, PNG o WEBP válida."
+      });
+    }
 
     try {
       const producto = await uploadProductImage(parsePositiveIntegerId(req.params.id), req.file);
@@ -273,6 +291,12 @@ export const uploadProductoImagen = (req: Request, res: Response) => {
     } catch (error) {
       if (error instanceof Error && error.message === "Producto no encontrado") {
         return res.status(404).json({ error: error.message });
+      }
+
+      if (error instanceof Error && /connect|ECONN|MinIO|S3/i.test(error.message)) {
+        return res.status(503).json({
+          error: "El servicio de imágenes no está disponible temporalmente."
+        });
       }
 
       console.error("Error al subir imagen de producto:", error);

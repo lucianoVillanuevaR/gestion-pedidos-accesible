@@ -1,4 +1,4 @@
-import { withProductImageUrl } from "./productImageService";
+import { withProductImageUrl } from "./productImageUrl";
 
 export const PRODUCTO_CATALOG_INCLUDE = {
   categorias: { orderBy: { nombre: "asc" } },

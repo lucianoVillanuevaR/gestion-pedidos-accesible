@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
+import { updateUserSafely } from "../services/userAdministrationService";
+import { RequestError } from "../utils/httpErrors";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateUsuarioCreate, validateUsuarioUpdate } from "../validations/usuarios.validation";
 
@@ -43,7 +45,7 @@ export async function createUsuario(req: Request, res: Response) {
     const usuario = await prisma.usuario.create({
       data: {
         ...data,
-        passwordHash: await bcrypt.hash(password, 10)
+        passwordHash: await bcrypt.hash(password, 12)
       }
     });
 
@@ -65,17 +67,12 @@ export async function updateUsuario(req: Request, res: Response) {
     const validation = validateUsuarioUpdate(req.body);
     if (validation.error || !validation.data) return res.status(400).json({ error: validation.error });
 
-    const { password, ...data } = validation.data;
-    const usuario = await prisma.usuario.update({
-      data: {
-        ...data,
-        ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {})
-      },
-      where: { id: parsePositiveIntegerId(req.params.id) }
-    });
+    const userId = parsePositiveIntegerId(req.params.id);
+    const usuario = await updateUserSafely(userId, validation.data);
 
     res.json(toUsuarioResponse(usuario));
   } catch (error: unknown) {
+    if (error instanceof RequestError) return res.status(error.statusCode).json({ error: error.message });
     if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
