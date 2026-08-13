@@ -1,7 +1,7 @@
 import { Accessibility, CheckCircle2, ChevronDown, Eye, EyeOff, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import fondoR from "../assets/fondoR.png";
+import fondoR from "../assets/fondoR.webp";
 import logoRiq from "../assets/logoRiq.png";
 import { getEasyRoute } from "../config/navigation";
 import { DEMO_USERS, getDefaultRouteForRole } from "../constants/auth";
