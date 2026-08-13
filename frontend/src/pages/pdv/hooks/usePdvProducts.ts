@@ -27,49 +27,28 @@ export function usePdvProducts({
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
-  const loadProductos = useCallback(() => {
+  const loadProductos = useCallback((signal?: AbortSignal) => {
     setLoadingProductos(true);
     setLoadingError(null);
 
-    getProductos({ includeUnavailable: true })
+    return getProductos({ includeUnavailable: true, signal })
       .then((list) => {
         setProductos(list || []);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         setLoadingError("No fue posible cargar productos");
       })
       .finally(() => {
-        setLoadingProductos(false);
+        if (!signal?.aborted) setLoadingProductos(false);
       });
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-
-    setLoadingProductos(true);
-    setLoadingError(null);
-
-    getProductos({ includeUnavailable: true })
-      .then((list) => {
-        if (isMounted) {
-          setProductos(list || []);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setLoadingError("No fue posible cargar productos");
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setLoadingProductos(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    const controller = new AbortController();
+    void loadProductos(controller.signal);
+    return () => controller.abort();
+  }, [loadProductos]);
 
   useEffect(() => {
     let isMounted = true;

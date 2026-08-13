@@ -28,7 +28,7 @@ export interface Categoria {
 
 export type TipoProducto = "producto" | "promo" | "combo";
 
-export interface ProductoComponente {
+interface ProductoComponente {
   id?: number;
   componenteId: number;
   cantidad: number;

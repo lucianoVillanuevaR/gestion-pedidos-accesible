@@ -23,8 +23,8 @@ import {
 const PEDIDO_WITH_DETALLES_INCLUDE = {
   detalles: {
     include: {
-      producto: true,
-      variante: true
+      producto: { select: { id: true, imagenUrl: true, nombre: true } },
+      variante: { select: { id: true, nombre: true, productoId: true } }
     }
   }
 } as const;

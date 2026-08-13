@@ -36,9 +36,9 @@ export function usePedidosController({
   const pedidoCounts = useMemo(() => getPedidoCounts(pedidos), [pedidos]);
   const normalSummary = useMemo(() => getNormalSummary(pedidos), [pedidos]);
 
-  const loadPedidos = useCallback(async (signal?: AbortSignal) => {
+  const loadPedidos = useCallback(async (signal?: AbortSignal, silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       setError(null);
       const pedidosResponse = await getPedidos(signal);
       setPedidos(withPedidoNumerosTurno(pedidosResponse));
@@ -49,7 +49,7 @@ export function usePedidosController({
 
       setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar los pedidos");
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 

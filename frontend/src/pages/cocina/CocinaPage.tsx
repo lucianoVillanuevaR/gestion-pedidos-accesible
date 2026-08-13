@@ -49,11 +49,18 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
       return;
     }
 
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadPedidos(undefined, true);
+    };
     const intervalId = window.setInterval(() => {
-      loadPedidos();
+      refreshWhenVisible();
     }, AUTO_REFRESH_MS);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [isAutoRefreshEnabled, loadPedidos]);
 
   const handleRefresh = () => {

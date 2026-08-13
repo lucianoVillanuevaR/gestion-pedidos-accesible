@@ -20,12 +20,14 @@ async function readProductoResponse(path: string, fallbackMessage: string, init?
   return normalizeProducto(producto);
 }
 
-export async function getProductos({ includeUnavailable = false }: { includeUnavailable?: boolean } = {}): Promise<
-  Producto[]
-> {
+export async function getProductos({
+  includeUnavailable = false,
+  signal
+}: { includeUnavailable?: boolean; signal?: AbortSignal } = {}): Promise<Producto[]> {
   const query = includeUnavailable ? "?includeUnavailable=true" : "";
   const data = await apiRequest<Array<Producto & { precio: number | string }>>(`/productos${query}`, {
-    fallbackMessage: "Error cargando productos"
+    fallbackMessage: "Error cargando productos",
+    signal
   });
   return data.map(normalizeProducto);
 }
