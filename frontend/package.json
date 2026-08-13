@@ -6,11 +6,13 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run",
+    "test": "vitest run src",
+    "test:a11y": "vitest run src/accessibility",
+    "test:e2e:a11y": "playwright test",
     "test:watch": "vitest",
     "lint": "eslint . --max-warnings 0",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.{json,js,ts,mjs,html}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{json,js,ts,mjs,html}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.{ts,tsx}\" \"*.{json,js,ts,mjs,html}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"e2e/**/*.{ts,tsx}\" \"*.{json,js,ts,mjs,html}\"",
     "check": "npm run format:check && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
@@ -21,13 +23,16 @@
     "react-to-print": "^3.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "4.7.0",
     "autoprefixer": "^10.4.20",
+    "axe-core": "^4.13.0",
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",

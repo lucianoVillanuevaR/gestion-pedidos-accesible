@@ -97,3 +97,22 @@ jobs:
       - name: Revisar formato con Prettier
         working-directory: backend
         run: npm exec prettier -- ../ --check
+
+      - name: Levantar aplicación para pruebas accesibles
+        run: docker compose up -d --build --wait
+
+      - name: Instalar Chromium para Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar auditoría accesible en navegador
+        working-directory: frontend
+        run: npm run test:e2e:a11y
+
+      - name: Mostrar logs si falla la auditoría
+        if: failure()
+        run: docker compose logs --no-color --tail=200
+
+      - name: Detener aplicación de CI
+        if: always()
+        run: docker compose down --volumes
