@@ -16,6 +16,7 @@ export type AccessibilityState = {
   isHighContrast: boolean;
   isVoiceEnabled: boolean;
   isSoundEnabled: boolean;
+  isVoiceSupported: boolean;
   prefersReducedMotion: boolean;
   setTextSize: (value: AccessibilityTextSize) => void;
   setAccessibleMode: (value: boolean) => void;
@@ -58,6 +59,10 @@ function getFontSizeForState(textSize: AccessibilityTextSize, isAccessible: bool
 }
 
 function useAccessibility(): AccessibilityState {
+  const isVoiceSupported =
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    typeof window.SpeechSynthesisUtterance === "function";
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [isAccessible, setIsAccessible] = useState(() => {
     if (typeof window === "undefined") {
@@ -183,6 +188,7 @@ function useAccessibility(): AccessibilityState {
     isHighContrast,
     isVoiceEnabled,
     isSoundEnabled,
+    isVoiceSupported,
     prefersReducedMotion,
     setTextSize: updateTextSize,
     setAccessibleMode,

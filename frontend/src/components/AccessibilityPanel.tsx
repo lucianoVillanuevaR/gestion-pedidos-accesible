@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { AccessibilityTextSize } from "../constants/accessibility";
+import useAccessibleDialog from "../hooks/useAccessibleDialog";
 import useVoice from "../hooks/useVoice";
 
 type AccessibilityPanelProps = {
@@ -10,6 +11,7 @@ type AccessibilityPanelProps = {
   isHighContrast: boolean;
   isVoiceEnabled: boolean;
   isSoundEnabled: boolean;
+  isVoiceSupported?: boolean;
   onToggleAccessible: () => void;
   onSetTextSize: (value: AccessibilityTextSize) => void;
   onToggleContrast: () => void;
@@ -25,6 +27,7 @@ function AccessibilityPanel({
   isHighContrast,
   isVoiceEnabled,
   isSoundEnabled,
+  isVoiceSupported = true,
   onToggleAccessible,
   onSetTextSize,
   onToggleContrast,
@@ -34,57 +37,7 @@ function AccessibilityPanel({
   const { cancel, speak } = useVoice({ enabled: true });
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const previouslyFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-        return;
-      }
-
-      if (event.key !== "Tab" || !dialogRef.current) {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      );
-
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        dialogRef.current.focus();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && (activeElement === firstElement || !dialogRef.current.contains(activeElement))) {
-        event.preventDefault();
-        lastElement.focus();
-      } else if (!event.shiftKey && (activeElement === lastElement || !dialogRef.current.contains(activeElement))) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    closeButtonRef.current?.focus();
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      previouslyFocusedElement?.focus();
-    };
-  }, [isOpen, onClose]);
+  useAccessibleDialog({ containerRef: dialogRef, enabled: isOpen, initialFocusRef: closeButtonRef, onClose });
 
   if (!isOpen) {
     return null;
@@ -379,13 +332,22 @@ function AccessibilityPanel({
                 <button
                   type="button"
                   onClick={handleToggleVoice}
+                  disabled={!isVoiceSupported}
                   aria-label={isVoiceEnabled ? "Desactivar ayuda por voz" : "Activar ayuda por voz"}
                   aria-pressed={isVoiceEnabled}
-                  className={getButtonClass(isVoiceEnabled)}
+                  className={`${getButtonClass(isVoiceEnabled)} disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   <span className={isAccessible ? "text-2xl" : ""}>{isVoiceEnabled ? "ACTIVADO" : "ACTIVAR"}</span>
                 </button>
               </div>
+              {!isVoiceSupported && (
+                <p
+                  className="rounded-xl border border-amber-700 bg-amber-50 p-3 font-bold text-amber-950"
+                  role="status"
+                >
+                  La ayuda por voz no está disponible en este navegador. Puedes usar un lector de pantalla externo.
+                </p>
+              )}
             </section>
 
             <section className={sectionClass}>

@@ -1,4 +1,5 @@
 import { Accessibility, LogOut, ShieldCheck, X } from "lucide-react";
+import { useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import logoRiq from "../assets/logoRiq.png";
 import {
@@ -16,6 +17,7 @@ import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
 import { getDefaultRouteForRole } from "../constants/auth";
 import useVoice from "../hooks/useVoice";
+import useAccessibleDialog from "../hooks/useAccessibleDialog";
 import SidebarNavItem from "./SidebarNavItem";
 
 type AppSidebarProps = {
@@ -31,6 +33,9 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
     useAccessibilityContext();
   const { logout, user } = useAuthContext();
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
+  const sidebarRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  useAccessibleDialog({ containerRef: sidebarRef, enabled: isOpen, initialFocusRef: closeButtonRef, onClose });
 
   if (!user) {
     return null;
@@ -153,6 +158,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
       />
 
       <aside
+        ref={sidebarRef}
         id="main-sidebar"
         className={`fixed inset-y-0 left-0 z-50 flex ${widthClass} flex-col border-r transition-transform duration-300 lg:translate-x-0 ${
           hasTopBrandBar ? "lg:bottom-0 lg:top-14 lg:h-[calc(100vh-56px)]" : ""
@@ -164,6 +170,9 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
               : "border-slate-200 bg-white text-slate-950 shadow-sm shadow-slate-200/50"
         }`}
         aria-label="Navegación principal"
+        aria-modal={isOpen || undefined}
+        role={isOpen ? "dialog" : undefined}
+        tabIndex={-1}
       >
         <div
           className={`flex items-center justify-between gap-3 border-b ${brandHeaderSpacingClass} ${brandHeaderClass} ${hasTopBrandBar ? "lg:hidden" : ""}`}
@@ -189,6 +198,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={handleCloseMenu}
             className={`inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg border transition lg:hidden ${isAccessible ? "min-h-[52px] min-w-[52px] text-base" : ""} ${brandCloseButtonClass}`}

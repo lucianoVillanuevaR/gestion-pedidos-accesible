@@ -1,4 +1,6 @@
 import { Check, Minus, Plus, X } from "lucide-react";
+import { useRef } from "react";
+import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
 import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
 import { formatCurrency } from "../../../utils/pdv";
 import {
@@ -24,6 +26,9 @@ export default function PdvProductConfiguratorNormalView({
   ) => void;
   producto: Producto;
 }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: closeButtonRef, onClose });
   const {
     aderezos,
     cantidad,
@@ -44,9 +49,11 @@ export default function PdvProductConfiguratorNormalView({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto px-3 py-5">
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="variant-selection-title"
+        tabIndex={-1}
         className={`w-full max-w-[680px] overflow-hidden rounded-[22px] border shadow-2xl ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-300 bg-white"}`}
       >
         <header
@@ -61,6 +68,7 @@ export default function PdvProductConfiguratorNormalView({
             </h2>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400"

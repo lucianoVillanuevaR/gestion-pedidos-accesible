@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
+import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
 import {
   StatusBadge,
   formatCurrency as formatKitchenCurrency,
@@ -9,12 +11,18 @@ import {
 import type { HistorialPedidoDetalle } from "../cocinaHistoryUtils";
 
 export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void; pedido: HistorialPedidoDetalle }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: closeButtonRef, onClose });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-[1px]">
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="historial-pedido-title"
+        ref={dialogRef}
+        tabIndex={-1}
         className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[26px] border border-slate-200 bg-white p-5 shadow-2xl sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
@@ -22,6 +30,7 @@ export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void;
             Pedido #{getPedidoDisplayNumber(pedido)}
           </h2>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className={`inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 font-black text-slate-700 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}

@@ -1,7 +1,8 @@
 import { ClipboardPlus } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../../contexts/AccessibilityContext";
+import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import type { EstadoPedido, PedidoDetalleResponse, PedidoResponse } from "../../../types";
 import { formatCurrency } from "../../../utils/formatters";
@@ -30,18 +31,18 @@ export function StatusBadge({ estado, isLarge = false }: { estado: EstadoPedido;
 function ModalShell({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
   const { isAccessible, isHighContrast } = useAccessibilityContext();
   const titleId = useId();
+  const dialogRef = useRef<HTMLElement | null>(null);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
-
-  useEffect(() => {
-    titleRef.current?.focus();
-  }, []);
+  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: titleRef, onClose });
 
   return (
     <div className="fixed inset-x-0 -top-16 bottom-0 z-[1000] flex items-center justify-center bg-black/30 px-4 py-6 pt-[5.5rem] backdrop-blur-[1px]">
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
         className={`max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[26px] bg-white p-5 shadow-2xl sm:p-6 ${
           isHighContrast
             ? "contrast-panel border-2 border-yellow-400"

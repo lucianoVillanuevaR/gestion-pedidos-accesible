@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Check, Minus, Plus, X } from "lucide-react";
 import type { PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
 import useVoice from "../../../hooks/useVoice";
+import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
 import { formatCurrency } from "../../../utils/pdv";
 import {
   ADEREZOS_DISPONIBLES,
@@ -50,6 +51,9 @@ export default function PdvProductConfiguratorEasyView({
   } = config;
   const isLastStep = easyConfigStep === easySteps.length - 1;
   const { speak } = useVoice({ enabled: isVoiceEnabled });
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: closeButtonRef, onClose });
   const lastAnnouncedStepRef = useRef("");
   const stageTitle =
     easyStage === "opcion"
@@ -94,9 +98,11 @@ export default function PdvProductConfiguratorEasyView({
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto px-3 py-4 sm:items-center">
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="easy-config-title"
+        tabIndex={-1}
         className={`my-auto flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[24px] border-4 shadow-2xl ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-900 bg-white"}`}
       >
         <header
@@ -119,6 +125,7 @@ export default function PdvProductConfiguratorEasyView({
               </h2>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={onClose}
               className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-2 text-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white hover:bg-slate-100"}`}
