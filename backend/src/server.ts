@@ -7,6 +7,8 @@ import routes from "./routes";
 const app = express();
 
 app.disable("x-powered-by");
+// Solo se confía en la cantidad conocida de proxies de la instalación.
+app.set("trust proxy", env.trustProxyHops);
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");

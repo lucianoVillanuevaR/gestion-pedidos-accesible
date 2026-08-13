@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { login, me } from "../controllers/auth.controller";
 import { requireAuth } from "../middlewares/auth";
-import { createIpRateLimit } from "../middlewares/rateLimit";
+import { createFailedLoginRateLimit } from "../middlewares/rateLimit";
 
 const router = Router();
-const loginRateLimit = createIpRateLimit({
-  maxRequests: 10,
+const loginRateLimit = createFailedLoginRateLimit({
+  maxFailures: 10,
   windowMs: 15 * 60 * 1000,
   message: "Demasiados intentos de inicio de sesión. Intenta nuevamente en unos minutos."
 });

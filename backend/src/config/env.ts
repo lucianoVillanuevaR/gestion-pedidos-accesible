@@ -18,6 +18,14 @@ function validPort(name: string, value: string | undefined, fallback: number) {
   return port;
 }
 
+function validProxyHops(value: string | undefined) {
+  const hops = Number(value ?? 1);
+  if (!Number.isInteger(hops) || hops < 1 || hops > 2) {
+    throw new Error("TRUST_PROXY_HOPS debe ser 1 o 2");
+  }
+  return hops;
+}
+
 function validUrl(name: string, value: string) {
   try {
     return new URL(value).toString().replace(/\/$/, "");
@@ -43,6 +51,7 @@ export const env = {
   clientUrl: validUrl("CLIENT_URL", requiredInProduction("CLIENT_URL", "http://localhost:5173")),
   databaseUrl: requiredInProduction("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/riquisimo"),
   jwtSecret,
+  trustProxyHops: validProxyHops(process.env.TRUST_PROXY_HOPS),
   minio: {
     endpoint: requiredInProduction("MINIO_ENDPOINT", "localhost"),
     port: validPort("MINIO_PORT", process.env.MINIO_PORT, 9000),
