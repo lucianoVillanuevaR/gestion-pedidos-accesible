@@ -51,7 +51,7 @@ function getAudioContext() {
   return sharedAudioContext;
 }
 
-export async function playSoundFeedback(type: SoundFeedbackType, volumeLevel: SoundVolumeLevel = "loud") {
+export async function playSoundFeedback(type: SoundFeedbackType, volumeLevel: SoundVolumeLevel = "soft") {
   try {
     const context = getAudioContext();
     if (!context) return;
@@ -81,7 +81,7 @@ export async function playSoundFeedback(type: SoundFeedbackType, volumeLevel: So
   }
 }
 
-export function useSoundFeedback(isSoundEnabled: boolean, volumeLevel: SoundVolumeLevel = "loud") {
+export function useSoundFeedback(isSoundEnabled: boolean, volumeLevel: SoundVolumeLevel = "soft") {
   const play = useCallback(
     (type: SoundFeedbackType) => {
       if (isSoundEnabled) void playSoundFeedback(type, volumeLevel);

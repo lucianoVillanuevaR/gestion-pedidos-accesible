@@ -22,6 +22,10 @@ export function useNewPedidoNotification({
     if (knownIds && isAutomaticRefresh && pedidos.some((pedido) => !knownIds.has(pedido.id))) {
       notify();
     }
-    knownPedidoIdsRef.current = currentIds;
+    if (knownIds) {
+      currentIds.forEach((id) => knownIds.add(id));
+    } else {
+      knownPedidoIdsRef.current = currentIds;
+    }
   }, [isAutomaticRefresh, isInitialLoading, notify, pedidos]);
 }

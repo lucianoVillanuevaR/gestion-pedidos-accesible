@@ -125,8 +125,8 @@ describe("useAccessibility", () => {
 
     expect(result.current.isSoundEnabled).toBe(false);
     expect(result.current.isVoiceEnabled).toBe(false);
-    expect(result.current.soundVolume).toBe("loud");
+    expect(result.current.soundVolume).toBe("soft");
     expect(window.localStorage.getItem(ACCESSIBILITY_SOUND_STORAGE_KEY)).toBe("false");
-    expect(window.localStorage.getItem(ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY)).toBe("loud");
+    expect(window.localStorage.getItem(ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY)).toBe("soft");
   });
 });

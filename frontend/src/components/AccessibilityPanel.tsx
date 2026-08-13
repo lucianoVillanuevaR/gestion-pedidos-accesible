@@ -412,16 +412,13 @@ function AccessibilityPanel({
                       ["loud", "Fuerte"]
                     ] as const
                   ).map(([value, label]) => {
-                    const selected = soundVolume === value;
+                    const selected = isSoundEnabled && soundVolume === value;
                     return (
                       <button
                         key={value}
                         type="button"
                         aria-pressed={selected}
-                        onClick={() => {
-                          onSetSoundVolume(value);
-                          void playSoundFeedback("notification", value);
-                        }}
+                        onClick={() => onSetSoundVolume(value)}
                         className={`${getButtonClass(selected)} disabled:cursor-not-allowed disabled:opacity-50`}
                       >
                         {label}
@@ -430,12 +427,15 @@ function AccessibilityPanel({
                   })}
                 </div>
                 <p className="font-semibold text-slate-700" aria-live="polite">
-                  Nivel seleccionado:{" "}
-                  {soundVolume === "soft" ? "Suave" : soundVolume === "normal" ? "Normal" : "Fuerte"}
+                  {isSoundEnabled
+                    ? `Nivel seleccionado: ${
+                        soundVolume === "soft" ? "Suave" : soundVolume === "normal" ? "Normal" : "Fuerte"
+                      }`
+                    : "Activa los sonidos para configurar el volumen."}
                 </p>
                 <button
                   type="button"
-                  onClick={() => void playSoundFeedback("notification", soundVolume)}
+                  onClick={() => void playSoundFeedback("success", soundVolume)}
                   className={`${getButtonClass(false)} w-full disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   Probar sonido

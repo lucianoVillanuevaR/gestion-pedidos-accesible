@@ -5,6 +5,12 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AccessibilityPanel from "./AccessibilityPanel";
 
+const playSoundFeedback = vi.fn();
+
+vi.mock("../hooks/useSoundFeedback", () => ({
+  playSoundFeedback: (...args: unknown[]) => playSoundFeedback(...args)
+}));
+
 vi.mock("../hooks/useVoice", () => ({
   default: () => ({ cancel: vi.fn(), speak: vi.fn() })
 }));
@@ -17,7 +23,7 @@ const defaultProps = {
   isHighContrast: false,
   isVoiceEnabled: false,
   isSoundEnabled: false,
-  soundVolume: "loud" as const,
+  soundVolume: "soft" as const,
   onToggleAccessible: vi.fn(),
   onSetTextSize: vi.fn(),
   onToggleContrast: vi.fn(),
@@ -103,5 +109,32 @@ describe("AccessibilityPanel", () => {
     expect(
       (screen.getByRole("button", { name: "Probar sonido" }).closest("fieldset") as HTMLFieldSetElement).disabled
     ).toBe(true);
+    expect(screen.getByRole("button", { name: "Suave" }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByText("Activa los sonidos para configurar el volumen.")).toBeTruthy();
+  });
+
+  it("reproduce una única confirmación al activar y ninguna al desactivar", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccessibilityPanel {...defaultProps} soundVolume="normal" />);
+
+    await user.click(screen.getByRole("button", { name: "Activar sonidos" }));
+    expect(playSoundFeedback).toHaveBeenCalledOnce();
+    expect(playSoundFeedback).toHaveBeenCalledWith("success", "normal");
+
+    rerender(<AccessibilityPanel {...defaultProps} isSoundEnabled soundVolume="normal" />);
+    await user.click(screen.getByRole("button", { name: "Desactivar sonidos" }));
+    expect(playSoundFeedback).toHaveBeenCalledOnce();
+  });
+
+  it("prueba una confirmación solo cuando los sonidos están habilitados", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AccessibilityPanel {...defaultProps} />);
+
+    await user.click(screen.getByRole("button", { name: "Probar sonido" }));
+    expect(playSoundFeedback).not.toHaveBeenCalled();
+
+    rerender(<AccessibilityPanel {...defaultProps} isSoundEnabled soundVolume="loud" />);
+    await user.click(screen.getByRole("button", { name: "Probar sonido" }));
+    expect(playSoundFeedback).toHaveBeenCalledWith("success", "loud");
   });
 });

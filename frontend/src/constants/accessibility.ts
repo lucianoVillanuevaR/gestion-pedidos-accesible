@@ -11,4 +11,4 @@ export type AccessibilityTextSize = (typeof ACCESSIBILITY_TEXT_SIZES)[number];
 
 export const SOUND_VOLUME_LEVELS = ["soft", "normal", "loud"] as const;
 export type SoundVolumeLevel = (typeof SOUND_VOLUME_LEVELS)[number];
-export const DEFAULT_SOUND_VOLUME: SoundVolumeLevel = "loud";
+export const DEFAULT_SOUND_VOLUME: SoundVolumeLevel = "soft";

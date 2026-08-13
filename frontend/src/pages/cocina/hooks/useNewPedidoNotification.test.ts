@@ -39,4 +39,16 @@ describe("useNewPedidoNotification", () => {
     rerender({ automatic: false, pedidos: [pedido(1), pedido(2)] });
     expect(notify).not.toHaveBeenCalled();
   });
+
+  it("no vuelve a notificar un pedido conocido que desaparece y reaparece", () => {
+    const notify = vi.fn();
+    const { rerender } = renderHook(
+      ({ pedidos }) => useNewPedidoNotification({ isInitialLoading: false, isAutomaticRefresh: true, notify, pedidos }),
+      { initialProps: { pedidos: [pedido(1), pedido(2)] } }
+    );
+
+    rerender({ pedidos: [pedido(1)] });
+    rerender({ pedidos: [pedido(1), pedido(2)] });
+    expect(notify).not.toHaveBeenCalled();
+  });
 });
