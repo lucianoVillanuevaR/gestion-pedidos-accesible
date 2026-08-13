@@ -10,7 +10,7 @@ import {
   setTurnoAbierto,
   setTurnoFechaInicio
 } from "../pages/pedidos/PedidosShared";
-import { abrirTurnoRemoto, guardarCierreTurno, obtenerCierresTurno } from "../services/cierresTurno";
+import { abrirTurnoRemoto, cargarCierresTurno, guardarCierreTurno } from "../services/cierresTurno";
 import { createPedido, getPedidos, updatePedidoEstado } from "../services/pedidos";
 import type { CreatePedidoPayload, EstadoPedido, PedidoResponse } from "../types";
 
@@ -24,6 +24,7 @@ function jsonResponse(body: unknown, status = 200) {
 function installPedidosApi() {
   let pedido: PedidoResponse | null = null;
   let turnoAbierto = false;
+  let cierre: Record<string, unknown> | null = null;
 
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
@@ -53,28 +54,33 @@ function installPedidosApi() {
 
     if (url.endsWith("/api/turnos/1/cerrar") && init?.method === "POST") {
       turnoAbierto = false;
+      cierre = {
+        id: "turno-1",
+        fechaCierre: "2026-06-20T13:00:00.000Z",
+        usuarioId: "cajero",
+        pedidos: pedido ? [{ id: pedido.id }] : [],
+        productosVendidos: [],
+        totalPedidos: pedido ? 1 : 0,
+        pedidosEntregados: pedido?.estado === "entregado" ? 1 : 0,
+        pedidosCancelados: 0,
+        pedidosPendientes: 0,
+        totalVendido: pedido?.estado === "entregado" ? Number(pedido.total) : 0,
+        totalEfectivo: pedido?.estado === "entregado" ? Number(pedido.total) : 0,
+        totalPendiente: 0,
+        totalTarjeta: 0,
+        totalTransferencia: 0
+      };
       return jsonResponse({
         turno: {
           id: 1,
           estado: "cerrado",
-          resumen: {
-            id: "turno-1",
-            fechaCierre: "2026-06-20T13:00:00.000Z",
-            usuarioId: "cajero",
-            pedidos: pedido ? [{ id: pedido.id }] : [],
-            productosVendidos: [],
-            totalPedidos: pedido ? 1 : 0,
-            pedidosEntregados: pedido?.estado === "entregado" ? 1 : 0,
-            pedidosCancelados: 0,
-            pedidosPendientes: 0,
-            totalVendido: pedido?.estado === "entregado" ? Number(pedido.total) : 0,
-            totalEfectivo: pedido?.estado === "entregado" ? Number(pedido.total) : 0,
-            totalPendiente: 0,
-            totalTarjeta: 0,
-            totalTransferencia: 0
-          }
+          resumen: cierre
         }
       });
+    }
+
+    if (url.endsWith("/api/turnos/cierres") && (!init?.method || init.method === "GET")) {
+      return jsonResponse({ turnos: cierre ? [{ resumen: cierre }] : [] });
     }
 
     if (url.endsWith("/api/pedidos") && init?.method === "POST") {
@@ -195,14 +201,15 @@ describe("flujo operativo principal", () => {
     setTurnoAbierto(false);
 
     expect(readTurnoAbierto()).toBe(false);
-    expect(obtenerCierresTurno()).toHaveLength(1);
-    expect(obtenerCierresTurno()[0]).toMatchObject({
+    const cierres = await cargarCierresTurno();
+    expect(cierres).toHaveLength(1);
+    expect(cierres[0]).toMatchObject({
       usuarioId: "cajero",
       pedidosEntregados: 1,
       totalVendido: 5000
     });
     const closeRequest = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/api/turnos/1/cerrar"));
     expect(closeRequest?.[1]?.body).toBeUndefined();
-    expect(fetchMock).toHaveBeenCalledTimes(9);
+    expect(fetchMock).toHaveBeenCalledTimes(10);
   });
 });

@@ -18,7 +18,6 @@ const ROUTE_MESSAGES: Record<string, string> = {
   "/productos/facil":
     "Productos en modo fácil. Revisa productos con tarjetas grandes y puedes enviarlos a nuevo pedido.",
   "/inventario/facil": "Inventario en modo fácil. Revisa productos disponibles, bajo stock o agotados.",
-  "/clientes": "Clientes. Revisa registro, segmentos y estado de clientes.",
   "/cocina": "Cocina. Vista general para preparar y organizar comandas.",
   "/preparacion/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",
   "/cocina/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",

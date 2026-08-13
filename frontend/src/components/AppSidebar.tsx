@@ -6,7 +6,6 @@ import {
   getEasyRoute,
   getSidebarNavigation,
   isAdminRoute,
-  isClientesRoute,
   isHistorialPedidosRoute,
   isInventarioRoute,
   isPdvRoute,
@@ -47,16 +46,9 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
   const isProductosPage = isProductosRoute(location.pathname);
   const isInventarioPage = isInventarioRoute(location.pathname);
   const isHistorialPedidosPage = isHistorialPedidosRoute(location.pathname);
-  const isClientesPage = isClientesRoute(location.pathname);
   const isAdminPage = isAdminRoute(location.pathname);
   const hasYellowHeader =
-    isPdvPage ||
-    isPedidosPage ||
-    isProductosPage ||
-    isInventarioPage ||
-    isHistorialPedidosPage ||
-    isClientesPage ||
-    isAdminPage;
+    isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isHistorialPedidosPage || isAdminPage;
   const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[82vw] max-w-[280px] lg:w-[240px]";
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"

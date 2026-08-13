@@ -206,10 +206,6 @@ export function isHistorialPedidosRoute(pathname: string) {
   return pathname === "/historial-pedidos";
 }
 
-export function isClientesRoute(pathname: string) {
-  return pathname === "/clientes";
-}
-
 export function isInventarioRoute(pathname: string) {
   return pathname === "/inventario" || pathname === "/inventario/facil";
 }

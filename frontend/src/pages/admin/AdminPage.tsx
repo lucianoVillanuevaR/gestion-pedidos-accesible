@@ -102,6 +102,8 @@ function AdminDashboardPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
   const [totalVendido, setTotalVendido] = useState(0);
+  const [ultimoCierre, setUltimoCierre] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,9 +115,9 @@ function AdminDashboardPage() {
         setPedidos(pedidosData);
         setProductos(productosData);
         setInventario(inventarioData);
-        setTotalVendido(
-          cierres[0]?.totalVendido ?? pedidosData.reduce((total, pedido) => total + Number(pedido.total), 0)
-        );
+        setTotalVendido(cierres.reduce((total, cierre) => total + cierre.totalVendido, 0));
+        setUltimoCierre(cierres[0]?.fechaCierre ?? null);
+        setLastUpdated(new Date());
       })
       .catch((requestError) =>
         setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el dashboard")
@@ -130,10 +132,8 @@ function AdminDashboardPage() {
   const disponibles = productos.filter((producto) => producto.disponible !== false).length;
   const stockCritico = inventario.filter((item) => item.estado === "bajo_stock" || item.estado === "sin_stock");
   const pedidosPendientes = pedidos.filter((pedido) => pedido.estado === "pendiente").length;
-  const lastUpdated = new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "short",
-    timeStyle: "short"
-  }).format(new Date());
+  const formatDateTime = (value: string | Date) =>
+    new Intl.DateTimeFormat("es-CL", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 
   return (
     <AdminShell title="Dashboard Admin" description="Resumen general del sistema y estado operativo del local.">
@@ -151,12 +151,12 @@ function AdminDashboardPage() {
               <div className="divide-y divide-slate-100">
                 <DashboardLine
                   label="Último turno cerrado"
-                  value={totalVendido > 0 ? formatCurrency(totalVendido) : "Sin cierre confirmado"}
+                  value={ultimoCierre ? formatDateTime(ultimoCierre) : "No hay turnos cerrados"}
                 />
                 <DashboardLine label="Total vendido confirmado" value={formatCurrency(totalVendido)} />
                 <DashboardLine label="Pedidos pendientes" value={pedidosPendientes} />
                 <DashboardLine label="Productos disponibles" value={`${disponibles} de ${productos.length}`} />
-                <DashboardLine label="Última actualización" value={lastUpdated} />
+                <DashboardLine label="Última actualización" value={lastUpdated ? formatDateTime(lastUpdated) : "-"} />
               </div>
             </article>
           </section>
@@ -517,12 +517,14 @@ function AdminUsersPage() {
 
 function AdminInput({
   label,
+  minLength,
   onChange,
   required = true,
   type = "text",
   value
 }: {
   label: string;
+  minLength?: number;
   onChange: (value: string) => void;
   required?: boolean;
   type?: string;
@@ -533,6 +535,7 @@ function AdminInput({
       <span className="mb-1 block text-xs font-black text-slate-500">{label}</span>
       <input
         required={required}
+        minLength={minLength}
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -622,6 +625,7 @@ function UserFormModal({
           <AdminInput
             label={editing ? "Nueva contraseña" : "Contraseña"}
             type="password"
+            minLength={8}
             value={editing ? password : draft.password}
             onChange={(value) => (editing ? onPasswordChange(value) : onDraftChange({ ...draft, password: value }))}
             required={!editing}

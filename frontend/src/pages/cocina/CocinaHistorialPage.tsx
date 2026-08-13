@@ -5,7 +5,7 @@ import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import useVoice from "../../hooks/useVoice";
-import { cargarCierresTurno, obtenerCierresTurno } from "../../services/cierresTurno";
+import { cargarCierresTurno } from "../../services/cierresTurno";
 import type { CierreTurno } from "../../types";
 import { formatCurrency as formatKitchenCurrency } from "../pedidos/PedidosShared";
 import { HistorialFacilView } from "./components/CocinaHistorialFacilView";
@@ -33,7 +33,7 @@ export default function CocinaHistorialPage() {
   const { isAccessible, isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const { speak: speakForced } = useVoice({ enabled: isVoiceEnabled });
-  const [cierres, setCierres] = useState<CierreTurno[]>(() => obtenerCierresTurno());
+  const [cierres, setCierres] = useState<CierreTurno[]>([]);
   const [expandedTurnoIds, setExpandedTurnoIds] = useState<Set<string>>(new Set());
   const [turnoViewById, setTurnoViewById] = useState<Record<string, "pedidos" | "resumen">>({});
   const [selectedPedido, setSelectedPedido] = useState<HistorialPedidoDetalle | null>(null);

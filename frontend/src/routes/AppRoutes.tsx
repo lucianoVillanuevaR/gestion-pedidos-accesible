@@ -6,7 +6,6 @@ import { getDefaultRouteForRole } from "../constants/auth";
 import { useAuthContext } from "../contexts/AuthContext";
 import type { UserRole } from "../types";
 
-const ClientesPage = lazy(() => import("../pages/clientes/ClientesPage"));
 const CocinaPage = lazy(() => import("../pages/cocina/CocinaPage"));
 const AdminPage = lazy(() => import("../pages/admin/AdminPage"));
 const CocinaFacilPage = lazy(() =>
@@ -82,7 +81,6 @@ function AppRoutes() {
             <Route path="/inventario/facil" element={<InventarioPage isAccessible />} />
 
             <Route path="/historial-pedidos" element={<CocinaHistorialPage />} />
-            <Route path="/clientes" element={<ClientesPage />} />
           </Route>
 
           <Route element={<RequireRole allowedRoles={["cocina", "admin"]} />}>

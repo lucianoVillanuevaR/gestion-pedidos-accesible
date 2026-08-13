@@ -1,30 +1,6 @@
 import type { CierreTurno } from "../types";
 import { apiRequest } from "./api";
 
-const CIERRES_TURNO_STORAGE_KEY = "riquisimo:cierres-turno";
-
-function readStoredCierresTurno(): CierreTurno[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(CIERRES_TURNO_STORAGE_KEY);
-    if (!rawValue) {
-      return [];
-    }
-
-    const parsedValue = JSON.parse(rawValue);
-    return Array.isArray(parsedValue) ? (parsedValue as CierreTurno[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function obtenerCierresTurno() {
-  return readStoredCierresTurno();
-}
-
 export async function guardarCierreTurno() {
   if (typeof window === "undefined") {
     throw new Error("No es posible cerrar un turno fuera del navegador");
@@ -48,8 +24,6 @@ export async function guardarCierreTurno() {
     throw new Error("El servidor no devolvió el resumen del turno cerrado");
   }
 
-  const cierres = readStoredCierresTurno();
-  window.localStorage.setItem(CIERRES_TURNO_STORAGE_KEY, JSON.stringify([closeBody.turno.resumen, ...cierres]));
   return closeBody.turno.resumen;
 }
 
@@ -75,7 +49,5 @@ export async function cargarCierresTurno() {
   }>("/turnos/cierres", {
     fallbackMessage: "No fue posible cargar los cierres"
   });
-  const cierres = (body.turnos ?? []).flatMap((turno) => (turno.resumen ? [turno.resumen] : []));
-  window.localStorage.setItem(CIERRES_TURNO_STORAGE_KEY, JSON.stringify(cierres));
-  return cierres;
+  return (body.turnos ?? []).flatMap((turno) => (turno.resumen ? [turno.resumen] : []));
 }
