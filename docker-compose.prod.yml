@@ -8,10 +8,6 @@ services:
     environment:
       NODE_ENV: production
 
-  seed:
-    environment:
-      NODE_ENV: production
-
   postgres:
     ports: !reset []
 

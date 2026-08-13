@@ -9,7 +9,8 @@ git clone https://github.com/lucianoVillanuevaR/gestion-pedidos-accesible.git
 cd gestion-pedidos-accesible
 cp .env.example .env
 nano .env
-docker compose up -d --build
+docker compose --profile tools run --rm --build seed
+docker compose up -d --build --wait
 docker compose ps
 curl http://localhost/api/health
 ```
@@ -25,9 +26,10 @@ Para subirlo a un servidor con el `docker-compose.yml` incluido:
 2. Copia `.env.example` a `.env` en el servidor y cambia todos los secretos de demo.
 3. Configura `CLIENT_URL` con la URL pública del frontend, por ejemplo `https://tudominio.cl`.
 4. Si el frontend y backend van juntos detrás del Nginx incluido, deja `VITE_API_URL=/api`.
-5. Configura `MINIO_PUBLIC_URL` y `VITE_MINIO_PUBLIC_URL` con la URL pública desde donde el navegador cargará imágenes. Si no vas a exponer MinIO directamente, ponlo detrás de HTTPS con proxy.
-6. Levanta con `docker compose up -d --build`. El servicio `seed` aplica migraciones y sincroniza los datos base automáticamente antes de iniciar el backend.
-7. Verifica `docker compose ps`, `curl https://tudominio.cl/health` y `curl https://tudominio.cl/api/health`.
+5. Conserva `MINIO_PUBLIC_URL=/media` y `VITE_MINIO_PUBLIC_URL=/media`; Nginx entrega las imágenes bajo el mismo origen sin publicar MinIO.
+6. Levanta con `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build --wait`. El servicio `migrate` aplica únicamente migraciones pendientes antes de iniciar el backend; producción nunca ejecuta datos demo automáticamente.
+7. Crea el primer administrador mediante el comando explícito documentado abajo.
+8. Verifica `docker compose ps`, `curl https://tudominio.cl/health` y `curl https://tudominio.cl/api/health`.
 
 Para producción puedes usar el override incluido, que deja públicos solo los puertos del frontend y mantiene backend, Postgres y MinIO dentro de la red Docker:
 
@@ -68,25 +70,41 @@ Respuesta esperada:
 }
 ```
 
-## Seed
+## Migraciones, catálogo inicial y primer administrador
 
-El seed se ejecuta automáticamente dentro del contenedor al correr:
+Las migraciones se ejecutan automáticamente al levantar Docker. El catálogo y los usuarios demo son una importación explícita, exclusiva de desarrollo:
 
 ```bash
-docker compose up -d --build
+docker compose --profile tools run --rm --build seed
 ```
 
-El proceso aplica migraciones pendientes, crea/verifica el bucket de MinIO y sincroniza datos base sin duplicar usuarios, categorías, productos, variantes ni componentes. También crea usuarios demo si no existen.
+El seed es idempotente y no destructivo: solo crea registros ausentes. Nunca desactiva productos creados por el administrador, no sobrescribe precios ni categorías y no reemplaza variantes o componentes existentes.
 
 Usuarios demo:
 
 ```text
-cajero / 123456
-cocina / 123456
-admin  / 123456
+cajero / valor de SEED_DEMO_PASSWORD
+cocina / valor de SEED_DEMO_PASSWORD
+admin  / valor de SEED_DEMO_PASSWORD
 ```
 
-La clave se puede cambiar en `.env` con `SEED_DEMO_PASSWORD`.
+Para crear el primer administrador de una instalación real:
+
+```bash
+docker compose exec backend npm run admin:create -- \
+  --username=administrador \
+  --email=admin@institucion.cl \
+  --nombre="Administrador" \
+  --password="una-clave-larga-y-segura"
+```
+
+El comando valida los datos, cifra la contraseña con bcrypt e impide duplicados. No existe un endpoint público de registro.
+
+Si una base antigua tiene un producto con control de stock pero sin inventario, ejecutar explícitamente:
+
+```bash
+docker compose exec backend npm run inventory:repair
+```
 
 ## Servicios
 
@@ -97,7 +115,8 @@ frontend
 backend
 postgres
 minio
-seed
+migrate
+seed (solo perfil tools)
 ```
 
 `postgres`, `backend` y `frontend` tienen healthcheck. El backend espera a que `seed` termine con éxito, para que la app quede lista al abrir `http://localhost`.
@@ -125,13 +144,27 @@ Detener sin borrar datos:
 docker compose down
 ```
 
-Reiniciar completamente:
+No uses en producción salvo que realmente quieras borrar todos los datos:
 
 ```bash
 docker compose down -v
 ```
 
 Atención: `docker compose down -v` borra los volúmenes `postgres_data` y `minio_data`. Eso elimina la base de datos y los archivos guardados en MinIO.
+
+## Backups básicos
+
+PostgreSQL:
+
+```bash
+docker compose exec -T postgres pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > respaldo.sql
+```
+
+MinIO: respalda el volumen `minio_data` o sincroniza el bucket `productos` con `mc mirror`. Para recuperar, restaura primero PostgreSQL y después el contenido del bucket, manteniendo los mismos nombres de objeto.
+
+## HTTPS
+
+El contenedor Nginx atiende HTTP. HTTPS y HSTS deben configurarse en el proxy o balanceador institucional que termina TLS. Publica solamente 80/443; backend, PostgreSQL y la consola/API de MinIO deben permanecer privados.
 
 ## Validación rápida
 

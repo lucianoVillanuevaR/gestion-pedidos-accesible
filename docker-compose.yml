@@ -5,14 +5,14 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-/api}
-        VITE_MINIO_PUBLIC_URL: ${VITE_MINIO_PUBLIC_URL:-${MINIO_PUBLIC_URL}}
+        VITE_MINIO_PUBLIC_URL: ${VITE_MINIO_PUBLIC_URL:-/media}
         VITE_MINIO_BUCKET_PRODUCTOS: ${VITE_MINIO_BUCKET_PRODUCTOS:-${MINIO_BUCKET_PRODUCTOS}}
     restart: always
     ports:
       - "80:80"
     environment:
       VITE_API_URL: /api
-      VITE_MINIO_PUBLIC_URL: ${VITE_MINIO_PUBLIC_URL:-${MINIO_PUBLIC_URL}}
+      VITE_MINIO_PUBLIC_URL: ${VITE_MINIO_PUBLIC_URL:-/media}
       VITE_MINIO_BUCKET_PRODUCTOS: ${VITE_MINIO_BUCKET_PRODUCTOS:-${MINIO_BUCKET_PRODUCTOS}}
     depends_on:
       backend:
@@ -47,20 +47,34 @@ services:
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
       MINIO_PUBLIC_READ: ${MINIO_PUBLIC_READ:-true}
     depends_on:
-      seed:
+      migrate:
         condition: service_completed_successfully
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health/ready >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
 
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    command: npm run prisma:migrate:prod
+
   seed:
+    profiles: ["tools"]
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -69,26 +83,13 @@ services:
       - ./.env
     environment:
       NODE_ENV: development
-      PORT: ${PORT}
-      CLIENT_URL: ${CLIENT_URL}
       DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
-      MINIO_PORT: ${MINIO_PORT}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET_PRODUCTOS: ${MINIO_BUCKET_PRODUCTOS}
-      MINIO_USE_SSL: ${MINIO_USE_SSL}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
-      MINIO_PUBLIC_READ: ${MINIO_PUBLIC_READ:-true}
-      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-123456}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-12345678}
     depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_started
+      migrate:
+        condition: service_completed_successfully
     restart: "no"
-    command: sh -c "npm run prisma:migrate:prod && npm run seed"
+    command: npm run seed
 
   postgres:
     image: postgres:16-alpine
@@ -108,7 +109,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: riquisimo-minio
     command: server /data --console-address ":9001"
     environment:

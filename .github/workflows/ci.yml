@@ -47,16 +47,20 @@ jobs:
           MINIO_SECRET_KEY=minioadmin123
           MINIO_BUCKET_PRODUCTOS=productos
           MINIO_USE_SSL=false
-          MINIO_PUBLIC_URL=http://localhost:9000
+          MINIO_PUBLIC_URL=/media
           MINIO_PUBLIC_READ=true
 
           VITE_API_URL=/api
-          VITE_MINIO_PUBLIC_URL=http://localhost:9000
+          VITE_MINIO_PUBLIC_URL=/media
           VITE_MINIO_BUCKET_PRODUCTOS=productos
+          SEED_DEMO_PASSWORD=clave-demo-ci
           EOF
 
       - name: Validar Docker Compose
         run: docker compose --env-file .env config
+
+      - name: Validar Docker Compose de producción
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env config
 
       - name: Instalar dependencias backend
         working-directory: backend
@@ -78,6 +82,10 @@ jobs:
         working-directory: backend
         run: npm run build
 
+      - name: Auditar dependencias de producción backend
+        working-directory: backend
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Instalar dependencias frontend
         working-directory: frontend
         run: npm ci
@@ -94,12 +102,18 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Auditar dependencias de producción frontend
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Revisar formato con Prettier
         working-directory: backend
         run: npm exec prettier -- ../ --check
 
       - name: Levantar aplicación para pruebas accesibles
-        run: docker compose up -d --build --wait
+        run: |
+          docker compose --profile tools run --rm --build seed
+          docker compose up -d --build --wait
 
       - name: Instalar Chromium para Playwright
         working-directory: frontend
@@ -112,6 +126,16 @@ jobs:
       - name: Mostrar logs si falla la auditoría
         if: failure()
         run: docker compose logs --no-color --tail=200
+
+      - name: Guardar evidencia de Playwright si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-evidence
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
 
       - name: Detener aplicación de CI
         if: always()
