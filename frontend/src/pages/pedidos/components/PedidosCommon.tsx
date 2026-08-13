@@ -33,7 +33,11 @@ function ModalShell({ children, onClose, title }: { children: ReactNode; onClose
   const titleId = useId();
   const dialogRef = useRef<HTMLElement | null>(null);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
-  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: titleRef, onClose });
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    initialFocusRef: titleRef,
+    onClose
+  });
 
   return (
     <div className="fixed inset-x-0 -top-16 bottom-0 z-[1000] flex items-center justify-center bg-black/30 px-4 py-6 pt-[5.5rem] backdrop-blur-[1px]">

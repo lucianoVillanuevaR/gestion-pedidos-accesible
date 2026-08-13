@@ -13,7 +13,11 @@ import type { HistorialPedidoDetalle } from "../cocinaHistoryUtils";
 export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void; pedido: HistorialPedidoDetalle }) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: closeButtonRef, onClose });
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-[1px]">

@@ -42,7 +42,7 @@ export function CategoriaBlock({
             <Utensils className="h-4 w-4" aria-hidden="true" />
           </span>
           <span className="min-w-0">
-            <span className="block text-[11px] font-bold text-slate-500">Nombre de categoría</span>
+            <span className="block text-[11px] font-bold text-slate-600">Nombre de categoría</span>
             <span className="block truncate text-sm font-black uppercase text-slate-950">{grupo.label}</span>
           </span>
         </button>

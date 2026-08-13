@@ -133,7 +133,10 @@ function AdminDashboardPage() {
   const stockCritico = inventario.filter((item) => item.estado === "bajo_stock" || item.estado === "sin_stock");
   const pedidosPendientes = pedidos.filter((pedido) => pedido.estado === "pendiente").length;
   const formatDateTime = (value: string | Date) =>
-    new Intl.DateTimeFormat("es-CL", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+    new Intl.DateTimeFormat("es-CL", {
+      dateStyle: "short",
+      timeStyle: "short"
+    }).format(new Date(value));
 
   return (
     <AdminShell title="Dashboard Admin" description="Resumen general del sistema y estado operativo del local.">
@@ -371,7 +374,7 @@ function AdminUsersPage() {
             3 roles
           </span>
         </header>
-        <div className="overflow-x-auto px-4 py-3">
+        <div className="overflow-x-auto px-4 py-3" tabIndex={0} aria-label="Tabla de permisos desplazable">
           <table className="w-full min-w-[860px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs font-black uppercase text-slate-500">

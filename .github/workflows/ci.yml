@@ -121,6 +121,8 @@ jobs:
 
       - name: Ejecutar auditoría accesible en navegador
         working-directory: frontend
+        env:
+          E2E_DEMO_PASSWORD: clave-demo-ci
         run: npm run test:e2e:a11y
 
       - name: Mostrar logs si falla la auditoría

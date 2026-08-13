@@ -352,7 +352,7 @@ function CierreHeader({
               <button
                 type="button"
                 onClick={onAbrirTurno}
-                className={`inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-700 bg-emerald-600 px-5 font-black text-white transition hover:bg-emerald-700 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-800 bg-emerald-700 px-5 font-black text-white transition hover:bg-emerald-800 ${buttonSizeClass} ${FOCUS_VISIBLE_CLASS}`}
               >
                 <Store className="h-5 w-5" aria-hidden="true" />
                 Abrir turno

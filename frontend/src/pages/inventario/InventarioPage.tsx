@@ -338,7 +338,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
                         <Warehouse className="h-4 w-4" aria-hidden="true" />
                       </span>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black leading-tight text-slate-500">Estado de inventario</p>
+                        <p className="text-[11px] font-black leading-tight text-slate-600">Estado de inventario</p>
                         <h2 className="truncate !text-base !leading-tight font-black uppercase text-slate-950">
                           {section.label}
                         </h2>

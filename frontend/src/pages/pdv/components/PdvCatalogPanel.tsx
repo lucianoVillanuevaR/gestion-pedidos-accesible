@@ -105,7 +105,11 @@ function PdvCatalogPanel() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
+          tabIndex={0}
+          aria-label="Catálogo de productos desplazable"
+        >
           {!isTurnoOpen && (
             <PdvFeedbackMessage
               className="mb-4"

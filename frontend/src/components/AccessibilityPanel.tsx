@@ -37,7 +37,12 @@ function AccessibilityPanel({
   const { cancel, speak } = useVoice({ enabled: true });
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  useAccessibleDialog({ containerRef: dialogRef, enabled: isOpen, initialFocusRef: closeButtonRef, onClose });
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    enabled: isOpen,
+    initialFocusRef: closeButtonRef,
+    onClose
+  });
 
   if (!isOpen) {
     return null;

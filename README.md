@@ -119,7 +119,7 @@ migrate
 seed (solo perfil tools)
 ```
 
-`postgres`, `backend` y `frontend` tienen healthcheck. El backend espera a que `seed` termine con éxito, para que la app quede lista al abrir `http://localhost`.
+`postgres`, `backend` y `frontend` tienen healthcheck. El flujo normal es `postgres → migrate → backend → frontend`. El `seed` pertenece al perfil opcional `tools` y nunca es requisito para iniciar producción.
 
 ## Comandos útiles
 

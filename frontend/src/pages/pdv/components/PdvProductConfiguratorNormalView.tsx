@@ -28,7 +28,11 @@ export default function PdvProductConfiguratorNormalView({
 }) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: closeButtonRef, onClose });
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose
+  });
   const {
     aderezos,
     cantidad,

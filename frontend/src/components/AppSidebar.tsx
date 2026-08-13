@@ -34,7 +34,12 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
   const sidebarRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  useAccessibleDialog({ containerRef: sidebarRef, enabled: isOpen, initialFocusRef: closeButtonRef, onClose });
+  useAccessibleDialog({
+    containerRef: sidebarRef,
+    enabled: isOpen,
+    initialFocusRef: closeButtonRef,
+    onClose
+  });
 
   if (!user) {
     return null;

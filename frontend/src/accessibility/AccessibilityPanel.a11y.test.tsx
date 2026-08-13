@@ -5,7 +5,9 @@ import axe from "axe-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AccessibilityPanel from "../components/AccessibilityPanel";
 
-vi.mock("../hooks/useVoice", () => ({ default: () => ({ cancel: vi.fn(), speak: vi.fn() }) }));
+vi.mock("../hooks/useVoice", () => ({
+  default: () => ({ cancel: vi.fn(), speak: vi.fn() })
+}));
 
 describe("auditoría automática del panel de accesibilidad", () => {
   afterEach(cleanup);
@@ -29,7 +31,10 @@ describe("auditoría automática del panel de accesibilidad", () => {
     );
 
     const results = await axe.run(container, {
-      runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+      runOnly: {
+        type: "tag",
+        values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]
+      },
       rules: { "color-contrast": { enabled: false } }
     });
     expect(results.violations).toEqual([]);

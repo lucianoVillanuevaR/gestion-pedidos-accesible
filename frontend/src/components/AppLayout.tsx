@@ -182,11 +182,11 @@ function AppLayout() {
           </header>
         )}
 
-        <main id="main-content" className={mainContentClass}>
+        <div id="main-content" tabIndex={-1} className={mainContentClass}>
           <div className={`${pageShellClass} ${isPdvNormalPage ? "h-full" : ""}`}>
             <Outlet />
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );

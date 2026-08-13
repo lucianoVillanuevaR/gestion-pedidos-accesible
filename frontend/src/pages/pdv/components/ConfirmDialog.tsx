@@ -14,7 +14,11 @@ type ConfirmDialogProps = {
 function ConfirmDialog({ children, description, onCancel, onConfirm, primaryLabel, title }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: cancelButtonRef, onClose: onCancel });
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    initialFocusRef: cancelButtonRef,
+    onClose: onCancel
+  });
 
   return (
     <div

@@ -104,7 +104,7 @@ function PdvNormalView() {
               className={`inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border px-3 text-xs font-black transition ${
                 isTurnoOpen
                   ? "border-red-800 bg-red-700 text-white hover:bg-red-800"
-                  : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800"
               } ${isHighContrast ? (isTurnoOpen ? "contrast-button-danger" : "contrast-button-primary") : ""}`}
               aria-pressed={isTurnoOpen}
               aria-label={isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
@@ -156,7 +156,7 @@ function PdvNormalView() {
           </div>
         </div>
 
-        <div className="border-b border-slate-200 bg-slate-400 px-3 py-3 text-sm font-bold text-white no-print print:hidden">
+        <div className="border-b border-slate-200 bg-slate-700 px-3 py-3 text-sm font-bold text-white no-print print:hidden">
           Productos del pedido
         </div>
 

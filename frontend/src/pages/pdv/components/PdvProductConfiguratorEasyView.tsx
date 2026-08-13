@@ -53,7 +53,11 @@ export default function PdvProductConfiguratorEasyView({
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  useAccessibleDialog({ containerRef: dialogRef, initialFocusRef: closeButtonRef, onClose });
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose
+  });
   const lastAnnouncedStepRef = useRef("");
   const stageTitle =
     easyStage === "opcion"
