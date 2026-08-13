@@ -40,9 +40,9 @@ const EASY_SECONDARY_BUTTON_CLASS = "border-slate-300 bg-white text-slate-950 ho
 const EASY_SOFT_PANEL_CLASS = "border-slate-200 bg-slate-50";
 
 function PedidosFacilPage() {
-  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isSavingCierre, setIsSavingCierre] = useState(false);

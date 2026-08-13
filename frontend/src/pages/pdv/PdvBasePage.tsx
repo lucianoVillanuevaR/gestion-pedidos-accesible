@@ -53,7 +53,7 @@ function buildDetalleProductoText(item: PdvViewContextValue["pedidoDetalles"][nu
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isHighContrast, isVoiceEnabled, isSoundEnabled, isPanelOpen, openAccessibilityPanel } =
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume, isPanelOpen, openAccessibilityPanel } =
     useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
@@ -80,7 +80,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const initialProductHandledRef = useRef(false);
   const lastAnnouncedAccessibleStepKeyRef = useRef("");
   const ticketRef = useRef<HTMLDivElement | null>(null);
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const playSoundCue = useCallback((cue: "error" | "success" | "warning") => soundFeedback[cue](), [soundFeedback]);
   const { feedback, feedbackRef, setFeedback, showFeedback } = usePdvFeedback();
 

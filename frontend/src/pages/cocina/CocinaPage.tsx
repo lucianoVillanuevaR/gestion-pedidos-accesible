@@ -28,9 +28,9 @@ export function CocinaFacilPage() {
 }
 
 function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
-  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const { speak } = useActionVoice(isVoiceEnabled);
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true);
   const fullscreenTargetRef = useRef<HTMLDivElement>(null);
   const [isAutomaticRefresh, setIsAutomaticRefresh] = useState(false);

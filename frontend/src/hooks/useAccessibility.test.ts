@@ -6,6 +6,7 @@ import {
   ACCESSIBILITY_CONTRAST_STORAGE_KEY,
   ACCESSIBILITY_MODE_STORAGE_KEY,
   ACCESSIBILITY_SOUND_STORAGE_KEY,
+  ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY,
   ACCESSIBILITY_TEXT_SIZE_STORAGE_KEY,
   ACCESSIBILITY_VOICE_STORAGE_KEY
 } from "../constants/accessibility";
@@ -69,6 +70,7 @@ describe("useAccessibility", () => {
     window.localStorage.setItem(ACCESSIBILITY_CONTRAST_STORAGE_KEY, "true");
     window.localStorage.setItem(ACCESSIBILITY_VOICE_STORAGE_KEY, "true");
     window.localStorage.setItem(ACCESSIBILITY_SOUND_STORAGE_KEY, "true");
+    window.localStorage.setItem(ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY, "normal");
 
     const { result } = renderHook(() => useAccessibility());
 
@@ -77,7 +79,8 @@ describe("useAccessibility", () => {
       textSize: "large",
       isHighContrast: true,
       isVoiceEnabled: true,
-      isSoundEnabled: true
+      isSoundEnabled: true,
+      soundVolume: "normal"
     });
     expect(document.documentElement.style.fontSize).toBe("24px");
   });
@@ -122,6 +125,8 @@ describe("useAccessibility", () => {
 
     expect(result.current.isSoundEnabled).toBe(false);
     expect(result.current.isVoiceEnabled).toBe(false);
+    expect(result.current.soundVolume).toBe("loud");
     expect(window.localStorage.getItem(ACCESSIBILITY_SOUND_STORAGE_KEY)).toBe("false");
+    expect(window.localStorage.getItem(ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY)).toBe("loud");
   });
 });

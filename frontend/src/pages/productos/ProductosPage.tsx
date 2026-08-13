@@ -28,10 +28,10 @@ import {
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
 
 function ProductosPage() {
-  const { isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
   const [remoteCategorias, setRemoteCategorias] = useState<CategoriaCatalogoOption[]>([]);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);

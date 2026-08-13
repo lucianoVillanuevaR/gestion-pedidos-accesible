@@ -32,6 +32,7 @@ class AudioContextMock {
 describe("useSoundFeedback", () => {
   beforeEach(() => {
     start.mockClear();
+    gain.gain.exponentialRampToValueAtTime.mockClear();
     Object.defineProperty(window, "AudioContext", { configurable: true, value: AudioContextMock });
   });
 
@@ -42,8 +43,9 @@ describe("useSoundFeedback", () => {
   });
 
   it("reproduce una señal cuando están activados", async () => {
-    const { result } = renderHook(() => useSoundFeedback(true));
+    const { result } = renderHook(() => useSoundFeedback(true, "normal"));
     act(() => result.current.error());
     await vi.waitFor(() => expect(start).toHaveBeenCalledTimes(2));
+    expect(gain.gain.exponentialRampToValueAtTime.mock.calls[0][0]).toBeCloseTo(0.0875);
   });
 });

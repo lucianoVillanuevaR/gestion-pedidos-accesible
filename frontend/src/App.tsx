@@ -12,6 +12,7 @@ function AppShell() {
     isHighContrast,
     isVoiceEnabled,
     isSoundEnabled,
+    soundVolume,
     isVoiceSupported,
     closeAccessibilityPanel,
     toggleAccessibility,
@@ -19,6 +20,7 @@ function AppShell() {
     toggleHighContrast,
     toggleVoiceEnabled,
     toggleSoundEnabled,
+    setSoundVolume,
     resetAccessibilitySettings
   } = useAccessibilityContext();
 
@@ -35,12 +37,14 @@ function AppShell() {
         isHighContrast={isHighContrast}
         isVoiceEnabled={isVoiceEnabled}
         isSoundEnabled={isSoundEnabled}
+        soundVolume={soundVolume}
         isVoiceSupported={isVoiceSupported}
         onToggleAccessible={toggleAccessibility}
         onSetTextSize={setTextSize}
         onToggleContrast={toggleHighContrast}
         onToggleVoice={toggleVoiceEnabled}
         onToggleSound={toggleSoundEnabled}
+        onSetSoundVolume={setSoundVolume}
         onReset={resetAccessibilitySettings}
       />
     </>

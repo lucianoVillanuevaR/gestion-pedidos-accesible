@@ -46,11 +46,11 @@ import {
 import CierreTurnoPrintable from "./components/CierreTurnoPrintable";
 
 function CierreTurnoPage() {
-  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { speakAction } = useActionVoice(isVoiceEnabled);
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

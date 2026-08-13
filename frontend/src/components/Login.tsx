@@ -34,11 +34,18 @@ function Login() {
   const easyModeToastTimerRef = useRef<number | null>(null);
   const previousAccessibleRef = useRef<boolean | null>(null);
   const { login } = useAuthContext();
-  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, isSoundEnabled, openAccessibilityPanel } =
-    useAccessibilityContext();
+  const {
+    isAccessible,
+    isHighContrast,
+    isPanelOpen,
+    isVoiceEnabled,
+    isSoundEnabled,
+    soundVolume,
+    openAccessibilityPanel
+  } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakHelp } = useVoice({ enabled: true });
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
 
   useEffect(() => {
     return () => {

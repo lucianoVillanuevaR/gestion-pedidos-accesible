@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { AccessibilityTextSize } from "../constants/accessibility";
+import type { AccessibilityTextSize, SoundVolumeLevel } from "../constants/accessibility";
 import useAccessibleDialog from "../hooks/useAccessibleDialog";
 import useVoice from "../hooks/useVoice";
 import { playSoundFeedback } from "../hooks/useSoundFeedback";
@@ -12,12 +12,14 @@ type AccessibilityPanelProps = {
   isHighContrast: boolean;
   isVoiceEnabled: boolean;
   isSoundEnabled: boolean;
+  soundVolume: SoundVolumeLevel;
   isVoiceSupported?: boolean;
   onToggleAccessible: () => void;
   onSetTextSize: (value: AccessibilityTextSize) => void;
   onToggleContrast: () => void;
   onToggleVoice: () => void;
   onToggleSound: () => void;
+  onSetSoundVolume: (value: SoundVolumeLevel) => void;
   onReset: () => void;
 };
 
@@ -29,12 +31,14 @@ function AccessibilityPanel({
   isHighContrast,
   isVoiceEnabled,
   isSoundEnabled,
+  soundVolume,
   isVoiceSupported = true,
   onToggleAccessible,
   onSetTextSize,
   onToggleContrast,
   onToggleVoice,
   onToggleSound,
+  onSetSoundVolume,
   onReset
 }: AccessibilityPanelProps) {
   const { cancel, speak } = useVoice({ enabled: true });
@@ -385,7 +389,7 @@ function AccessibilityPanel({
                     );
                     onToggleSound();
                     if (!isSoundEnabled) {
-                      void playSoundFeedback("success");
+                      void playSoundFeedback("success", soundVolume);
                     }
                   }}
                   aria-label={isSoundEnabled ? "Desactivar sonidos" : "Activar sonidos"}
@@ -395,6 +399,48 @@ function AccessibilityPanel({
                   <span className={isAccessible ? "text-2xl" : ""}>{isSoundEnabled ? "ACTIVADO" : "ACTIVAR"}</span>
                 </button>
               </div>
+
+              <fieldset className="space-y-3" disabled={!isSoundEnabled}>
+                <legend className={`font-black text-slate-900 ${isAccessible ? "text-xl" : "text-base"}`}>
+                  Volumen de los sonidos
+                </legend>
+                <div className="grid grid-cols-3 gap-2" role="group" aria-label="Nivel de volumen de los sonidos">
+                  {(
+                    [
+                      ["soft", "Suave"],
+                      ["normal", "Normal"],
+                      ["loud", "Fuerte"]
+                    ] as const
+                  ).map(([value, label]) => {
+                    const selected = soundVolume === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => {
+                          onSetSoundVolume(value);
+                          void playSoundFeedback("notification", value);
+                        }}
+                        className={`${getButtonClass(selected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="font-semibold text-slate-700" aria-live="polite">
+                  Nivel seleccionado:{" "}
+                  {soundVolume === "soft" ? "Suave" : soundVolume === "normal" ? "Normal" : "Fuerte"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void playSoundFeedback("notification", soundVolume)}
+                  className={`${getButtonClass(false)} w-full disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  Probar sonido
+                </button>
+              </fieldset>
             </section>
 
             {isAccessible && (

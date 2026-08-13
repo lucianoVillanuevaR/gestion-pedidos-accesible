@@ -17,11 +17,13 @@ const defaultProps = {
   isHighContrast: false,
   isVoiceEnabled: false,
   isSoundEnabled: false,
+  soundVolume: "loud" as const,
   onToggleAccessible: vi.fn(),
   onSetTextSize: vi.fn(),
   onToggleContrast: vi.fn(),
   onToggleVoice: vi.fn(),
   onToggleSound: vi.fn(),
+  onSetSoundVolume: vi.fn(),
   onReset: vi.fn()
 };
 
@@ -82,5 +84,24 @@ describe("AccessibilityPanel", () => {
     expect(screen.getByRole("button", { name: "Cerrar panel de opciones" })).toBeTruthy();
     expect(screen.getByText("MODO FÁCIL")).toBeTruthy();
     expect(screen.getAllByText("ACTIVADO")).toHaveLength(4);
+  });
+
+  it("permite elegir volumen y deshabilita el control cuando los sonidos están apagados", async () => {
+    const user = userEvent.setup();
+    const onSetSoundVolume = vi.fn();
+    const { rerender } = render(
+      <AccessibilityPanel {...defaultProps} isSoundEnabled onSetSoundVolume={onSetSoundVolume} />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Normal" }));
+    expect(onSetSoundVolume).toHaveBeenCalledWith("normal");
+
+    rerender(<AccessibilityPanel {...defaultProps} />);
+    expect((screen.getByRole("button", { name: "Fuerte" }).closest("fieldset") as HTMLFieldSetElement).disabled).toBe(
+      true
+    );
+    expect(
+      (screen.getByRole("button", { name: "Probar sonido" }).closest("fieldset") as HTMLFieldSetElement).disabled
+    ).toBe(true);
   });
 });

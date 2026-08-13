@@ -39,9 +39,9 @@ import {
 } from "./PedidosShared";
 
 function PedidosNormalPage() {
-  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
@@ -152,7 +152,7 @@ function NormalPedidosList({
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
-      <div className="hidden border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase text-slate-400 md:grid md:grid-cols-[170px_170px_130px_minmax(0,1fr)_300px] xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_340px]">
+      <div className="hidden border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase text-slate-600 md:grid md:grid-cols-[170px_170px_130px_minmax(0,1fr)_300px] xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_340px]">
         <span>Fecha</span>
         <span>Estado</span>
         <span>Total</span>
@@ -198,13 +198,13 @@ function NormalPedidoRow({
       }`}
     >
       <div>
-        <p className="flex items-center gap-1.5 font-black text-yellow-600">
+        <p className="flex items-center gap-1.5 font-black text-yellow-700">
           #{numeroPedido}
           <Store className="h-4 w-4" aria-hidden="true" />
           En el local
         </p>
         <p
-          className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-600" : "text-slate-600"}`}
+          className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-700" : "text-slate-600"}`}
         >
           <Clock3 className="h-4 w-4" aria-hidden="true" />
           {formatElapsedTime(pedido.createdAt)}
@@ -398,7 +398,7 @@ function PedidosActivosPanel({
                       option.value === "pendiente"
                         ? "bg-yellow-500 text-white"
                         : option.value === "en_preparacion" || option.value === "listo"
-                          ? "bg-emerald-500 text-white"
+                          ? "bg-emerald-700 text-white"
                           : "bg-slate-100 text-slate-700"
                     }`}
                   >
@@ -459,7 +459,7 @@ function BoardActionButton({
   const toneClass = {
     danger: "border-red-500 bg-white text-red-600 hover:bg-red-50",
     info: "border-[#FECE00] bg-white text-yellow-700 hover:bg-yellow-50",
-    success: "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
+    success: "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
   }[tone];
 
   return (

@@ -3,10 +3,14 @@ import {
   ACCESSIBILITY_CONTRAST_STORAGE_KEY,
   ACCESSIBILITY_MODE_STORAGE_KEY,
   ACCESSIBILITY_SOUND_STORAGE_KEY,
+  ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY,
   ACCESSIBILITY_TEXT_SIZE_STORAGE_KEY,
   ACCESSIBILITY_TEXT_SIZES,
   ACCESSIBILITY_VOICE_STORAGE_KEY,
-  type AccessibilityTextSize
+  DEFAULT_SOUND_VOLUME,
+  SOUND_VOLUME_LEVELS,
+  type AccessibilityTextSize,
+  type SoundVolumeLevel
 } from "../constants/accessibility";
 
 export type AccessibilityState = {
@@ -16,6 +20,7 @@ export type AccessibilityState = {
   isHighContrast: boolean;
   isVoiceEnabled: boolean;
   isSoundEnabled: boolean;
+  soundVolume: SoundVolumeLevel;
   isVoiceSupported: boolean;
   prefersReducedMotion: boolean;
   setTextSize: (value: AccessibilityTextSize) => void;
@@ -26,6 +31,7 @@ export type AccessibilityState = {
   toggleHighContrast: () => void;
   toggleVoiceEnabled: () => void;
   toggleSoundEnabled: () => void;
+  setSoundVolume: (value: SoundVolumeLevel) => void;
   resetAccessibilitySettings: () => void;
 };
 
@@ -47,6 +53,14 @@ function readTextSizeStorage(): AccessibilityTextSize {
   return ACCESSIBILITY_TEXT_SIZES.includes(savedValue as AccessibilityTextSize)
     ? (savedValue as AccessibilityTextSize)
     : "normal";
+}
+
+function readSoundVolumeStorage(): SoundVolumeLevel {
+  if (typeof window === "undefined") return DEFAULT_SOUND_VOLUME;
+  const savedValue = window.localStorage.getItem(ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY);
+  return SOUND_VOLUME_LEVELS.includes(savedValue as SoundVolumeLevel)
+    ? (savedValue as SoundVolumeLevel)
+    : DEFAULT_SOUND_VOLUME;
 }
 
 function getFontSizeForState(textSize: AccessibilityTextSize, isAccessible: boolean) {
@@ -94,6 +108,7 @@ function useAccessibility(): AccessibilityState {
 
     return readBooleanStorage(ACCESSIBILITY_SOUND_STORAGE_KEY);
   });
+  const [soundVolume, setSoundVolumeState] = useState(readSoundVolumeStorage);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -123,6 +138,7 @@ function useAccessibility(): AccessibilityState {
     window.localStorage.setItem(ACCESSIBILITY_CONTRAST_STORAGE_KEY, String(isHighContrast));
     window.localStorage.setItem(ACCESSIBILITY_VOICE_STORAGE_KEY, String(isVoiceEnabled));
     window.localStorage.setItem(ACCESSIBILITY_SOUND_STORAGE_KEY, String(isSoundEnabled));
+    window.localStorage.setItem(ACCESSIBILITY_SOUND_VOLUME_STORAGE_KEY, soundVolume);
 
     const doc = window.document.documentElement;
     const body = window.document.body;
@@ -131,6 +147,7 @@ function useAccessibility(): AccessibilityState {
     doc.dataset.contrast = String(isHighContrast);
     doc.dataset.voice = String(isVoiceEnabled);
     doc.dataset.sound = String(isSoundEnabled);
+    doc.dataset.soundVolume = soundVolume;
     doc.dataset.textSize = textSize;
     doc.dataset.reducedMotion = String(prefersReducedMotion);
 
@@ -146,7 +163,7 @@ function useAccessibility(): AccessibilityState {
     } else {
       doc.classList.remove("reduce-motion");
     }
-  }, [isAccessible, textSize, isHighContrast, isVoiceEnabled, isSoundEnabled, prefersReducedMotion]);
+  }, [isAccessible, textSize, isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume, prefersReducedMotion]);
 
   const toggleAccessibility = useCallback(() => {
     setIsAccessible((currentValue) => !currentValue);
@@ -174,12 +191,17 @@ function useAccessibility(): AccessibilityState {
     setIsSoundEnabled((currentValue) => !currentValue);
   }, []);
 
+  const setSoundVolume = useCallback((value: SoundVolumeLevel) => {
+    if (SOUND_VOLUME_LEVELS.includes(value)) setSoundVolumeState(value);
+  }, []);
+
   const resetAccessibilitySettings = useCallback(() => {
     setIsAccessible(false);
     setTextSizeState("normal");
     setIsHighContrast(false);
     setIsVoiceEnabled(false);
     setIsSoundEnabled(false);
+    setSoundVolumeState(DEFAULT_SOUND_VOLUME);
   }, []);
 
   const openAccessibilityPanel = useCallback(() => {
@@ -197,6 +219,7 @@ function useAccessibility(): AccessibilityState {
     isHighContrast,
     isVoiceEnabled,
     isSoundEnabled,
+    soundVolume,
     isVoiceSupported,
     prefersReducedMotion,
     setTextSize: updateTextSize,
@@ -207,6 +230,7 @@ function useAccessibility(): AccessibilityState {
     toggleHighContrast,
     toggleVoiceEnabled,
     toggleSoundEnabled,
+    setSoundVolume,
     resetAccessibilitySettings
   };
 }

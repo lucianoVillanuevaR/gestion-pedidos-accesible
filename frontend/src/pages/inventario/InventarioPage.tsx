@@ -54,9 +54,9 @@ function parseStockValue(value: string) {
 }
 
 function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
-  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const { speakAction } = useActionVoice(isVoiceEnabled);
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
   const [draftValues, setDraftValues] = useState<Record<number, { stockActual: string; stockMinimo: string }>>({});
   const [error, setError] = useState<string | null>(null);

@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import type { SoundVolumeLevel } from "../constants/accessibility";
 
 export type SoundFeedbackType = "success" | "error" | "warning" | "notification";
 
@@ -31,6 +32,12 @@ const FEEDBACK_TONES: Record<SoundFeedbackType, ToneStep[]> = {
 
 let sharedAudioContext: AudioContext | null = null;
 
+const VOLUME_MULTIPLIERS: Record<SoundVolumeLevel, number> = {
+  soft: 1.5,
+  normal: 2.5,
+  loud: 3.75
+};
+
 function getAudioContext() {
   if (typeof window === "undefined") return null;
   const AudioContextClass =
@@ -44,7 +51,7 @@ function getAudioContext() {
   return sharedAudioContext;
 }
 
-export async function playSoundFeedback(type: SoundFeedbackType) {
+export async function playSoundFeedback(type: SoundFeedbackType, volumeLevel: SoundVolumeLevel = "loud") {
   try {
     const context = getAudioContext();
     if (!context) return;
@@ -60,7 +67,9 @@ export async function playSoundFeedback(type: SoundFeedbackType) {
       oscillator.type = step.type ?? "sine";
       oscillator.frequency.setValueAtTime(step.frequency, startAt);
       gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.exponentialRampToValueAtTime(step.volume, startAt + 0.01);
+      const notificationBoost = type === "notification" ? 1.15 : 1;
+      const volume = Math.min(step.volume * VOLUME_MULTIPLIERS[volumeLevel] * notificationBoost, 0.18);
+      gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
       oscillator.connect(gain);
       gain.connect(context.destination);
@@ -72,12 +81,12 @@ export async function playSoundFeedback(type: SoundFeedbackType) {
   }
 }
 
-export function useSoundFeedback(isSoundEnabled: boolean) {
+export function useSoundFeedback(isSoundEnabled: boolean, volumeLevel: SoundVolumeLevel = "loud") {
   const play = useCallback(
     (type: SoundFeedbackType) => {
-      if (isSoundEnabled) void playSoundFeedback(type);
+      if (isSoundEnabled) void playSoundFeedback(type, volumeLevel);
     },
-    [isSoundEnabled]
+    [isSoundEnabled, volumeLevel]
   );
 
   return {

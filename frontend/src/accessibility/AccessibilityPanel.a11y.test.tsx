@@ -22,11 +22,13 @@ describe("auditoría automática del panel de accesibilidad", () => {
         isHighContrast
         isVoiceEnabled={false}
         isSoundEnabled
+        soundVolume="loud"
         onToggleAccessible={vi.fn()}
         onSetTextSize={vi.fn()}
         onToggleContrast={vi.fn()}
         onToggleVoice={vi.fn()}
         onToggleSound={vi.fn()}
+        onSetSoundVolume={vi.fn()}
         onReset={vi.fn()}
       />
     );

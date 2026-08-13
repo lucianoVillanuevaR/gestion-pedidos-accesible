@@ -240,8 +240,8 @@ function DashboardLine({ label, value }: { label: string; value: number | string
 }
 
 function AdminUsersPage() {
-  const { isSoundEnabled } = useAccessibilityContext();
-  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const { isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const emptyUser: CreateUserPayload = {
     email: "",
     label: "",
