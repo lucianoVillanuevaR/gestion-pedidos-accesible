@@ -3,6 +3,7 @@ import ErrorAlert from "../../components/ErrorAlert";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import useVoice from "../../hooks/useVoice";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import {
   createProducto,
   deleteProductImage,
@@ -27,9 +28,10 @@ import {
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
 
 function ProductosPage() {
-  const { isVoiceEnabled } = useAccessibilityContext();
+  const { isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
   const [remoteCategorias, setRemoteCategorias] = useState<CategoriaCatalogoOption[]>([]);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
@@ -128,6 +130,7 @@ function ProductosPage() {
       setError(null);
       const producto = await createProducto(payload);
       let productoFinal = { ...producto, categoria: payload.categoria };
+      let imageUploadFailed = false;
 
       if (imageFile) {
         try {
@@ -137,8 +140,10 @@ function ProductosPage() {
           };
           speakAction("Imagen subida correctamente.", `producto-image-uploaded:${producto.id}`, { cooldownMs: 2200 });
         } catch (imageError) {
+          imageUploadFailed = true;
           const message = imageError instanceof Error ? imageError.message : "No se pudo subir la imagen.";
           setError(`Producto creado, pero no se pudo subir la imagen. ${message}`);
+          soundFeedback.error();
           speak(`Producto creado, pero no se pudo subir la imagen. ${message}`, {
             priority: "high",
             dedupeKey: `producto-create-image-error:${producto.id}`,
@@ -156,6 +161,7 @@ function ProductosPage() {
         return nextCategories;
       });
       setAddProductCategory(null);
+      if (!imageUploadFailed) soundFeedback.success();
       speakAction(`Producto agregado. ${productoFinal.nombre}.`, `producto-created:${productoFinal.id}`, {
         cooldownMs: 2500
       });
@@ -163,6 +169,7 @@ function ProductosPage() {
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No fue posible crear el producto";
       setError(message);
+      soundFeedback.error();
       speak(`No fue posible crear el producto. ${message}`, {
         priority: "high",
         dedupeKey: "producto-create-error",
@@ -189,6 +196,7 @@ function ProductosPage() {
       };
       replaceProductoInList(productoActualizado);
       setEditingProducto(null);
+      soundFeedback.success();
       speakAction(
         voiceMessage?.(productoActualizado) ?? `Producto editado. ${productoActualizado.nombre}.`,
         `producto-updated:${productoActualizado.id}:${productoActualizado.disponible}`,
@@ -197,6 +205,7 @@ function ProductosPage() {
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No fue posible actualizar el producto";
       setError(message);
+      soundFeedback.error();
       speak(`No fue posible actualizar el producto. ${message}`, {
         priority: "high",
         dedupeKey: `producto-update-error:${producto.id}`,
@@ -215,10 +224,12 @@ function ProductosPage() {
     try {
       const productoActualizado = await uploadProductImage(producto.id, file);
       replaceProductoInList(productoActualizado);
+      soundFeedback.success();
       speakAction("Imagen subida correctamente.", `producto-image-uploaded:${producto.id}`, { cooldownMs: 2200 });
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No se pudo subir la imagen.";
       setError(message);
+      soundFeedback.error();
       speak(`No se pudo subir la imagen. ${message}`, {
         priority: "high",
         dedupeKey: `producto-image-upload-error:${producto.id}`,
@@ -238,10 +249,12 @@ function ProductosPage() {
     try {
       const productoActualizado = await deleteProductImage(producto.id);
       replaceProductoInList(productoActualizado);
+      soundFeedback.success();
       speakAction("Imagen eliminada correctamente.", `producto-image-deleted:${producto.id}`, { cooldownMs: 2200 });
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No se pudo eliminar la imagen.";
       setError(message);
+      soundFeedback.error();
       speak(`No se pudo eliminar la imagen. ${message}`, {
         priority: "high",
         dedupeKey: `producto-image-delete-error:${producto.id}`,
@@ -270,10 +283,12 @@ function ProductosPage() {
         currentProductos.filter((currentProducto) => currentProducto.id !== producto.id)
       );
       setEditingProducto((currentProducto) => (currentProducto?.id === producto.id ? null : currentProducto));
+      soundFeedback.success();
       speakAction(`Producto eliminado. ${producto.nombre}.`, `producto-deleted:${producto.id}`, { cooldownMs: 2200 });
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No fue posible eliminar el producto";
       setError(message);
+      soundFeedback.error();
       speak(`No fue posible eliminar el producto. ${message}`, {
         priority: "high",
         dedupeKey: `producto-delete-error:${producto.id}`,

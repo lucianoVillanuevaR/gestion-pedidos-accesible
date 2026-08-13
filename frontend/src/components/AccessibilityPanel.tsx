@@ -2,6 +2,7 @@ import { useRef } from "react";
 import type { AccessibilityTextSize } from "../constants/accessibility";
 import useAccessibleDialog from "../hooks/useAccessibleDialog";
 import useVoice from "../hooks/useVoice";
+import { playSoundFeedback } from "../hooks/useSoundFeedback";
 
 type AccessibilityPanelProps = {
   isOpen: boolean;
@@ -17,6 +18,7 @@ type AccessibilityPanelProps = {
   onToggleContrast: () => void;
   onToggleVoice: () => void;
   onToggleSound: () => void;
+  onReset: () => void;
 };
 
 function AccessibilityPanel({
@@ -32,7 +34,8 @@ function AccessibilityPanel({
   onSetTextSize,
   onToggleContrast,
   onToggleVoice,
-  onToggleSound
+  onToggleSound,
+  onReset
 }: AccessibilityPanelProps) {
   const { cancel, speak } = useVoice({ enabled: true });
   const dialogRef = useRef<HTMLElement>(null);
@@ -381,6 +384,9 @@ function AccessibilityPanel({
                       "accessibility-panel-sound"
                     );
                     onToggleSound();
+                    if (!isSoundEnabled) {
+                      void playSoundFeedback("success");
+                    }
                   }}
                   aria-label={isSoundEnabled ? "Desactivar sonidos" : "Activar sonidos"}
                   aria-pressed={isSoundEnabled}
@@ -407,14 +413,8 @@ function AccessibilityPanel({
               type="button"
               onClick={() => {
                 announcePanelAction("Restablecer ajustes.", "accessibility-panel-reset");
-                onSetTextSize("normal");
-                if (isAccessible) onToggleAccessible();
-                if (isHighContrast) onToggleContrast();
-                if (isVoiceEnabled) {
-                  cancel();
-                  onToggleVoice();
-                }
-                if (isSoundEnabled) onToggleSound();
+                cancel();
+                onReset();
               }}
               className={`
                 w-full min-h-[56px] rounded-xl border font-bold transition

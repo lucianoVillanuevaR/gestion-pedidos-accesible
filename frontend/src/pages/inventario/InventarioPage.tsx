@@ -7,6 +7,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
@@ -53,8 +54,9 @@ function parseStockValue(value: string) {
 }
 
 function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
-  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const { speakAction } = useActionVoice(isVoiceEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
   const [draftValues, setDraftValues] = useState<Record<number, { stockActual: string; stockMinimo: string }>>({});
   const [error, setError] = useState<string | null>(null);
@@ -174,8 +176,10 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
         }
       }));
       setMessage("Inventario actualizado correctamente.");
+      soundFeedback.success();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo actualizar inventario");
+      soundFeedback.error();
     } finally {
       setUpdatingProductoId(null);
     }

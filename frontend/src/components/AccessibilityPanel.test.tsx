@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import AccessibilityPanel from "./AccessibilityPanel";
 
 vi.mock("../hooks/useVoice", () => ({
-  default: () => ({ speak: vi.fn() })
+  default: () => ({ cancel: vi.fn(), speak: vi.fn() })
 }));
 
 const defaultProps = {
@@ -21,7 +21,8 @@ const defaultProps = {
   onSetTextSize: vi.fn(),
   onToggleContrast: vi.fn(),
   onToggleVoice: vi.fn(),
-  onToggleSound: vi.fn()
+  onToggleSound: vi.fn(),
+  onReset: vi.fn()
 };
 
 describe("AccessibilityPanel", () => {

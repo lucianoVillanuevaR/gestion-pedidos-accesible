@@ -230,7 +230,6 @@ export function usePdvOrderDraft({
         ...current,
         [itemKey]: personalizacion
       }));
-      playSoundCue("add");
       announce(`${producto.nombre}${variante ? `, ${variante.nombre}` : ""} agregado. Cantidad ${nextQuantity}.`, {
         priority: "normal",
         dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
@@ -280,14 +279,13 @@ export function usePdvOrderDraft({
 
       const nextQuantity = (items[producto.id] || 0) + 1;
       setItemQuantity(producto, nextQuantity);
-      playSoundCue("add");
       announce(`${producto.nombre}. Cantidad ${nextQuantity}.`, {
         priority: "low",
         dedupeKey: `quantity-up:${producto.id}:${nextQuantity}`,
         cooldownMs: 1500
       });
     },
-    [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue, setItemQuantity]
+    [announce, isTurnoOpen, items, notifyTurnoClosed, setItemQuantity]
   );
 
   const decreaseProduct = useCallback(
@@ -301,7 +299,6 @@ export function usePdvOrderDraft({
       setItemQuantity(producto, currentQuantity - 1);
 
       if (currentQuantity <= 1) {
-        playSoundCue("remove");
         announce(`${producto.nombre} quitado del pedido.`, {
           priority: "low",
           dedupeKey: `product-removed:${producto.id}`,
@@ -310,14 +307,13 @@ export function usePdvOrderDraft({
         return;
       }
 
-      playSoundCue("decrease");
       announce(`${producto.nombre}. Cantidad ${currentQuantity - 1}.`, {
         priority: "low",
         dedupeKey: `quantity-down:${producto.id}:${currentQuantity - 1}`,
         cooldownMs: 1500
       });
     },
-    [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue, setItemQuantity]
+    [announce, isTurnoOpen, items, notifyTurnoClosed, setItemQuantity]
   );
 
   const removeProduct = useCallback(
@@ -333,28 +329,26 @@ export function usePdvOrderDraft({
         return next;
       });
 
-      playSoundCue("remove");
       announce("Producto eliminado del pedido.", {
         priority: "normal",
         dedupeKey: "product-removed",
         cooldownMs: 1500
       });
     },
-    [announce, playSoundCue]
+    [announce]
   );
 
   const resetPedido = useCallback(() => {
     clearPedidoForm();
     setFeedback(null);
     setShowResetConfirm(false);
-    playSoundCue("clear");
     announce("Pedido cancelado.", {
       priority: "high",
       dedupeKey: "pedido-reset",
       cooldownMs: 2000,
       interrupt: true
     });
-  }, [announce, clearPedidoForm, playSoundCue, setFeedback]);
+  }, [announce, clearPedidoForm, setFeedback]);
 
   const openResetConfirm = useCallback(() => {
     setShowResetConfirm(true);

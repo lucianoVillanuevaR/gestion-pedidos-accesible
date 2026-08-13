@@ -13,7 +13,7 @@ import { usePdvFeedback } from "./hooks/usePdvFeedback";
 import { usePdvOrderDraft } from "./hooks/usePdvOrderDraft";
 import { usePdvPedidoEditing } from "./hooks/usePdvPedidoEditing";
 import { usePdvProducts } from "./hooks/usePdvProducts";
-import { usePdvSoundCue } from "./hooks/usePdvSoundCue";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { usePdvTurno } from "./hooks/usePdvTurno";
 import PdvFacilView from "./PdvFacilView";
 import { buildPedidoSaveErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
@@ -80,7 +80,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const initialProductHandledRef = useRef(false);
   const lastAnnouncedAccessibleStepKeyRef = useRef("");
   const ticketRef = useRef<HTMLDivElement | null>(null);
-  const playSoundCue = usePdvSoundCue(isSoundEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
+  const playSoundCue = useCallback((cue: "error" | "success" | "warning") => soundFeedback[cue](), [soundFeedback]);
   const { feedback, feedbackRef, setFeedback, showFeedback } = usePdvFeedback();
 
   useEffect(() => {
@@ -152,7 +153,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const notifyTurnoClosed = useCallback(() => {
     const message = "Debe abrir turno antes de registrar pedidos.";
-    playSoundCue("error");
+    playSoundCue("warning");
     announce(message, {
       priority: "high",
       dedupeKey: "pdv-turno-cerrado-action",

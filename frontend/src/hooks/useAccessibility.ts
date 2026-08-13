@@ -26,6 +26,7 @@ export type AccessibilityState = {
   toggleHighContrast: () => void;
   toggleVoiceEnabled: () => void;
   toggleSoundEnabled: () => void;
+  resetAccessibilitySettings: () => void;
 };
 
 function readBooleanStorage(key: string) {
@@ -173,6 +174,14 @@ function useAccessibility(): AccessibilityState {
     setIsSoundEnabled((currentValue) => !currentValue);
   }, []);
 
+  const resetAccessibilitySettings = useCallback(() => {
+    setIsAccessible(false);
+    setTextSizeState("normal");
+    setIsHighContrast(false);
+    setIsVoiceEnabled(false);
+    setIsSoundEnabled(false);
+  }, []);
+
   const openAccessibilityPanel = useCallback(() => {
     setIsPanelOpen(true);
   }, []);
@@ -197,7 +206,8 @@ function useAccessibility(): AccessibilityState {
     toggleAccessibility,
     toggleHighContrast,
     toggleVoiceEnabled,
-    toggleSoundEnabled
+    toggleSoundEnabled,
+    resetAccessibilitySettings
   };
 }
 

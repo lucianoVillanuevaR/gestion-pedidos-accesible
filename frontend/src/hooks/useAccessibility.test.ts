@@ -112,4 +112,16 @@ describe("useAccessibility", () => {
     await waitFor(() => expect(result.current.prefersReducedMotion).toBe(false));
     expect(document.documentElement.classList.contains("reduce-motion")).toBe(false);
   });
+
+  it("restablece también voz y sonidos y persiste el valor predeterminado", () => {
+    window.localStorage.setItem(ACCESSIBILITY_SOUND_STORAGE_KEY, "true");
+    window.localStorage.setItem(ACCESSIBILITY_VOICE_STORAGE_KEY, "true");
+    const { result } = renderHook(() => useAccessibility());
+
+    act(() => result.current.resetAccessibilitySettings());
+
+    expect(result.current.isSoundEnabled).toBe(false);
+    expect(result.current.isVoiceEnabled).toBe(false);
+    expect(window.localStorage.getItem(ACCESSIBILITY_SOUND_STORAGE_KEY)).toBe("false");
+  });
 });

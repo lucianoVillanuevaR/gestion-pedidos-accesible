@@ -10,7 +10,7 @@ import {
 import type { FeedbackState } from "../PdvShared";
 
 type Announce = (message: string, options?: Record<string, unknown>) => void;
-type PlaySoundCue = (cue: "add" | "clear" | "decrease" | "error" | "remove" | "success") => void;
+type PlaySoundCue = (cue: "error" | "success" | "warning") => void;
 
 export function usePdvTurno({
   announce,
@@ -55,6 +55,7 @@ export function usePdvTurno({
           title: "No se pudo cerrar el turno",
           message: closeError
         });
+        playSoundCue("warning");
         return;
       }
 
@@ -73,6 +74,7 @@ export function usePdvTurno({
           interrupt: true
         });
       } catch (error) {
+        playSoundCue("error");
         showFeedback({
           type: "error",
           title: "No se pudo cerrar el turno",
@@ -89,6 +91,7 @@ export function usePdvTurno({
       setIsTurnoOpen(true);
       onTurnoStateChange();
       const message = "Turno abierto correctamente.";
+      playSoundCue("success");
       announce(message, {
         priority: "high",
         dedupeKey: "pdv-turno-abierto",
@@ -96,6 +99,7 @@ export function usePdvTurno({
         interrupt: true
       });
     } catch (error) {
+      playSoundCue("error");
       showFeedback({
         type: "error",
         title: "No se pudo abrir el turno",

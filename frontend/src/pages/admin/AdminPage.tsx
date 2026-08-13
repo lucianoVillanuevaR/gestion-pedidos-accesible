@@ -6,6 +6,8 @@ import AlertMessage from "../../components/ui/AlertMessage";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
+import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { cargarCierresTurno } from "../../services/cierresTurno";
 import { getInventario } from "../../services/inventario";
 import { getPedidos } from "../../services/pedidos";
@@ -238,6 +240,8 @@ function DashboardLine({ label, value }: { label: string; value: number | string
 }
 
 function AdminUsersPage() {
+  const { isSoundEnabled } = useAccessibilityContext();
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
   const emptyUser: CreateUserPayload = {
     email: "",
     label: "",
@@ -320,8 +324,10 @@ function AdminUsersPage() {
       setPassword("");
       setIsUserModalOpen(false);
       setMessage("Usuario guardado correctamente.");
+      soundFeedback.success();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo guardar usuario");
+      soundFeedback.error();
     } finally {
       setSavingId(null);
     }
@@ -339,8 +345,10 @@ function AdminUsersPage() {
         activo: !usuario.activo
       });
       setUsuarios((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+      soundFeedback.success();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar estado");
+      soundFeedback.error();
     } finally {
       setSavingId(null);
     }

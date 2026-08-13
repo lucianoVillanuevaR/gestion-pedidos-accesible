@@ -17,6 +17,7 @@ import ErrorAlert from "../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import type { EstadoPedido, PedidoResponse } from "../../types";
 import {
   EmptyPedidosMessage,
@@ -38,8 +39,9 @@ import {
 } from "./PedidosShared";
 
 function PedidosNormalPage() {
-  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
@@ -67,7 +69,9 @@ function PedidosNormalPage() {
   };
 
   const handleNormalEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
-    await handleEstadoChange(pedido, estado);
+    const succeeded = await handleEstadoChange(pedido, estado);
+    if (succeeded) soundFeedback.success();
+    else soundFeedback.error();
     const numeroPedido = getPedidoDisplayNumber(pedido);
     speak(`Pedido ${numeroPedido} actualizado a ${ESTADO_META[estado].label}.`, {
       priority: "high",

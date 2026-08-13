@@ -72,8 +72,10 @@ export function usePedidosController({
         )
       );
       setActiveModal(null);
+      return true;
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo actualizar el pedido");
+      return false;
     } finally {
       setUpdatingPedidoId(null);
     }

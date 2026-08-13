@@ -6,6 +6,7 @@ import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { ESTADOS_PEDIDO_ACTIVOS } from "../../domain/pedidoRules";
 import useVoice from "../../hooks/useVoice";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
 import type { EstadoPedido, PedidoResponse } from "../../types";
 import {
@@ -39,8 +40,9 @@ const EASY_SECONDARY_BUTTON_CLASS = "border-slate-300 bg-white text-slate-950 ho
 const EASY_SOFT_PANEL_CLASS = "border-slate-200 bg-slate-50";
 
 function PedidosFacilPage() {
-  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isSavingCierre, setIsSavingCierre] = useState(false);
@@ -87,7 +89,9 @@ function PedidosFacilPage() {
   const hasPedidosActivos = turnoSummary.pedidosPendientes > 0;
 
   const handleAccessibleEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
-    await handleEstadoChange(pedido, estado);
+    const succeeded = await handleEstadoChange(pedido, estado);
+    if (succeeded) soundFeedback.success();
+    else soundFeedback.error();
     const numeroPedido = getPedidoDisplayNumber(pedido);
     const message = `Pedido ${numeroPedido} actualizado a ${ESTADO_META[estado].label}.`;
     setLiveMessage(message);

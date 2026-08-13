@@ -27,6 +27,7 @@ describe("auditoría automática del panel de accesibilidad", () => {
         onToggleContrast={vi.fn()}
         onToggleVoice={vi.fn()}
         onToggleSound={vi.fn()}
+        onReset={vi.fn()}
       />
     );
 

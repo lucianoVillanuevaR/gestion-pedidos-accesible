@@ -22,6 +22,7 @@ import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
 import type { CierreProductoResumen } from "../../types";
 import { getResponsableDisplay, type ResponsableDisplay } from "../../utils/turnoResponsable";
@@ -45,10 +46,11 @@ import {
 import CierreTurnoPrintable from "./components/CierreTurnoPrintable";
 
 function CierreTurnoPage() {
-  const { isAccessible, isHighContrast, isVoiceEnabled } = useAccessibilityContext();
+  const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { speakAction } = useActionVoice(isVoiceEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -94,10 +96,12 @@ function CierreTurnoPage() {
       setTurnoFechaInicio(turno.fechaInicio);
       setIsTurnoOpen(true);
       setMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
+      soundFeedback.success();
       speakAction("Turno abierto.", "cierre-abrir-turno");
       loadPedidos();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "No fue posible abrir el turno.");
+      soundFeedback.error();
     }
   };
 
@@ -105,6 +109,7 @@ function CierreTurnoPage() {
     const closeError = validateTurnoClose(isTurnoOpen);
     if (closeError) {
       setMessage(closeError);
+      soundFeedback.warning();
       setIsConfirmOpen(false);
       return;
     }
@@ -116,10 +121,12 @@ function CierreTurnoPage() {
       setIsTurnoOpen(false);
       setIsConfirmOpen(false);
       setMessage("Turno cerrado correctamente.");
+      soundFeedback.success();
       speakAction("Turno cerrado correctamente.", `cierre-turno:${cierre.id}`);
       await loadPedidos();
     } catch (requestError) {
       setMessage(requestError instanceof Error ? requestError.message : "No fue posible cerrar el turno.");
+      soundFeedback.error();
     } finally {
       setIsSaving(false);
     }

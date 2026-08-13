@@ -8,6 +8,7 @@ import { DEMO_USERS, getDefaultRouteForRole } from "../constants/auth";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
 import useVoice from "../hooks/useVoice";
+import { useSoundFeedback } from "../hooks/useSoundFeedback";
 import AlertMessage from "./ui/AlertMessage";
 
 type FeedbackState = {
@@ -33,10 +34,11 @@ function Login() {
   const easyModeToastTimerRef = useRef<number | null>(null);
   const previousAccessibleRef = useRef<boolean | null>(null);
   const { login } = useAuthContext();
-  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } =
+  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, isSoundEnabled, openAccessibilityPanel } =
     useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakHelp } = useVoice({ enabled: true });
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
 
   useEffect(() => {
     return () => {
@@ -87,6 +89,7 @@ function Login() {
 
   const announceError = (message: string) => {
     setFeedback({ type: "error", message });
+    soundFeedback.error();
     speak(message);
   };
 
@@ -101,6 +104,7 @@ function Login() {
     }
 
     setFeedback({ type: "success", message: "Bienvenido al sistema" });
+    soundFeedback.success();
     speak("Bienvenido al sistema");
 
     if (navigateTimerRef.current) {

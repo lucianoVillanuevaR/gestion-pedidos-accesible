@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
+import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import type { EstadoPedido, PedidoResponse } from "../../types";
 import {
   ESTADO_META,
@@ -11,6 +12,7 @@ import {
 } from "../pedidos/PedidosShared";
 import { CocinaFacilView, CocinaNormalView, type CocinaViewProps } from "./components/CocinaBoardViews";
 import { useFullscreenToggle } from "./hooks/useFullscreenToggle";
+import { useNewPedidoNotification } from "./hooks/useNewPedidoNotification";
 import { getNextCocinaEstado } from "./utils/cocinaUtils";
 
 export { default as CocinaHistorialPage } from "./CocinaHistorialPage";
@@ -26,10 +28,12 @@ export function CocinaFacilPage() {
 }
 
 function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
-  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled } = useAccessibilityContext();
   const { speak } = useActionVoice(isVoiceEnabled);
+  const soundFeedback = useSoundFeedback(isSoundEnabled);
   const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true);
   const fullscreenTargetRef = useRef<HTMLDivElement>(null);
+  const [isAutomaticRefresh, setIsAutomaticRefresh] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreenToggle(fullscreenTargetRef);
   const { activeModal, error, handleEstadoChange, isLoading, loadPedidos, pedidos, setActiveModal, updatingPedidoId } =
     usePedidosController({});
@@ -43,6 +47,12 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   );
   const counts = useMemo(() => getPedidoCounts(pedidos), [pedidos]);
   const urgentCount = useMemo(() => cocinaPedidos.filter(isPedidoDelayed).length, [cocinaPedidos]);
+  useNewPedidoNotification({
+    isInitialLoading: isLoading,
+    isAutomaticRefresh,
+    notify: soundFeedback.notification,
+    pedidos
+  });
 
   useEffect(() => {
     if (!isAutoRefreshEnabled) {
@@ -50,7 +60,10 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     }
 
     const refreshWhenVisible = () => {
-      if (document.visibilityState === "visible") void loadPedidos(undefined, true);
+      if (document.visibilityState === "visible") {
+        setIsAutomaticRefresh(true);
+        void loadPedidos(undefined, true);
+      }
     };
     const intervalId = window.setInterval(() => {
       refreshWhenVisible();
@@ -64,6 +77,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   }, [isAutoRefreshEnabled, loadPedidos]);
 
   const handleRefresh = () => {
+    setIsAutomaticRefresh(false);
     speak("Actualizando pedidos en preparación.", {
       priority: "normal",
       dedupeKey: "cocina-refresh",
@@ -72,32 +86,36 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     loadPedidos();
   };
 
-  const handleCocinaEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
-    await handleEstadoChange(pedido, estado);
+  const handleCocinaEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido, playFeedback = true) => {
+    const succeeded = await handleEstadoChange(pedido, estado);
+    if (!succeeded) {
+      if (playFeedback) soundFeedback.error();
+      return false;
+    }
+    if (playFeedback) soundFeedback.success();
     speak(`Pedido ${getPedidoDisplayNumber(pedido)} actualizado a ${ESTADO_META[estado].label}.`, {
       priority: "high",
       dedupeKey: `cocina-estado:${pedido.id}:${estado}`,
       cooldownMs: 1600,
       interrupt: true
     });
-  };
-
-  const handleAdvancePedido = async (pedido: PedidoResponse) => {
-    const nextEstado = getNextCocinaEstado(pedido.estado);
-
-    if (!nextEstado) {
-      return;
-    }
-
-    await handleCocinaEstadoChange(pedido, nextEstado);
+    return true;
   };
 
   const handleAdvanceVisible = async () => {
     const pedidosToUpdate = cocinaPedidos.filter((pedido) => getNextCocinaEstado(pedido.estado));
+    let hasSuccess = false;
+    let hasError = false;
 
     for (const pedido of pedidosToUpdate) {
-      await handleAdvancePedido(pedido);
+      const nextEstado = getNextCocinaEstado(pedido.estado);
+      if (!nextEstado) continue;
+      const succeeded = await handleCocinaEstadoChange(pedido, nextEstado, false);
+      hasSuccess ||= succeeded;
+      hasError ||= !succeeded;
     }
+    if (hasError) soundFeedback.error();
+    else if (hasSuccess) soundFeedback.success();
   };
 
   const CocinaView = isAccessibleView ? CocinaFacilView : CocinaNormalView;
