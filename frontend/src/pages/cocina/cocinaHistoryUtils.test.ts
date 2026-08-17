@@ -63,4 +63,48 @@ describe("utilidades del historial de cocina", () => {
       }
     ]);
   });
+
+  it("mantiene separados dos turnos cerrados el mismo día", () => {
+    const segundoCierre: CierreTurno = {
+      ...cierre,
+      fechaCierre: "2026-06-23T23:00:00.000Z",
+      id: "turno-2",
+      pedidos: [
+        {
+          ...cierre.pedidos[0],
+          createdAt: "2026-06-23T22:00:00.000Z",
+          id: 20,
+          total: 8300
+        }
+      ],
+      totalEfectivo: 8300,
+      totalVendido: 8300
+    };
+
+    const turnos = getTurnosHistorial([cierre, segundoCierre]);
+
+    expect(turnos).toHaveLength(2);
+    expect(turnos.find((turno) => turno.id === "turno-1")?.pedidos.map((pedido) => pedido.id)).toEqual([10]);
+    expect(turnos.find((turno) => turno.id === "turno-2")?.pedidos.map((pedido) => pedido.id)).toEqual([20]);
+    expect(turnos.find((turno) => turno.id === "turno-1")?.totalVendido).toBe(7800);
+    expect(turnos.find((turno) => turno.id === "turno-2")?.totalVendido).toBe(8300);
+  });
+
+  it("conserva los turnos sin pedidos para poder imprimir un cierre vacío", () => {
+    const turnoVacio: CierreTurno = {
+      ...cierre,
+      id: "turno-vacio",
+      pedidos: [],
+      pedidosEntregados: 0,
+      productosVendidos: [],
+      totalEfectivo: 0,
+      totalPedidos: 0,
+      totalVendido: 0
+    };
+
+    const turnos = getTurnosHistorial([turnoVacio]);
+
+    expect(turnos).toHaveLength(1);
+    expect(turnos[0].pedidos).toEqual([]);
+  });
 });

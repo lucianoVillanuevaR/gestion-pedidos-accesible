@@ -100,7 +100,7 @@ export default function PdvProductConfiguratorEasyView({
   }, [easyConfigStep, easyStage, easySteps.length, esSandwich, isVoiceEnabled, producto.id, producto.nombre, speak]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto px-3 py-4 sm:items-center">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/40 px-3 py-4 backdrop-blur-[1px] no-print sm:items-center">
       <section
         ref={dialogRef}
         role="dialog"

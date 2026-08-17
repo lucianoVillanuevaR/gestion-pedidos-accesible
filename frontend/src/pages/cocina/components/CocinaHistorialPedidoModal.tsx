@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { createPortal } from "react-dom";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
 import {
@@ -19,8 +20,8 @@ export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void;
     onClose
   });
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-[1px]">
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex min-h-dvh w-screen items-center justify-center overflow-y-auto bg-black/40 px-4 py-6 backdrop-blur-[1px] no-print">
       <section
         role="dialog"
         aria-modal="true"
@@ -49,7 +50,6 @@ export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void;
             <span className="font-bold text-slate-600">
               {pedido.createdAt ? formatKitchenDateTime(pedido.createdAt) : "Sin fecha"}
             </span>
-            <span className="font-bold text-slate-600">{formatMetodoPagoLabel(pedido.metodoPago)}</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -95,6 +95,7 @@ export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void;
           </p>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }

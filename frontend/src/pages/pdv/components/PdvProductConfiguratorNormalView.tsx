@@ -51,7 +51,7 @@ export default function PdvProductConfiguratorNormalView({
   } = config;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto px-3 py-5">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/40 px-3 py-5 backdrop-blur-[1px] no-print">
       <section
         ref={dialogRef}
         role="dialog"

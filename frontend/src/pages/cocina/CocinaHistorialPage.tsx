@@ -51,6 +51,10 @@ export default function CocinaHistorialPage() {
   }, []);
 
   const turnosHistorial = useMemo(() => getTurnosHistorial(cierres), [cierres]);
+  const turnosHistorialById = useMemo(
+    () => new Map(turnosHistorial.map((turno) => [turno.id, turno])),
+    [turnosHistorial]
+  );
   const filteredTurnos = useMemo(
     () =>
       filterTurnosHistorial(turnosHistorial, {
@@ -224,6 +228,7 @@ export default function CocinaHistorialPage() {
                 onPrint={handlePrintTurno}
                 onReadAction={announceHistorialControl}
                 onToggle={(view) => handleToggleTurno(turno.id, view)}
+                printTurno={turnosHistorialById.get(turno.id) ?? turno}
                 selectedView={turnoViewById[turno.id] ?? "resumen"}
                 turno={turno}
               />

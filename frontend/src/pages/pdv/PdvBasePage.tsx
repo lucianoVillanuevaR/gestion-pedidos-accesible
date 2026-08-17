@@ -463,12 +463,24 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         window.setTimeout(resolve, 100);
       });
 
+      const ticket = printIframe.contentDocument?.querySelector<HTMLElement>(".ticket-print");
+      if (ticket) {
+        const pixelsToMillimeters = 25.4 / 96;
+        const contentHeightMm = Math.ceil(ticket.getBoundingClientRect().height * pixelsToMillimeters) + 2;
+        const dynamicPageStyle = printIframe.contentDocument?.createElement("style");
+
+        if (dynamicPageStyle) {
+          dynamicPageStyle.textContent = `@page { size: 80mm ${contentHeightMm}mm; margin: 0; }`;
+          printIframe.contentDocument?.head.appendChild(dynamicPageStyle);
+        }
+      }
+
       printWindow.focus();
       printWindow.print();
     },
     pageStyle: `
       @page {
-        size: 80mm auto;
+        size: 80mm 100mm;
         margin: 0;
       }
       html,
@@ -478,6 +490,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         margin: 0;
         padding: 0;
         background: white;
+        overflow: hidden;
       }
       .ticket-print {
         width: 80mm !important;

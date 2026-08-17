@@ -126,7 +126,7 @@ function TicketComanda({
 
       <footer className="ticket-footer">
         <div className="ticket-divider-dashed" />
-        <p>*** FIN DE COMANDA ***</p>
+        <strong>FIN COMANDA</strong>
       </footer>
     </article>
   );

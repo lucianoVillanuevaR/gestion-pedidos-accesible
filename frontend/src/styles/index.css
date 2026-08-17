@@ -52,9 +52,9 @@ input {
   display: none;
 }
 
-@page turno-summary {
+@page cierre-turno-summary {
   size: A4 portrait;
-  margin: 0;
+  margin: 12mm;
 }
 
 /* ============================================
@@ -466,12 +466,12 @@ html[data-contrast="true"] button {
 .ticket-print {
   width: 80mm;
   margin: 0 auto;
-  padding: 5mm 4mm 7mm;
+  padding: 3mm 4mm 5mm;
   background: #ffffff;
   color: #000000;
   font-family: "Courier New", Courier, monospace;
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.35;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
@@ -483,8 +483,8 @@ html[data-contrast="true"] button {
 
 .ticket-logo {
   display: block;
-  width: 17mm;
-  height: 17mm;
+  width: 14mm;
+  height: 14mm;
   margin: 0 auto 1.5mm;
   border-radius: 2mm;
   filter: grayscale(1) contrast(1.35);
@@ -514,8 +514,10 @@ html[data-contrast="true"] button {
 }
 
 .ticket-order-number {
-  margin-top: 2mm;
-  font-size: 22px;
+  margin-top: 2.5mm;
+  padding: 2mm 1mm;
+  border: 2px solid #000000;
+  font-size: 26px;
   font-weight: 900;
   line-height: 1;
 }
@@ -585,21 +587,24 @@ html[data-contrast="true"] button {
   grid-template-columns: 8mm minmax(0, 1fr) auto;
   align-items: start;
   gap: 1.5mm;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .ticket-qty {
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1;
 }
 
 .ticket-product {
   min-width: 0;
+  font-weight: 900;
   overflow-wrap: anywhere;
 }
 
 .ticket-price {
   min-width: 16mm;
+  font-size: 10px;
+  font-weight: 700;
   text-align: right;
   white-space: nowrap;
 }
@@ -607,7 +612,7 @@ html[data-contrast="true"] button {
 .ticket-description {
   margin-top: 1mm !important;
   padding-left: 9.5mm;
-  font-size: 10px;
+  font-size: 11px;
   overflow-wrap: anywhere;
 }
 
@@ -616,8 +621,9 @@ html[data-contrast="true"] button {
   margin-left: 9.5mm !important;
   padding: 1.5mm;
   border: 1.5px solid #000000;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
+  text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
@@ -632,7 +638,7 @@ html[data-contrast="true"] button {
   align-items: baseline;
   justify-content: space-between;
   gap: 3mm;
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 900;
 }
 
@@ -652,7 +658,8 @@ html[data-contrast="true"] button {
 .ticket-obs-text {
   margin: 1.5mm 0 0;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 900;
+  text-transform: uppercase;
   overflow-wrap: anywhere;
 }
 
@@ -660,6 +667,7 @@ html[data-contrast="true"] button {
   margin-top: 3mm;
   font-size: 11px;
   line-height: 1.6;
+  letter-spacing: 0.08em;
 }
 
 @media print {
@@ -673,9 +681,10 @@ html[data-contrast="true"] button {
 
   .ticket-print {
     width: 80mm;
+    max-width: 80mm;
     min-height: 0;
     margin: 0;
-    padding: 3mm 4mm 6mm;
+    padding: 3mm 4mm 5mm;
     overflow: visible;
   }
 
@@ -708,38 +717,79 @@ html[data-contrast="true"] button {
 
   .historial-print-target .historial-print-only {
     display: block !important;
-    page: turno-summary;
     width: 100%;
-    min-height: 297mm;
-    padding: 12mm;
     box-sizing: border-box;
     font-family: "Trebuchet MS", Arial, sans-serif;
     color: #0f172a !important;
   }
 
+  .historial-print-target .cierre-turno-print {
+    page: cierre-turno-summary;
+    min-height: 0;
+    padding: 0;
+    color: #111827 !important;
+    print-color-adjust: economy;
+    -webkit-print-color-adjust: economy;
+  }
+
+  .historial-print-target .cierre-turno-print--short {
+    display: flex !important;
+    min-height: 272mm;
+    flex-direction: column;
+  }
+
+  .cierre-turno-print *,
+  .cierre-turno-print *::before,
+  .cierre-turno-print *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
   .turno-print-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: 48px auto minmax(0, 1fr);
     align-items: center;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #0f172a;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1.5px solid #171717;
   }
 
   .turno-print-header img {
-    width: 52px;
-    height: 52px;
-    border-radius: 9px;
+    width: 42px;
+    height: 42px;
+    border-radius: 0;
     filter: grayscale(1) contrast(1.25);
   }
 
   .turno-print-header h1 {
     margin: 0;
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1.1;
   }
 
+  .turno-print-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .turno-print-brand strong {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+  }
+
+  .turno-print-brand span {
+    color: #475569 !important;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .turno-print-title {
+    text-align: right;
+  }
+
   .turno-print-header p {
-    margin: 4px 0 0;
+    margin: 2px 0 0;
     color: #475569 !important;
     font-size: 10px;
     font-weight: 700;
@@ -747,9 +797,10 @@ html[data-contrast="true"] button {
 
   .turno-print-context {
     display: grid;
-    grid-template-columns: 1.4fr 0.6fr;
-    gap: 18px;
-    padding: 10px 0;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    padding: 11px 0;
+    border-bottom: 1px solid #a3a3a3;
   }
 
   .turno-print-context p {
@@ -757,12 +808,12 @@ html[data-contrast="true"] button {
     flex-direction: column;
     gap: 2px;
     margin: 0;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .turno-print-context strong {
-    color: #64748b !important;
-    font-size: 8px;
+    color: #525252 !important;
+    font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -775,23 +826,23 @@ html[data-contrast="true"] button {
     display: grid;
     grid-template-columns: 1.35fr repeat(3, 1fr);
     gap: 8px;
-    margin: 2px 0 12px;
+    margin: 11px 0 12px;
   }
 
   .turno-print-metrics article {
     display: flex;
-    min-height: 54px;
+    min-height: 58px;
     flex-direction: column;
     justify-content: space-between;
     padding: 8px 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
+    border: 1px solid #a3a3a3;
+    border-radius: 0;
     break-inside: avoid;
   }
 
   .turno-print-metrics span {
-    color: #475569 !important;
-    font-size: 8px;
+    color: #404040 !important;
+    font-size: 9px;
     font-weight: 800;
     text-transform: uppercase;
   }
@@ -801,20 +852,26 @@ html[data-contrast="true"] button {
   }
 
   .turno-print-metric-primary {
-    border: 2px solid #0f172a !important;
+    border: 1px solid #a3a3a3 !important;
+  }
+
+  .turno-print-metric-primary strong {
+    font-size: 21px;
   }
 
   .turno-print-columns {
     display: grid;
-    grid-template-columns: 0.72fr 1.28fr;
-    gap: 10px;
+    grid-template-columns: 0.82fr 1.18fr;
+    gap: 12px;
     align-items: start;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #a3a3a3;
   }
 
   .turno-print-card {
     padding: 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
+    border: 1px solid #a3a3a3;
+    border-radius: 0;
     break-inside: avoid;
   }
 
@@ -824,28 +881,31 @@ html[data-contrast="true"] button {
     font-size: 13px;
   }
 
-  .turno-print-payment-list {
-    margin: 0;
+  .turno-print-payment-table th:nth-child(2),
+  .turno-print-payment-table td:nth-child(2),
+  .turno-print-products-table th:nth-child(2),
+  .turno-print-products-table td:nth-child(2) {
+    text-align: center;
   }
 
-  .turno-print-payment-list div {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 5px 0;
-    border-top: 1px solid #e2e8f0;
-    font-size: 9px;
+  .turno-print-payment-table th:last-child,
+  .turno-print-payment-table td:last-child,
+  .turno-print-products-table th:last-child,
+  .turno-print-products-table td:last-child {
+    text-align: right;
   }
 
-  .turno-print-payment-list dd {
-    margin: 0;
-    font-weight: 800;
+  .turno-print-total-row {
+    border-top: 2px solid #0f172a;
+    font-weight: 900;
   }
 
   .turno-print-empty {
     margin: 0;
-    color: #475569 !important;
-    font-size: 9px;
+    max-width: 36ch;
+    color: #525252 !important;
+    font-size: 10px;
+    line-height: 1.45;
   }
 
   .turno-print-orders {
@@ -860,8 +920,8 @@ html[data-contrast="true"] button {
   }
 
   .turno-print-section-heading span {
-    color: #475569 !important;
-    font-size: 9px;
+    color: #404040 !important;
+    font-size: 10px;
     font-weight: 700;
   }
 
@@ -872,7 +932,7 @@ html[data-contrast="true"] button {
   .turno-print-section-heading p {
     margin: 0 0 8px;
     color: #475569 !important;
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 700;
   }
 
@@ -881,24 +941,28 @@ html[data-contrast="true"] button {
   }
 
   .turno-print-orders th:nth-child(1) {
-    width: 8%;
+    width: 7%;
   }
 
   .turno-print-orders th:nth-child(2) {
-    width: 14%;
+    width: 8%;
   }
 
   .turno-print-orders th:nth-child(3) {
-    width: 34%;
+    width: 15%;
   }
 
-  .turno-print-orders th:nth-child(4),
-  .turno-print-orders th:nth-child(5) {
-    width: 13%;
+  .turno-print-orders th:nth-child(4) {
+    width: 31%;
   }
 
+  .turno-print-orders th:nth-child(5),
   .turno-print-orders th:nth-child(6) {
-    width: 18%;
+    width: 12%;
+  }
+
+  .turno-print-orders th:nth-child(7) {
+    width: 15%;
   }
 
   .turno-print-orders td {
@@ -906,9 +970,33 @@ html[data-contrast="true"] button {
     vertical-align: top;
   }
 
+  .turno-print-order-product {
+    display: block;
+  }
+
+  .turno-print-order-product + .turno-print-order-product {
+    margin-top: 2px;
+  }
+
   .historial-print-only table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 9px;
+  }
+
+  .cierre-turno-print table {
+    font-size: 10px;
+  }
+
+  .cierre-turno-print th,
+  .cierre-turno-print td {
+    border-color: #a3a3a3;
+    padding: 6px 7px;
+  }
+
+  .cierre-turno-print th {
+    background: #f5f5f5 !important;
+    color: #262626 !important;
     font-size: 9px;
   }
 
@@ -931,12 +1019,37 @@ html[data-contrast="true"] button {
 
   .historial-print-only tr {
     break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .historial-print-only td:last-child,
   .historial-print-only th:last-child,
-  .turno-print-products-table td:first-child,
-  .turno-print-products-table th:first-child {
+  .turno-print-products-table td:nth-child(2),
+  .turno-print-products-table th:nth-child(2) {
     white-space: nowrap;
+  }
+
+  .turno-print-card,
+  .turno-print-metrics,
+  .turno-print-section-heading,
+  .turno-print-footer {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .turno-print-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 8px;
+    border-top: 1px solid #737373;
+    color: #404040 !important;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .cierre-turno-print--short .turno-print-footer {
+    margin-top: auto;
   }
 }

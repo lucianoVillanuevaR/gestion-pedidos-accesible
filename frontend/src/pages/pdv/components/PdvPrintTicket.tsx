@@ -26,7 +26,7 @@ function PdvPrintTicket({
     <div
       ref={ticketRef}
       aria-hidden="true"
-      className="pointer-events-none fixed -left-[9999px] top-0 w-[80mm] bg-white print:static print:left-auto"
+      className="pointer-events-none fixed -left-[9999px] top-0 w-[80mm] bg-white print:static print:left-auto print:w-[80mm]"
     >
       <TicketComanda
         clienteNombre={clienteNombre}

@@ -3,7 +3,6 @@ import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import type { CierreTurno } from "../../../types";
 import { getResponsableDisplay } from "../../../utils/turnoResponsable";
 import {
-  ESTADO_META,
   StatusBadge,
   formatCurrency as formatKitchenCurrency,
   formatDateTime as formatKitchenDateTime,
@@ -11,6 +10,7 @@ import {
   formatTime,
   getPedidoDisplayNumber
 } from "../../pedidos/PedidosShared";
+import CierreTurnoPrintable from "../../pedidos/components/CierreTurnoPrintable";
 import {
   countTurnoPedidosByEstado,
   countTurnoPedidosPendientes,
@@ -27,6 +27,7 @@ export function HistorialTurnoCard({
   onPrint,
   onReadAction,
   onToggle,
+  printTurno,
   selectedView,
   turno
 }: {
@@ -37,6 +38,7 @@ export function HistorialTurnoCard({
   onPrint: (turnoId: string) => void;
   onReadAction: (message: string, dedupeKey: string) => void;
   onToggle: (view: "pedidos" | "resumen") => void;
+  printTurno: HistorialTurno;
   selectedView: "pedidos" | "resumen";
   turno: HistorialTurno;
 }) {
@@ -45,6 +47,19 @@ export function HistorialTurnoCard({
   const pedidosPendientes = turno.pedidosPendientes ?? countTurnoPedidosPendientes(turno);
   const pedidosCancelados = turno.pedidosCancelados ?? countTurnoPedidosByEstado(turno, "cancelado");
   const responsable = getResponsableDisplay(turno.usuario, turno.usuarioId);
+  const printResponsable = getResponsableDisplay(printTurno.usuario, printTurno.usuarioId);
+  const printProductosVendidos = getTurnoProductosVendidos(printTurno);
+  const printSummary = {
+    pedidosCancelados: printTurno.pedidosCancelados ?? countTurnoPedidosByEstado(printTurno, "cancelado"),
+    pedidosEntregados: printTurno.pedidosEntregados ?? countTurnoPedidosByEstado(printTurno, "entregado"),
+    pedidosPendientes: printTurno.pedidosPendientes ?? countTurnoPedidosPendientes(printTurno),
+    totalEfectivo: printTurno.totalEfectivo ?? 0,
+    totalPedidos: printTurno.totalPedidos ?? printTurno.pedidos.length,
+    totalPendiente: printTurno.totalPendiente ?? 0,
+    totalTarjeta: printTurno.totalTarjeta ?? 0,
+    totalTransferencia: printTurno.totalTransferencia ?? 0,
+    totalVendido: printTurno.totalVendido ?? 0
+  };
 
   return (
     <article
@@ -126,7 +141,14 @@ export function HistorialTurnoCard({
         <HistorialMetric label="Pedidos cancelados" value={String(pedidosCancelados)} />
       </div>
 
-      <HistorialTurnoPrintable productosVendidos={productosVendidos} turno={turno} />
+      <CierreTurnoPrintable
+        fechaCierre={printTurno.fechaCierre}
+        fechaInicio={printTurno.fechaInicio}
+        pedidos={printTurno.pedidos}
+        productosVendidos={printProductosVendidos}
+        responsable={printResponsable}
+        summary={printSummary}
+      />
 
       {isExpanded && (
         <div className="grid gap-3 border-t border-slate-200 bg-slate-50 p-3">
@@ -156,104 +178,6 @@ function HistorialMetric({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-black uppercase text-slate-500">{label}</p>
       <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
     </div>
-  );
-}
-
-function HistorialTurnoPrintable({
-  productosVendidos,
-  turno
-}: {
-  productosVendidos: NonNullable<CierreTurno["productosVendidos"]>;
-  turno: HistorialTurno;
-}) {
-  const responsable = getResponsableDisplay(turno.usuario, turno.usuarioId);
-  const paymentRows = [
-    { label: "Efectivo", value: turno.totalEfectivo ?? 0 },
-    { label: "Tarjeta", value: turno.totalTarjeta ?? 0 },
-    { label: "Transferencia", value: turno.totalTransferencia ?? 0 }
-  ];
-
-  return (
-    <section className="historial-print-only">
-      <h1>Riquísimo</h1>
-      <p>Sistema de Pedidos - Resumen de turno cerrado</p>
-
-      <div className="historial-print-grid">
-        <p>
-          <strong>Fecha del turno:</strong> {formatKitchenDateTime(turno.fechaCierre)}
-        </p>
-        <p>
-          <strong>{responsable.primaryLabel}:</strong> {responsable.primaryValue}
-        </p>
-        {responsable.roleValue && (
-          <p>
-            <strong>Rol:</strong> {responsable.roleValue}
-          </p>
-        )}
-        <p>
-          <strong>Inicio:</strong> {turno.fechaInicio ? formatKitchenDateTime(turno.fechaInicio) : "Sin datos"}
-        </p>
-        <p>
-          <strong>Cierre:</strong> {formatKitchenDateTime(turno.fechaCierre)}
-        </p>
-        <p>
-          <strong>Total vendido confirmado:</strong> {formatKitchenCurrency(String(turno.totalVendido ?? 0))}
-        </p>
-        <p>
-          <strong>Pedidos entregados:</strong>{" "}
-          {turno.pedidosEntregados ?? countTurnoPedidosByEstado(turno, "entregado")}
-        </p>
-        <p>
-          <strong>Pedidos pendientes:</strong> {turno.pedidosPendientes ?? countTurnoPedidosPendientes(turno)}
-        </p>
-        <p>
-          <strong>Pedidos cancelados:</strong>{" "}
-          {turno.pedidosCancelados ?? countTurnoPedidosByEstado(turno, "cancelado")}
-        </p>
-      </div>
-
-      <h2>Métodos de pago</h2>
-      {paymentRows.map((row) => (
-        <p key={row.label}>
-          <strong>{row.label}:</strong> {formatKitchenCurrency(String(row.value))}
-        </p>
-      ))}
-
-      <h2>Productos vendidos</h2>
-      {productosVendidos.length === 0 ? (
-        <p>No hay productos vendidos confirmados.</p>
-      ) : (
-        productosVendidos.map((producto) => (
-          <p key={producto.productoId}>
-            {producto.cantidad}x {producto.productoNombre} - {formatKitchenCurrency(String(producto.total))}
-          </p>
-        ))
-      )}
-
-      <h2>Pedidos del turno</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Pedido</th>
-            <th>Estado</th>
-            <th>Hora</th>
-            <th>Método</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {turno.pedidos.map((pedido) => (
-            <tr key={`${turno.id}-${pedido.id}`}>
-              <td>#{getPedidoDisplayNumber(pedido)}</td>
-              <td>{ESTADO_META[pedido.estado].label}</td>
-              <td>{formatTime(pedido.createdAt)}</td>
-              <td>{formatMetodoPagoLabel(pedido.metodoPago)}</td>
-              <td>{formatKitchenCurrency(String(pedido.total))}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
   );
 }
 

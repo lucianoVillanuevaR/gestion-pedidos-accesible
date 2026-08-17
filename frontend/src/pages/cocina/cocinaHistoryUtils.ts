@@ -34,7 +34,6 @@ export function getTurnosHistorial(cierres: CierreTurno[]): HistorialTurno[] {
           return rightTime - leftTime;
         })
     }))
-    .filter((cierre) => cierre.pedidos.length > 0)
     .sort((left, right) => new Date(right.fechaCierre).getTime() - new Date(left.fechaCierre).getTime());
 }
 
