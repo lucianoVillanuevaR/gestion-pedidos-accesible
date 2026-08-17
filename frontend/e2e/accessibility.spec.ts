@@ -65,3 +65,53 @@ test("permite ampliar texto sin desbordamiento horizontal móvil", async ({ page
   );
   expect(hasHorizontalOverflow).toBe(false);
 });
+
+test("los controles de sonido reflejan y conservan sus preferencias", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+  await page
+    .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
+    .first()
+    .click();
+
+  const soft = page.getByRole("button", { name: "Suave" });
+  const normal = page.getByRole("button", { name: "Normal", exact: true });
+  const loud = page.getByRole("button", { name: "Fuerte" });
+  const preview = page.getByRole("button", { name: "Probar sonido" });
+
+  await expect(soft).toBeDisabled();
+  await expect(normal).toBeDisabled();
+  await expect(loud).toBeDisabled();
+  await expect(preview).toBeDisabled();
+  await expect(soft).toHaveAttribute("aria-pressed", "false");
+  await expect(normal).toHaveAttribute("aria-pressed", "false");
+  await expect(loud).toHaveAttribute("aria-pressed", "false");
+
+  await page.getByRole("button", { name: "Activar sonidos" }).click();
+  await expect(page.getByRole("button", { name: "Desactivar sonidos" })).toHaveAttribute("aria-pressed", "true");
+  await expect(soft).toBeEnabled();
+  await expect(normal).toBeEnabled();
+  await expect(loud).toBeEnabled();
+  await expect(preview).toBeEnabled();
+  await expect(soft).toHaveAttribute("aria-pressed", "true");
+
+  await normal.click();
+  await expect(normal).toHaveAttribute("aria-pressed", "true");
+  await expect(soft).toHaveAttribute("aria-pressed", "false");
+
+  await page.reload();
+  await page
+    .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
+    .first()
+    .click();
+  await expect(page.getByRole("button", { name: "Desactivar sonidos" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveAttribute("aria-pressed", "true");
+
+  await page.getByRole("button", { name: "Restablecer ajustes" }).click();
+  await expect(page.getByRole("button", { name: "Activar sonidos" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Suave" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "Fuerte" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "Probar sonido" })).toBeDisabled();
+});

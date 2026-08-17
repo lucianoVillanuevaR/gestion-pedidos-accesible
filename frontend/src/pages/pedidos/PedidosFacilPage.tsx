@@ -90,9 +90,21 @@ function PedidosFacilPage() {
 
   const handleAccessibleEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
     const succeeded = await handleEstadoChange(pedido, estado);
-    if (succeeded) soundFeedback.success();
-    else soundFeedback.error();
     const numeroPedido = getPedidoDisplayNumber(pedido);
+    if (!succeeded) {
+      const message = `No se pudo actualizar el pedido ${numeroPedido}.`;
+      soundFeedback.error();
+      setLiveMessage(message);
+      speak(message, {
+        priority: "high",
+        dedupeKey: `pedido-estado-error:${pedido.id}:${estado}`,
+        cooldownMs: 1800,
+        interrupt: true
+      });
+      return;
+    }
+
+    soundFeedback.success();
     const message = `Pedido ${numeroPedido} actualizado a ${ESTADO_META[estado].label}.`;
     setLiveMessage(message);
     speak(message, {

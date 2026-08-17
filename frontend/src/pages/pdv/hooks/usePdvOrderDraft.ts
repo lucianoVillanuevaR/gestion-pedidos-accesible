@@ -140,7 +140,7 @@ export function usePdvOrderDraft({
           title: "Cantidad máxima alcanzada",
           message
         });
-        playSoundCue("error");
+        playSoundCue("warning");
         announce(message, {
           priority: "high",
           dedupeKey: `quantity-max:${producto.id}`,
@@ -149,6 +149,8 @@ export function usePdvOrderDraft({
         });
         return;
       }
+
+      if (nextQuantity <= 0 && !(producto.id in items)) return;
 
       setItems((currentItems) => {
         if (nextQuantity <= 0) {
@@ -162,8 +164,9 @@ export function usePdvOrderDraft({
           [producto.id]: nextQuantity
         };
       });
+      if (nextQuantity <= 0) playSoundCue("warning");
     },
-    [announce, isTurnoOpen, notifyTurnoClosed, playSoundCue, showFeedback]
+    [announce, isTurnoOpen, items, notifyTurnoClosed, playSoundCue, showFeedback]
   );
 
   const clearPedidoForm = useCallback(() => {
@@ -218,7 +221,7 @@ export function usePdvOrderDraft({
           title: "Cantidad máxima alcanzada",
           message
         });
-        playSoundCue("error");
+        playSoundCue("warning");
         return;
       }
 
@@ -230,6 +233,7 @@ export function usePdvOrderDraft({
         ...current,
         [itemKey]: personalizacion
       }));
+      playSoundCue("success");
       announce(`${producto.nombre}${variante ? `, ${variante.nombre}` : ""} agregado. Cantidad ${nextQuantity}.`, {
         priority: "normal",
         dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
@@ -318,11 +322,14 @@ export function usePdvOrderDraft({
 
   const removeProduct = useCallback(
     (itemKey: string) => {
+      if (!(itemKey in items)) return;
+
       setItems((prevItems) => {
         const newItems = { ...prevItems };
         delete newItems[itemKey];
         return newItems;
       });
+      playSoundCue("warning");
       setPersonalizaciones((current) => {
         const next = { ...current };
         delete next[itemKey];
@@ -335,7 +342,7 @@ export function usePdvOrderDraft({
         cooldownMs: 1500
       });
     },
-    [announce]
+    [announce, items, playSoundCue]
   );
 
   const resetPedido = useCallback(() => {

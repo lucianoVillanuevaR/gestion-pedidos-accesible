@@ -70,9 +70,19 @@ function PedidosNormalPage() {
 
   const handleNormalEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido) => {
     const succeeded = await handleEstadoChange(pedido, estado);
-    if (succeeded) soundFeedback.success();
-    else soundFeedback.error();
     const numeroPedido = getPedidoDisplayNumber(pedido);
+    if (!succeeded) {
+      soundFeedback.error();
+      speak(`No se pudo actualizar el pedido ${numeroPedido}.`, {
+        priority: "high",
+        dedupeKey: `pedido-normal-estado-error:${pedido.id}:${estado}`,
+        cooldownMs: 1800,
+        interrupt: true
+      });
+      return;
+    }
+
+    soundFeedback.success();
     speak(`Pedido ${numeroPedido} actualizado a ${ESTADO_META[estado].label}.`, {
       priority: "high",
       dedupeKey: `pedido-normal-estado:${pedido.id}:${estado}`,
@@ -363,9 +373,6 @@ function PedidosActivosPanel({
     >
       <header className="px-4 py-4">
         <h1 className="text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
-        <p className="mt-1 max-w-2xl text-sm font-bold text-slate-600">
-          Revisa pedidos pendientes, en preparación, listos y entregados recientemente.
-        </p>
       </header>
 
       <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">

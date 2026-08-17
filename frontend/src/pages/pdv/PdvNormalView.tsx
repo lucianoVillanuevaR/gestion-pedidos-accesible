@@ -11,8 +11,32 @@ import PdvPaymentSection from "./components/PdvPaymentSection";
 import PdvReceiptActions from "./components/PdvReceiptActions";
 import { usePdvViewContext } from "./PdvViewContext";
 
-function PdvNormalView() {
+function TurnoDialogDetails({
+  cashierLabel,
+  dateLabel,
+  dateValue
+}: {
+  cashierLabel: string;
+  dateLabel: string;
+  dateValue: string;
+}) {
   const { user } = useAuthContext();
+
+  return (
+    <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
+      <div className="flex items-center justify-between gap-3">
+        <span>{cashierLabel}</span>
+        <span className="font-black text-slate-950">{user?.label ?? "Sin usuario"}</span>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <span>{dateLabel}</span>
+        <span className="font-black text-slate-950">{dateValue}</span>
+      </div>
+    </div>
+  );
+}
+
+function PdvNormalView() {
   const [showOpenTurnoConfirm, setShowOpenTurnoConfirm] = useState(false);
   const [showCloseTurnoConfirm, setShowCloseTurnoConfirm] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
@@ -203,27 +227,24 @@ function PdvNormalView() {
           onCancel={() => setShowOpenTurnoConfirm(false)}
           onConfirm={handleConfirmOpenTurno}
         >
-          <div className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
-            <div className="flex items-center justify-between gap-3">
-              <span>Cajero actual</span>
-              <span className="font-black text-slate-950">{user?.label ?? "Sin usuario"}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span>Fecha y hora</span>
-              <span className="font-black text-slate-950">{fullDate}</span>
-            </div>
-          </div>
+          <TurnoDialogDetails cashierLabel="Cajero actual" dateLabel="Fecha y hora" dateValue={fullDate} />
         </ConfirmDialog>
       )}
 
       {showCloseTurnoConfirm && (
         <ConfirmDialog
-          title="Confirmar cierre de turno"
-          description="¿Seguro que deseas cerrar el turno? No podrás registrar pedidos hasta abrir uno nuevo."
-          primaryLabel="Sí, cerrar turno"
+          title="Cerrar turno"
+          description="Al cerrar el turno no podrás registrar pedidos hasta abrir uno nuevo."
+          primaryLabel="Cerrar turno"
           onCancel={() => setShowCloseTurnoConfirm(false)}
           onConfirm={handleConfirmCloseTurno}
-        />
+        >
+          <TurnoDialogDetails
+            cashierLabel="Cajero que cierra"
+            dateLabel="Fecha y hora de cierre"
+            dateValue={fullDate}
+          />
+        </ConfirmDialog>
       )}
 
       {showSubmitConfirm && (

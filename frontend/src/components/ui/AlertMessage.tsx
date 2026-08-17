@@ -1,7 +1,7 @@
 import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import type { ReactNode } from "react";
 
-type AlertMessageTone = "error" | "success" | "info";
+type AlertMessageTone = "error" | "success" | "info" | "warning";
 
 type AlertMessageProps = {
   children?: ReactNode;
@@ -16,13 +16,15 @@ type AlertMessageProps = {
 const toneClasses: Record<AlertMessageTone, string> = {
   error: "border-red-800 bg-red-700 text-white",
   info: "border-slate-200 bg-white text-slate-900",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-950"
+  success: "border-emerald-200 bg-emerald-50 text-emerald-950",
+  warning: "border-amber-300 bg-amber-50 text-amber-950"
 };
 
 const icons = {
   error: AlertTriangle,
   info: Info,
-  success: CheckCircle2
+  success: CheckCircle2,
+  warning: AlertTriangle
 };
 
 function AlertMessage({

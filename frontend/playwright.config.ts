@@ -7,6 +7,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost",
+    launchOptions: process.env.PLAYWRIGHT_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+      : undefined,
     screenshot: "only-on-failure",
     trace: "retain-on-failure"
   },

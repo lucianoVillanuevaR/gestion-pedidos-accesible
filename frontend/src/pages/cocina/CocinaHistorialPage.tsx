@@ -165,9 +165,6 @@ export default function CocinaHistorialPage() {
         >
           <div>
             <h1 className="text-2xl font-black text-slate-950">Historial de turnos</h1>
-            <p className="mt-1 text-sm font-bold text-slate-600">
-              Consulta turnos cerrados, ventas confirmadas y pedidos registrados.
-            </p>
           </div>
           <button
             type="button"

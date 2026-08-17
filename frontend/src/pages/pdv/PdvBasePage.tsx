@@ -424,7 +424,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       showFeedback(buildPedidoSaveErrorFeedback(message || "Error al registrar", Boolean(editingPedido)));
-      playSoundCue("error");
+      playSoundCue(isStockError(message) ? "warning" : "error");
       announce(
         isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido",
         {

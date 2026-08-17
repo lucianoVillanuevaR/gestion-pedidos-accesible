@@ -152,6 +152,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
 
     if (stockActual === null || stockMinimo === null) {
       setError("El stock y el stock mínimo deben ser números enteros mayores o iguales a 0.");
+      soundFeedback.warning();
       return;
     }
 

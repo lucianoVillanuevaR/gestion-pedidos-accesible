@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";
+import AlertMessage from "../../components/ui/AlertMessage";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useAuthContext } from "../../contexts/AuthContext";
@@ -45,6 +46,11 @@ import {
 } from "./PedidosShared";
 import CierreTurnoPrintable from "./components/CierreTurnoPrintable";
 
+type TurnoFeedback = {
+  message: string;
+  tone: "success" | "warning" | "error";
+};
+
 function CierreTurnoPage() {
   const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const navigate = useNavigate();
@@ -54,7 +60,7 @@ function CierreTurnoPage() {
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<TurnoFeedback | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [expandedEasySections, setExpandedEasySections] = useState({
     metodos: false,
@@ -95,12 +101,15 @@ function CierreTurnoPage() {
       setTurnoAbierto(true);
       setTurnoFechaInicio(turno.fechaInicio);
       setIsTurnoOpen(true);
-      setMessage("Turno abierto. Ya puedes registrar nuevos pedidos.");
+      setFeedback({ message: "Turno abierto. Ya puedes registrar nuevos pedidos.", tone: "success" });
       soundFeedback.success();
       speakAction("Turno abierto.", "cierre-abrir-turno");
       loadPedidos();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "No fue posible abrir el turno.");
+      setFeedback({
+        message: error instanceof Error ? error.message : "No fue posible abrir el turno.",
+        tone: "error"
+      });
       soundFeedback.error();
     }
   };
@@ -108,7 +117,7 @@ function CierreTurnoPage() {
   const handleCerrarTurno = async () => {
     const closeError = validateTurnoClose(isTurnoOpen);
     if (closeError) {
-      setMessage(closeError);
+      setFeedback({ message: closeError, tone: "warning" });
       soundFeedback.warning();
       setIsConfirmOpen(false);
       return;
@@ -120,12 +129,15 @@ function CierreTurnoPage() {
       setTurnoAbierto(false);
       setIsTurnoOpen(false);
       setIsConfirmOpen(false);
-      setMessage("Turno cerrado correctamente.");
+      setFeedback({ message: "Turno cerrado correctamente.", tone: "success" });
       soundFeedback.success();
       speakAction("Turno cerrado correctamente.", `cierre-turno:${cierre.id}`);
       await loadPedidos();
     } catch (requestError) {
-      setMessage(requestError instanceof Error ? requestError.message : "No fue posible cerrar el turno.");
+      setFeedback({
+        message: requestError instanceof Error ? requestError.message : "No fue posible cerrar el turno.",
+        tone: "error"
+      });
       soundFeedback.error();
     } finally {
       setIsSaving(false);
@@ -169,14 +181,7 @@ function CierreTurnoPage() {
           />
         )}
 
-        {message && (
-          <div
-            className={`rounded-2xl border px-4 py-3 font-black ${isHighContrast ? "contrast-panel" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}
-            role="status"
-          >
-            {message}
-          </div>
-        )}
+        {feedback && <AlertMessage isHighContrast={isHighContrast} message={feedback.message} tone={feedback.tone} />}
 
         {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
 
@@ -331,7 +336,6 @@ function CierreHeader({
       <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.8fr)_minmax(620px,1fr)] xl:items-start">
         <div>
           <h1 className="mt-1 text-3xl font-black leading-tight text-slate-950">Cierre de turno</h1>
-          <p className="mt-1 text-base font-bold text-slate-600">Resumen y cierre del turno actual</p>
 
           <div
             className={`mt-5 grid gap-3 ${isAccessible ? "sm:grid-cols-2" : "sm:flex sm:flex-wrap"}`}

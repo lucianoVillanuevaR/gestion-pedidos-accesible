@@ -365,6 +365,7 @@ function ProductosPage() {
         return nextCategories;
       });
       setIsCreatingCategory(false);
+      soundFeedback.success();
       speakOnDemand(`Categoría creada. ${categoriaCreada.nombre}.`, {
         dedupeKey: `producto-category-created:${categoriaCreada.id}`,
         cooldownMs: 1800,
@@ -375,6 +376,7 @@ function ProductosPage() {
     } catch (requestError) {
       const message = requestError instanceof Error ? requestError.message : "No fue posible crear la categoría";
       setError(message);
+      soundFeedback.error();
       speak(`No fue posible crear la categoría. ${message}`, {
         priority: "high",
         dedupeKey: `producto-category-create-error:${label}`,
@@ -437,6 +439,7 @@ function ProductosPage() {
     if (!categoria.id) {
       const message = "No se puede eliminar una categoría sin registro en el servidor.";
       setError(message);
+      soundFeedback.warning();
       speak(message, {
         priority: "high",
         dedupeKey: `producto-category-delete-missing-id:${grupo.value}`,
@@ -449,6 +452,7 @@ function ProductosPage() {
     if (grupo.productos.length > 0) {
       const message = "Primero elimina o cambia de categoría los productos antes de borrar esta categoría.";
       setError(message);
+      soundFeedback.warning();
       speak(message, {
         priority: "high",
         dedupeKey: `producto-category-delete-not-empty:${grupo.value}`,
@@ -466,6 +470,7 @@ function ProductosPage() {
         setActiveCategory("Destacados");
         setIsDeletingCategory(false);
         setError(null);
+        soundFeedback.success();
         speakAction(`Categoría eliminada. ${grupo.label}.`, `producto-category-deleted:${categoria.id}`, {
           cooldownMs: 1800,
           priority: "normal"
@@ -474,6 +479,7 @@ function ProductosPage() {
       .catch((requestError) => {
         const message = requestError instanceof Error ? requestError.message : "No fue posible eliminar la categoría";
         setError(message);
+        soundFeedback.error();
         speak(`No fue posible eliminar la categoría. ${message}`, {
           priority: "high",
           dedupeKey: `producto-category-delete-error:${categoria.id}`,
