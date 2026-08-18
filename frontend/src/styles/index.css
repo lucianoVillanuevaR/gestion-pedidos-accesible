@@ -154,8 +154,7 @@ html[data-contrast="true"] .bg-\[\#F7F7F7\],
 html[data-contrast="true"] .bg-\[\#FFF8DC\],
 html[data-contrast="true"] .bg-\[\#FFF4BF\],
 html[data-contrast="true"] .bg-\[\#FFFBF0\],
-html[data-contrast="true"] .bg-\[\#F5F5F5\],
-html[data-contrast="true"] .bg-\[\#F7F7F7\] {
+html[data-contrast="true"] .bg-\[\#F5F5F5\] {
   background-color: var(--contrast-surface) !important;
 }
 
@@ -275,6 +274,23 @@ html[data-contrast="true"] a:visited {
   color: var(--contrast-accent-soft);
 }
 
+html[data-contrast="true"] ::selection {
+  background: #111827;
+  color: #ffffff;
+}
+
+html[data-contrast="true"] .shadow-sm,
+html[data-contrast="true"] .shadow-lg,
+html[data-contrast="true"] .shadow-xl,
+html[data-contrast="true"] .shadow-2xl {
+  box-shadow: none !important;
+}
+
+html[data-contrast="true"] a,
+html[data-contrast="true"] button {
+  border-width: 2px;
+}
+
 html[data-contrast="true"] .ticket-print,
 html[data-contrast="true"] .ticket-print * {
   background: #ffffff !important;
@@ -297,7 +313,6 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-a:focus-visible,
 [tabindex]:focus-visible {
   outline: 3px solid var(--focus-color);
   outline-offset: 2px;
@@ -307,7 +322,6 @@ html[data-accessible="true"] button:focus-visible,
 html[data-accessible="true"] input:focus-visible,
 html[data-accessible="true"] select:focus-visible,
 html[data-accessible="true"] textarea:focus-visible,
-html[data-accessible="true"] a:focus-visible,
 html[data-accessible="true"] [tabindex]:focus-visible {
   outline: 4px solid var(--focus-color);
   outline-offset: 3px;
@@ -402,6 +416,7 @@ html[data-accessible="true"] a:focus-visible {
   outline: 3px solid var(--focus-color);
   outline-offset: 3px;
   border-radius: 4px;
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1);
 }
 
 .skip-link {
@@ -433,26 +448,6 @@ html[data-accessible="true"] a:focus-visible {
   html[data-accessible="true"] {
     color-scheme: light;
   }
-}
-html[data-contrast="true"] textarea {
-  background-color: #ffffff !important;
-}
-
-html[data-contrast="true"] ::selection {
-  background: #111827;
-  color: #ffffff;
-}
-
-html[data-contrast="true"] .shadow-sm,
-html[data-contrast="true"] .shadow-lg,
-html[data-contrast="true"] .shadow-xl,
-html[data-contrast="true"] .shadow-2xl {
-  box-shadow: none !important;
-}
-
-html[data-contrast="true"] a,
-html[data-contrast="true"] button {
-  border-width: 2px;
 }
 
 ::selection {
@@ -680,11 +675,9 @@ html[data-contrast="true"] button {
   }
 
   .ticket-print {
-    width: 80mm;
     max-width: 80mm;
     min-height: 0;
     margin: 0;
-    padding: 3mm 4mm 5mm;
     overflow: visible;
   }
 

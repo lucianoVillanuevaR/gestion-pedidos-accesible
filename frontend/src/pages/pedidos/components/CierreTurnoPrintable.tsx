@@ -10,7 +10,7 @@ import {
   getTurnoSummary
 } from "../PedidosShared";
 
-type CierreTurnoPrintableProps = {
+export type CierreTurnoPrintableProps = {
   fechaCierre: string;
   fechaInicio?: string;
   pedidos: ReturnType<typeof getCierrePedidosResumen>;

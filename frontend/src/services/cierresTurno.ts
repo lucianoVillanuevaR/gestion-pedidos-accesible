@@ -45,9 +45,25 @@ export async function sincronizarTurnoActual() {
 
 export async function cargarCierresTurno() {
   const body = await apiRequest<{
-    turnos?: Array<{ resumen: CierreTurno | null }>;
+    turnos?: Array<{ id: number; resumen: CierreTurno | null }>;
   }>("/turnos/cierres", {
     fallbackMessage: "No fue posible cargar los cierres"
   });
-  return (body.turnos ?? []).flatMap((turno) => (turno.resumen ? [turno.resumen] : []));
+
+  return extractCierresTurno(body.turnos ?? []);
+}
+
+export function extractCierresTurno(turnos: Array<{ id: number; resumen: CierreTurno | null }>) {
+  const cierres: CierreTurno[] = [];
+
+  for (const turno of turnos) {
+    if (turno.resumen) {
+      cierres.push(turno.resumen);
+      continue;
+    }
+
+    console.warn(`El turno cerrado ${turno.id} no tiene datos suficientes para mostrar su resumen histórico.`);
+  }
+
+  return cierres;
 }

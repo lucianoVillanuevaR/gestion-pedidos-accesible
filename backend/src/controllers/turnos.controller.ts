@@ -14,20 +14,30 @@ type TurnoWithRelations = Prisma.TurnoGetPayload<{
   include: typeof turnoInclude;
 }>;
 
-function serializeTurno(turno: TurnoWithRelations) {
+function isObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+export function serializeTurno(turno: TurnoWithRelations) {
   const usuario = {
     label: turno.usuario.label,
     role: turno.usuario.role,
     username: turno.usuario.username
   };
-  const resumen =
-    turno.resumen && typeof turno.resumen === "object" && !Array.isArray(turno.resumen)
-      ? {
-          ...turno.resumen,
-          usuario,
-          usuarioId: "usuarioId" in turno.resumen ? turno.resumen.usuarioId : turno.usuario.username
-        }
-      : turno.resumen;
+  const resumen = isObject(turno.resumen)
+    ? {
+        ...turno.resumen,
+        usuario: isObject(turno.resumen.usuario)
+          ? {
+              label: typeof turno.resumen.usuario.label === "string" ? turno.resumen.usuario.label : usuario.label,
+              role: typeof turno.resumen.usuario.role === "string" ? turno.resumen.usuario.role : usuario.role,
+              username:
+                typeof turno.resumen.usuario.username === "string" ? turno.resumen.usuario.username : usuario.username
+            }
+          : usuario,
+        usuarioId: typeof turno.resumen.usuarioId === "string" ? turno.resumen.usuarioId : usuario.username
+      }
+    : turno.resumen;
 
   return {
     id: turno.id,
@@ -38,6 +48,19 @@ function serializeTurno(turno: TurnoWithRelations) {
     usuario,
     pedidoIds: turno.pedidos.map((pedido) => pedido.id),
     resumen
+  };
+}
+
+type TurnoForClose = Prisma.TurnoGetPayload<{
+  include: typeof turnoCloseInclude;
+}>;
+
+export function serializeCierreTurno(turno: TurnoForClose) {
+  if (turno.resumen || !turno.fechaCierre) return serializeTurno(turno);
+
+  return {
+    ...serializeTurno(turno),
+    resumen: buildResumenTurno(turno, turno.fechaCierre)
   };
 }
 
@@ -118,7 +141,7 @@ export async function getCierres(_req: Request, res: Response) {
   const turnos = await prisma.turno.findMany({
     where: { estado: "cerrado" },
     orderBy: { fechaCierre: "desc" },
-    include: turnoInclude
+    include: turnoCloseInclude
   });
-  return res.json({ turnos: turnos.map(serializeTurno) });
+  return res.json({ turnos: turnos.map(serializeCierreTurno) });
 }

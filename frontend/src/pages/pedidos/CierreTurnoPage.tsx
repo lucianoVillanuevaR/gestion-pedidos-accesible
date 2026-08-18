@@ -25,7 +25,7 @@ import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
-import type { CierreProductoResumen } from "../../types";
+import type { CierreProductoResumen, CierreTurno } from "../../types";
 import { getResponsableDisplay, type ResponsableDisplay } from "../../utils/turnoResponsable";
 import { validateTurnoClose } from "../../validations/turno.validation";
 import {
@@ -44,12 +44,38 @@ import {
   StatusBadge,
   usePedidosController
 } from "./PedidosShared";
-import CierreTurnoPrintable from "./components/CierreTurnoPrintable";
+import CierreTurnoPrintable, { type CierreTurnoPrintableProps } from "./components/CierreTurnoPrintable";
 
 type TurnoFeedback = {
   message: string;
   tone: "success" | "warning" | "error";
 };
+
+export function resolveCierreTurnoPrintable(
+  ultimoCierre: CierreTurno | null,
+  turnoActual: CierreTurnoPrintableProps
+): CierreTurnoPrintableProps {
+  if (!ultimoCierre) return turnoActual;
+
+  return {
+    fechaCierre: ultimoCierre.fechaCierre,
+    fechaInicio: ultimoCierre.fechaInicio,
+    pedidos: ultimoCierre.pedidos,
+    productosVendidos: ultimoCierre.productosVendidos,
+    responsable: getResponsableDisplay(ultimoCierre.usuario, ultimoCierre.usuarioId),
+    summary: {
+      pedidosCancelados: ultimoCierre.pedidosCancelados,
+      pedidosEntregados: ultimoCierre.pedidosEntregados,
+      pedidosPendientes: ultimoCierre.pedidosPendientes,
+      totalEfectivo: ultimoCierre.totalEfectivo,
+      totalPedidos: ultimoCierre.totalPedidos,
+      totalPendiente: ultimoCierre.totalPendiente,
+      totalTarjeta: ultimoCierre.totalTarjeta,
+      totalTransferencia: ultimoCierre.totalTransferencia,
+      totalVendido: ultimoCierre.totalVendido
+    }
+  };
+}
 
 function CierreTurnoPage() {
   const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
@@ -61,6 +87,7 @@ function CierreTurnoPage() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<TurnoFeedback | null>(null);
+  const [ultimoCierre, setUltimoCierre] = useState<CierreTurno | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [expandedEasySections, setExpandedEasySections] = useState({
     metodos: false,
@@ -94,6 +121,14 @@ function CierreTurnoPage() {
     [user]
   );
   const hasPedidosPendientes = summary.pedidosPendientes > 0;
+  const printableTurno = resolveCierreTurnoPrintable(ultimoCierre, {
+    fechaCierre: now.toISOString(),
+    fechaInicio,
+    pedidos: pedidosDetalle,
+    productosVendidos,
+    responsable,
+    summary
+  });
 
   const handleAbrirTurno = async () => {
     try {
@@ -101,6 +136,7 @@ function CierreTurnoPage() {
       setTurnoAbierto(true);
       setTurnoFechaInicio(turno.fechaInicio);
       setIsTurnoOpen(true);
+      setUltimoCierre(null);
       setFeedback({ message: "Turno abierto. Ya puedes registrar nuevos pedidos.", tone: "success" });
       soundFeedback.success();
       speakAction("Turno abierto.", "cierre-abrir-turno");
@@ -126,6 +162,7 @@ function CierreTurnoPage() {
     try {
       setIsSaving(true);
       const cierre = await guardarCierreTurno();
+      setUltimoCierre(cierre);
       setTurnoAbierto(false);
       setIsTurnoOpen(false);
       setIsConfirmOpen(false);
@@ -293,12 +330,12 @@ function CierreTurnoPage() {
 
         <section className="historial-print-turno historial-print-target" aria-hidden="true">
           <CierreTurnoPrintable
-            fechaCierre={now.toISOString()}
-            fechaInicio={fechaInicio}
-            pedidos={pedidosDetalle}
-            productosVendidos={productosVendidos}
-            responsable={responsable}
-            summary={summary}
+            fechaCierre={printableTurno.fechaCierre}
+            fechaInicio={printableTurno.fechaInicio}
+            pedidos={printableTurno.pedidos}
+            productosVendidos={printableTurno.productosVendidos}
+            responsable={printableTurno.responsable}
+            summary={printableTurno.summary}
           />
         </section>
       </main>
