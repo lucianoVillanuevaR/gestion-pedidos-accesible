@@ -22,6 +22,7 @@ import PdvPageStatus from "./components/PdvPageStatus";
 import PdvPrintTicket from "./components/PdvPrintTicket";
 import PdvProductConfigurator from "./components/PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
+import { getPdvKeyboardAction } from "./pdvKeyboardNavigation";
 
 function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
   const maxPedidoNumber = withPedidoNumerosTurno(pedidos).reduce((maxNumber, pedido) => {
@@ -598,15 +599,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         return;
       }
 
-      if (event.key === "Escape") {
+      const keyboardAction = getPdvKeyboardAction(event.key);
+
+      if (keyboardAction === "reset") {
         setAccessibleStep(1);
       }
 
-      if (event.key === "ArrowRight") {
+      if (keyboardAction === "next") {
         goNextAccessibleStep();
       }
 
-      if (event.key === "ArrowLeft") {
+      if (keyboardAction === "previous") {
         goPrevAccessibleStep();
       }
     };

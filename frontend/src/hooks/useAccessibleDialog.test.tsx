@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { getPdvKeyboardAction } from "../pages/pdv/pdvKeyboardNavigation";
 import useAccessibleDialog from "./useAccessibleDialog";
 
 function TestDialog({ onClose }: { onClose: () => void }) {
@@ -23,6 +24,12 @@ describe("useAccessibleDialog", () => {
   it("encierra el foco, cierra con Escape y restaura el disparador", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
+    const globalPdvAction = vi.fn();
+    const globalKeyHandler = (event: KeyboardEvent) => {
+      const action = getPdvKeyboardAction(event.key);
+      if (action) globalPdvAction(action);
+    };
+    window.addEventListener("keydown", globalKeyHandler);
     const trigger = document.createElement("button");
     document.body.appendChild(trigger);
     trigger.focus();
@@ -36,7 +43,9 @@ describe("useAccessibleDialog", () => {
     expect(document.activeElement).toBe(first);
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledOnce();
+    expect(globalPdvAction).not.toHaveBeenCalled();
     unmount();
+    window.removeEventListener("keydown", globalKeyHandler);
     expect(document.activeElement).toBe(trigger);
     trigger.remove();
   });

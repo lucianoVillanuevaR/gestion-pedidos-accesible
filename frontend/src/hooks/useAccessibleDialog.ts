@@ -36,6 +36,7 @@ function useAccessibleDialog({ containerRef, enabled = true, initialFocusRef, on
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && onClose) {
         event.preventDefault();
+        event.stopPropagation();
         onClose();
         return;
       }

@@ -95,4 +95,27 @@ describe("usePdvOrderDraft: feedback al modificar productos", () => {
     act(() => result.current.selectPendingVariant(undefined, 1, { aderezos: [] }));
     expect(playSoundCue).toHaveBeenCalledOnce();
   });
+
+  it("limpia todos los datos del pedido confirmado y elimina el borrador persistido", () => {
+    const { result } = renderDraft();
+
+    act(() => {
+      result.current.increaseProduct(producto);
+      result.current.setClienteNombre("Ana");
+      result.current.selectMetodoPago("efectivo");
+      result.current.setObservacion("Sin tomate");
+    });
+
+    expect(result.current.pedidoDetalles).toHaveLength(1);
+    expect(window.localStorage.length).toBe(1);
+
+    act(() => result.current.clearPedidoForm());
+
+    expect(result.current.pedidoDetalles).toHaveLength(0);
+    expect(result.current.clienteNombre).toBe("");
+    expect(result.current.metodoPago).toBe("");
+    expect(result.current.observacion).toBe("");
+    expect(result.current.total).toBe(0);
+    expect(window.localStorage.length).toBe(0);
+  });
 });

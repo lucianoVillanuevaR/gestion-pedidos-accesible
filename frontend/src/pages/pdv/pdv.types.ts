@@ -12,7 +12,6 @@ export type PdvPedidoDetalle = {
 
 export type PdvPrintData = {
   clienteNombre: string;
-  createdAt?: string;
   metodoPago: MetodoPago | "";
   numeroPedido: number | string;
   observacion: string;
