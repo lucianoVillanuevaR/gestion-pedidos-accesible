@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { CierreTurno } from "../../types";
-import { filterTurnosHistorial, getTurnoProductosVendidos, getTurnosHistorial } from "./cocinaHistoryUtils";
+import {
+  filterTurnosHistorial,
+  formatHistorialPedidoTime,
+  getPedidosRecientes,
+  getTurnoProductosVendidos,
+  getTurnosHistorial,
+  groupHistorialPedidosByDate
+} from "./cocinaHistoryUtils";
 
 const cierre: CierreTurno = {
   fechaCierre: "2026-06-23T20:00:00.000Z",
@@ -106,5 +113,75 @@ describe("utilidades del historial de cocina", () => {
 
     expect(turnos).toHaveLength(1);
     expect(turnos[0].pedidos).toEqual([]);
+  });
+
+  it("mantiene los filtros Hoy, Esta semana y Recientes sobre los cierres", () => {
+    const now = new Date(2026, 5, 24, 12);
+    const today = { ...cierre, fechaCierre: new Date(2026, 5, 24, 10).toISOString(), id: "hoy" };
+    const thisWeek = { ...cierre, fechaCierre: new Date(2026, 5, 22, 10).toISOString(), id: "semana" };
+    const previousWeek = { ...cierre, fechaCierre: new Date(2026, 5, 14, 10).toISOString(), id: "anterior" };
+    const turnos = getTurnosHistorial([previousWeek, thisWeek, today]);
+
+    const applyFilter = (dateFilter: "all" | "today" | "week") =>
+      filterTurnosHistorial(turnos, {
+        dateFilter,
+        estadoFilter: "todos",
+        metodoFilter: "todos",
+        searchTerm: ""
+      }).map((turno) => turno.id);
+
+    const originalDate = Date;
+    globalThis.Date = class extends originalDate {
+      constructor(value?: string | number | Date) {
+        super(value === undefined ? now : value);
+      }
+    } as DateConstructor;
+
+    try {
+      expect(applyFilter("today")).toEqual(["hoy"]);
+      expect(applyFilter("week")).toEqual(["hoy", "semana"]);
+      expect(applyFilter("all")).toEqual(["hoy", "semana", "anterior"]);
+    } finally {
+      globalThis.Date = originalDate;
+    }
+  });
+
+  it("agrupa por fecha y da contexto temporal sin alterar números repetidos", () => {
+    const todayPedido = {
+      ...getTurnosHistorial([cierre])[0].pedidos[0],
+      createdAt: "2026-06-23T18:42:00.000Z",
+      numeroTurno: 6
+    };
+    const yesterdayPedido = {
+      ...todayPedido,
+      createdAt: "2026-06-22T21:10:00.000Z",
+      fechaCierre: "2026-06-22T22:00:00.000Z",
+      turnoId: "turno-2"
+    };
+    const now = new Date("2026-06-23T23:00:00.000Z");
+    const groups = groupHistorialPedidosByDate([todayPedido, yesterdayPedido], now);
+
+    expect(groups.map((group) => group.label)).toEqual(["Hoy · 23 de junio", "Ayer · 22 de junio"]);
+    expect(formatHistorialPedidoTime(todayPedido, now)).toMatch(/^Hoy · \d{2}:\d{2}$/);
+    expect(formatHistorialPedidoTime(yesterdayPedido, now)).toMatch(/^Ayer · \d{2}:\d{2}$/);
+    expect(groups.flatMap((group) => group.pedidos.map((pedido) => pedido.numeroTurno))).toEqual([6, 6]);
+  });
+
+  it("devuelve todos los pedidos recientes ordenados para permitir carga incremental", () => {
+    const turnos = Array.from({ length: 15 }, (_, index) => ({
+      ...getTurnosHistorial([cierre])[0],
+      id: `turno-${index}`,
+      pedidos: [
+        {
+          ...getTurnosHistorial([cierre])[0].pedidos[0],
+          createdAt: new Date(2026, 5, 23, index).toISOString(),
+          id: index,
+          turnoId: `turno-${index}`
+        }
+      ]
+    }));
+
+    expect(getPedidosRecientes(turnos)).toHaveLength(15);
+    expect(getPedidosRecientes(turnos)[0].id).toBe(14);
   });
 });

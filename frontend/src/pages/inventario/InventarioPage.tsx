@@ -11,6 +11,12 @@ import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
+import {
+  countInventarioFacil,
+  filterInventarioFacil,
+  getInventarioFacilEmptyMessage,
+  getInventarioFacilEstadoLabel
+} from "./inventarioFacilUtils";
 
 type InventarioFilter = InventarioEstado | "todos";
 
@@ -104,6 +110,11 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
       items: filteredInventario.filter((item) => item.estado === section.value)
     }));
   }, [filteredInventario]);
+  const inventarioFacilFiltrado = useMemo(
+    () => filterInventarioFacil(inventario, activeFilter, searchTerm),
+    [activeFilter, inventario, searchTerm]
+  );
+  const conteoInventarioFacil = useMemo(() => countInventarioFacil(inventario), [inventario]);
 
   const loadInventario = () => {
     setIsLoading(true);
@@ -205,52 +216,113 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
 
   if (isAccessible) {
     return (
-      <section className="mx-auto w-full max-w-7xl space-y-5">
+      <section className="mx-auto w-full max-w-7xl space-y-4 px-3 pb-4 pt-4 sm:px-4 sm:pt-5 lg:px-5 lg:pt-6 xl:px-6">
         <div
-          className={`rounded-[28px] p-6 sm:p-8 ${isHighContrast ? "contrast-panel border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+          className={`rounded-[28px] p-5 ${isHighContrast ? "contrast-panel border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
         >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(480px,680px)] xl:items-start">
             <div>
-              <p className="text-lg font-black uppercase tracking-[0.18em] text-slate-500">Modo fácil</p>
-              <h1 className="mt-2 text-4xl font-black text-slate-950">Stock básico</h1>
-              <p className="mt-3 text-xl font-bold text-slate-700">
-                Revisa qué productos están disponibles o agotados.
+              <h1 className="text-3xl font-black text-slate-950 sm:text-4xl">Stock básico</h1>
+              <p className="mt-2 text-lg font-bold text-slate-700">
+                Revisa rápidamente qué productos tienen poco stock o están agotados.
               </p>
             </div>
-            <div className="grid gap-3 xl:min-w-[760px]">
-              <EasyModeActions />
-              <button
-                type="button"
-                onClick={handleAccessibleRefresh}
-                className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 border-slate-900 bg-white px-5 text-xl font-black text-slate-950 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <RefreshCw className={`h-7 w-7 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-                Actualizar
-              </button>
-            </div>
+            <EasyModeActions compact />
           </div>
         </div>
 
         {isLoading ? (
           <LoadingState label="Cargando inventario..." />
         ) : (
-          <div className="grid gap-4">
-            {inventario.map((item) => (
-              <article key={item.productoId} className="rounded-[26px] border-2 border-slate-900 bg-white p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-950">{item.productoNombre}</h2>
-                    <p className="mt-2 text-xl font-bold text-slate-700">Stock: {item.stockActual}</p>
-                  </div>
-                  <span
-                    className={`inline-flex min-h-[56px] items-center justify-center rounded-2xl border-2 px-5 text-xl font-black ${getEstadoClass(item.estado)}`}
+          <>
+            <div
+              className={`grid gap-3 rounded-[26px] p-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+            >
+              <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <label className="relative block">
+                  <span className="sr-only">Buscar producto</span>
+                  <Search
+                    className="pointer-events-none absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-slate-600"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Buscar producto"
+                    aria-label="Buscar producto"
+                    className={`min-h-[52px] w-full rounded-xl border-2 border-slate-300 bg-white py-2 pl-12 pr-4 text-lg font-black text-slate-950 outline-none placeholder:text-slate-500 focus:border-slate-900 ${FOCUS_VISIBLE_CLASS}`}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAccessibleRefresh}
+                  aria-label="Actualizar stock básico"
+                  className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-lg font-black transition ${
+                    isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
+                  } ${FOCUS_VISIBLE_CLASS}`}
+                >
+                  <RefreshCw className="h-6 w-6" aria-hidden="true" />
+                  Actualizar
+                </button>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3" aria-label="Resumen de stock">
+                <StockMetric label="Disponibles" value={conteoInventarioFacil.disponible} />
+                <StockMetric label="Poco stock" value={conteoInventarioFacil.bajo_stock} />
+                <StockMetric label="Agotados" value={conteoInventarioFacil.sin_stock} />
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3" aria-label="Filtros de stock">
+                <AccessibleStockFilter
+                  active={activeFilter === "todos"}
+                  label="Todos"
+                  onClick={() => setActiveFilter("todos")}
+                  isHighContrast={isHighContrast}
+                />
+                <AccessibleStockFilter
+                  active={activeFilter === "bajo_stock"}
+                  label="Poco stock"
+                  onClick={() => setActiveFilter("bajo_stock")}
+                  isHighContrast={isHighContrast}
+                />
+                <AccessibleStockFilter
+                  active={activeFilter === "sin_stock"}
+                  label="Agotados"
+                  onClick={() => setActiveFilter("sin_stock")}
+                  isHighContrast={isHighContrast}
+                />
+              </div>
+            </div>
+
+            {inventarioFacilFiltrado.length === 0 ? (
+              <div
+                className={`rounded-[26px] p-5 text-center text-lg font-black ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white text-slate-800"}`}
+                role="status"
+              >
+                {getInventarioFacilEmptyMessage(activeFilter, searchTerm)}
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {inventarioFacilFiltrado.map((item) => (
+                  <article
+                    key={item.productoId}
+                    className={`rounded-2xl px-4 py-2 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
                   >
-                    {getEstadoLabel(item.estado, true)}
-                  </span>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">{item.productoNombre}</h2>
+                        <p className="mt-1 text-lg font-bold text-slate-700">Stock: {item.stockActual}</p>
+                      </div>
+                      <AccessibleStockBadge estado={item.estado} isHighContrast={isHighContrast} />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
     );
@@ -390,6 +462,58 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
         )}
       </main>
     </div>
+  );
+}
+
+function StockMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 py-3">
+      <p className="text-lg font-black text-slate-700">{label}</p>
+      <p className="mt-1 text-3xl font-black leading-none text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function AccessibleStockFilter({
+  active,
+  isHighContrast,
+  label,
+  onClick
+}: {
+  active: boolean;
+  isHighContrast: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`min-h-[48px] rounded-xl border-2 px-4 text-lg font-black transition ${
+        isHighContrast
+          ? active
+            ? "contrast-button-primary"
+            : "contrast-button-secondary"
+          : active
+            ? "border-slate-900 bg-slate-900 text-white"
+            : "border-slate-300 bg-white text-slate-950 hover:border-slate-900"
+      } ${FOCUS_VISIBLE_CLASS}`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function AccessibleStockBadge({ estado, isHighContrast }: { estado: InventarioEstado; isHighContrast: boolean }) {
+  return (
+    <span
+      className={`inline-flex min-h-[40px] items-center justify-center self-start rounded-xl border-2 px-4 text-base font-black sm:self-auto ${
+        isHighContrast ? "contrast-panel-soft border-yellow-400" : getEstadoClass(estado)
+      }`}
+    >
+      {getInventarioFacilEstadoLabel(estado)}
+    </span>
   );
 }
 

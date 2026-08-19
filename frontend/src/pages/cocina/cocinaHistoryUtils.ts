@@ -17,6 +17,12 @@ export type HistorialDateFilter = "all" | "month" | "today" | "week";
 export type HistorialEstadoFilter = EstadoPedido | "todos";
 export type HistorialMetodoFilter = MetodoPago | "todos";
 
+export type HistorialPedidoGroup = {
+  dateKey: string;
+  label: string;
+  pedidos: HistorialPedidoDetalle[];
+};
+
 export function getTurnosHistorial(cierres: CierreTurno[]): HistorialTurno[] {
   return cierres
     .map((cierre) => ({
@@ -117,8 +123,83 @@ export function getPedidosRecientes(turnos: HistorialTurno[]) {
       const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
       const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
       return rightTime - leftTime;
-    })
-    .slice(0, 12);
+    });
+}
+
+function getHistorialPedidoDate(pedido: HistorialPedidoDetalle) {
+  const createdAt = pedido.createdAt ? new Date(pedido.createdAt) : null;
+
+  if (createdAt && !Number.isNaN(createdAt.getTime())) return createdAt;
+
+  const fechaCierre = new Date(pedido.fechaCierre);
+  return Number.isNaN(fechaCierre.getTime()) ? null : fechaCierre;
+}
+
+function isSameCalendarDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function getPreviousDay(value: Date) {
+  const previousDay = new Date(value);
+  previousDay.setDate(value.getDate() - 1);
+  return previousDay;
+}
+
+export function formatHistorialPedidoTime(pedido: HistorialPedidoDetalle, now = new Date()) {
+  const date = getHistorialPedidoDate(pedido);
+  if (!date) return "Fecha y hora no disponibles";
+
+  const relativeDay = isSameCalendarDay(date, now)
+    ? "Hoy"
+    : isSameCalendarDay(date, getPreviousDay(now))
+      ? "Ayer"
+      : new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "short" }).format(date).replace(".", "");
+
+  const time = new Intl.DateTimeFormat("es-CL", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit"
+  }).format(date);
+
+  return `${relativeDay} · ${time}`;
+}
+
+export function groupHistorialPedidosByDate(pedidos: HistorialPedidoDetalle[], now = new Date()) {
+  const groups = new Map<string, HistorialPedidoGroup>();
+
+  pedidos.forEach((pedido) => {
+    const date = getHistorialPedidoDate(pedido);
+    const dateKey = date
+      ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+      : "sin-fecha";
+    const relativeDay = date
+      ? isSameCalendarDay(date, now)
+        ? "Hoy"
+        : isSameCalendarDay(date, getPreviousDay(now))
+          ? "Ayer"
+          : new Intl.DateTimeFormat("es-CL", { weekday: "long" }).format(date)
+      : "Sin fecha";
+    const fullDate = date
+      ? new Intl.DateTimeFormat("es-CL", { day: "numeric", month: "long" }).format(date)
+      : "hora no disponible";
+    const currentGroup = groups.get(dateKey);
+
+    if (currentGroup) {
+      currentGroup.pedidos.push(pedido);
+    } else {
+      groups.set(dateKey, {
+        dateKey,
+        label: `${relativeDay.charAt(0).toUpperCase()}${relativeDay.slice(1)} · ${fullDate}`,
+        pedidos: [pedido]
+      });
+    }
+  });
+
+  return [...groups.values()];
 }
 
 export function getTurnoProductosVendidos(turno: HistorialTurno) {

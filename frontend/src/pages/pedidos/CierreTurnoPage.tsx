@@ -89,12 +89,6 @@ function CierreTurnoPage() {
   const [feedback, setFeedback] = useState<TurnoFeedback | null>(null);
   const [ultimoCierre, setUltimoCierre] = useState<CierreTurno | null>(null);
   const [now, setNow] = useState(() => new Date());
-  const [expandedEasySections, setExpandedEasySections] = useState({
-    metodos: false,
-    pedidos: false,
-    productos: false
-  });
-
   useEffect(() => {
     void sincronizarTurnoActual()
       .then((turno) => {
@@ -189,18 +183,27 @@ function CierreTurnoPage() {
 
   return (
     <div className={`min-h-screen ${pageClass}`}>
-      <main className="mx-auto w-full max-w-none space-y-5 px-3 py-4 sm:px-4 lg:px-5 xl:px-6 2xl:px-8">
+      <main
+        className={
+          isAccessible
+            ? "mx-auto w-full max-w-[1440px] space-y-4 px-3 pb-5 pt-4 sm:px-4 sm:pt-5 lg:px-5 lg:pt-6 xl:px-6"
+            : "mx-auto w-full max-w-none space-y-5 px-3 py-4 sm:px-4 lg:px-5 xl:px-6 2xl:px-8"
+        }
+      >
         {isAccessible ? (
           <section
-            className={`rounded-[28px] p-5 sm:p-6 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+            className={`rounded-[28px] p-5 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
           >
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Modo fácil</p>
-                <h1 className="mt-2 text-4xl font-black text-slate-950">Cierre de turno</h1>
-                <p className="mt-3 text-xl font-bold text-slate-700">Revisa el resumen antes de cerrar el turno.</p>
+                <h1 className="text-4xl font-black text-slate-950">Cierre de turno</h1>
+                <p className="mt-2 text-xl font-bold text-slate-700">
+                  {isTurnoOpen
+                    ? "Revisa el resumen antes de cerrar el turno."
+                    : "Abre un turno para comenzar a registrar ventas."}
+                </p>
               </div>
-              <EasyModeActions className="xl:min-w-[760px]" />
+              <EasyModeActions compact className="lg:min-w-[610px]" />
             </div>
           </section>
         ) : (
@@ -228,71 +231,17 @@ function CierreTurnoPage() {
             <span className="ml-3 font-black">Cargando resumen del turno...</span>
           </div>
         ) : isAccessible ? (
-          <>
-            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" aria-label="Resumen esencial de cierre">
-              <MetricCard
-                label="Total vendido confirmado"
-                value={formatCurrency(String(summary.totalVendido))}
-                variant="strong"
-              />
-              <MetricCard label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
-              <MetricCard label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
-            </section>
-
-            {hasPedidosPendientes && (
-              <p className="rounded-2xl border-2 border-yellow-300 bg-[#FFF8DC] px-5 py-4 text-xl font-black text-yellow-950">
-                Hay pedidos pendientes. Puedes revisarlos antes de cerrar.
-              </p>
-            )}
-
-            <section className="grid gap-3" aria-label="Acciones de cierre de turno">
-              <button
-                type="button"
-                onClick={isTurnoOpen ? () => setIsConfirmOpen(true) : handleAbrirTurno}
-                className={`inline-flex min-h-[64px] items-center justify-center gap-2 rounded-2xl border-2 px-5 text-xl font-black transition ${isTurnoOpen ? "border-red-800 bg-red-700 text-white hover:bg-red-800" : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"} ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <Check className="h-6 w-6" aria-hidden="true" />
-                {isTurnoOpen ? "Cerrar turno" : "Abrir turno"}
-              </button>
-            </section>
-
-            <EasyDisclosure
-              isExpanded={expandedEasySections.metodos}
-              onToggle={() =>
-                setExpandedEasySections((current) => ({
-                  ...current,
-                  metodos: !current.metodos
-                }))
-              }
-              title="Ver métodos de pago"
-            >
-              <PaymentMethodsPanel panelClass={panelClass} summary={summary} />
-            </EasyDisclosure>
-            <EasyDisclosure
-              isExpanded={expandedEasySections.productos}
-              onToggle={() =>
-                setExpandedEasySections((current) => ({
-                  ...current,
-                  productos: !current.productos
-                }))
-              }
-              title="Ver productos vendidos"
-            >
-              <ProductosVendidosPanel panelClass={panelClass} productosVendidos={productosVendidos} />
-            </EasyDisclosure>
-            <EasyDisclosure
-              isExpanded={expandedEasySections.pedidos}
-              onToggle={() =>
-                setExpandedEasySections((current) => ({
-                  ...current,
-                  pedidos: !current.pedidos
-                }))
-              }
-              title="Ver pedidos del turno"
-            >
-              <PedidosTurnoPanel panelClass={panelClass} pedidos={pedidosDetalle} />
-            </EasyDisclosure>
-          </>
+          <CierreTurnoFacilContent
+            hasPedidosPendientes={hasPedidosPendientes}
+            isHighContrast={isHighContrast}
+            isTurnoOpen={isTurnoOpen}
+            onAbrirTurno={handleAbrirTurno}
+            onCerrarTurno={() => setIsConfirmOpen(true)}
+            panelClass={panelClass}
+            pedidos={pedidosDetalle}
+            productosVendidos={productosVendidos}
+            summary={summary}
+          />
         ) : (
           <>
             <section
@@ -340,6 +289,149 @@ function CierreTurnoPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export function CierreTurnoFacilContent({
+  hasPedidosPendientes,
+  isHighContrast,
+  isTurnoOpen,
+  onAbrirTurno,
+  onCerrarTurno,
+  panelClass,
+  pedidos,
+  productosVendidos,
+  summary
+}: {
+  hasPedidosPendientes: boolean;
+  isHighContrast: boolean;
+  isTurnoOpen: boolean;
+  onAbrirTurno: () => void;
+  onCerrarTurno: () => void;
+  panelClass: string;
+  pedidos: ReturnType<typeof getCierrePedidosResumen>;
+  productosVendidos: CierreProductoResumen[];
+  summary: ReturnType<typeof getTurnoSummary>;
+}) {
+  const [expandedSections, setExpandedSections] = useState({
+    metodos: false,
+    pedidos: false,
+    productos: false
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((current) => ({ ...current, [section]: !current[section] }));
+  };
+
+  return (
+    <>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen esencial de cierre">
+        <MetricCard
+          compact
+          isHighContrast={isHighContrast}
+          label="Total vendido"
+          value={formatCurrency(String(summary.totalVendido))}
+          variant="strong"
+        />
+        <MetricCard
+          compact
+          isHighContrast={isHighContrast}
+          label="Pedidos entregados"
+          value={String(summary.pedidosEntregados)}
+        />
+        <MetricCard
+          compact
+          isHighContrast={isHighContrast}
+          label="Pedidos pendientes"
+          value={String(summary.pedidosPendientes)}
+        />
+        <MetricCard
+          compact
+          isHighContrast={isHighContrast}
+          label="Cancelados"
+          value={String(summary.pedidosCancelados)}
+        />
+      </section>
+
+      {hasPedidosPendientes && (
+        <p className="rounded-2xl border-2 border-yellow-300 bg-[#FFF8DC] px-5 py-3 text-lg font-black text-yellow-950">
+          Hay pedidos pendientes. Puedes revisarlos antes de cerrar.
+        </p>
+      )}
+
+      <section
+        className={`flex flex-col gap-3 rounded-2xl border-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${
+          isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-900 bg-white"
+        }`}
+        aria-label="Estado del turno"
+      >
+        <div>
+          <p className="text-xl font-black text-slate-950">Turno {isTurnoOpen ? "abierto" : "cerrado"}</p>
+          <p className="mt-1 font-bold text-slate-600">
+            {isTurnoOpen ? "Puedes revisar el resumen y sus detalles." : "Abre un turno para registrar ventas."}
+          </p>
+        </div>
+        {!isTurnoOpen && (
+          <button
+            type="button"
+            onClick={onAbrirTurno}
+            className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-5 text-lg font-black transition ${
+              isHighContrast
+                ? "contrast-button-success"
+                : "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            <Store className="h-5 w-5" aria-hidden="true" />
+            Abrir turno
+          </button>
+        )}
+      </section>
+
+      <div className="grid gap-2">
+        <EasyDisclosure
+          id="cierre-metodos"
+          isExpanded={expandedSections.metodos}
+          isHighContrast={isHighContrast}
+          onToggle={() => toggleSection("metodos")}
+          title="Métodos de pago"
+        >
+          <PaymentMethodsPanel panelClass={panelClass} summary={summary} />
+        </EasyDisclosure>
+        <EasyDisclosure
+          id="cierre-productos"
+          isExpanded={expandedSections.productos}
+          isHighContrast={isHighContrast}
+          onToggle={() => toggleSection("productos")}
+          title="Productos vendidos"
+        >
+          <ProductosVendidosPanel panelClass={panelClass} productosVendidos={productosVendidos} />
+        </EasyDisclosure>
+        <EasyDisclosure
+          id="cierre-pedidos"
+          isExpanded={expandedSections.pedidos}
+          isHighContrast={isHighContrast}
+          onToggle={() => toggleSection("pedidos")}
+          title="Pedidos del turno"
+        >
+          <PedidosTurnoPanel panelClass={panelClass} pedidos={pedidos} />
+        </EasyDisclosure>
+      </div>
+
+      {isTurnoOpen && (
+        <section className="flex justify-end" aria-label="Acción final de cierre">
+          <button
+            type="button"
+            onClick={onCerrarTurno}
+            className={`inline-flex min-h-[56px] w-full items-center justify-center gap-2 rounded-xl border-2 px-6 text-lg font-black transition sm:w-auto ${
+              isHighContrast ? "contrast-button-danger" : "border-red-800 bg-red-700 text-white hover:bg-red-800"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            <Check className="h-5 w-5" aria-hidden="true" />
+            Cerrar turno
+          </button>
+        </section>
+      )}
+    </>
   );
 }
 
@@ -468,22 +560,31 @@ function HeaderInfo({ icon, label, value }: { icon: JSX.Element; label: string; 
 
 function EasyDisclosure({
   children,
+  id,
   isExpanded,
+  isHighContrast,
   onToggle,
   title
 }: {
   children: ReactNode;
+  id: string;
   isExpanded: boolean;
+  isHighContrast: boolean;
   onToggle: () => void;
   title: string;
 }) {
   return (
-    <section className="rounded-[24px] border-2 border-slate-900 bg-white p-4">
+    <section
+      className={`rounded-2xl border-2 p-2 ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-900 bg-white"}`}
+    >
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isExpanded}
-        className={`flex min-h-[64px] w-full items-center justify-between gap-3 rounded-2xl border-2 border-slate-300 bg-white px-5 text-left text-xl font-black text-slate-950 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+        aria-controls={id}
+        className={`flex min-h-[56px] w-full items-center justify-between gap-3 rounded-xl border-2 px-4 text-left text-lg font-black transition ${
+          isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:bg-slate-50"
+        } ${FOCUS_VISIBLE_CLASS}`}
       >
         <span>{title}</span>
         {isExpanded ? (
@@ -492,28 +593,46 @@ function EasyDisclosure({
           <ChevronDown className="h-6 w-6" aria-hidden="true" />
         )}
       </button>
-      {isExpanded && <div className="mt-4">{children}</div>}
+      {isExpanded && (
+        <div id={id} className="mt-2">
+          {children}
+        </div>
+      )}
     </section>
   );
 }
 
 function MetricCard({
+  compact = false,
   helpText,
+  isHighContrast = false,
   label,
   value,
   variant = "default"
 }: {
+  compact?: boolean;
   helpText?: string;
+  isHighContrast?: boolean;
   label: string;
   value: string;
   variant?: "default" | "strong";
 }) {
   return (
     <article
-      className={`rounded-[18px] border p-4 ${variant === "strong" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}
+      className={`rounded-[18px] border ${compact ? "px-4 py-3" : "p-4"} ${
+        isHighContrast
+          ? "contrast-panel-soft border-yellow-400"
+          : variant === "strong"
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-slate-200 bg-white"
+      }`}
     >
       <p className="text-sm font-black uppercase text-slate-500">{label}</p>
-      <p className={`mt-2 font-black text-slate-950 ${variant === "strong" ? "text-3xl" : "text-2xl"}`}>{value}</p>
+      <p
+        className={`${compact ? "mt-1" : "mt-2"} font-black text-slate-950 ${variant === "strong" ? "text-3xl" : "text-2xl"}`}
+      >
+        {value}
+      </p>
       {helpText && <p className="mt-2 text-sm font-bold text-emerald-800">{helpText}</p>}
     </article>
   );
