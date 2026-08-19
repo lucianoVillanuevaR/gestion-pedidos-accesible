@@ -32,7 +32,9 @@ export type PdvViewContextValue = {
   feedbackRef: RefObject<HTMLDivElement>;
   goNextAccessibleStep: () => void;
   goPrevAccessibleStep: () => void;
+  hasPrintableTicket: boolean;
   handlePrint: () => void;
+  handlePrintKitchen: () => void;
   handleReadPedidoSummary: () => void;
   handleSubmit: () => void;
   handleToggleTurno: () => void;

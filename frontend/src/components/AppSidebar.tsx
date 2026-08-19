@@ -238,11 +238,6 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                 <span className={`block font-black leading-tight ${isAccessible ? "text-lg" : "text-[13px]"}`}>
                   {isAccessible ? "Opciones de ayuda" : "Accesibilidad"}
                 </span>
-                <span
-                  className={`mt-0.5 block ${isAccessible ? "text-sm" : "text-[11px]"} ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}
-                >
-                  Modo fácil, contraste y ayuda
-                </span>
               </span>
             </span>
             <ShieldCheck className={isAccessible ? "h-6 w-6" : "h-5 w-5"} aria-hidden="true" />

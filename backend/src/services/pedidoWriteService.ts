@@ -4,7 +4,7 @@ import { getErrorMessage, RequestError } from "../utils/httpErrors";
 import { consumeStockRequirements } from "./pedidoStockService";
 import { buildStockRequirements, getApplicableStockComponents, type StockProduct } from "./stockRequirementsService";
 
-export type PersonalizacionPedido = {
+type PersonalizacionPedido = {
   aderezos: string[];
   comentario?: string;
   combinacion?: {

@@ -19,6 +19,7 @@ type TicketComandaProps = {
   metodoPago: MetodoPago | "";
   observacion?: string;
   numeroPedido?: string | number;
+  type?: "customer" | "kitchen";
 };
 
 function TicketComanda({
@@ -27,8 +28,10 @@ function TicketComanda({
   total,
   metodoPago,
   observacion,
-  numeroPedido
+  numeroPedido,
+  type = "kitchen"
 }: TicketComandaProps) {
+  const isKitchen = type === "kitchen";
   const now = new Date();
   const fecha = now.toLocaleDateString("es-CL", {
     year: "numeric",
@@ -43,9 +46,9 @@ function TicketComanda({
   return (
     <article className="ticket-print">
       <header className="ticket-header">
-        <img className="ticket-logo" src={logoRiquisimo} alt="Riquísimo" />
-        <p className="ticket-brand">RIQUÍSIMO</p>
-        <p className="ticket-document-type">COMANDA DE COCINA</p>
+        {!isKitchen && <img className="ticket-logo" src={logoRiquisimo} alt="Riquísimo" />}
+        {!isKitchen && <p className="ticket-brand">RIQUÍSIMO</p>}
+        <p className="ticket-document-type">{isKitchen ? "TICKET DE COCINA" : "TICKET DE CLIENTE"}</p>
         {numeroPedido && <h1 className="ticket-order-number">PEDIDO #{numeroPedido}</h1>}
       </header>
 
@@ -64,10 +67,12 @@ function TicketComanda({
           <span className="ticket-label">Cliente</span>
           <span className="ticket-value">{clienteNombre?.trim() || "Sin nombre"}</span>
         </div>
-        <div className="ticket-row">
-          <span className="ticket-label">Pago</span>
-          <span className="ticket-value">{metodoPago ? getPaymentLabel(metodoPago) : "Sin seleccionar"}</span>
-        </div>
+        {!isKitchen && (
+          <div className="ticket-row">
+            <span className="ticket-label">Pago</span>
+            <span className="ticket-value">{metodoPago ? getPaymentLabel(metodoPago) : "Sin seleccionar"}</span>
+          </div>
+        )}
       </section>
 
       <div className="ticket-divider-dashed" />
@@ -79,13 +84,13 @@ function TicketComanda({
         ) : (
           pedidoDetalles.map((item) => (
             <div key={item.itemKey} className="ticket-item">
-              <div className="ticket-item-line">
+              <div className={`ticket-item-line ${isKitchen ? "ticket-item-line--kitchen" : ""}`}>
                 <strong className="ticket-qty">{item.cantidad}×</strong>
                 <strong className="ticket-product">{item.producto.nombre}</strong>
-                <strong className="ticket-price">{formatCurrency(item.subtotal)}</strong>
+                {!isKitchen && <strong className="ticket-price">{formatCurrency(item.subtotal)}</strong>}
               </div>
 
-              {item.cantidad > 1 && (
+              {!isKitchen && item.cantidad > 1 && (
                 <p className="ticket-description">{formatCurrency(item.subtotal / item.cantidad)} c/u</p>
               )}
               {item.variante && (
@@ -111,11 +116,15 @@ function TicketComanda({
         )}
       </section>
 
-      <div className="ticket-divider-strong" />
-      <div className="ticket-total-row">
-        <span>TOTAL</span>
-        <strong>{formatCurrency(total)}</strong>
-      </div>
+      {!isKitchen && (
+        <>
+          <div className="ticket-divider-strong" />
+          <div className="ticket-total-row">
+            <span>TOTAL</span>
+            <strong>{formatCurrency(total)}</strong>
+          </div>
+        </>
+      )}
 
       {observacion?.trim() && (
         <section className="ticket-observations">
@@ -126,7 +135,7 @@ function TicketComanda({
 
       <footer className="ticket-footer">
         <div className="ticket-divider-dashed" />
-        <strong>FIN COMANDA</strong>
+        <strong>{isKitchen ? "FIN COMANDA" : "¡GRACIAS POR SU COMPRA!"}</strong>
       </footer>
     </article>
   );

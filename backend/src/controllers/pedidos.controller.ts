@@ -116,7 +116,7 @@ export const crearPedido = async (req: Request, res: Response) => {
 
       const { detallesData, total } = await preparePedidoWrite(tx, detallesNormalizados);
 
-      return tx.pedido.create({
+      const pedidoCreado = await tx.pedido.create({
         data: {
           turnoId: turno.id,
           total,
@@ -130,6 +130,9 @@ export const crearPedido = async (req: Request, res: Response) => {
         },
         include: PEDIDO_WITH_DETALLES_INCLUDE
       });
+
+      const numeroTurno = await tx.pedido.count({ where: { turnoId: turno.id } });
+      return { ...pedidoCreado, numeroTurno };
     });
 
     res.status(201).json(withPedidoProductImageUrls(pedido));

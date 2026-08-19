@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useReactToPrint } from "react-to-print";
+import { useReactToPrint, type UseReactToPrintOptions } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { createPedido, getPedidos, updatePedido } from "../../services/pedidos";
@@ -22,6 +22,55 @@ import PdvPageStatus from "./components/PdvPageStatus";
 import PdvPrintTicket from "./components/PdvPrintTicket";
 import PdvProductConfigurator from "./components/PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
+
+const THERMAL_TICKET_PAGE_STYLE = `
+  @page {
+    size: 80mm 100mm;
+    margin: 0;
+  }
+  html,
+  body {
+    width: 80mm !important;
+    min-width: 80mm !important;
+    margin: 0;
+    padding: 0;
+    background: white;
+    overflow: hidden;
+  }
+  .ticket-print {
+    width: 80mm !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+`;
+
+const printThermalTicket: NonNullable<UseReactToPrintOptions["print"]> = async (printIframe) => {
+  const printWindow = printIframe.contentWindow;
+
+  if (!printWindow) {
+    throw new Error("No se pudo preparar la ventana de impresión");
+  }
+
+  await new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 100);
+  });
+
+  const ticket = printIframe.contentDocument?.querySelector<HTMLElement>(".ticket-print");
+  if (ticket) {
+    const pixelsToMillimeters = 25.4 / 96;
+    const contentHeightMm = Math.ceil(ticket.getBoundingClientRect().height * pixelsToMillimeters) + 2;
+    const dynamicPageStyle = printIframe.contentDocument?.createElement("style");
+
+    if (dynamicPageStyle) {
+      dynamicPageStyle.textContent = `@page { size: 80mm ${contentHeightMm}mm; margin: 0; }`;
+      printIframe.contentDocument?.head.appendChild(dynamicPageStyle);
+    }
+  }
+
+  printWindow.focus();
+  printWindow.print();
+};
 
 function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
   const maxPedidoNumber = withPedidoNumerosTurno(pedidos).reduce((maxNumber, pedido) => {
@@ -50,6 +99,15 @@ function buildDetalleProductoText(item: PdvViewContextValue["pedidoDetalles"][nu
   return `${buildCantidadProductoText(item.cantidad, item.producto.nombre)}${opcion}`;
 }
 
+type SavedTicket = {
+  clienteNombre: string;
+  metodoPago: MetodoPago;
+  numeroPedido: number | string;
+  observacion: string;
+  pedidoDetalles: PdvViewContextValue["pedidoDetalles"];
+  total: number;
+};
+
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,10 +134,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [sending, setSending] = useState(false);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [nextPedidoNumber, setNextPedidoNumber] = useState(1);
+  const [savedTicket, setSavedTicket] = useState<SavedTicket | null>(null);
 
   const initialProductHandledRef = useRef(false);
   const lastAnnouncedAccessibleStepKeyRef = useRef("");
-  const ticketRef = useRef<HTMLDivElement | null>(null);
+  const customerTicketRef = useRef<HTMLDivElement | null>(null);
+  const kitchenTicketRef = useRef<HTMLDivElement | null>(null);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const playSoundCue = useCallback((cue: "error" | "success" | "warning") => soundFeedback[cue](), [soundFeedback]);
   const { feedback, feedbackRef, setFeedback, showFeedback } = usePdvFeedback();
@@ -329,6 +389,10 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   }, [addProduct, isAccessible, loadingProductos, location.pathname, location.state, navigate, productos]);
 
   async function getNumeroTurnoPedidoCreado(pedidoCreado: PedidoResponse) {
+    if (pedidoCreado.numeroTurno) {
+      return pedidoCreado.numeroTurno;
+    }
+
     if (!pedidoCreado.id) {
       return null;
     }
@@ -385,6 +449,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       const numeroPedido = editingPedido
         ? getPedidoDisplayNumber(editingPedido)
         : await getNumeroTurnoPedidoCreado(pedidoCreado);
+      if (!editingPedido && numeroPedido && isAccessible) {
+        setSavedTicket({
+          clienteNombre: pedidoCreado.clienteNombre ?? clienteNombre.trim(),
+          metodoPago: pedidoCreado.metodoPago,
+          numeroPedido,
+          observacion: pedidoCreado.observacion ?? observacion.trim(),
+          pedidoDetalles,
+          total: Number(pedidoCreado.total)
+        });
+      }
       setNextPedidoNumber((currentNumber) =>
         typeof numeroPedido === "number" && Number.isFinite(numeroPedido) ? numeroPedido + 1 : currentNumber + 1
       );
@@ -449,70 +523,31 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     }
   };
 
+  const handlePrintError = useCallback(() => {
+    const msg = "No se pudo abrir la impresión. Revisa que el navegador permita imprimir.";
+    showFeedback({ type: "error", title: "No se pudo imprimir", message: msg });
+    announce(msg, {
+      priority: "high",
+      dedupeKey: "print-error",
+      cooldownMs: 2500,
+      interrupt: true
+    });
+  }, [announce, showFeedback]);
+
   const handlePrint = useReactToPrint({
-    contentRef: ticketRef,
-    documentTitle: `Comanda-Riquisisimo-${new Date().getTime()}`,
-    print: async (printIframe) => {
-      const printWindow = printIframe.contentWindow;
+    contentRef: customerTicketRef,
+    documentTitle: `Ticket-cliente-Riquisisimo-${new Date().getTime()}`,
+    print: printThermalTicket,
+    pageStyle: THERMAL_TICKET_PAGE_STYLE,
+    onPrintError: handlePrintError
+  });
 
-      if (!printWindow) {
-        throw new Error("No se pudo preparar la ventana de impresión");
-      }
-
-      await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, 100);
-      });
-
-      const ticket = printIframe.contentDocument?.querySelector<HTMLElement>(".ticket-print");
-      if (ticket) {
-        const pixelsToMillimeters = 25.4 / 96;
-        const contentHeightMm = Math.ceil(ticket.getBoundingClientRect().height * pixelsToMillimeters) + 2;
-        const dynamicPageStyle = printIframe.contentDocument?.createElement("style");
-
-        if (dynamicPageStyle) {
-          dynamicPageStyle.textContent = `@page { size: 80mm ${contentHeightMm}mm; margin: 0; }`;
-          printIframe.contentDocument?.head.appendChild(dynamicPageStyle);
-        }
-      }
-
-      printWindow.focus();
-      printWindow.print();
-    },
-    pageStyle: `
-      @page {
-        size: 80mm 100mm;
-        margin: 0;
-      }
-      html,
-      body {
-        width: 80mm !important;
-        min-width: 80mm !important;
-        margin: 0;
-        padding: 0;
-        background: white;
-        overflow: hidden;
-      }
-      .ticket-print {
-        width: 80mm !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-        box-shadow: none !important;
-      }
-    `,
-    onPrintError: () => {
-      const msg = "No se pudo abrir la impresión. Revisa que el navegador permita imprimir.";
-      showFeedback({
-        type: "error",
-        title: "No se pudo imprimir",
-        message: msg
-      });
-      announce(msg, {
-        priority: "high",
-        dedupeKey: "print-error",
-        cooldownMs: 2500,
-        interrupt: true
-      });
-    }
+  const handlePrintKitchen = useReactToPrint({
+    contentRef: kitchenTicketRef,
+    documentTitle: `Ticket-cocina-Riquisisimo-${new Date().getTime()}`,
+    print: printThermalTicket,
+    pageStyle: THERMAL_TICKET_PAGE_STYLE,
+    onPrintError: handlePrintError
   });
 
   const bgWrapper = isHighContrast ? "bg-black" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
@@ -699,7 +734,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     feedbackRef,
     goNextAccessibleStep,
     goPrevAccessibleStep,
+    hasPrintableTicket: pedidoDetalles.length > 0 || Boolean(savedTicket),
     handlePrint,
+    handlePrintKitchen,
     handleReadPedidoSummary,
     handleSubmit,
     handleToggleTurno,
@@ -781,13 +818,14 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           )}
 
           <PdvPrintTicket
-            clienteNombre={clienteNombre}
-            metodoPago={metodoPago}
-            nextPedidoNumber={nextPedidoNumber}
-            observacion={observacion}
-            pedidoDetalles={pedidoDetalles}
-            ticketRef={ticketRef}
-            total={total}
+            clienteNombre={pedidoDetalles.length > 0 ? clienteNombre : (savedTicket?.clienteNombre ?? "")}
+            customerTicketRef={customerTicketRef}
+            kitchenTicketRef={kitchenTicketRef}
+            metodoPago={pedidoDetalles.length > 0 ? metodoPago : (savedTicket?.metodoPago ?? "")}
+            nextPedidoNumber={pedidoDetalles.length > 0 ? nextPedidoNumber : (savedTicket?.numeroPedido ?? 0)}
+            observacion={pedidoDetalles.length > 0 ? observacion : (savedTicket?.observacion ?? "")}
+            pedidoDetalles={pedidoDetalles.length > 0 ? pedidoDetalles : (savedTicket?.pedidoDetalles ?? [])}
+            total={pedidoDetalles.length > 0 ? total : (savedTicket?.total ?? 0)}
           />
         </div>
       </main>

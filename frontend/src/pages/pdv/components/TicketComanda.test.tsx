@@ -26,6 +26,7 @@ describe("TicketComanda", () => {
           }
         ]}
         total={11000}
+        type="customer"
       />
     );
 
@@ -36,6 +37,34 @@ describe("TicketComanda", () => {
     expect(screen.getByText("2×")).toBeTruthy();
     expect(screen.getByText("NOTA: Sin cebolla")).toBeTruthy();
     expect(screen.getByText("Entregar rápido")).toBeTruthy();
+  });
+
+  it("oculta precios y pago en el ticket de cocina", () => {
+    const { container } = render(
+      <TicketComanda
+        clienteNombre="Ana"
+        metodoPago="tarjeta"
+        numeroPedido={6}
+        pedidoDetalles={[
+          {
+            itemKey: "5:1",
+            productoId: 5,
+            cantidad: 1,
+            subtotal: 5500,
+            producto: { id: 5, nombre: "Arma tu sandwich", precio: 5500 }
+          }
+        ]}
+        total={5500}
+        type="kitchen"
+      />
+    );
+
+    expect(container.textContent).toContain("TICKET DE COCINA");
+    expect(container.querySelector(".ticket-logo")).toBeNull();
+    expect(container.querySelector(".ticket-brand")).toBeNull();
+    expect(container.textContent).not.toContain("Tarjeta");
+    expect(container.textContent).not.toContain("TOTAL");
+    expect(container.textContent).not.toContain("$5.500");
   });
 
   it("conserva nombres largos, variantes, aderezos y cliente sin nombre", () => {
@@ -57,7 +86,10 @@ describe("TicketComanda", () => {
               precio: 5500
             },
             variante: { id: 3, nombre: "Carne mechada", productoId: 9 },
-            personalizacion: { aderezos: ["Mayonesa", "Mostaza"], comentario: "Sin tomate" }
+            personalizacion: {
+              aderezos: ["Mayonesa", "Mostaza"],
+              comentario: "Sin tomate"
+            }
           }
         ]}
         total={16500}

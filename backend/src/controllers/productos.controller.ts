@@ -158,19 +158,19 @@ export const updateProducto = async (req: Request, res: Response) => {
       data.componentes = { deleteMany: {}, create: componentes };
     }
 
-    if (categoria !== undefined) {
-      data.categorias = {
-        connectOrCreate: {
+    const producto = await prisma.$transaction(async (tx) => {
+      if (categoria !== undefined) {
+        const categoriaSeleccionada = await tx.categoria.upsert({
           create: {
             descripcion: `Productos de ${categoria}`,
             nombre: categoria
           },
+          update: {},
           where: { nombre: categoria }
-        }
-      };
-    }
+        });
+        data.categorias = { set: [{ id: categoriaSeleccionada.id }] };
+      }
 
-    const producto = await prisma.$transaction(async (tx) => {
       const updated = await tx.producto.update({
         data,
         include: PRODUCTO_CATALOG_INCLUDE,

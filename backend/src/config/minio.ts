@@ -2,7 +2,6 @@ import { Client } from "minio";
 import { env } from "./env";
 
 export const productBucket = env.minio.productBucket;
-export const minioPublicUrl = env.minio.publicUrl;
 
 export const minioClient = new Client({
   endPoint: env.minio.endpoint,

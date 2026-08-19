@@ -76,17 +76,7 @@ function ModoFacilPage() {
         <header className={`rounded-[28px] p-6 sm:p-8 ${panelClass}`}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <p
-                className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "text-yellow-300" : "text-slate-500"}`}
-              >
-                Riquísimo
-              </p>
-              <h1 className="mt-3 text-4xl font-black leading-tight tracking-tight sm:text-5xl">Modo fácil</h1>
-              <p
-                className={`mt-3 text-xl font-bold leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-700"}`}
-              >
-                Elige una opción para continuar.
-              </p>
+              <h1 className="text-4xl font-black leading-tight tracking-tight sm:text-5xl">Modo fácil</h1>
             </div>
 
             <div className="grid gap-3 lg:min-w-[620px]">

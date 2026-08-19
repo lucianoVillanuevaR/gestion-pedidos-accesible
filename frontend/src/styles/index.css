@@ -585,6 +585,10 @@ html[data-accessible="true"] a:focus-visible {
   font-size: 13px;
 }
 
+.ticket-item-line--kitchen {
+  grid-template-columns: 8mm minmax(0, 1fr);
+}
+
 .ticket-qty {
   font-size: 17px;
   line-height: 1;

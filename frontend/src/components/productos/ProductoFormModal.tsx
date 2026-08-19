@@ -462,7 +462,7 @@ export function ProductoFormModal({
                 onChange={(event) => {
                   const value = event.target.value as CategoriaCatalogo;
                   setCategoria(value);
-                  setDestacado(value === "Destacados" || destacado);
+                  setDestacado(value === "Destacados");
                 }}
                 className={`min-h-[42px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
               >

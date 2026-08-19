@@ -25,14 +25,11 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
   return (
     <>
       <div className="border-b border-dashed border-slate-300 px-3 py-3 no-print print:hidden">
-        <div className="mb-2 flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-sm">
           <span>Subtotal Productos ({totalItems})</span>
           <span>{formatCurrency(total)}</span>
         </div>
-        <div className="flex items-center justify-between text-sm text-slate-500">
-          <span>Descuento</span>
-          <span>{formatCurrency(0)}</span>
-        </div>
+        {/* TODO: Mostrar el descuento cuando esta funcionalidad esté implementada. */}
       </div>
 
       <div className="border-b border-slate-200 px-3 py-3 no-print print:hidden">
