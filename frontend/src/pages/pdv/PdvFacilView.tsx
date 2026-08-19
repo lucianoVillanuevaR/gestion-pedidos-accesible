@@ -98,11 +98,6 @@ function PdvFacilView() {
       <header className={`rounded-3xl ${cardBorder} p-6 sm:p-8 ${panelBg}`}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
-            <p
-              className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "contrast-secondary-text" : "text-slate-500"}`}
-            >
-              Riquísimo · Modo fácil
-            </p>
             <h1 className="mt-3 font-black tracking-tight text-[2rem] sm:text-[2.35rem]">
               Paso {visibleStepNumber}: {stepGuidance.title}
             </h1>

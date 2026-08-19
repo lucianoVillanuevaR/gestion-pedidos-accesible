@@ -191,45 +191,45 @@ export function CocinaFacilView({
 
   return (
     <div className={`min-h-screen ${pageBg}`}>
-      <section className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-6 sm:px-4 lg:px-5 xl:px-6">
-        <header className={`rounded-[28px] p-5 sm:p-6 ${panelClass}`}>
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(520px,760px)] xl:items-start">
+      <section className="mx-auto w-full max-w-[1520px] space-y-3 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
+        <header className={`rounded-[28px] p-4 ${panelClass}`}>
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(480px,680px)] xl:items-start">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-slate-500">Modo fácil</p>
-              <h1 className="mt-2 text-4xl font-black leading-tight text-slate-950">Preparación</h1>
-              <p className="mt-3 text-xl font-bold text-slate-700">Aquí aparecen los pedidos que deben prepararse.</p>
+              <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Preparación</h1>
+              <p className="mt-2 text-lg font-bold text-slate-700">Aquí aparecen los pedidos que deben prepararse.</p>
             </div>
-            <EasyModeActions />
+            <EasyModeActions compact />
           </div>
 
-          <div className="mt-5 grid gap-3 border-t border-slate-200 pt-5 lg:grid-cols-[1fr_auto] lg:items-center">
-            <p className="text-xl font-black text-slate-950">
+          <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 lg:grid-cols-[1fr_auto] lg:items-center">
+            <p className="text-lg font-black text-slate-950">
               {isAutoRefreshEnabled
-                ? "La preparación se actualiza sola cada pocos segundos."
+                ? "La preparación se actualiza automáticamente."
                 : "La preparación está en actualización manual."}
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={onFullscreenToggle}
                 aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
                 title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${secondaryButtonClass} ${FOCUS_VISIBLE_CLASS}`}
+                className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-base font-black transition ${secondaryButtonClass} ${FOCUS_VISIBLE_CLASS}`}
               >
                 {isFullscreen ? (
                   <Minimize2 className="h-6 w-6" aria-hidden="true" />
                 ) : (
                   <Maximize2 className="h-6 w-6" aria-hidden="true" />
                 )}
-                <span className="hidden sm:inline">Pantalla</span>
+                <span>{isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}</span>
               </button>
               <button
                 type="button"
                 onClick={onRefresh}
-                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-lg font-black transition ${
+                aria-label="Actualizar pedidos de preparación"
+                className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-base font-black transition ${
                   isHighContrast
                     ? "contrast-button-secondary"
-                    : "border-slate-950 bg-slate-950 text-white hover:bg-black"
+                    : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
                 } ${FOCUS_VISIBLE_CLASS}`}
               >
                 <RefreshCw className="h-6 w-6" aria-hidden="true" />
@@ -239,40 +239,48 @@ export function CocinaFacilView({
           </div>
         </header>
 
-        <div className={`rounded-[26px] p-5 ${panelClass}`}>
-          <div className="flex min-h-[64px] w-fit items-center gap-3 rounded-2xl border-2 border-slate-900 bg-slate-900 px-5 text-xl font-black text-white">
-            <ChefHat className="h-7 w-7" aria-hidden="true" />
+        <div className={`rounded-[26px] p-3 ${panelClass}`}>
+          <div className="flex items-center gap-2 text-xl font-black text-slate-950 sm:text-2xl">
+            <ChefHat className="h-6 w-6" aria-hidden="true" />
             Pedidos para preparar
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             <LargeMetric label="Pendientes" value={counts.pendientes} />
             <LargeMetric label="En preparación" value={counts.enPreparacion} />
             <LargeMetric label="Listos" value={counts.listos} />
-            <LargeMetric label="Urgentes (más de 20 min)" value={urgentCount} />
+            <LargeMetric label="Atrasados" subtitle="Más de 20 min" value={urgentCount} />
           </div>
         </div>
 
-        <div className={`grid gap-4 rounded-[26px] p-4 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}>
-          <p className="text-xl font-black text-slate-950">Controles de preparación</p>
-          <div className="grid gap-3 sm:grid-cols-2 md:min-w-[460px]">
+        <div className={`grid gap-3 rounded-[26px] p-3 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}>
+          <p className="text-lg font-black text-slate-950">Controles de preparación</p>
+          <div className="grid gap-2 sm:grid-cols-2 md:min-w-[540px]">
             <button
               type="button"
               onClick={onAutoRefreshToggle}
-              className={`min-h-[70px] rounded-2xl border-2 px-5 text-xl font-black transition ${
-                isAutoRefreshEnabled
-                  ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-                  : "border-slate-900 bg-white text-slate-950 hover:bg-slate-100"
+              aria-pressed={isAutoRefreshEnabled}
+              className={`min-h-[52px] rounded-xl border-2 px-4 text-base font-black transition ${
+                isHighContrast
+                  ? "contrast-button-secondary"
+                  : isAutoRefreshEnabled
+                    ? "border-emerald-700 bg-white text-emerald-800 hover:bg-emerald-50"
+                    : "border-slate-300 bg-white text-slate-950 hover:bg-slate-100"
               } ${FOCUS_VISIBLE_CLASS}`}
             >
-              {isAutoRefreshEnabled ? "Auto activo" : "Activar auto"}
+              {isAutoRefreshEnabled ? "Automática: Activada" : "Automática: Desactivada"}
             </button>
             <button
               type="button"
               onClick={onAdvanceVisible}
               disabled={pedidos.length === 0 || updatingPedidoId !== null}
-              className={`min-h-[70px] rounded-2xl border-2 border-emerald-700 bg-emerald-600 px-5 text-xl font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
+              aria-label="Avanzar todas al siguiente estado"
+              className={`min-h-[52px] rounded-xl border-2 px-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isHighContrast
+                  ? "contrast-button-primary"
+                  : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+              } ${FOCUS_VISIBLE_CLASS}`}
             >
-              Marcar todas
+              Avanzar todas
             </button>
           </div>
         </div>
@@ -283,12 +291,12 @@ export function CocinaFacilView({
           <LoadingPanel isHighContrast={isHighContrast} label="Cargando tickets de cocina..." />
         ) : pedidos.length === 0 ? (
           <div
-            className={`rounded-[26px] p-8 text-center ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+            className={`rounded-[26px] p-6 text-center ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
           >
-            <UtensilsCrossed className="mx-auto h-12 w-12 text-slate-400" aria-hidden="true" />
-            <p className="mt-4 text-3xl font-black text-slate-950">No hay tickets en esta estación</p>
-            <p className="mt-2 text-xl font-bold text-slate-600">
-              Cuando entre un pedido aparecerá aquí automáticamente.
+            <UtensilsCrossed className="mx-auto h-10 w-10 text-slate-400" aria-hidden="true" />
+            <p className="mt-3 text-2xl font-black text-slate-950 sm:text-3xl">No hay pedidos para preparar</p>
+            <p className="mt-2 text-lg font-bold text-slate-600">
+              Cuando haya nuevos pedidos, aparecerán aquí automáticamente.
             </p>
           </div>
         ) : (
@@ -649,11 +657,12 @@ function IconButton({
   );
 }
 
-function LargeMetric({ label, value }: { label: string; value: number }) {
+function LargeMetric({ label, subtitle, value }: { label: string; subtitle?: string; value: number }) {
   return (
-    <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
-      <p className="text-lg font-black text-slate-600">{label}</p>
-      <p className="mt-2 text-4xl font-black text-slate-950">{value}</p>
+    <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 py-3">
+      <p className="text-base font-black text-slate-600 sm:text-lg">{label}</p>
+      <p className="mt-1 text-3xl font-black leading-none text-slate-950 sm:text-4xl">{value}</p>
+      {subtitle && <p className="mt-1 text-sm font-bold text-slate-600 sm:text-base">{subtitle}</p>}
     </div>
   );
 }

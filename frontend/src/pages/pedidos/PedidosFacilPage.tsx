@@ -211,21 +211,16 @@ function PedidosFacilPage() {
 
   return (
     <div className={`min-h-screen ${pageBg}`}>
-      <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
+      <main className="mx-auto w-full max-w-[1520px] space-y-4 px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
         <p className="sr-only" aria-live="polite">
           {liveMessage}
         </p>
 
-        <section className={`rounded-[28px] p-5 sm:p-6 ${panelClass}`} aria-label="Resumen de pedidos activos">
-          <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <section className={`rounded-[28px] p-5 ${panelClass}`} aria-label="Resumen de pedidos activos">
+          <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p
-                className={`text-sm font-black uppercase tracking-[0.18em] ${isHighContrast ? "text-yellow-300" : "text-slate-500"}`}
-              >
-                Modo fácil
-              </p>
               <h1
-                className={`mt-1 text-3xl font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}
+                className={`text-3xl font-black leading-tight tracking-tight ${isHighContrast ? "contrast-important" : "text-slate-950"}`}
               >
                 Pedidos activos
               </h1>
@@ -234,47 +229,57 @@ function PedidosFacilPage() {
               </p>
             </div>
 
-            <div className="grid gap-3 xl:min-w-[760px]">
-              <EasyModeActions />
+            <div className="grid gap-3 xl:min-w-[680px]">
+              <EasyModeActions compact />
               <Link
                 to="/pdv/facil"
-                onClick={() =>
+                aria-disabled={!isTurnoOpen}
+                onClick={(event) => {
+                  if (!isTurnoOpen) {
+                    event.preventDefault();
+                    return;
+                  }
+
                   speak("Crear nuevo pedido.", {
                     priority: "high",
                     dedupeKey: "pedidos-facil-crear-pedido",
                     cooldownMs: 700,
                     interrupt: true
-                  })
-                }
+                  });
+                }}
                 className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-5 text-lg font-black no-underline transition ${
                   isHighContrast
-                    ? "contrast-button-primary"
-                    : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                    ? isTurnoOpen
+                      ? "contrast-button-primary"
+                      : "contrast-button-secondary cursor-not-allowed opacity-60"
+                    : isTurnoOpen
+                      ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "cursor-not-allowed border-slate-300 bg-slate-200 text-slate-600"
                 } ${FOCUS_VISIBLE_CLASS}`}
               >
                 <ClipboardPlus className="h-6 w-6" aria-hidden="true" />
-                Crear nuevo pedido
+                {isTurnoOpen ? "Crear nuevo pedido" : "Abrir turno para crear pedidos"}
               </Link>
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-3 lg:grid-cols-3">
             <SummaryCard isHighContrast={isHighContrast} label="Pedidos activos" value={String(pedidosActivos)} />
             <SummaryCard
               isHighContrast={isHighContrast}
-              label="Ventas entregadas"
+              label="Total vendido"
               value={formatCurrency(String(normalSummary.totalVendido))}
             />
             <SummaryCard
               isHighContrast={isHighContrast}
-              label="Ventas pendientes"
+              label="Total pendiente"
               value={formatCurrency(String(normalSummary.totalPendiente))}
             />
           </div>
         </section>
 
         <section
-          className={`grid gap-4 rounded-[28px] p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] ${panelClass}`}
+          className={`grid gap-3 rounded-[28px] p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] ${panelClass}`}
           aria-label="Herramientas de pedidos"
         >
           <label className="relative block">
@@ -318,12 +323,16 @@ function PedidosFacilPage() {
             type="button"
             onClick={handleRefreshPedidos}
             disabled={isLoading}
-            className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-5 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"
+            aria-label="Actualizar pedidos"
+            title="Actualizar pedidos"
+            className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 lg:w-14 lg:px-0 ${
+              isHighContrast
+                ? "contrast-button-secondary"
+                : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             <RefreshCw className={`h-6 w-6 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-            Actualizar
+            <span className="lg:sr-only">Actualizar</span>
           </button>
         </section>
 
@@ -431,10 +440,10 @@ function PedidosFacilPage() {
 function SummaryCard({ isHighContrast, label, value }: { isHighContrast: boolean; label: string; value: string }) {
   return (
     <article
-      className={`rounded-3xl p-5 ${isHighContrast ? "contrast-panel-soft border-2 border-yellow-400" : `border-2 ${EASY_SOFT_PANEL_CLASS}`}`}
+      className={`rounded-3xl p-4 ${isHighContrast ? "contrast-panel-soft border-2 border-yellow-400" : `border-2 ${EASY_SOFT_PANEL_CLASS}`}`}
     >
       <p className="text-xl font-black text-slate-700">{label}</p>
-      <p className="mt-3 text-4xl font-black leading-none text-slate-950">{value}</p>
+      <p className="mt-2 text-4xl font-black leading-none text-slate-950">{value}</p>
     </article>
   );
 }
