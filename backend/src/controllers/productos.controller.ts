@@ -3,7 +3,11 @@ import prisma from "../config/prisma";
 import { getUploadErrorMessage, uploadProductImageMiddleware } from "../middlewares/uploadImage";
 import { validateProductComponents } from "../services/productComponentsService";
 import { deleteProductImage, deleteProductImageObject, uploadProductImage } from "../services/productImageService";
-import { PRODUCTO_CATALOG_INCLUDE, toProductoResponse } from "../services/productoCatalogService";
+import {
+  buildCategoriaReplacement,
+  PRODUCTO_CATALOG_INCLUDE,
+  toProductoResponse
+} from "../services/productoCatalogService";
 import { RequestError } from "../utils/httpErrors";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateProductoCreate, validateProductoUpdate } from "../validations/productos.validation";
@@ -160,15 +164,7 @@ export const updateProducto = async (req: Request, res: Response) => {
 
     const producto = await prisma.$transaction(async (tx) => {
       if (categoria !== undefined) {
-        const categoriaSeleccionada = await tx.categoria.upsert({
-          create: {
-            descripcion: `Productos de ${categoria}`,
-            nombre: categoria
-          },
-          update: {},
-          where: { nombre: categoria }
-        });
-        data.categorias = { set: [{ id: categoriaSeleccionada.id }] };
+        data.categorias = await buildCategoriaReplacement(tx.categoria, categoria);
       }
 
       const updated = await tx.producto.update({

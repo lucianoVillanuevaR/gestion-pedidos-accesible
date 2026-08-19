@@ -57,6 +57,18 @@ describe("validateProductoForm", () => {
 });
 
 describe("buildProductoPayload", () => {
+  it("mantiene Destacados independiente de la categoría real", () => {
+    expect(
+      buildProductoPayload({
+        categoria: "Sandwich",
+        descripcion: "",
+        destacado: true,
+        nombre: "SANDWICH LUCO PATRÓN",
+        precio: 5000
+      })
+    ).toEqual(expect.objectContaining({ categoria: "Sandwich", destacado: true }));
+  });
+
   it("limpia textos y redondea el precio", () => {
     expect(
       buildProductoPayload({

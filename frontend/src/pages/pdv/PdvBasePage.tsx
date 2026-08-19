@@ -22,6 +22,7 @@ import PdvPageStatus from "./components/PdvPageStatus";
 import PdvPrintTicket from "./components/PdvPrintTicket";
 import PdvProductConfigurator from "./components/PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
+import { buildPedidoPrintSnapshot, type PedidoPrintSnapshot } from "./pedidoPrintSnapshot";
 
 const THERMAL_TICKET_PAGE_STYLE = `
   @page {
@@ -99,15 +100,6 @@ function buildDetalleProductoText(item: PdvViewContextValue["pedidoDetalles"][nu
   return `${buildCantidadProductoText(item.cantidad, item.producto.nombre)}${opcion}`;
 }
 
-type SavedTicket = {
-  clienteNombre: string;
-  metodoPago: MetodoPago;
-  numeroPedido: number | string;
-  observacion: string;
-  pedidoDetalles: PdvViewContextValue["pedidoDetalles"];
-  total: number;
-};
-
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -134,7 +126,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [sending, setSending] = useState(false);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [nextPedidoNumber, setNextPedidoNumber] = useState(1);
-  const [savedTicket, setSavedTicket] = useState<SavedTicket | null>(null);
+  const [savedTicket, setSavedTicket] = useState<PedidoPrintSnapshot | null>(null);
 
   const initialProductHandledRef = useRef(false);
   const lastAnnouncedAccessibleStepKeyRef = useRef("");
@@ -388,24 +380,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     navigate(location.pathname, { replace: true, state: null });
   }, [addProduct, isAccessible, loadingProductos, location.pathname, location.state, navigate, productos]);
 
-  async function getNumeroTurnoPedidoCreado(pedidoCreado: PedidoResponse) {
-    if (pedidoCreado.numeroTurno) {
-      return pedidoCreado.numeroTurno;
-    }
-
-    if (!pedidoCreado.id) {
-      return null;
-    }
-
-    try {
-      const pedidoActivo = withPedidoNumerosTurno(await getPedidos()).find((pedido) => pedido.id === pedidoCreado.id);
-
-      return pedidoActivo ? getPedidoDisplayNumber(pedidoActivo) : pedidoCreado.id;
-    } catch {
-      return pedidoCreado.id;
-    }
-  }
-
   const handleSubmit = async () => {
     setFeedback(null);
     let shouldResetAccessibleFlow = false;
@@ -446,18 +420,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
             })
           : await createPedido(payload)
       ) as PedidoResponse;
-      const numeroPedido = editingPedido
-        ? getPedidoDisplayNumber(editingPedido)
-        : await getNumeroTurnoPedidoCreado(pedidoCreado);
-      if (!editingPedido && numeroPedido && isAccessible) {
-        setSavedTicket({
-          clienteNombre: pedidoCreado.clienteNombre ?? clienteNombre.trim(),
-          metodoPago: pedidoCreado.metodoPago,
-          numeroPedido,
-          observacion: pedidoCreado.observacion ?? observacion.trim(),
-          pedidoDetalles,
-          total: Number(pedidoCreado.total)
-        });
+      const numeroPedido = editingPedido ? getPedidoDisplayNumber(editingPedido) : pedidoCreado.numeroTurno;
+      if (!editingPedido) {
+        try {
+          setSavedTicket(buildPedidoPrintSnapshot(pedidoCreado));
+        } catch (snapshotError) {
+          console.error("El pedido fue creado, pero no se pudo preparar el ticket confirmado:", snapshotError);
+        }
       }
       setNextPedidoNumber((currentNumber) =>
         typeof numeroPedido === "number" && Number.isFinite(numeroPedido) ? numeroPedido + 1 : currentNumber + 1
@@ -536,7 +505,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const handlePrint = useReactToPrint({
     contentRef: customerTicketRef,
-    documentTitle: `Ticket-cliente-Riquisisimo-${new Date().getTime()}`,
+    documentTitle: `Ticket-cliente-Riquisimo-${new Date().getTime()}`,
     print: printThermalTicket,
     pageStyle: THERMAL_TICKET_PAGE_STYLE,
     onPrintError: handlePrintError
@@ -544,7 +513,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const handlePrintKitchen = useReactToPrint({
     contentRef: kitchenTicketRef,
-    documentTitle: `Ticket-cocina-Riquisisimo-${new Date().getTime()}`,
+    documentTitle: `Ticket-cocina-Riquisimo-${new Date().getTime()}`,
     print: printThermalTicket,
     pageStyle: THERMAL_TICKET_PAGE_STYLE,
     onPrintError: handlePrintError
@@ -734,6 +703,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     feedbackRef,
     goNextAccessibleStep,
     goPrevAccessibleStep,
+    hasPrintableKitchenTicket: pedidoDetalles.length > 0 || Boolean(savedTicket),
     hasPrintableTicket: pedidoDetalles.length > 0 || Boolean(savedTicket),
     handlePrint,
     handlePrintKitchen,
@@ -754,6 +724,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     metodoPago,
     navigate,
     nextPedidoNumber,
+    printablePedidoNumber: savedTicket?.numeroPedido ?? null,
     observacion,
     openAccessibilityPanel,
     openResetConfirm,
@@ -819,8 +790,14 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
           <PdvPrintTicket
             clienteNombre={pedidoDetalles.length > 0 ? clienteNombre : (savedTicket?.clienteNombre ?? "")}
+            createdAt={pedidoDetalles.length > 0 ? undefined : savedTicket?.createdAt}
             customerTicketRef={customerTicketRef}
+            kitchenClienteNombre={pedidoDetalles.length > 0 ? clienteNombre : (savedTicket?.clienteNombre ?? "")}
+            kitchenCreatedAt={pedidoDetalles.length > 0 ? undefined : savedTicket?.createdAt}
             kitchenTicketRef={kitchenTicketRef}
+            kitchenNumeroPedido={pedidoDetalles.length > 0 ? nextPedidoNumber : (savedTicket?.numeroPedido ?? 0)}
+            kitchenObservacion={pedidoDetalles.length > 0 ? observacion : (savedTicket?.observacion ?? "")}
+            kitchenPedidoDetalles={pedidoDetalles.length > 0 ? pedidoDetalles : (savedTicket?.pedidoDetalles ?? [])}
             metodoPago={pedidoDetalles.length > 0 ? metodoPago : (savedTicket?.metodoPago ?? "")}
             nextPedidoNumber={pedidoDetalles.length > 0 ? nextPedidoNumber : (savedTicket?.numeroPedido ?? 0)}
             observacion={pedidoDetalles.length > 0 ? observacion : (savedTicket?.observacion ?? "")}

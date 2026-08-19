@@ -2,6 +2,8 @@
 
 Aplicación web para gestión de pedidos, productos, stock básico, preparación, cierre de turno e imágenes de productos con MinIO. Incluye modo normal y modo fácil/accesible.
 
+Los pedidos confirmados permiten imprimir tickets internos de cocina y cliente, optimizados para impresoras térmicas de 80 mm. No corresponden a boletas electrónicas ni implican integración tributaria con el SII.
+
 ## Levantar desde cero
 
 ```bash

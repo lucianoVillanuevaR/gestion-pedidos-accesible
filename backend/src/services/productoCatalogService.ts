@@ -10,6 +10,25 @@ export const PRODUCTO_CATALOG_INCLUDE = {
   variantes: { where: { disponible: true }, orderBy: { orden: "asc" } }
 } as const;
 
+export async function buildCategoriaReplacement(
+  categoriaRepository: {
+    upsert(args: {
+      create: { descripcion: string; nombre: string };
+      update: Record<string, never>;
+      where: { nombre: string };
+    }): Promise<{ id: number }>;
+  },
+  categoria: string
+) {
+  const categoriaSeleccionada = await categoriaRepository.upsert({
+    create: { descripcion: `Productos de ${categoria}`, nombre: categoria },
+    update: {},
+    where: { nombre: categoria }
+  });
+
+  return { set: [{ id: categoriaSeleccionada.id }] };
+}
+
 export function toProductoResponse<
   T extends {
     disponible: boolean;

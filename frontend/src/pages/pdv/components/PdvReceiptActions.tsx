@@ -7,16 +7,20 @@ function PdvReceiptActions() {
     handlePrint,
     handlePrintKitchen,
     handleReadPedidoSummary,
+    hasPrintableKitchenTicket,
     hasPrintableTicket,
     isHighContrast,
     isTurnoOpen,
     openResetConfirm,
     pedidoDetalles,
+    printablePedidoNumber,
     quickActionButtonClass,
     quickActionIconButtonClass
   } = usePdvViewContext();
 
-  const canPrint = isTurnoOpen && hasPrintableTicket;
+  const canPrintKitchen = isTurnoOpen && hasPrintableKitchenTicket;
+  const canPrintCustomer = isTurnoOpen && hasPrintableTicket;
+  const canPrint = canPrintKitchen || canPrintCustomer;
   const [isPrintMenuOpen, setIsPrintMenuOpen] = useState(false);
   const printMenuRef = useRef<HTMLDivElement>(null);
 
@@ -48,41 +52,41 @@ function PdvReceiptActions() {
             disabled={!canPrint}
             className={`w-full min-w-0 ${quickActionButtonClass} ${!canPrint ? "cursor-not-allowed opacity-40" : ""}`}
             aria-expanded={isPrintMenuOpen}
-            aria-haspopup="menu"
+            aria-controls="pdv-print-options"
           >
             <Printer
               className={`h-4 w-4 shrink-0 ${isHighContrast ? "text-current" : "text-slate-700"}`}
               aria-hidden="true"
             />
-            <span>Imprimir</span>
+            <span>{printablePedidoNumber ? `Imprimir #${printablePedidoNumber}` : "Imprimir"}</span>
             <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
           </button>
           {isPrintMenuOpen && (
             <div
               className={`absolute bottom-[calc(100%+8px)] left-0 z-50 min-w-[220px] overflow-hidden rounded-xl border py-1 shadow-xl ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white text-slate-900"}`}
-              role="menu"
+              id="pdv-print-options"
               aria-label="Opciones de impresión"
             >
               <button
                 type="button"
-                role="menuitem"
+                disabled={!canPrintKitchen}
                 onClick={() => {
                   setIsPrintMenuOpen(false);
                   handlePrintKitchen();
                 }}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-bold hover:bg-slate-100 focus:bg-slate-100 focus:outline-none"
+                className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-bold focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 ${isHighContrast ? "hover:bg-yellow-400 hover:text-black focus:bg-yellow-400 focus:text-black" : "hover:bg-slate-100 focus:bg-slate-100"}`}
               >
                 <ChefHat className="h-5 w-5" aria-hidden="true" />
                 Ticket de cocina
               </button>
               <button
                 type="button"
-                role="menuitem"
+                disabled={!canPrintCustomer}
                 onClick={() => {
                   setIsPrintMenuOpen(false);
                   handlePrint();
                 }}
-                className="flex w-full items-center gap-3 border-t border-slate-200 px-4 py-3 text-left text-sm font-bold hover:bg-slate-100 focus:bg-slate-100 focus:outline-none"
+                className={`flex w-full items-center gap-3 border-t px-4 py-3 text-left text-sm font-bold focus:outline-none disabled:cursor-not-allowed disabled:opacity-40 ${isHighContrast ? "border-yellow-400 hover:bg-yellow-400 hover:text-black focus:bg-yellow-400 focus:text-black" : "border-slate-200 hover:bg-slate-100 focus:bg-slate-100"}`}
               >
                 <ReceiptText className="h-5 w-5" aria-hidden="true" />
                 Ticket de cliente

@@ -45,7 +45,13 @@ export function ProductoFormModal({
   const [nombre, setNombre] = useState(producto?.nombre ?? "");
   const [descripcion, setDescripcion] = useState(producto?.descripcion ?? "");
   const [precio, setPrecio] = useState(producto ? String(producto.precio) : "");
-  const [categoria, setCategoria] = useState<CategoriaCatalogo>(defaultCategory);
+  const [categoria, setCategoria] = useState<CategoriaCatalogo>(
+    defaultCategory === "Destacados" && producto?.categoria !== "Destacados"
+      ? (producto?.categoria ?? "Otros")
+      : defaultCategory === "Destacados"
+        ? "Otros"
+        : defaultCategory
+  );
   const [disponible, setDisponible] = useState(producto?.disponibleConfigurado ?? producto?.disponible ?? true);
   const [destacado, setDestacado] = useState(producto?.destacado ?? defaultCategory === "Destacados");
   const [tipo, setTipo] = useState<TipoProducto>(producto?.tipo ?? "producto");
@@ -458,20 +464,23 @@ export function ProductoFormModal({
                 <p className="mt-1 text-xs font-bold text-slate-500">Selecciona dónde se mostrará este producto.</p>
               </div>
               <select
+                aria-label="Categoría"
                 value={categoria}
-                onChange={(event) => {
-                  const value = event.target.value as CategoriaCatalogo;
-                  setCategoria(value);
-                  setDestacado(value === "Destacados");
-                }}
+                onChange={(event) => setCategoria(event.target.value as CategoriaCatalogo)}
                 className={`min-h-[42px] rounded-lg border border-slate-300 bg-white px-3 font-bold text-slate-950 outline-none focus:border-yellow-500 ${FOCUS_VISIBLE_CLASS}`}
               >
-                {categoriasCatalogo.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                {categoriasCatalogo
+                  .filter((option) => option.value !== "Destacados")
+                  .map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
               </select>
+              <label className="flex min-h-[44px] items-center gap-3 rounded-xl border border-yellow-300 bg-yellow-50 px-3 font-bold text-slate-900 sm:col-start-2">
+                <input type="checkbox" checked={destacado} onChange={(event) => setDestacado(event.target.checked)} />
+                Mostrar en Destacados
+              </label>
             </div>
 
             {formError && (

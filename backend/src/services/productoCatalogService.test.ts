@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { toProductoResponse } from "./productoCatalogService";
+import { describe, expect, it, vi } from "vitest";
+import { buildCategoriaReplacement, toProductoResponse } from "./productoCatalogService";
 
 const productoBase = {
   disponible: true,
@@ -9,6 +9,15 @@ const productoBase = {
 };
 
 describe("respuesta del catálogo de productos", () => {
+  it("reemplaza todas las asociaciones al mover un producto de categoría", async () => {
+    const upsert = vi.fn().mockResolvedValue({ id: 22 });
+
+    const relation = await buildCategoriaReplacement({ upsert }, "Sandwich");
+
+    expect(relation).toEqual({ set: [{ id: 22 }] });
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { nombre: "Sandwich" } }));
+  });
+
   it("calcula la disponibilidad de una promoción según sus componentes", () => {
     const response = toProductoResponse({
       ...productoBase,

@@ -6,12 +6,10 @@ import {
   Eye,
   LockKeyhole,
   Printer,
-  ReceiptText,
   UnlockKeyhole
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
-import useAccessibleDialog from "../../hooks/useAccessibleDialog";
 import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
 import { PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
@@ -22,15 +20,6 @@ function PdvFacilView() {
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [isCloseTurnoConfirmOpen, setIsCloseTurnoConfirmOpen] = useState(false);
   const [isOrderSummaryOpen, setIsOrderSummaryOpen] = useState(false);
-  const [isPrintOptionsOpen, setIsPrintOptionsOpen] = useState(false);
-  const printDialogRef = useRef<HTMLElement>(null);
-  const printDialogCloseRef = useRef<HTMLButtonElement>(null);
-  useAccessibleDialog({
-    containerRef: printDialogRef,
-    enabled: isPrintOptionsOpen,
-    initialFocusRef: printDialogCloseRef,
-    onClose: () => setIsPrintOptionsOpen(false)
-  });
   const {
     accessibleProductos,
     accessibleStep,
@@ -44,6 +33,7 @@ function PdvFacilView() {
     feedback,
     goNextAccessibleStep,
     goPrevAccessibleStep,
+    hasPrintableKitchenTicket,
     hasPrintableTicket,
     handlePrint,
     handlePrintKitchen,
@@ -60,6 +50,7 @@ function PdvFacilView() {
     panelBg,
     pedidoDetalles,
     puedeRegistrar,
+    printablePedidoNumber,
     removeProduct,
     selectedCategory,
     selectCategory,
@@ -176,6 +167,38 @@ function PdvFacilView() {
 
       {feedback && (
         <PdvFeedbackMessage feedback={feedback} isAccessible isHighContrast={isHighContrast} className={cardBorder} />
+      )}
+
+      {hasPrintableTicket && printablePedidoNumber && (
+        <section className={`rounded-2xl ${cardBorder} p-5 ${panelBg}`} aria-labelledby="ultimo-ticket-title">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="ultimo-ticket-title" className="text-2xl font-black">
+                Pedido #{printablePedidoNumber} registrado
+              </h2>
+              <p className={`mt-1 text-lg font-bold ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}>
+                Puedes reimprimir el último pedido confirmado.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={handlePrintKitchen}
+                className={`min-h-[56px] rounded-xl border-2 px-5 text-lg font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:border-yellow-500 hover:bg-[#FECE00]"}`}
+              >
+                Ticket de cocina
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl border-2 px-5 text-lg font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:border-yellow-500 hover:bg-[#FECE00]"}`}
+              >
+                <Printer className="h-6 w-6" aria-hidden="true" />
+                Ticket de cliente
+              </button>
+            </div>
+          </div>
+        </section>
       )}
 
       {!isTurnoOpen && (
@@ -530,18 +553,38 @@ function PdvFacilView() {
               </button>
               <button
                 type="button"
-                onClick={() => setIsPrintOptionsOpen(true)}
-                disabled={!hasPrintableTicket}
+                onClick={handlePrintKitchen}
+                disabled={!hasPrintableKitchenTicket}
                 className={`rounded-lg border-2 py-4 px-6 font-bold text-lg transition ${
-                  !hasPrintableTicket
-                    ? "border-slate-300 bg-slate-200 text-slate-500 cursor-not-allowed"
-                    : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
-                } ${isHighContrast && hasPrintableTicket ? "contrast-button-secondary" : ""}`}
+                  hasPrintableKitchenTicket
+                    ? isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
+                    : "border-slate-300 bg-slate-200 text-slate-500 cursor-not-allowed"
+                }`}
                 style={{ minHeight: 64 }}
               >
                 <span className="inline-flex items-center gap-2">
                   <Printer className="h-6 w-6" aria-hidden="true" />
-                  Imprimir ticket
+                  Imprimir comanda
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                disabled={!hasPrintableTicket}
+                className={`rounded-lg border-2 py-4 px-6 font-bold text-lg transition ${
+                  hasPrintableTicket
+                    ? isHighContrast
+                      ? "contrast-button-secondary"
+                      : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
+                    : "border-slate-300 bg-slate-200 text-slate-500 cursor-not-allowed"
+                }`}
+                style={{ minHeight: 64 }}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Printer className="h-6 w-6" aria-hidden="true" />
+                  Ticket de cliente
                 </span>
               </button>
               <button
@@ -649,63 +692,6 @@ function PdvFacilView() {
                 className={`min-h-[56px] rounded-2xl border-2 px-6 text-lg font-black transition ${isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"}`}
               >
                 Listo
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {isPrintOptionsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-[1px]">
-          <section
-            ref={printDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="opciones-impresion-title"
-            className={`w-full max-w-2xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="opciones-impresion-title" className="text-3xl font-black text-slate-950">
-                  ¿Qué ticket deseas imprimir?
-                </h2>
-                <p className="mt-2 text-lg font-bold text-slate-700">Selecciona una de las dos opciones.</p>
-              </div>
-              <button
-                ref={printDialogCloseRef}
-                type="button"
-                onClick={() => setIsPrintOptionsOpen(false)}
-                aria-label="Cerrar opciones de impresión"
-                className={`min-h-[48px] min-w-[48px] rounded-2xl border-2 px-3 text-xl font-black ${isHighContrast ? "contrast-button-secondary" : "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"}`}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPrintOptionsOpen(false);
-                  handlePrintKitchen();
-                }}
-                className={`flex min-h-[140px] flex-col items-center justify-center gap-3 rounded-2xl border-2 p-5 text-xl font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:border-yellow-500 hover:bg-[#FECE00] focus-visible:border-yellow-500 focus-visible:bg-[#FECE00]"}`}
-              >
-                <ChefHat className="h-10 w-10" aria-hidden="true" />
-                Ticket de cocina
-                <span className="text-sm font-bold text-slate-600">Productos y observaciones, sin precios</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPrintOptionsOpen(false);
-                  handlePrint();
-                }}
-                className={`flex min-h-[140px] flex-col items-center justify-center gap-3 rounded-2xl border-2 p-5 text-xl font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:border-yellow-500 hover:bg-[#FECE00] focus-visible:border-yellow-500 focus-visible:bg-[#FECE00]"}`}
-              >
-                <ReceiptText className="h-10 w-10" aria-hidden="true" />
-                Ticket de cliente
-                <span className="text-sm font-bold text-slate-700">Detalle, método de pago y total</span>
               </button>
             </div>
           </section>

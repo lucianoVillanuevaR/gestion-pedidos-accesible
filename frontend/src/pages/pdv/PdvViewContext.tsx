@@ -32,6 +32,7 @@ export type PdvViewContextValue = {
   feedbackRef: RefObject<HTMLDivElement>;
   goNextAccessibleStep: () => void;
   goPrevAccessibleStep: () => void;
+  hasPrintableKitchenTicket: boolean;
   hasPrintableTicket: boolean;
   handlePrint: () => void;
   handlePrintKitchen: () => void;
@@ -52,6 +53,7 @@ export type PdvViewContextValue = {
   metodoPago: MetodoPago | "";
   navigate: NavigateFunction;
   nextPedidoNumber: number;
+  printablePedidoNumber: number | string | null;
   observacion: string;
   openAccessibilityPanel: () => void;
   openResetConfirm: () => void;

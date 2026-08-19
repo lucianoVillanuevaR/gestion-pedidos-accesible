@@ -14,6 +14,7 @@ type TicketDetalle = {
 
 type TicketComandaProps = {
   clienteNombre?: string;
+  createdAt?: string | Date;
   pedidoDetalles: TicketDetalle[];
   total: number;
   metodoPago: MetodoPago | "";
@@ -24,6 +25,7 @@ type TicketComandaProps = {
 
 function TicketComanda({
   clienteNombre,
+  createdAt,
   pedidoDetalles,
   total,
   metodoPago,
@@ -32,7 +34,7 @@ function TicketComanda({
   type = "kitchen"
 }: TicketComandaProps) {
   const isKitchen = type === "kitchen";
-  const now = new Date();
+  const now = createdAt ? new Date(createdAt) : new Date();
   const fecha = now.toLocaleDateString("es-CL", {
     year: "numeric",
     month: "2-digit",

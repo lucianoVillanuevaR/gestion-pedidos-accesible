@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 import TicketComanda from "./TicketComanda";
 
 describe("TicketComanda", () => {
-  it("muestra logo, número, cliente, pago y detalle en la comanda", () => {
+  it("muestra logo, número, cliente, pago y detalle en el ticket de cliente", () => {
     render(
       <TicketComanda
         clienteNombre="Ana"
+        createdAt="2026-08-18T18:25:00.000Z"
         metodoPago="tarjeta"
         numeroPedido={6}
         observacion="Entregar rápido"
@@ -33,6 +34,7 @@ describe("TicketComanda", () => {
     expect(screen.getByRole("img", { name: "Riquísimo" })).toBeTruthy();
     expect(screen.getAllByText("PEDIDO #6")).toHaveLength(1);
     expect(screen.getByText("Ana")).toBeTruthy();
+    expect(screen.getByText("18-08-2026")).toBeTruthy();
     expect(screen.getByText("Tarjeta")).toBeTruthy();
     expect(screen.getByText("2×")).toBeTruthy();
     expect(screen.getByText("NOTA: Sin cebolla")).toBeTruthy();

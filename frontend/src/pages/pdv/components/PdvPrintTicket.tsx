@@ -5,22 +5,34 @@ import TicketComanda from "./TicketComanda";
 
 type PdvPrintTicketProps = {
   clienteNombre: string;
+  createdAt?: string;
   metodoPago: MetodoPago | "";
   nextPedidoNumber: number | string;
   observacion: string;
   pedidoDetalles: PdvViewContextValue["pedidoDetalles"];
   customerTicketRef: RefObject<HTMLDivElement>;
+  kitchenClienteNombre: string;
+  kitchenCreatedAt?: string;
+  kitchenNumeroPedido: number | string;
+  kitchenObservacion: string;
+  kitchenPedidoDetalles: PdvViewContextValue["pedidoDetalles"];
   kitchenTicketRef: RefObject<HTMLDivElement>;
   total: number;
 };
 
 function PdvPrintTicket({
   clienteNombre,
+  createdAt,
   metodoPago,
   nextPedidoNumber,
   observacion,
   pedidoDetalles,
   customerTicketRef,
+  kitchenClienteNombre,
+  kitchenCreatedAt,
+  kitchenNumeroPedido,
+  kitchenObservacion,
+  kitchenPedidoDetalles,
   kitchenTicketRef,
   total
 }: PdvPrintTicketProps) {
@@ -32,12 +44,13 @@ function PdvPrintTicket({
         className="pointer-events-none fixed -left-[9999px] top-0 w-[80mm] bg-white print:static print:left-auto print:w-[80mm]"
       >
         <TicketComanda
-          clienteNombre={clienteNombre}
-          pedidoDetalles={pedidoDetalles}
+          clienteNombre={kitchenClienteNombre}
+          createdAt={kitchenCreatedAt}
+          pedidoDetalles={kitchenPedidoDetalles}
           total={total}
           metodoPago={metodoPago}
-          observacion={observacion}
-          numeroPedido={nextPedidoNumber}
+          observacion={kitchenObservacion}
+          numeroPedido={kitchenNumeroPedido}
           type="kitchen"
         />
       </div>
@@ -48,6 +61,7 @@ function PdvPrintTicket({
       >
         <TicketComanda
           clienteNombre={clienteNombre}
+          createdAt={createdAt}
           pedidoDetalles={pedidoDetalles}
           total={total}
           metodoPago={metodoPago}

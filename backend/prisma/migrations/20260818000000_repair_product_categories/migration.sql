@@ -1,37 +1,16 @@
--- Repara asociaciones múltiples creadas por el antiguo flujo de edición.
--- Solo actúa cuando la categoría correcta puede inferirse por el nombre y ya está asociada;
--- los casos ambiguos se conservan para evitar pérdida de información.
-WITH inferred_categories AS (
-  SELECT
-    p."id" AS "productoId",
-    CASE
-      WHEN lower(p."nombre") LIKE '%completo%' THEN 'Completos'
-      WHEN lower(p."nombre") LIKE '%hamburguesa%'
-        OR lower(p."nombre") LIKE '%sandwich%'
-        OR lower(p."nombre") LIKE '%chacarero%'
-        OR lower(p."nombre") LIKE '%luco%' THEN 'Sandwich'
-      WHEN lower(p."nombre") LIKE '%bebida%'
-        OR lower(p."nombre") LIKE '%jugo%'
-        OR lower(p."nombre") LIKE '%agua%'
-        OR lower(p."nombre") LIKE '%te%' THEN 'Bebidas'
-      ELSE NULL
-    END AS "categoriaNombre"
-  FROM "Producto" p
-), repairable_products AS (
-  SELECT inferred."productoId", keep_category."id" AS "categoriaId"
-  FROM inferred_categories inferred
-  JOIN "Categoria" keep_category ON keep_category."nombre" = inferred."categoriaNombre"
-  JOIN "_CategoriaToProducto" keep_relation
-    ON keep_relation."A" = keep_category."id"
-    AND keep_relation."B" = inferred."productoId"
-  WHERE inferred."categoriaNombre" IS NOT NULL
-    AND (
-      SELECT count(*)
-      FROM "_CategoriaToProducto" relation_count
-      WHERE relation_count."B" = inferred."productoId"
-    ) > 1
-)
-DELETE FROM "_CategoriaToProducto" relation_to_remove
-USING repairable_products repair
-WHERE relation_to_remove."B" = repair."productoId"
-  AND relation_to_remove."A" <> repair."categoriaId";
+-- Corrige únicamente el caso histórico confirmado. No se infieren categorías por
+-- coincidencias parciales porque nombres como "té" pueden aparecer dentro de
+-- palabras no relacionadas y eliminar asociaciones válidas.
+DELETE FROM "_CategoriaToProducto" AS relation_to_remove
+USING "Producto" AS product, "Categoria" AS old_category, "Categoria" AS correct_category
+WHERE product."nombre" = 'SANDWICH LUCO PATRÓN'
+  AND old_category."nombre" = 'Ahorros exclusivos'
+  AND correct_category."nombre" = 'Sandwich'
+  AND relation_to_remove."B" = product."id"
+  AND relation_to_remove."A" = old_category."id"
+  AND EXISTS (
+    SELECT 1
+    FROM "_CategoriaToProducto" AS correct_relation
+    WHERE correct_relation."B" = product."id"
+      AND correct_relation."A" = correct_category."id"
+  );
