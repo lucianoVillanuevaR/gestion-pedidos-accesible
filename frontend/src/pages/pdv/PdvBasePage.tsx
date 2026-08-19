@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useReactToPrint, type UseReactToPrintOptions } from "react-to-print";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { createPedido, getPedidos, updatePedido } from "../../services/pedidos";
@@ -15,6 +14,7 @@ import { usePdvPedidoEditing } from "./hooks/usePdvPedidoEditing";
 import { usePdvProducts } from "./hooks/usePdvProducts";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { usePdvTurno } from "./hooks/usePdvTurno";
+import { usePdvPrinting } from "./hooks/usePdvPrinting";
 import PdvFacilView from "./PdvFacilView";
 import { buildPedidoSaveErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
 import PdvNormalView from "./PdvNormalView";
@@ -22,56 +22,6 @@ import PdvPageStatus from "./components/PdvPageStatus";
 import PdvPrintTicket from "./components/PdvPrintTicket";
 import PdvProductConfigurator from "./components/PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
-import { buildPedidoPrintSnapshot, type PedidoPrintSnapshot } from "./pedidoPrintSnapshot";
-
-const THERMAL_TICKET_PAGE_STYLE = `
-  @page {
-    size: 80mm 100mm;
-    margin: 0;
-  }
-  html,
-  body {
-    width: 80mm !important;
-    min-width: 80mm !important;
-    margin: 0;
-    padding: 0;
-    background: white;
-    overflow: hidden;
-  }
-  .ticket-print {
-    width: 80mm !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-  }
-`;
-
-const printThermalTicket: NonNullable<UseReactToPrintOptions["print"]> = async (printIframe) => {
-  const printWindow = printIframe.contentWindow;
-
-  if (!printWindow) {
-    throw new Error("No se pudo preparar la ventana de impresión");
-  }
-
-  await new Promise<void>((resolve) => {
-    window.setTimeout(resolve, 100);
-  });
-
-  const ticket = printIframe.contentDocument?.querySelector<HTMLElement>(".ticket-print");
-  if (ticket) {
-    const pixelsToMillimeters = 25.4 / 96;
-    const contentHeightMm = Math.ceil(ticket.getBoundingClientRect().height * pixelsToMillimeters) + 2;
-    const dynamicPageStyle = printIframe.contentDocument?.createElement("style");
-
-    if (dynamicPageStyle) {
-      dynamicPageStyle.textContent = `@page { size: 80mm ${contentHeightMm}mm; margin: 0; }`;
-      printIframe.contentDocument?.head.appendChild(dynamicPageStyle);
-    }
-  }
-
-  printWindow.focus();
-  printWindow.print();
-};
 
 function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
   const maxPedidoNumber = withPedidoNumerosTurno(pedidos).reduce((maxNumber, pedido) => {
@@ -106,7 +56,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume, isPanelOpen, openAccessibilityPanel } =
     useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
-  const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakManualRead } = useVoice({ enabled: true });
 
   const [selectedCategory, setSelectedCategory] = useState<FiltroCategoria>("Destacados");
@@ -126,12 +75,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const [sending, setSending] = useState(false);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [nextPedidoNumber, setNextPedidoNumber] = useState(1);
-  const [savedTicket, setSavedTicket] = useState<PedidoPrintSnapshot | null>(null);
 
   const initialProductHandledRef = useRef(false);
   const lastAnnouncedAccessibleStepKeyRef = useRef("");
-  const customerTicketRef = useRef<HTMLDivElement | null>(null);
-  const kitchenTicketRef = useRef<HTMLDivElement | null>(null);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const playSoundCue = useCallback((cue: "error" | "success" | "warning") => soundFeedback[cue](), [soundFeedback]);
   const { feedback, feedbackRef, setFeedback, showFeedback } = usePdvFeedback();
@@ -162,7 +108,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const announcePdvControl = useCallback(
     (message: string, dedupeKey: string) => {
-      speakOnDemand(message, {
+      speak(message, {
         priority: "high",
         dedupeKey,
         cooldownMs: 700,
@@ -170,7 +116,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         force: true
       });
     },
-    [speakOnDemand]
+    [speak]
   );
 
   const selectCategory = useCallback(
@@ -421,13 +367,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           : await createPedido(payload)
       ) as PedidoResponse;
       const numeroPedido = editingPedido ? getPedidoDisplayNumber(editingPedido) : pedidoCreado.numeroTurno;
-      if (!editingPedido) {
-        try {
-          setSavedTicket(buildPedidoPrintSnapshot(pedidoCreado));
-        } catch (snapshotError) {
-          console.error("El pedido fue creado, pero no se pudo preparar el ticket confirmado:", snapshotError);
-        }
-      }
       setNextPedidoNumber((currentNumber) =>
         typeof numeroPedido === "number" && Number.isFinite(numeroPedido) ? numeroPedido + 1 : currentNumber + 1
       );
@@ -503,21 +442,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     });
   }, [announce, showFeedback]);
 
-  const handlePrint = useReactToPrint({
-    contentRef: customerTicketRef,
-    documentTitle: `Ticket-cliente-Riquisimo-${new Date().getTime()}`,
-    print: printThermalTicket,
-    pageStyle: THERMAL_TICKET_PAGE_STYLE,
-    onPrintError: handlePrintError
-  });
-
-  const handlePrintKitchen = useReactToPrint({
-    contentRef: kitchenTicketRef,
-    documentTitle: `Ticket-cocina-Riquisimo-${new Date().getTime()}`,
-    print: printThermalTicket,
-    pageStyle: THERMAL_TICKET_PAGE_STYLE,
-    onPrintError: handlePrintError
-  });
+  const {
+    customerTicketRef,
+    kitchenTicketRef,
+    handlePrintCustomer: handlePrint,
+    handlePrintKitchen
+  } = usePdvPrinting({ onPrintError: handlePrintError });
 
   const bgWrapper = isHighContrast ? "bg-black" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const textColor = isHighContrast ? "text-white" : isAccessible ? "text-slate-950" : "text-[#1F2937]";
@@ -703,8 +633,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     feedbackRef,
     goNextAccessibleStep,
     goPrevAccessibleStep,
-    hasPrintableKitchenTicket: pedidoDetalles.length > 0 || Boolean(savedTicket),
-    hasPrintableTicket: pedidoDetalles.length > 0 || Boolean(savedTicket),
+    canPrintCurrentOrder: pedidoDetalles.length > 0,
     handlePrint,
     handlePrintKitchen,
     handleReadPedidoSummary,
@@ -724,7 +653,6 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     metodoPago,
     navigate,
     nextPedidoNumber,
-    printablePedidoNumber: savedTicket?.numeroPedido ?? null,
     observacion,
     openAccessibilityPanel,
     openResetConfirm,
@@ -789,20 +717,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           )}
 
           <PdvPrintTicket
-            clienteNombre={pedidoDetalles.length > 0 ? clienteNombre : (savedTicket?.clienteNombre ?? "")}
-            createdAt={pedidoDetalles.length > 0 ? undefined : savedTicket?.createdAt}
             customerTicketRef={customerTicketRef}
-            kitchenClienteNombre={pedidoDetalles.length > 0 ? clienteNombre : (savedTicket?.clienteNombre ?? "")}
-            kitchenCreatedAt={pedidoDetalles.length > 0 ? undefined : savedTicket?.createdAt}
             kitchenTicketRef={kitchenTicketRef}
-            kitchenNumeroPedido={pedidoDetalles.length > 0 ? nextPedidoNumber : (savedTicket?.numeroPedido ?? 0)}
-            kitchenObservacion={pedidoDetalles.length > 0 ? observacion : (savedTicket?.observacion ?? "")}
-            kitchenPedidoDetalles={pedidoDetalles.length > 0 ? pedidoDetalles : (savedTicket?.pedidoDetalles ?? [])}
-            metodoPago={pedidoDetalles.length > 0 ? metodoPago : (savedTicket?.metodoPago ?? "")}
-            nextPedidoNumber={pedidoDetalles.length > 0 ? nextPedidoNumber : (savedTicket?.numeroPedido ?? 0)}
-            observacion={pedidoDetalles.length > 0 ? observacion : (savedTicket?.observacion ?? "")}
-            pedidoDetalles={pedidoDetalles.length > 0 ? pedidoDetalles : (savedTicket?.pedidoDetalles ?? [])}
-            total={pedidoDetalles.length > 0 ? total : (savedTicket?.total ?? 0)}
+            printData={{
+              clienteNombre,
+              metodoPago,
+              numeroPedido: nextPedidoNumber,
+              observacion,
+              pedidoDetalles,
+              total
+            }}
           />
         </div>
       </main>

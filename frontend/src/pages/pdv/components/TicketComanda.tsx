@@ -1,21 +1,12 @@
 import logoRiquisimo from "../../../assets/logoRiq.png";
-import type { MetodoPago, PersonalizacionProducto, Producto, VarianteProducto } from "../../../types";
+import type { MetodoPago } from "../../../types";
 import { formatCurrency, getPaymentLabel } from "../../../utils/pdv";
-
-type TicketDetalle = {
-  itemKey: string;
-  productoId: number;
-  cantidad: number;
-  subtotal: number;
-  producto: Producto;
-  variante?: VarianteProducto;
-  personalizacion?: PersonalizacionProducto;
-};
+import type { PdvPedidoDetalle } from "../pdv.types";
 
 type TicketComandaProps = {
   clienteNombre?: string;
   createdAt?: string | Date;
-  pedidoDetalles: TicketDetalle[];
+  pedidoDetalles: PdvPedidoDetalle[];
   total: number;
   metodoPago: MetodoPago | "";
   observacion?: string;

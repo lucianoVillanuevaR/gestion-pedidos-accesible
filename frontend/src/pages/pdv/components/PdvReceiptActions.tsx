@@ -7,20 +7,16 @@ function PdvReceiptActions() {
     handlePrint,
     handlePrintKitchen,
     handleReadPedidoSummary,
-    hasPrintableKitchenTicket,
-    hasPrintableTicket,
+    canPrintCurrentOrder,
     isHighContrast,
     isTurnoOpen,
     openResetConfirm,
     pedidoDetalles,
-    printablePedidoNumber,
     quickActionButtonClass,
     quickActionIconButtonClass
   } = usePdvViewContext();
 
-  const canPrintKitchen = isTurnoOpen && hasPrintableKitchenTicket;
-  const canPrintCustomer = isTurnoOpen && hasPrintableTicket;
-  const canPrint = canPrintKitchen || canPrintCustomer;
+  const canPrint = isTurnoOpen && canPrintCurrentOrder;
   const [isPrintMenuOpen, setIsPrintMenuOpen] = useState(false);
   const printMenuRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +54,7 @@ function PdvReceiptActions() {
               className={`h-4 w-4 shrink-0 ${isHighContrast ? "text-current" : "text-slate-700"}`}
               aria-hidden="true"
             />
-            <span>{printablePedidoNumber ? `Imprimir #${printablePedidoNumber}` : "Imprimir"}</span>
+            <span>Imprimir</span>
             <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
           </button>
           {isPrintMenuOpen && (
@@ -69,7 +65,7 @@ function PdvReceiptActions() {
             >
               <button
                 type="button"
-                disabled={!canPrintKitchen}
+                disabled={!canPrint}
                 onClick={() => {
                   setIsPrintMenuOpen(false);
                   handlePrintKitchen();
@@ -81,7 +77,7 @@ function PdvReceiptActions() {
               </button>
               <button
                 type="button"
-                disabled={!canPrintCustomer}
+                disabled={!canPrint}
                 onClick={() => {
                   setIsPrintMenuOpen(false);
                   handlePrint();

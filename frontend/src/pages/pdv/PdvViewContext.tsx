@@ -1,18 +1,9 @@
 import { createContext, useContext, type Dispatch, type RefObject, type SetStateAction } from "react";
 import type { NavigateFunction } from "react-router-dom";
-import type { MetodoPago, PersonalizacionProducto, Producto, VarianteProducto } from "../../types";
+import type { MetodoPago, Producto } from "../../types";
 import type { FiltroCategoria } from "../../utils/pdv";
 import type { FeedbackState } from "./PdvShared";
-
-type PedidoDetalleItem = {
-  itemKey: string;
-  productoId: number;
-  cantidad: number;
-  producto: Producto;
-  subtotal: number;
-  variante?: VarianteProducto;
-  personalizacion?: PersonalizacionProducto;
-};
+import type { PdvPedidoDetalle } from "./pdv.types";
 
 export type PdvViewContextValue = {
   accessibleObservationPlaceholder: string;
@@ -32,8 +23,7 @@ export type PdvViewContextValue = {
   feedbackRef: RefObject<HTMLDivElement>;
   goNextAccessibleStep: () => void;
   goPrevAccessibleStep: () => void;
-  hasPrintableKitchenTicket: boolean;
-  hasPrintableTicket: boolean;
+  canPrintCurrentOrder: boolean;
   handlePrint: () => void;
   handlePrintKitchen: () => void;
   handleReadPedidoSummary: () => void;
@@ -53,12 +43,11 @@ export type PdvViewContextValue = {
   metodoPago: MetodoPago | "";
   navigate: NavigateFunction;
   nextPedidoNumber: number;
-  printablePedidoNumber: number | string | null;
   observacion: string;
   openAccessibilityPanel: () => void;
   openResetConfirm: () => void;
   panelBg: string;
-  pedidoDetalles: PedidoDetalleItem[];
+  pedidoDetalles: PdvPedidoDetalle[];
   puedeRegistrar: boolean;
   quickActionButtonClass: string;
   quickActionIconButtonClass: string;

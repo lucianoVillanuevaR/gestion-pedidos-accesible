@@ -14,6 +14,7 @@ import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "..
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
 import { PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
 import PdvFeedbackMessage from "./components/PdvFeedbackMessage";
+import AccessibleDialog from "./components/AccessibleDialog";
 import { usePdvViewContext } from "./PdvViewContext";
 
 function PdvFacilView() {
@@ -33,8 +34,7 @@ function PdvFacilView() {
     feedback,
     goNextAccessibleStep,
     goPrevAccessibleStep,
-    hasPrintableKitchenTicket,
-    hasPrintableTicket,
+    canPrintCurrentOrder,
     handlePrint,
     handlePrintKitchen,
     handleSubmit,
@@ -50,7 +50,6 @@ function PdvFacilView() {
     panelBg,
     pedidoDetalles,
     puedeRegistrar,
-    printablePedidoNumber,
     removeProduct,
     selectedCategory,
     selectCategory,
@@ -167,38 +166,6 @@ function PdvFacilView() {
 
       {feedback && (
         <PdvFeedbackMessage feedback={feedback} isAccessible isHighContrast={isHighContrast} className={cardBorder} />
-      )}
-
-      {hasPrintableTicket && printablePedidoNumber && (
-        <section className={`rounded-2xl ${cardBorder} p-5 ${panelBg}`} aria-labelledby="ultimo-ticket-title">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 id="ultimo-ticket-title" className="text-2xl font-black">
-                Pedido #{printablePedidoNumber} registrado
-              </h2>
-              <p className={`mt-1 text-lg font-bold ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}>
-                Puedes reimprimir el último pedido confirmado.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={handlePrintKitchen}
-                className={`min-h-[56px] rounded-xl border-2 px-5 text-lg font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:border-yellow-500 hover:bg-[#FECE00]"}`}
-              >
-                Ticket de cocina
-              </button>
-              <button
-                type="button"
-                onClick={handlePrint}
-                className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-xl border-2 px-5 text-lg font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-white text-slate-950 hover:border-yellow-500 hover:bg-[#FECE00]"}`}
-              >
-                <Printer className="h-6 w-6" aria-hidden="true" />
-                Ticket de cliente
-              </button>
-            </div>
-          </div>
-        </section>
       )}
 
       {!isTurnoOpen && (
@@ -554,9 +521,9 @@ function PdvFacilView() {
               <button
                 type="button"
                 onClick={handlePrintKitchen}
-                disabled={!hasPrintableKitchenTicket}
+                disabled={!canPrintCurrentOrder}
                 className={`rounded-lg border-2 py-4 px-6 font-bold text-lg transition ${
-                  hasPrintableKitchenTicket
+                  canPrintCurrentOrder
                     ? isHighContrast
                       ? "contrast-button-secondary"
                       : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
@@ -572,9 +539,9 @@ function PdvFacilView() {
               <button
                 type="button"
                 onClick={handlePrint}
-                disabled={!hasPrintableTicket}
+                disabled={!canPrintCurrentOrder}
                 className={`rounded-lg border-2 py-4 px-6 font-bold text-lg transition ${
-                  hasPrintableTicket
+                  canPrintCurrentOrder
                     ? isHighContrast
                       ? "contrast-button-secondary"
                       : "border-slate-900 bg-white text-slate-900 hover:bg-slate-100"
@@ -609,166 +576,157 @@ function PdvFacilView() {
       )}
 
       {isOrderSummaryOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="resumen-pedido-title"
-            className={`max-h-[90vh] w-full max-w-3xl overflow-auto rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 id="resumen-pedido-title" className="text-3xl font-black text-slate-950">
-                  Resumen del pedido
-                </h2>
-                <p className="mt-2 text-lg font-bold text-slate-700">
-                  Revisa productos, pago y total antes de registrar.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsOrderSummaryOpen(false)}
-                aria-label="Cerrar resumen del pedido"
-                className={`min-h-[48px] rounded-2xl border-2 px-4 text-xl font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"}`}
-              >
-                ×
-              </button>
+        <AccessibleDialog
+          labelId="resumen-pedido-title"
+          onClose={() => setIsOrderSummaryOpen(false)}
+          panelClassName={`max-h-[90vh] w-full max-w-3xl overflow-auto rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="resumen-pedido-title" className="text-3xl font-black text-slate-950">
+                Resumen del pedido
+              </h2>
+              <p className="mt-2 text-lg font-bold text-slate-700">
+                Revisa productos, pago y total antes de registrar.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsOrderSummaryOpen(false)}
+              aria-label="Cerrar resumen del pedido"
+              className={`min-h-[48px] rounded-2xl border-2 px-4 text-xl font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"}`}
+            >
+              ×
+            </button>
+          </div>
 
-            <div className="mt-6 grid gap-3">
-              {pedidoDetalles.map((item) => (
-                <article
-                  key={item.itemKey}
-                  className={`rounded-2xl border-2 p-4 ${isHighContrast ? "border-yellow-400" : "border-slate-300 bg-white"}`}
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-xl font-black text-slate-950">{item.producto.nombre}</p>
-                      {item.variante && (
-                        <p className="mt-1 text-base font-black text-yellow-700">Opción: {item.variante.nombre}</p>
-                      )}
-                      {item.personalizacion?.combinacion && (
-                        <p className="mt-1 text-base font-black text-yellow-700">
-                          Combinación: {item.personalizacion.combinacion.nombre}
-                        </p>
-                      )}
-                      {item.personalizacion?.aderezos.length ? (
-                        <p className="mt-1 text-base font-bold text-slate-600">
-                          Aderezos: {item.personalizacion.aderezos.join(", ")}
-                        </p>
-                      ) : null}
-                      {item.personalizacion?.comentario && (
-                        <p className="mt-1 text-base italic text-slate-600">“{item.personalizacion.comentario}”</p>
-                      )}
-                      <p className="mt-2 text-base font-bold text-slate-600">
-                        {item.cantidad} x {formatCurrency(item.producto.precio)}
+          <div className="mt-6 grid gap-3">
+            {pedidoDetalles.map((item) => (
+              <article
+                key={item.itemKey}
+                className={`rounded-2xl border-2 p-4 ${isHighContrast ? "border-yellow-400" : "border-slate-300 bg-white"}`}
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xl font-black text-slate-950">{item.producto.nombre}</p>
+                    {item.variante && (
+                      <p className="mt-1 text-base font-black text-yellow-700">Opción: {item.variante.nombre}</p>
+                    )}
+                    {item.personalizacion?.combinacion && (
+                      <p className="mt-1 text-base font-black text-yellow-700">
+                        Combinación: {item.personalizacion.combinacion.nombre}
                       </p>
-                    </div>
-                    <p className="text-xl font-black text-slate-950">{formatCurrency(item.subtotal)}</p>
+                    )}
+                    {item.personalizacion?.aderezos.length ? (
+                      <p className="mt-1 text-base font-bold text-slate-600">
+                        Aderezos: {item.personalizacion.aderezos.join(", ")}
+                      </p>
+                    ) : null}
+                    {item.personalizacion?.comentario && (
+                      <p className="mt-1 text-base italic text-slate-600">“{item.personalizacion.comentario}”</p>
+                    )}
+                    <p className="mt-2 text-base font-bold text-slate-600">
+                      {item.cantidad} x {formatCurrency(item.producto.precio)}
+                    </p>
                   </div>
-                </article>
-              ))}
-            </div>
+                  <p className="text-xl font-black text-slate-950">{formatCurrency(item.subtotal)}</p>
+                </div>
+              </article>
+            ))}
+          </div>
 
-            <div className="mt-6 grid gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50 p-4 text-lg font-black text-slate-950">
-              <div className="flex items-center justify-between gap-3">
-                <span>Cliente</span>
-                <span>{clienteNombre.trim() || "Sin nombre"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Método de pago</span>
-                <span>{metodoPago ? getPaymentLabel(metodoPago) : "Sin seleccionar"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3 border-t border-slate-300 pt-3 text-2xl">
-                <span>Total</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
+          <div className="mt-6 grid gap-3 rounded-2xl border-2 border-slate-300 bg-slate-50 p-4 text-lg font-black text-slate-950">
+            <div className="flex items-center justify-between gap-3">
+              <span>Cliente</span>
+              <span>{clienteNombre.trim() || "Sin nombre"}</span>
             </div>
+            <div className="flex items-center justify-between gap-3">
+              <span>Método de pago</span>
+              <span>{metodoPago ? getPaymentLabel(metodoPago) : "Sin seleccionar"}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-slate-300 pt-3 text-2xl">
+              <span>Total</span>
+              <span>{formatCurrency(total)}</span>
+            </div>
+          </div>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsOrderSummaryOpen(false)}
-                className={`min-h-[56px] rounded-2xl border-2 px-6 text-lg font-black transition ${isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"}`}
-              >
-                Listo
-              </button>
-            </div>
-          </section>
-        </div>
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIsOrderSummaryOpen(false)}
+              className={`min-h-[56px] rounded-2xl border-2 px-6 text-lg font-black transition ${isHighContrast ? "contrast-button-primary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"}`}
+            >
+              Listo
+            </button>
+          </div>
+        </AccessibleDialog>
       )}
 
       {isSubmitConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirmar-pedido-title"
-            className={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
-          >
-            <h2 id="confirmar-pedido-title" className="text-3xl font-black text-slate-950">
-              {isEditingPedido ? "¿Deseas guardar los cambios?" : "¿Deseas registrar este pedido?"}
-            </h2>
-            <p className="mt-3 text-xl font-bold text-slate-700">Total a pagar: {formatCurrency(total)}</p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setIsSubmitConfirmOpen(false)}
-                className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:bg-slate-50"}`}
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSubmitConfirmOpen(false);
-                  handleSubmit();
-                }}
-                disabled={!puedeRegistrar}
-                className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${isHighContrast ? "contrast-button-success" : "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800"}`}
-              >
-                {isEditingPedido ? "Guardar cambios" : "Registrar pedido"}
-              </button>
-            </div>
-          </section>
-        </div>
+        <AccessibleDialog
+          labelId="confirmar-pedido-title"
+          onClose={() => setIsSubmitConfirmOpen(false)}
+          panelClassName={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+        >
+          <h2 id="confirmar-pedido-title" className="text-3xl font-black text-slate-950">
+            {isEditingPedido ? "¿Deseas guardar los cambios?" : "¿Deseas registrar este pedido?"}
+          </h2>
+          <p className="mt-3 text-xl font-bold text-slate-700">Total a pagar: {formatCurrency(total)}</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setIsSubmitConfirmOpen(false)}
+              className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-950 hover:bg-slate-50"}`}
+            >
+              Volver
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSubmitConfirmOpen(false);
+                handleSubmit();
+              }}
+              disabled={!puedeRegistrar}
+              className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${isHighContrast ? "contrast-button-success" : "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800"}`}
+            >
+              {isEditingPedido ? "Guardar cambios" : "Registrar pedido"}
+            </button>
+          </div>
+        </AccessibleDialog>
       )}
 
       {isCloseTurnoConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirmar-cierre-turno-title"
-            className={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
-          >
-            <h2 id="confirmar-cierre-turno-title" className="text-3xl font-black text-slate-950">
-              ¿Deseas cerrar el turno?
-            </h2>
-            <p className="mt-3 text-xl font-bold text-slate-700">
-              No podrás registrar pedidos hasta abrir un turno nuevo.
-            </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setIsCloseTurnoConfirmOpen(false)}
-                className="min-h-[56px] rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-black text-slate-950 hover:bg-slate-50"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCloseTurnoConfirmOpen(false);
-                  handleToggleTurno();
-                }}
-                className="min-h-[56px] rounded-2xl border-2 border-red-800 bg-red-700 px-5 text-lg font-black text-white hover:bg-red-800"
-              >
-                Sí, cerrar turno
-              </button>
-            </div>
-          </section>
-        </div>
+        <AccessibleDialog
+          labelId="confirmar-cierre-turno-title"
+          onClose={() => setIsCloseTurnoConfirmOpen(false)}
+          panelClassName={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+        >
+          <h2 id="confirmar-cierre-turno-title" className="text-3xl font-black text-slate-950">
+            ¿Deseas cerrar el turno?
+          </h2>
+          <p className="mt-3 text-xl font-bold text-slate-700">
+            No podrás registrar pedidos hasta abrir un turno nuevo.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setIsCloseTurnoConfirmOpen(false)}
+              className="min-h-[56px] rounded-2xl border-2 border-slate-300 bg-white px-5 text-lg font-black text-slate-950 hover:bg-slate-50"
+            >
+              Volver
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsCloseTurnoConfirmOpen(false);
+                handleToggleTurno();
+              }}
+              className="min-h-[56px] rounded-2xl border-2 border-red-800 bg-red-700 px-5 text-lg font-black text-white hover:bg-red-800"
+            >
+              Sí, cerrar turno
+            </button>
+          </div>
+        </AccessibleDialog>
       )}
     </div>
   );
