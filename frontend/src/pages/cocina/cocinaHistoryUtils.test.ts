@@ -6,7 +6,8 @@ import {
   getPedidosRecientes,
   getTurnoProductosVendidos,
   getTurnosHistorial,
-  groupHistorialPedidosByDate
+  groupHistorialPedidosByDate,
+  paginateTurnosHistorial
 } from "./cocinaHistoryUtils";
 
 const cierre: CierreTurno = {
@@ -183,5 +184,34 @@ describe("utilidades del historial de cocina", () => {
 
     expect(getPedidosRecientes(turnos)).toHaveLength(15);
     expect(getPedidosRecientes(turnos)[0].id).toBe(14);
+  });
+
+  it("pagina ocho turnos después de conservar el orden filtrado", () => {
+    const baseTurno = getTurnosHistorial([cierre])[0];
+    const turnos = Array.from({ length: 19 }, (_, index) => ({ ...baseTurno, id: `turno-${index}` }));
+
+    const firstPage = paginateTurnosHistorial(turnos, 1);
+    const secondPage = paginateTurnosHistorial(turnos, 2);
+
+    expect(firstPage).toMatchObject({ end: 8, page: 1, start: 1, total: 19, totalPages: 3 });
+    expect(firstPage.items).toHaveLength(8);
+    expect(secondPage.items.map((turno) => turno.id)).toEqual([
+      "turno-8",
+      "turno-9",
+      "turno-10",
+      "turno-11",
+      "turno-12",
+      "turno-13",
+      "turno-14",
+      "turno-15"
+    ]);
+  });
+
+  it("ajusta páginas fuera de rango sin perder el total", () => {
+    const baseTurno = getTurnosHistorial([cierre])[0];
+    const turnos = Array.from({ length: 9 }, (_, index) => ({ ...baseTurno, id: `turno-${index}` }));
+
+    expect(paginateTurnosHistorial(turnos, 99)).toMatchObject({ end: 9, page: 2, start: 9, totalPages: 2 });
+    expect(paginateTurnosHistorial([], 4)).toMatchObject({ end: 0, page: 1, start: 0, total: 0, totalPages: 1 });
   });
 });

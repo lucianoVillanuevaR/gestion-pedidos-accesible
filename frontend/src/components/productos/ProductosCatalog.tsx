@@ -1,4 +1,5 @@
-import { ChevronDown, Eye, EyeOff, Pencil, Plus, Utensils } from "lucide-react";
+import { ChevronDown, Ellipsis, Eye, EyeOff, Pencil, Plus, Trash2, Utensils } from "lucide-react";
+import { useState } from "react";
 import type { ProductoConCategoria } from "../../utils/pdv";
 import { formatCurrency } from "../../utils/pdv";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
@@ -16,6 +17,7 @@ export function CategoriaBlock({
   grupo,
   isExpanded,
   onAddProduct,
+  onDeleteCategory,
   onEditProduct,
   onToggle,
   onToggleAvailability,
@@ -24,18 +26,21 @@ export function CategoriaBlock({
   grupo: CategoriaGrupo;
   isExpanded: boolean;
   onAddProduct: () => void;
+  onDeleteCategory?: () => void;
   onEditProduct: (producto: ProductoConCategoria) => void;
   onToggle: () => void;
   onToggleAvailability: (producto: ProductoConCategoria) => void;
   updatingProductoId: number | null;
 }) {
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+
   return (
     <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.06)]">
-      <div className="flex min-h-[54px] items-center justify-between gap-3 bg-slate-100 px-3">
+      <div className="flex min-h-[54px] flex-wrap items-center justify-between gap-2 bg-slate-100 px-3 py-2 sm:flex-nowrap sm:gap-3 sm:py-0">
         <button
           type="button"
           onClick={onToggle}
-          className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg py-2 text-left transition hover:bg-slate-200 ${FOCUS_VISIBLE_CLASS}`}
+          className={`flex min-w-0 flex-1 basis-[220px] items-center gap-3 rounded-lg py-2 text-left transition hover:bg-slate-200 ${FOCUS_VISIBLE_CLASS}`}
           aria-expanded={isExpanded}
         >
           <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-500">
@@ -47,7 +52,7 @@ export function CategoriaBlock({
           </span>
         </button>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-white px-2 text-xs font-black text-slate-600 shadow-sm">
             {grupo.productos.length}
           </span>
@@ -57,11 +62,40 @@ export function CategoriaBlock({
               event.stopPropagation();
               onAddProduct();
             }}
-            className={`hidden min-h-[36px] items-center justify-center gap-1 rounded-lg border border-slate-900 bg-slate-900 px-3 text-sm font-black text-white transition hover:bg-black sm:inline-flex ${FOCUS_VISIBLE_CLASS}`}
+            aria-label={`Agregar producto en ${grupo.label}`}
+            className={`inline-flex min-h-[36px] items-center justify-center gap-1 rounded-lg border border-slate-900 bg-slate-900 px-2 text-sm font-black text-white transition hover:bg-black sm:px-3 ${FOCUS_VISIBLE_CLASS}`}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Producto
+            <span className="hidden sm:inline">Agregar producto</span>
           </button>
+          {onDeleteCategory && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsOptionsOpen((isOpen) => !isOpen)}
+                aria-expanded={isOptionsOpen}
+                aria-label={`Opciones de categoría ${grupo.label}`}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Ellipsis className="h-5 w-5" aria-hidden="true" />
+              </button>
+              {isOptionsOpen && (
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOptionsOpen(false);
+                      onDeleteCategory();
+                    }}
+                    className={`flex min-h-[42px] w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-red-700 transition hover:bg-red-50 ${FOCUS_VISIBLE_CLASS}`}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    Eliminar categoría
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <button
             type="button"
             onClick={onToggle}
@@ -109,7 +143,7 @@ function ProductoRow({
 
   return (
     <article
-      className={`grid gap-3 px-3 py-3 transition hover:bg-[#FFFDF3] sm:grid-cols-[minmax(0,1fr)_120px_96px] sm:items-center ${isAvailable ? "" : "bg-slate-50 opacity-70"}`}
+      className={`grid gap-3 px-3 py-3 transition hover:bg-[#FFFDF3] sm:grid-cols-[minmax(0,1fr)_120px_96px] sm:items-center ${isAvailable ? "" : "bg-slate-50"}`}
     >
       <div className="flex min-w-0 items-center gap-3">
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400">
@@ -143,7 +177,7 @@ function ProductoRow({
               ? "border-yellow-200 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
               : "border-slate-200 bg-white text-slate-500 hover:bg-slate-100"
           } ${FOCUS_VISIBLE_CLASS}`}
-          aria-label={isAvailable ? `Ocultar ${producto.nombre}` : `Mostrar ${producto.nombre}`}
+          aria-label={isAvailable ? `Ocultar producto ${producto.nombre}` : `Mostrar producto ${producto.nombre}`}
         >
           {isAvailable ? (
             <Eye className="h-5 w-5" aria-hidden="true" />
@@ -155,7 +189,7 @@ function ProductoRow({
           type="button"
           onClick={() => onEditProduct(producto)}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-yellow-200 bg-[#FFF8DC] text-slate-950 transition hover:bg-[#FFF4BF] ${FOCUS_VISIBLE_CLASS}`}
-          aria-label={`Editar ${producto.nombre}`}
+          aria-label={`Editar producto ${producto.nombre}`}
         >
           <Pencil className="h-5 w-5" aria-hidden="true" />
         </button>

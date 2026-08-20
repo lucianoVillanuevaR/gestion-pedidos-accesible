@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CierreTurno } from "../../types";
-import { resolveCierreTurnoPrintable } from "./CierreTurnoPage";
+import { formatCount, resolveCierreTurnoPrintable } from "./CierreTurnoPage";
 
 const summaryVacio = {
   pedidosCancelados: 0,
@@ -53,5 +53,18 @@ describe("impresión del cierre de turno", () => {
     expect(printable.pedidos.map((pedido) => pedido.id)).toEqual([21]);
     expect(printable.summary.totalVendido).toBe(3500);
     expect(printable.responsable.primaryValue).toBe("Cajero Antiguo");
+  });
+});
+
+describe("textos del cierre de turno", () => {
+  it.each([
+    [1, "vendido", "vendidos", "1 vendido"],
+    [2, "vendido", "vendidos", "2 vendidos"],
+    [1, "unidad", "unidades", "1 unidad"],
+    [2, "unidad", "unidades", "2 unidades"],
+    [1, "pedido", "pedidos", "1 pedido"],
+    [2, "pedido", "pedidos", "2 pedidos"]
+  ])("pluraliza %i correctamente", (value, singular, plural, expected) => {
+    expect(formatCount(value as number, singular as string, plural as string)).toBe(expected);
   });
 });

@@ -33,10 +33,11 @@ function ProductosPage() {
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [addProductCategory, setAddProductCategory] = useState<CategoriaCatalogo | null>(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [remoteCategorias, setRemoteCategorias] = useState<CategoriaCatalogoOption[]>([]);
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<CategoriaCatalogoOption | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<CategoriaCatalogo>>(new Set());
@@ -97,6 +98,16 @@ function ProductosPage() {
       return nextCategories;
     });
   }, [grupos]);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) return;
+
+    setExpandedCategories((currentCategories) => {
+      const nextCategories = new Set(currentCategories);
+      grupos.forEach((grupo) => nextCategories.add(grupo.value));
+      return nextCategories;
+    });
+  }, [grupos, searchTerm]);
 
   const sortProductos = (productos: Producto[]) => {
     return [...productos].sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
@@ -161,6 +172,7 @@ function ProductosPage() {
         return nextCategories;
       });
       setAddProductCategory(null);
+      setIsProductModalOpen(false);
       if (!imageUploadFailed) soundFeedback.success();
       speakAction(`Producto agregado. ${productoFinal.nombre}.`, `producto-created:${productoFinal.id}`, {
         cooldownMs: 2500
@@ -309,15 +321,12 @@ function ProductosPage() {
   };
 
   const handleOpenCreateProduct = () => {
-    setAddProductCategory(activeCategory);
-    speakAction(
-      `Botón producto. Agregar producto en categoría ${activeCategory}.`,
-      `producto-open-create:${activeCategory}`,
-      {
-        cooldownMs: 1600,
-        priority: "normal"
-      }
-    );
+    setAddProductCategory("Otros");
+    setIsProductModalOpen(true);
+    speakAction("Nuevo producto. Selecciona una categoría.", "producto-open-create:global", {
+      cooldownMs: 1600,
+      priority: "normal"
+    });
   };
 
   const handleOpenCreateCategory = () => {
@@ -468,7 +477,7 @@ function ProductosPage() {
           currentCategorias.filter((currentCategoria) => currentCategoria.value !== grupo.value)
         );
         setActiveCategory("Destacados");
-        setIsDeletingCategory(false);
+        setDeletingCategory(null);
         setError(null);
         soundFeedback.success();
         speakAction(`Categoría eliminada. ${grupo.label}.`, `producto-category-deleted:${categoria.id}`, {
@@ -519,7 +528,6 @@ function ProductosPage() {
           isLoading={isLoading}
           onCreateCategory={handleOpenCreateCategory}
           onCreateProduct={handleOpenCreateProduct}
-          onDeleteCategory={() => setIsDeletingCategory(true)}
           onRefresh={handleRefreshProductos}
           onSearchChange={setSearchTerm}
           onSearchFocus={handleSearchFocus}
@@ -541,6 +549,7 @@ function ProductosPage() {
                 isExpanded={expandedCategories.has(grupo.value)}
                 onAddProduct={() => {
                   setAddProductCategory(grupo.value);
+                  setIsProductModalOpen(true);
                   speakAction(
                     `Botón producto. Agregar producto en categoría ${grupo.label}.`,
                     `producto-open-create:${grupo.value}`,
@@ -550,6 +559,14 @@ function ProductosPage() {
                     }
                   );
                 }}
+                onDeleteCategory={
+                  categoriasEliminables.some((categoria) => categoria.value === grupo.value)
+                    ? () => {
+                        const categoria = categoriasEliminables.find((item) => item.value === grupo.value);
+                        if (categoria) setDeletingCategory(categoria);
+                      }
+                    : undefined
+                }
                 onEditProduct={handleOpenEditProduct}
                 onToggle={() => handleToggleCategoryBlock(grupo)}
                 onToggleAvailability={handleToggleAvailability}
@@ -560,13 +577,16 @@ function ProductosPage() {
           </section>
         )}
 
-        {addProductCategory && (
+        {isProductModalOpen && addProductCategory && (
           <ProductoFormModal
             availableProductos={productosConCategoria}
             categoriasCatalogo={categoriasCatalogo}
             defaultCategory={addProductCategory}
             isSaving={isCreating}
-            onClose={() => setAddProductCategory(null)}
+            onClose={() => {
+              setAddProductCategory(null);
+              setIsProductModalOpen(false);
+            }}
             onSubmit={handleCreateProducto}
           />
         )}
@@ -594,13 +614,13 @@ function ProductosPage() {
           />
         )}
 
-        {isDeletingCategory && (
+        {deletingCategory && (
           <CategoriaDeleteModal
-            categorias={categoriasEliminables.map((categoria) => ({
-              ...categoria,
-              productosCount: grupos.find((grupo) => grupo.value === categoria.value)?.productos.length ?? 0
-            }))}
-            onClose={() => setIsDeletingCategory(false)}
+            categoria={{
+              ...deletingCategory,
+              productosCount: grupos.find((grupo) => grupo.value === deletingCategory.value)?.productos.length ?? 0
+            }}
+            onClose={() => setDeletingCategory(null)}
             onSubmit={handleDeleteCategory}
           />
         )}

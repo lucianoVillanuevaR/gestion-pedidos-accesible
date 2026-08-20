@@ -77,6 +77,10 @@ export function resolveCierreTurnoPrintable(
   };
 }
 
+export function formatCount(value: number, singular: string, plural: string) {
+  return `${value} ${value === 1 ? singular : plural}`;
+}
+
 function CierreTurnoPage() {
   const { isAccessible, isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const navigate = useNavigate();
@@ -248,11 +252,7 @@ function CierreTurnoPage() {
               className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
               aria-label="Indicadores principales de cierre"
             >
-              <MetricCard
-                label="Total vendido confirmado"
-                value={formatCurrency(String(summary.totalVendido))}
-                variant="strong"
-              />
+              <MetricCard label="Total vendido" value={formatCurrency(String(summary.totalVendido))} variant="strong" />
               <MetricCard label="Pedidos entregados" value={String(summary.pedidosEntregados)} />
               <MetricCard label="Pedidos pendientes" value={String(summary.pedidosPendientes)} />
               <MetricCard label="Pedidos cancelados" value={String(summary.pedidosCancelados)} />
@@ -705,7 +705,7 @@ function ProductosVendidosPanel({
           <p className="mt-1 text-sm font-bold text-slate-600">Resumen por producto entregado.</p>
         </div>
         <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-          {totalUnidades} unidades
+          {formatCount(totalUnidades, "unidad", "unidades")}
         </span>
       </div>
 
@@ -721,7 +721,7 @@ function ProductosVendidosPanel({
               className="grid gap-2 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:grid-cols-[1fr_110px_140px] sm:items-center"
             >
               <p className="font-black text-slate-950">{producto.productoNombre}</p>
-              <p className="font-bold text-slate-700">{producto.cantidad} vendidos</p>
+              <p className="font-bold text-slate-700">{formatCount(producto.cantidad, "vendido", "vendidos")}</p>
               <p className="font-black text-slate-950 sm:text-right">{formatCurrency(String(producto.total))}</p>
             </article>
           ))}
@@ -747,7 +747,7 @@ function PedidosTurnoPanel({
           </h2>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
-          {pedidos.length} pedidos
+          {formatCount(pedidos.length, "pedido", "pedidos")}
         </span>
       </div>
 

@@ -1,4 +1,4 @@
-import { AlertTriangle, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
@@ -74,11 +74,11 @@ export function CategoriaFormModal({
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-[480px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
-        aria-label="Crear categoría"
+        aria-label="Nueva categoría"
       >
         <div className="flex min-h-[68px] items-center justify-between gap-3 border-b border-slate-200 px-5">
           <div>
-            <h2 className="text-xl font-black text-slate-950">Crear categoría</h2>
+            <h2 className="text-xl font-black text-slate-950">Nueva categoría</h2>
             <p className="mt-0.5 text-sm font-semibold text-slate-500">
               Organiza productos bajo un nombre fácil de reconocer.
             </p>
@@ -142,21 +142,19 @@ export function CategoriaFormModal({
 }
 
 export function CategoriaDeleteModal({
-  categorias,
+  categoria,
   onClose,
   onSubmit
 }: {
-  categorias: Array<CategoriaCatalogoOption & { productosCount: number }>;
+  categoria: CategoriaCatalogoOption & { productosCount: number };
   onClose: () => void;
   onSubmit: (categoria: CategoriaCatalogo) => void;
 }) {
-  const [selectedCategory, setSelectedCategory] = useState<CategoriaCatalogo | "">("");
-  const selected = categorias.find((categoria) => categoria.value === selectedCategory);
-  const canDelete = Boolean(selected && selected.productosCount === 0);
+  const canDelete = categoria.productosCount === 0;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (canDelete && selectedCategory) onSubmit(selectedCategory);
+    if (canDelete) onSubmit(categoria.value);
   };
 
   return createPortal(
@@ -173,9 +171,9 @@ export function CategoriaDeleteModal({
             </span>
             <div>
               <h2 id="delete-category-title" className="text-xl font-black text-slate-950">
-                Eliminar categoría
+                ¿Eliminar categoría &quot;{categoria.label}&quot;?
               </h2>
-              <p className="text-sm font-semibold text-slate-500">Elige cuál deseas eliminar.</p>
+              <p className="text-sm font-semibold text-slate-500">No se puede deshacer esta acción.</p>
             </div>
           </div>
           <button
@@ -189,45 +187,14 @@ export function CategoriaDeleteModal({
         </div>
 
         <div className="space-y-4 bg-slate-50 p-5">
-          {categorias.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
-              <p className="font-black text-slate-900">No hay categorías personalizadas</p>
-              <p className="mt-1 text-sm font-semibold text-slate-500">
-                Las categorías predeterminadas no se pueden eliminar.
-              </p>
+          {categoria.productosCount > 0 ? (
+            <div className="rounded-2xl border border-red-800 bg-red-700 p-4 text-white" role="alert">
+              <p className="font-black">Esta categoría contiene {categoria.productosCount} productos</p>
+              <p className="mt-1 text-sm font-semibold">Cámbialos de categoría antes de eliminarla.</p>
             </div>
           ) : (
-            <label className="block">
-              <span className="mb-2 block text-sm font-black text-slate-700">Categoría</span>
-              <select
-                autoFocus
-                value={selectedCategory}
-                onChange={(event) => setSelectedCategory(event.target.value as CategoriaCatalogo)}
-                className={`min-h-[50px] w-full rounded-xl border border-slate-300 bg-white px-4 font-bold text-slate-950 outline-none transition focus:border-yellow-500 focus:ring-4 focus:ring-yellow-100 ${FOCUS_VISIBLE_CLASS}`}
-              >
-                <option value="">Selecciona una categoría</option>
-                {categorias.map((categoria) => (
-                  <option key={categoria.value} value={categoria.value}>
-                    {categoria.label} ({categoria.productosCount} productos)
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {selected && selected.productosCount > 0 && (
-            <div className="flex gap-3 rounded-2xl border border-red-800 bg-red-700 p-4 text-white" role="alert">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-              <div>
-                <p className="font-black">Esta categoría contiene {selected.productosCount} productos</p>
-                <p className="mt-1 text-sm font-semibold">Cámbialos de categoría antes de eliminarla.</p>
-              </div>
-            </div>
-          )}
-
-          {selected && selected.productosCount === 0 && (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-900">
-              Se eliminará <strong>{selected.label}</strong>. Esta acción no se puede deshacer.
+              Se eliminará <strong>{categoria.label}</strong>.
             </div>
           )}
         </div>

@@ -65,36 +65,26 @@ export function HistorialTurnoCard({
     <article
       className={`historial-print-turno overflow-hidden rounded-2xl ${isPrintTarget ? "historial-print-target" : ""} ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]"}`}
     >
-      <div className="flex w-full flex-col gap-4 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="grid w-full gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div>
           <p className="text-xs font-black uppercase text-slate-500">Turno cerrado</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">{formatKitchenDateTime(turno.fechaCierre)}</h2>
-          <p className="mt-2 flex flex-wrap gap-3 text-sm font-bold text-slate-600">
+          <h2 className="mt-0.5 text-xl font-black text-slate-950">{formatKitchenDateTime(turno.fechaCierre)}</h2>
+          <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold text-slate-600">
             <span>
               {responsable.primaryLabel}: {responsable.primaryValue}
             </span>
             {responsable.roleValue && <span>Rol: {responsable.roleValue}</span>}
-            <span>Inicio: {turno.fechaInicio ? formatKitchenDateTime(turno.fechaInicio) : "Sin datos"}</span>
-            <span>Cierre: {formatKitchenDateTime(turno.fechaCierre)}</span>
+            <span>Inicio: {turno.fechaInicio ? formatTime(turno.fechaInicio) : "Sin datos"}</span>
+            <span>Cierre: {formatTime(turno.fechaCierre)}</span>
           </p>
-          <p className="mt-2 flex flex-wrap gap-2 text-sm font-black text-slate-700">
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
-              {turno.pedidos.length} pedidos registrados
-            </span>
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1">
-              {pedidosEntregados} entregados
-            </span>
-            <span className="rounded-full border border-yellow-200 bg-[#FFF8DC] px-3 py-1">
-              {pedidosPendientes} pendientes
-            </span>
-            <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1">
-              {pedidosCancelados} cancelados
-            </span>
+          <p className="mt-2 text-sm font-black text-slate-700">
+            {turno.pedidos.length} pedidos · {pedidosEntregados} entregados · {pedidosPendientes} pendientes ·{" "}
+            {pedidosCancelados} cancelados
           </p>
         </div>
-        <div className="grid gap-3 sm:min-w-[320px]">
+        <div className="grid gap-2 lg:min-w-[330px]">
           <div className="text-left sm:text-right">
-            <p className="text-xs font-black uppercase text-slate-500">Total vendido confirmado</p>
+            <p className="text-xs font-black text-slate-500">Total vendido</p>
             <p className="text-2xl font-black text-slate-950">{formatKitchenCurrency(String(turno.totalVendido))}</p>
           </div>
           <div className="no-print grid gap-2 sm:grid-cols-3">
@@ -107,7 +97,7 @@ export function HistorialTurnoCard({
               aria-expanded={isExpanded && selectedView === "resumen"}
               className={`min-h-[48px] rounded-xl border px-3 text-sm font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
             >
-              Ver resumen
+              Resumen
             </button>
             <button
               type="button"
@@ -118,7 +108,7 @@ export function HistorialTurnoCard({
               aria-expanded={isExpanded && selectedView === "pedidos"}
               className={`min-h-[48px] rounded-xl border px-3 text-sm font-black transition ${isHighContrast ? "contrast-button-secondary" : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"} ${FOCUS_VISIBLE_CLASS}`}
             >
-              Ver pedidos
+              Pedidos
             </button>
             <button
               type="button"
@@ -133,12 +123,6 @@ export function HistorialTurnoCard({
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="grid gap-3 border-t border-slate-100 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
-        <HistorialMetric label="Pedidos entregados" value={String(pedidosEntregados)} />
-        <HistorialMetric label="Pedidos pendientes" value={String(pedidosPendientes)} />
-        <HistorialMetric label="Pedidos cancelados" value={String(pedidosCancelados)} />
       </div>
 
       <CierreTurnoPrintable
@@ -169,15 +153,6 @@ export function HistorialTurnoCard({
         </div>
       )}
     </article>
-  );
-}
-
-function HistorialMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <p className="text-xs font-black uppercase text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
-    </div>
   );
 }
 

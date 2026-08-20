@@ -16,12 +16,33 @@ export type HistorialTurno = Omit<CierreTurno, "pedidos"> & {
 export type HistorialDateFilter = "all" | "month" | "today" | "week";
 export type HistorialEstadoFilter = EstadoPedido | "todos";
 export type HistorialMetodoFilter = MetodoPago | "todos";
+export const HISTORIAL_PAGE_SIZE = 8;
 
 export type HistorialPedidoGroup = {
   dateKey: string;
   label: string;
   pedidos: HistorialPedidoDetalle[];
 };
+
+export function paginateTurnosHistorial(
+  turnos: HistorialTurno[],
+  requestedPage: number,
+  pageSize = HISTORIAL_PAGE_SIZE
+) {
+  const total = turnos.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const startIndex = (page - 1) * pageSize;
+
+  return {
+    end: total === 0 ? 0 : Math.min(startIndex + pageSize, total),
+    items: turnos.slice(startIndex, startIndex + pageSize),
+    page,
+    start: total === 0 ? 0 : startIndex + 1,
+    total,
+    totalPages
+  };
+}
 
 export function getTurnosHistorial(cierres: CierreTurno[]): HistorialTurno[] {
   return cierres

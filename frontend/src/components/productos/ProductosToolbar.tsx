@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Search } from "lucide-react";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import type { CategoriaCatalogo } from "../../pages/productos/ProductosShared";
 import type { CategoriaGrupo } from "./ProductosCatalog";
@@ -9,7 +9,6 @@ type ProductosToolbarProps = {
   isLoading: boolean;
   onCreateCategory: () => void;
   onCreateProduct: () => void;
-  onDeleteCategory: () => void;
   onRefresh: () => void;
   onSearchChange: (value: string) => void;
   onSearchFocus?: () => void;
@@ -23,7 +22,6 @@ export function ProductosToolbar({
   isLoading,
   onCreateCategory,
   onCreateProduct,
-  onDeleteCategory,
   onRefresh,
   onSearchChange,
   onSearchFocus,
@@ -34,9 +32,8 @@ export function ProductosToolbar({
     <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
       <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-3 lg:flex-row lg:items-center lg:justify-end">
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-          <ToolbarButton icon={Plus} label="Producto" onClick={onCreateProduct} />
-          <ToolbarButton icon={Plus} label="Crear categoría" onClick={onCreateCategory} />
-          <ToolbarButton danger icon={Trash2} label="Eliminar categoría" onClick={onDeleteCategory} />
+          <ToolbarButton icon={Plus} label="Nuevo producto" onClick={onCreateProduct} />
+          <ToolbarButton icon={Plus} label="Nueva categoría" onClick={onCreateCategory} />
           <ToolbarButton
             disabled={isLoading}
             icon={RefreshCw}
@@ -98,14 +95,12 @@ export function ProductosToolbar({
 }
 
 function ToolbarButton({
-  danger = false,
   disabled = false,
   icon: Icon,
   iconClassName = "",
   label,
   onClick
 }: {
-  danger?: boolean;
   disabled?: boolean;
   icon: typeof Plus;
   iconClassName?: string;
@@ -117,9 +112,7 @@ function ToolbarButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
-        danger ? "border-red-800 bg-red-700 hover:bg-red-800" : "border-slate-900 bg-slate-900 hover:bg-black"
-      } ${FOCUS_VISIBLE_CLASS}`}
+      className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
     >
       <Icon className={`h-5 w-5 ${iconClassName}`} aria-hidden="true" />
       {label}

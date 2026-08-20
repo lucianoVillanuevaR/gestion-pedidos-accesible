@@ -17,15 +17,21 @@ import {
 } from "./components/CocinaHistorialFilters";
 import { HistorialPedidoModal } from "./components/CocinaHistorialPedidoModal";
 import { HistorialTurnoCard } from "./components/CocinaHistorialTurnoCard";
+import { HistorialPagination } from "./components/HistorialPagination";
 import {
   filterTurnosHistorial,
   getPedidosRecientes,
   getTurnosHistorial,
+  paginateTurnosHistorial,
   type HistorialDateFilter,
   type HistorialEstadoFilter,
   type HistorialMetodoFilter,
   type HistorialPedidoDetalle
 } from "./cocinaHistoryUtils";
+
+export function getInitialHistorialDateFilter(isAccessible: boolean): HistorialDateFilter {
+  return isAccessible ? "all" : "week";
+}
 
 export default function CocinaHistorialPage() {
   const location = useLocation();
@@ -38,11 +44,12 @@ export default function CocinaHistorialPage() {
   const [turnoViewById, setTurnoViewById] = useState<Record<string, "pedidos" | "resumen">>({});
   const [selectedPedido, setSelectedPedido] = useState<HistorialPedidoDetalle | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState<HistorialDateFilter>("all");
+  const [dateFilter, setDateFilter] = useState<HistorialDateFilter>(() => getInitialHistorialDateFilter(isAccessible));
   const [estadoFilter, setEstadoFilter] = useState<HistorialEstadoFilter>("todos");
   const [metodoFilter, setMetodoFilter] = useState<HistorialMetodoFilter>("todos");
   const [liveMessage, setLiveMessage] = useState("Historial de turnos listo para consultar.");
   const [printTurnoId, setPrintTurnoId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     void cargarCierresTurno()
@@ -66,6 +73,7 @@ export default function CocinaHistorialPage() {
     [dateFilter, estadoFilter, metodoFilter, searchTerm, turnosHistorial]
   );
   const easyPedidos = useMemo(() => getPedidosRecientes(filteredTurnos), [filteredTurnos]);
+  const pagination = useMemo(() => paginateTurnosHistorial(filteredTurnos, currentPage), [currentPage, filteredTurnos]);
   const totalVendido = filteredTurnos.reduce((total, turno) => total + turno.totalVendido, 0);
   const pedidosEntregados = filteredTurnos.reduce((total, turno) => total + turno.pedidosEntregados, 0);
   const pedidosCancelados = filteredTurnos.reduce((total, turno) => total + turno.pedidosCancelados, 0);
@@ -97,23 +105,38 @@ export default function CocinaHistorialPage() {
   const handleDateFilterChange = (value: HistorialDateFilter) => {
     const label = HISTORIAL_DATE_FILTERS.find((filter) => filter.value === value)?.label ?? value;
     setDateFilter(value);
+    setCurrentPage(1);
     announceHistorialControl(`Filtro de fecha ${label}.`, `historial-fecha:${value}`);
   };
 
   const handleEstadoFilterChange = (value: HistorialEstadoFilter) => {
     const label = HISTORIAL_ESTADO_FILTERS.find((filter) => filter.value === value)?.label ?? value;
     setEstadoFilter(value);
+    setCurrentPage(1);
     announceHistorialControl(`Filtro de estado ${label}.`, `historial-estado:${value}`);
   };
 
   const handleMetodoFilterChange = (value: HistorialMetodoFilter) => {
     const label = HISTORIAL_METODO_FILTERS.find((filter) => filter.value === value)?.label ?? value;
     setMetodoFilter(value);
+    setCurrentPage(1);
     announceHistorialControl(`Filtro de método de pago ${label}.`, `historial-metodo:${value}`);
   };
 
   const handleSearchFocus = () => {
     announceHistorialControl("Barra de búsqueda.", "historial-barra-busqueda");
+  };
+
+  const handleSearchTermChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setExpandedTurnoIds(new Set());
+    setLiveMessage(`Página ${page} de ${pagination.totalPages}.`);
+    window.scrollTo({ behavior: "smooth", top: 0 });
   };
 
   const handleToggleTurno = (turnoId: string, view: "pedidos" | "resumen" = "resumen") => {
@@ -193,7 +216,7 @@ export default function CocinaHistorialPage() {
           onEstadoFilterChange={handleEstadoFilterChange}
           onMetodoFilterChange={handleMetodoFilterChange}
           onSearchFocus={handleSearchFocus}
-          onSearchTermChange={setSearchTerm}
+          onSearchTermChange={handleSearchTermChange}
           searchTerm={searchTerm}
         />
 
@@ -205,6 +228,10 @@ export default function CocinaHistorialPage() {
             <HistoryStat label="Pedidos cancelados" value={pedidosCancelados} />
           </section>
         )}
+
+        <p className="px-1 text-sm font-black text-slate-700" aria-live="polite">
+          {filteredTurnos.length} {filteredTurnos.length === 1 ? "turno encontrado" : "turnos encontrados"}
+        </p>
 
         {filteredTurnos.length === 0 ? (
           <div
@@ -218,7 +245,7 @@ export default function CocinaHistorialPage() {
           </div>
         ) : (
           <div className="grid gap-3">
-            {filteredTurnos.map((turno) => (
+            {pagination.items.map((turno) => (
               <HistorialTurnoCard
                 key={turno.id}
                 isExpanded={expandedTurnoIds.has(turno.id)}
@@ -235,6 +262,16 @@ export default function CocinaHistorialPage() {
             ))}
           </div>
         )}
+
+        <HistorialPagination
+          end={pagination.end}
+          isHighContrast={isHighContrast}
+          onPageChange={handlePageChange}
+          page={pagination.page}
+          start={pagination.start}
+          total={pagination.total}
+          totalPages={pagination.totalPages}
+        />
 
         {selectedPedido && <HistorialPedidoModal pedido={selectedPedido} onClose={() => setSelectedPedido(null)} />}
       </section>

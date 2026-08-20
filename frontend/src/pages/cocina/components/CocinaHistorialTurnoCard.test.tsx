@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
-import { render } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CierreTurno } from "../../../types";
 import { getTurnosHistorial } from "../cocinaHistoryUtils";
 import { HistorialTurnoCard } from "./CocinaHistorialTurnoCard";
@@ -58,6 +58,8 @@ const cierre: CierreTurno = {
 };
 
 describe("HistorialTurnoCard", () => {
+  afterEach(cleanup);
+
   it("imprime el turno original completo aunque la tarjeta muestre pedidos filtrados", () => {
     const [printTurno] = getTurnosHistorial([cierre]);
     const turnoFiltrado = { ...printTurno, pedidos: [printTurno.pedidos[0]] };
@@ -83,5 +85,34 @@ describe("HistorialTurnoCard", () => {
     expect(reporte?.textContent).toContain("#102");
     expect(reporte?.textContent).toContain("Arma tu sandwich");
     expect(reporte?.textContent).toContain("$9.400");
+  });
+
+  it("muestra un único resumen compacto y conserva sus tres acciones", () => {
+    const [turno] = getTurnosHistorial([cierre]);
+    const onPrint = vi.fn();
+    const onToggle = vi.fn();
+    render(
+      <HistorialTurnoCard
+        isExpanded={false}
+        isHighContrast={false}
+        isPrintTarget={false}
+        onOpenModal={vi.fn()}
+        onPrint={onPrint}
+        onReadAction={vi.fn()}
+        onToggle={onToggle}
+        printTurno={turno}
+        selectedView="resumen"
+        turno={turno}
+      />
+    );
+
+    expect(screen.getByText("2 pedidos · 2 entregados · 0 pendientes · 0 cancelados")).toBeTruthy();
+    expect(screen.queryByText("Pedidos entregados")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Resumen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pedidos" }));
+    fireEvent.click(screen.getByRole("button", { name: "Imprimir" }));
+    expect(onToggle).toHaveBeenNthCalledWith(1, "resumen");
+    expect(onToggle).toHaveBeenNthCalledWith(2, "pedidos");
+    expect(onPrint).toHaveBeenCalledWith(turno.id);
   });
 });

@@ -83,7 +83,7 @@ export function CocinaNormalView({
               } ${FOCUS_VISIBLE_CLASS}`}
             >
               <Check className="h-5 w-5" aria-hidden="true" />
-              Marcar todas
+              Avanzar todos
             </button>
             <IconButton
               label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
@@ -91,7 +91,12 @@ export function CocinaNormalView({
               icon={isFullscreen ? Minimize2 : Maximize2}
               isHighContrast={isHighContrast}
             />
-            <IconButton label="Actualizar" onClick={onRefresh} icon={RefreshCw} isHighContrast={isHighContrast} />
+            <IconButton
+              label="Actualizar preparación"
+              onClick={onRefresh}
+              icon={RefreshCw}
+              isHighContrast={isHighContrast}
+            />
           </div>
         </div>
 
@@ -102,7 +107,7 @@ export function CocinaNormalView({
             type="button"
             onClick={onAutoRefreshToggle}
             aria-pressed={isAutoRefreshEnabled}
-            className={`inline-flex min-h-[48px] items-center justify-center rounded-lg px-5 text-sm font-black transition ${
+            className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg px-5 text-sm font-black transition ${
               isAutoRefreshEnabled
                 ? isHighContrast
                   ? "contrast-button-primary"
@@ -112,16 +117,9 @@ export function CocinaNormalView({
                   : "border border-yellow-300 bg-white text-slate-950 hover:bg-[#FFF8DC]"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
-            {isAutoRefreshEnabled ? "Actualización automática activa" : "Activar actualización automática"}
-          </button>
-          <p
-            className={`flex items-center gap-2 text-sm font-semibold ${isHighContrast ? "contrast-secondary-text" : "text-slate-700"}`}
-          >
             <RefreshCw className={`h-5 w-5 ${isAutoRefreshEnabled ? "animate-spin" : ""}`} aria-hidden="true" />
-            {isAutoRefreshEnabled
-              ? "Los tickets nuevos entran solos a cocina."
-              : "Actualiza manualmente para ver nuevos tickets."}
-          </p>
+            {isAutoRefreshEnabled ? "Actualización automática activa" : "Actualización automática desactivada"}
+          </button>
         </div>
 
         <CocinaSummary counts={counts} isHighContrast={isHighContrast} urgentCount={urgentCount} />
@@ -361,7 +359,7 @@ function CocinaSummary({
     { label: "Pendientes", value: counts.pendientes },
     { label: "En preparación", value: counts.enPreparacion },
     { label: "Listos", value: counts.listos },
-    { label: "Urgentes", value: urgentCount }
+    { label: "Urgentes", subtitle: "Más de 20 min", value: urgentCount }
   ];
 
   return (
@@ -373,6 +371,7 @@ function CocinaSummary({
         >
           <p className="text-xs font-black uppercase text-slate-500">{item.label}</p>
           <p className="mt-1 text-3xl font-black text-slate-950">{item.value}</p>
+          {item.subtitle && <p className="mt-1 text-xs font-bold text-slate-600">{item.subtitle}</p>}
         </div>
       ))}
     </div>
@@ -381,13 +380,11 @@ function CocinaSummary({
 
 function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido }: TicketProps) {
   const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
-  const interactionProps = getKitchenTicketInteractionProps(pedido, onOpenModal);
   const comentarios = getKitchenComments(pedido);
 
   return (
     <article
-      {...interactionProps}
-      className={`flex min-h-[246px] cursor-pointer flex-col justify-between rounded-xl border border-dashed p-4 transition hover:-translate-y-0.5 hover:shadow-lg ${
+      className={`flex min-h-[246px] flex-col justify-between rounded-xl border border-dashed p-4 transition hover:-translate-y-0.5 hover:shadow-lg ${
         isHighContrast
           ? "contrast-panel border-yellow-400"
           : delayed
@@ -395,7 +392,12 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
             : "border-slate-300 bg-white"
       } ${FOCUS_VISIBLE_CLASS}`}
     >
-      <div>
+      <button
+        type="button"
+        onClick={() => onOpenModal({ action: "detail", pedido })}
+        aria-label={`Ver detalle del pedido ${numeroPedido}`}
+        className={`w-full rounded-lg text-left ${FOCUS_VISIBLE_CLASS}`}
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xl font-black text-slate-950">Pedido #{numeroPedido}</p>
@@ -428,8 +430,8 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
             ))}
           </div>
         )}
-        <p className="mt-3 text-xs font-black uppercase text-slate-400">Haz clic para ver todos los detalles</p>
-      </div>
+        <p className="mt-3 text-xs font-black uppercase text-slate-600">Haz clic para ver todos los detalles</p>
+      </button>
 
       <div className="mt-4 grid gap-2">
         <div className="grid grid-cols-2 gap-2" aria-label="Flujo del pedido">
@@ -446,7 +448,7 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
               isPreparing
                 ? "border-yellow-300 bg-yellow-100 text-yellow-900"
                 : isPending
-                  ? "border-yellow-600 bg-yellow-500 text-white hover:bg-yellow-600"
+                  ? "border-yellow-600 bg-yellow-500 text-slate-950 hover:bg-yellow-600"
                   : "border-slate-200 bg-slate-100 text-slate-400"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
