@@ -607,9 +607,7 @@ function ProductosPage() {
                       }
                     : undefined
                 }
-                onToggleCategory={
-                  grupo.id ? () => handleToggleCategory(grupo) : undefined
-                }
+                onToggleCategory={grupo.id ? () => handleToggleCategory(grupo) : undefined}
                 onOptionsOpenChange={(isOpen) => setOpenCategoryOptions(isOpen ? grupo.value : null)}
                 onEditProduct={handleOpenEditProduct}
                 onToggle={() => handleToggleCategoryBlock(grupo)}
