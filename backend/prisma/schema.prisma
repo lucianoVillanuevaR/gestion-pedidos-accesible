@@ -58,6 +58,7 @@ model ProductoComponente {
 model Categoria {
   id          Int        @id @default(autoincrement())
   nombre      String     @unique
+  activa      Boolean    @default(true)
   descripcion String?
   orden       Int        @default(0)
   createdAt   DateTime   @default(now())

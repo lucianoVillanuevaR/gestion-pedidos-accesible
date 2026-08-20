@@ -15,7 +15,7 @@ function PdvOrderSummary() {
           {pedidoDetalles.map((item) => (
             <div key={item.itemKey} className="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-100 py-2">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-slate-950">{item.producto.nombre}</p>
+                <p className="line-clamp-2 text-sm font-bold text-slate-950">{item.producto.nombre}</p>
                 {item.variante && <p className="text-xs font-black text-yellow-700">Opción: {item.variante.nombre}</p>}
                 {item.personalizacion?.combinacion && (
                   <p className="text-xs font-black text-yellow-700">

@@ -20,6 +20,7 @@ export interface Producto {
 }
 
 export interface Categoria {
+  activa: boolean;
   descripcion?: string | null;
   id: number;
   nombre: string;

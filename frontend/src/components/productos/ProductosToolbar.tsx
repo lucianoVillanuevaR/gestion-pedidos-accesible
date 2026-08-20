@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, Search } from "lucide-react";
+import { EyeOff, Plus, RefreshCw, Search } from "lucide-react";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import type { CategoriaCatalogo } from "../../pages/productos/ProductosShared";
 import type { CategoriaGrupo } from "./ProductosCatalog";
@@ -85,6 +85,12 @@ export function ProductosToolbar({
                 <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-100 px-1 text-xs text-slate-700">
                   {grupo.productos.length}
                 </span>
+                {grupo.activa === false && (
+                  <span className="inline-flex items-center gap-1 text-xs font-black text-slate-700">
+                    <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                    Oculta
+                  </span>
+                )}
               </button>
             );
           })}

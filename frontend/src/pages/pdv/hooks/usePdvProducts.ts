@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   buildCategoriasCatalogo,
+  filterProductosByCategoriasActivas,
   groupProductosByCategoria,
-  withProductoCategoria
+  isCategoriaActiva
 } from "../../productos/ProductosShared";
 import type { CategoriaCatalogoOption, CategoriaCatalogo } from "../../productos/ProductosShared";
 import { getCategorias } from "../../../services/categorias";
@@ -24,6 +25,7 @@ export function usePdvProducts({
 }) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaCatalogoOption[]>([]);
+  const [loadingCategorias, setLoadingCategorias] = useState(true);
   const [loadingProductos, setLoadingProductos] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
@@ -58,6 +60,7 @@ export function usePdvProducts({
         if (isMounted) {
           setCategorias(
             list.map((categoria) => ({
+              activa: categoria.activa,
               id: categoria.id,
               label: categoria.nombre,
               value: categoria.nombre as CategoriaCatalogo
@@ -65,7 +68,12 @@ export function usePdvProducts({
           );
         }
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (isMounted) setLoadingError("No fue posible cargar categorías");
+      })
+      .finally(() => {
+        if (isMounted) setLoadingCategorias(false);
+      });
 
     return () => {
       isMounted = false;
@@ -73,6 +81,10 @@ export function usePdvProducts({
   }, []);
 
   const categoriasCatalogo = useMemo(() => buildCategoriasCatalogo(productos, categorias), [categorias, productos]);
+  const categoriasActivas = useMemo(
+    () => categoriasCatalogo.filter((categoria) => isCategoriaActiva(categoria.value, categoriasCatalogo)),
+    [categoriasCatalogo]
+  );
 
   const productosDisponibles = useMemo(
     () => productos.filter((producto) => producto.disponible !== false),
@@ -80,16 +92,18 @@ export function usePdvProducts({
   );
 
   const productosConCategoria = useMemo<ProductoConCategoria[]>(() => {
-    return withProductoCategoria(productosDisponibles, categoriasCatalogo);
-  }, [categoriasCatalogo, productosDisponibles]);
+    if (loadingCategorias) return [];
+    return filterProductosByCategoriasActivas(productosDisponibles, categoriasCatalogo);
+  }, [categoriasCatalogo, loadingCategorias, productosDisponibles]);
 
   const categoryFilters = useMemo<Array<{ label: string; value: FiltroCategoria }>>(() => {
-    const productosCatalogo = withProductoCategoria(productos, categoriasCatalogo);
-    return groupProductosByCategoria(productosCatalogo, categoriasCatalogo).map((grupo) => ({
+    if (loadingCategorias) return [];
+    const productosCatalogo = filterProductosByCategoriasActivas(productos, categoriasCatalogo);
+    return groupProductosByCategoria(productosCatalogo, categoriasActivas).map((grupo) => ({
       label: grupo.label,
       value: grupo.value as FiltroCategoria
     }));
-  }, [categoriasCatalogo, productos]);
+  }, [categoriasActivas, categoriasCatalogo, loadingCategorias, productos]);
 
   const productosFiltrados = useMemo(() => {
     const filtradosPorCategoria = filterProductosByCategory(productosConCategoria, selectedCategory);
@@ -105,7 +119,7 @@ export function usePdvProducts({
     accessibleProductos,
     categoryFilters,
     loadingError,
-    loadingProductos,
+    loadingProductos: loadingProductos || loadingCategorias,
     loadProductos,
     productos,
     productosFiltrados,

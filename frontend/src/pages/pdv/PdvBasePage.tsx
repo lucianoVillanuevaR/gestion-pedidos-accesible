@@ -73,6 +73,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setLoadingError
   } = usePdvProducts({ searchTerm, selectedCategory });
 
+  useEffect(() => {
+    if (categoryFilters.length === 0) return;
+    if (!categoryFilters.some((category) => category.value === selectedCategory)) {
+      setSelectedCategory(categoryFilters[0].value);
+    }
+  }, [categoryFilters, selectedCategory]);
+
   const [sending, setSending] = useState(false);
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [nextPedidoNumber, setNextPedidoNumber] = useState(1);

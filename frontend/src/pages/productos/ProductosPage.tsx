@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
+import AlertMessage from "../../components/ui/AlertMessage";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import useVoice from "../../hooks/useVoice";
@@ -11,7 +12,7 @@ import {
   updateProducto,
   uploadProductImage
 } from "../../services/productos";
-import { createCategoria, deleteCategoria, getCategorias } from "../../services/categorias";
+import { createCategoria, deleteCategoria, getCategorias, updateCategoriaActiva } from "../../services/categorias";
 import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../../types";
 import { formatCurrency, type ProductoConCategoria } from "../../utils/pdv";
 import { CategoriaDeleteModal, CategoriaFormModal } from "../../components/productos/CategoriaModals";
@@ -21,6 +22,7 @@ import { ProductosToolbar } from "../../components/productos/ProductosToolbar";
 import LoadingState from "../../components/ui/LoadingState";
 import {
   CATEGORIAS_CATALOGO,
+  isCategoriaBase,
   mergeCategorias,
   type CategoriaCatalogo,
   type CategoriaCatalogoOption
@@ -38,12 +40,14 @@ function ProductosPage() {
   const [editingProducto, setEditingProducto] = useState<ProductoConCategoria | null>(null);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState<CategoriaCatalogoOption | null>(null);
+  const [categoryFeedback, setCategoryFeedback] = useState<string | null>(null);
+  const [openCategoryOptions, setOpenCategoryOptions] = useState<CategoriaCatalogo | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<CategoriaCatalogo>>(new Set());
   const categoriasCatalogo = useMemo(() => mergeCategorias(remoteCategorias), [remoteCategorias]);
   const categoriasEliminables = useMemo(
-    () => remoteCategorias.filter((categoria) => !CATEGORIAS_CATALOGO.some((base) => base.value === categoria.value)),
+    () => remoteCategorias.filter((categoria) => !isCategoriaBase(categoria.value) && categoria.value !== "Destacados"),
     [remoteCategorias]
   );
   const {
@@ -68,6 +72,7 @@ function ProductosPage() {
       .then((categorias) =>
         setRemoteCategorias(
           categorias.map((categoria) => ({
+            activa: categoria.activa,
             id: categoria.id,
             label: categoria.nombre,
             value: categoria.nombre as CategoriaCatalogo
@@ -361,6 +366,7 @@ function ProductosPage() {
         mergeCategorias([
           ...currentCategorias,
           {
+            activa: categoriaCreada.activa,
             id: categoriaCreada.id,
             label: categoriaCreada.nombre,
             value
@@ -498,6 +504,31 @@ function ProductosPage() {
       });
   };
 
+  const handleToggleCategory = async (grupo: CategoriaGrupo) => {
+    const categoria = remoteCategorias.find((item) => item.value === grupo.value);
+    if (!categoria?.id) return;
+
+    const nextActiva = grupo.activa === false;
+    try {
+      setError(null);
+      setCategoryFeedback(null);
+      const updated = await updateCategoriaActiva(categoria.id, nextActiva);
+      setRemoteCategorias((currentCategorias) =>
+        currentCategorias.map((currentCategoria) =>
+          currentCategoria.id === updated.id ? { ...currentCategoria, activa: updated.activa } : currentCategoria
+        )
+      );
+      const message = nextActiva ? `Categoría ${grupo.label} visible nuevamente.` : `Categoría ${grupo.label} oculta.`;
+      setCategoryFeedback(message);
+      soundFeedback.success();
+      speakAction(message, `producto-category-active:${categoria.id}:${nextActiva}`, { cooldownMs: 1800 });
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "No fue posible actualizar la categoría";
+      setError(message);
+      soundFeedback.error();
+    }
+  };
+
   const handleToggleCategoryBlock = (grupo: CategoriaGrupo) => {
     const isCurrentlyOpen = expandedCategories.has(grupo.value);
     setExpandedCategories((currentCategories) => {
@@ -536,6 +567,7 @@ function ProductosPage() {
         />
 
         {error && <ErrorAlert message={error} />}
+        {categoryFeedback && <AlertMessage message={categoryFeedback} tone="success" />}
 
         {isLoading ? (
           <LoadingState label="Cargando productos..." />
@@ -546,7 +578,15 @@ function ProductosPage() {
             {grupos.map((grupo) => (
               <CategoriaBlock
                 key={grupo.value}
+                deleteCategoryDisabledReason={
+                  grupo.value === "Destacados"
+                    ? "Destacados es una vista del sistema y no se puede eliminar"
+                    : isCategoriaBase(grupo.value)
+                      ? "Las categorías base del sistema no se pueden eliminar"
+                      : undefined
+                }
                 isExpanded={expandedCategories.has(grupo.value)}
+                isOptionsOpen={openCategoryOptions === grupo.value}
                 onAddProduct={() => {
                   setAddProductCategory(grupo.value);
                   setIsProductModalOpen(true);
@@ -567,6 +607,10 @@ function ProductosPage() {
                       }
                     : undefined
                 }
+                onToggleCategory={
+                  grupo.id ? () => handleToggleCategory(grupo) : undefined
+                }
+                onOptionsOpenChange={(isOpen) => setOpenCategoryOptions(isOpen ? grupo.value : null)}
                 onEditProduct={handleOpenEditProduct}
                 onToggle={() => handleToggleCategoryBlock(grupo)}
                 onToggleAvailability={handleToggleAvailability}

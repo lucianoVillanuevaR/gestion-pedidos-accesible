@@ -1,7 +1,9 @@
-import { Check, X } from "lucide-react";
+import { Check, Info, X } from "lucide-react";
 import { formatCurrency } from "../../../utils/pdv";
+import { validatePedidoSubmit } from "../../../validations/pedido.validation";
 import { PAYMENT_OPTIONS } from "../PdvShared";
 import { usePdvViewContext } from "../PdvViewContext";
+import { getAcceptHelpMessage } from "../pdvAcceptHelp";
 
 type PdvPaymentSectionProps = {
   onAccept: () => void;
@@ -10,9 +12,12 @@ type PdvPaymentSectionProps = {
 function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
   const {
     cancelEditingPedido,
+    clienteNombre,
     isHighContrast,
     isEditingPedido,
+    isTurnoOpen,
     metodoPago,
+    observacion,
     openResetConfirm,
     pedidoDetalles,
     puedeRegistrar,
@@ -21,6 +26,14 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
     total,
     totalItems
   } = usePdvViewContext();
+  const validationError = validatePedidoSubmit({
+    clienteNombre,
+    isTurnoOpen,
+    metodoPago,
+    observacion,
+    totalProductos: pedidoDetalles.length
+  });
+  const acceptHelpMessage = getAcceptHelpMessage({ clienteNombre, metodoPago, sending, validationError });
 
   return (
     <>
@@ -39,6 +52,17 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
             <span className="text-2xl font-black text-slate-950">{formatCurrency(total)}</span>
           </div>
         </div>
+        {acceptHelpMessage && (
+          <p
+            aria-live="polite"
+            className={`mb-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-sm font-bold ${
+              isHighContrast ? "contrast-panel-soft" : "border-yellow-300 bg-yellow-50 text-yellow-950"
+            }`}
+          >
+            <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>{acceptHelpMessage}</span>
+          </p>
+        )}
         <div className="grid grid-cols-3 gap-2">
           {PAYMENT_OPTIONS.map((option) => {
             const active = metodoPago === option.value;

@@ -1,10 +1,20 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
+import { isProtectedCategory } from "../domain/categoriaRules";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
-import { validateCategoriaNombre } from "../validations/categorias.validation";
+import { validateCategoriaActiva, validateCategoriaNombre } from "../validations/categorias.validation";
 
-function serializeCategoria(categoria: { id: number; nombre: string }) {
+type SerializedCategoria = { activa: boolean; id: number; nombre: string };
+
+const categoriaActivaRepository = prisma.categoria as unknown as {
+  create(args: unknown): Promise<SerializedCategoria>;
+  findMany(args: unknown): Promise<SerializedCategoria[]>;
+  update(args: unknown): Promise<SerializedCategoria>;
+};
+
+function serializeCategoria(categoria: SerializedCategoria) {
   return {
+    activa: categoria.activa,
     id: categoria.id,
     nombre: categoria.nombre
   };
@@ -12,9 +22,9 @@ function serializeCategoria(categoria: { id: number; nombre: string }) {
 
 export async function getCategorias(_req: Request, res: Response) {
   try {
-    const categorias = await prisma.categoria.findMany({
+    const categorias = await categoriaActivaRepository.findMany({
       orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true }
+      select: { activa: true, id: true, nombre: true }
     });
 
     return res.json(categorias.map(serializeCategoria));
@@ -34,12 +44,12 @@ export async function createCategoria(req: Request, res: Response) {
     }
 
     const cleanName = (nombre as string).trim();
-    const categoria = await prisma.categoria.create({
+    const categoria = await categoriaActivaRepository.create({
       data: {
         descripcion: `Productos de ${cleanName}`,
         nombre: cleanName
       },
-      select: { id: true, nombre: true }
+      select: { activa: true, id: true, nombre: true }
     });
 
     return res.status(201).json(serializeCategoria(categoria));
@@ -50,6 +60,44 @@ export async function createCategoria(req: Request, res: Response) {
 
     console.error("Error al crear categoría:", error);
     return res.status(500).json({ error: "Error al crear categoría" });
+  }
+}
+
+export async function updateCategoria(req: Request, res: Response) {
+  try {
+    const idError = validatePositiveIntegerId(req.params.id, "ID de categoría");
+
+    if (idError) {
+      return res.status(400).json({ error: idError });
+    }
+
+    const { activa } = req.body as { activa?: unknown };
+    const validationError = validateCategoriaActiva(activa);
+
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
+    }
+
+    const categoriaId = parsePositiveIntegerId(req.params.id);
+    const categoriaActual = await prisma.categoria.findUnique({
+      where: { id: categoriaId },
+      select: { id: true, nombre: true }
+    });
+
+    if (!categoriaActual) {
+      return res.status(404).json({ error: "Categoría no encontrada" });
+    }
+
+    const categoria = await categoriaActivaRepository.update({
+      data: { activa: activa as boolean },
+      where: { id: categoriaId },
+      select: { activa: true, id: true, nombre: true }
+    });
+
+    return res.json(serializeCategoria(categoria));
+  } catch (error) {
+    console.error("Error al actualizar categoría:", error);
+    return res.status(500).json({ error: "Error al actualizar categoría" });
   }
 }
 
@@ -69,6 +117,10 @@ export async function deleteCategoria(req: Request, res: Response) {
 
     if (!categoria) {
       return res.status(404).json({ error: "Categoría no encontrada" });
+    }
+
+    if (isProtectedCategory(categoria.nombre)) {
+      return res.status(409).json({ error: "No se puede eliminar una categoría base del sistema" });
     }
 
     if (categoria._count.productos > 0) {

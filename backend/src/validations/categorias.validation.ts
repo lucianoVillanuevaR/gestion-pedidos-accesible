@@ -25,3 +25,11 @@ export function validateCategoriaNombre(nombre?: unknown) {
 
   return null;
 }
+
+export function validateCategoriaActiva(activa: unknown) {
+  if (typeof activa !== "boolean") {
+    return "El estado activa debe ser booleano";
+  }
+
+  return null;
+}

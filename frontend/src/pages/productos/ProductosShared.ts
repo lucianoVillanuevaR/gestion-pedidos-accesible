@@ -10,19 +10,34 @@ import {
 
 export type CategoriaCatalogo = ProductoCategoriaCatalogo | "Destacados";
 export type CategoriaCatalogoOption = {
+  activa: boolean | null;
   id?: number;
   label: string;
   value: CategoriaCatalogo;
 };
 
 export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
-  { label: "Destacados", value: "Destacados" },
+  { activa: null, label: "Destacados", value: "Destacados" },
   ...FILTROS.filter((filtro) => filtro.value !== "Todos" && filtro.value !== "Destacados").map((filtro) => ({
+    activa: null,
     label: filtro.label,
     value: filtro.value as ProductoCategoria
   })),
-  { label: "Otros", value: "Otros" }
+  { activa: null, label: "Otros", value: "Otros" }
 ];
+
+export const BASE_CATEGORY_NAMES = new Set<CategoriaCatalogo>([
+  "Ahorros exclusivos",
+  "Promociones",
+  "Completos",
+  "Sandwich",
+  "Bebidas",
+  "Otros"
+]);
+
+export function isCategoriaBase(categoria: CategoriaCatalogo) {
+  return BASE_CATEGORY_NAMES.has(categoria);
+}
 
 const CATEGORIA_ALIASES: Record<string, CategoriaCatalogo> = {
   "Completos / Hot Dogs": "Completos",
@@ -42,9 +57,11 @@ export function mergeCategorias(customCategorias: CategoriaCatalogoOption[]) {
     const value = normalizeCategoriaCatalogo(String(categoria.value));
     const normalizedLabel = CATEGORIA_ALIASES[label] ?? label;
 
-    if (label && value && !categoriaMap.has(value)) {
+    if (label && value) {
+      const current = categoriaMap.get(value);
       categoriaMap.set(value, {
-        id: categoria.id,
+        activa: categoria.activa ?? current?.activa ?? null,
+        id: categoria.id ?? current?.id,
         label: normalizedLabel,
         value
       });
@@ -60,10 +77,20 @@ export function buildCategoriasCatalogo(productos: Producto[], customCategorias:
     .filter((categoria): categoria is string => Boolean(categoria))
     .map((categoria) => {
       const value = normalizeCategoriaCatalogo(categoria);
-      return { label: value, value };
+      return { activa: null, label: value, value };
     });
 
   return mergeCategorias([...customCategorias, ...categoriasProductos]);
+}
+
+export function isCategoriaActiva(categoria: CategoriaCatalogo, categorias: CategoriaCatalogoOption[]) {
+  return categorias.find((item) => item.value === categoria)?.activa !== false;
+}
+
+export function filterProductosByCategoriasActivas(productos: Producto[], categorias: CategoriaCatalogoOption[]) {
+  return withProductoCategoria(productos, categorias).filter((producto) =>
+    isCategoriaActiva(producto.categoria, categorias)
+  );
 }
 
 export function withProductoCategoria(productos: Producto[], categorias = CATEGORIAS_CATALOGO): ProductoConCategoria[] {

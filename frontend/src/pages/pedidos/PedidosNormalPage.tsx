@@ -1,16 +1,4 @@
-import {
-  CalendarDays,
-  Check,
-  Clock3,
-  Eye,
-  LoaderCircle,
-  Pencil,
-  RefreshCw,
-  Search,
-  Store,
-  User,
-  X
-} from "lucide-react";
+import { Check, Clock3, Eye, LoaderCircle, Pencil, RefreshCw, Search, Store, User, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
@@ -26,6 +14,7 @@ import {
   formatCurrency,
   formatElapsedTime,
   formatMetodoPago,
+  formatTime,
   getPedidoDisplayNumber,
   getPedidoSummary,
   getProductCount,
@@ -163,7 +152,7 @@ function NormalPedidosList({
   return (
     <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
       <div className="hidden border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase text-slate-600 md:grid md:grid-cols-[170px_170px_130px_minmax(0,1fr)_300px] xl:grid-cols-[180px_180px_140px_minmax(0,1fr)_340px]">
-        <span>Fecha</span>
+        <span>Información</span>
         <span>Estado</span>
         <span>Total</span>
         <span>Pedido</span>
@@ -185,7 +174,7 @@ function NormalPedidosList({
   );
 }
 
-function NormalPedidoRow({
+export function NormalPedidoRow({
   isUpdating,
   onEditPedido,
   onOpenModal,
@@ -207,26 +196,27 @@ function NormalPedidoRow({
         isCancelled ? "border-red-300 bg-slate-50 hover:bg-slate-50" : "border-[#FECE00] hover:bg-[#FFFDF3]"
       }`}
     >
-      <div>
-        <p className="flex items-center gap-1.5 font-black text-yellow-700">
-          #{numeroPedido}
+      <div className="space-y-2">
+        <p className="flex flex-wrap items-center gap-x-1.5 font-black text-slate-950">
+          <span>Pedido #{numeroPedido}</span>
+          <span aria-hidden="true">·</span>
           <Store className="h-4 w-4" aria-hidden="true" />
-          En el local
+          <span>En el local</span>
         </p>
         <p
-          className={`mt-2 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-700" : "text-slate-600"}`}
+          className={`flex flex-wrap items-center gap-x-1.5 text-sm font-bold ${delayed ? "text-yellow-700" : "text-slate-600"}`}
         >
           <Clock3 className="h-4 w-4" aria-hidden="true" />
-          {formatElapsedTime(pedido.createdAt)}
-        </p>
-        <p className="mt-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
-          <CalendarDays className="h-4 w-4" aria-hidden="true" />
-          {createdAt}
+          <span>{formatElapsedTime(pedido.createdAt)}</span>
+          <span aria-hidden="true">·</span>
+          <span>{createdAt}</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatTime(pedido.createdAt)}</span>
         </p>
         {pedido.clienteNombre && (
-          <p className="mt-2 flex items-center gap-1.5 text-sm font-black text-slate-950">
+          <p className="flex items-center gap-1.5 text-sm font-black text-slate-950">
             <User className="h-4 w-4" aria-hidden="true" />
-            {pedido.clienteNombre}
+            Cliente: {pedido.clienteNombre}
           </p>
         )}
       </div>
@@ -247,7 +237,7 @@ function NormalPedidoRow({
 
       <div>
         <p className="line-clamp-2 font-bold leading-snug text-slate-800">{getPedidoSummary(pedido)}</p>
-        <p className="mt-2 text-xs font-bold text-slate-500">{getProductCount(pedido)} productos</p>
+        <p className="mt-2 text-xs font-bold text-slate-500">{formatProductCount(getProductCount(pedido))}</p>
       </div>
 
       <NormalPedidoActions
@@ -260,7 +250,7 @@ function NormalPedidoRow({
   );
 }
 
-function NormalPedidoActions({
+export function NormalPedidoActions({
   isUpdating,
   onEditPedido,
   onOpenModal,
@@ -276,6 +266,7 @@ function NormalPedidoActions({
   return (
     <div className="flex flex-wrap gap-2 md:flex-nowrap md:justify-end">
       <BoardActionButton
+        ariaLabel={`Ver pedido #${getPedidoDisplayNumber(pedido)}`}
         icon={<Eye className="h-5 w-5" aria-hidden="true" />}
         label="Ver"
         onClick={() => onOpenModal({ action: "detail", pedido })}
@@ -326,7 +317,7 @@ function NormalPedidoActions({
         <BoardActionStatus
           icon={
             actions.statusLabel === "Finalizado" ? (
-              <Check className="h-5 w-5" aria-hidden="true" />
+              <Check className="h-4 w-4" aria-hidden="true" />
             ) : (
               <X className="h-5 w-5" aria-hidden="true" />
             )
@@ -339,7 +330,7 @@ function NormalPedidoActions({
   );
 }
 
-function PedidosActivosPanel({
+export function PedidosActivosPanel({
   estadoFilter,
   isHighContrast,
   isLoading,
@@ -372,7 +363,7 @@ function PedidosActivosPanel({
       className={`overflow-hidden rounded-[10px] ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]"}`}
     >
       <header className="px-4 py-4">
-        <h1 className="text-3xl font-black leading-tight text-slate-950">Pedidos activos</h1>
+        <h1 className="text-3xl font-black leading-tight text-slate-950">Pedidos</h1>
       </header>
 
       <div className="flex flex-col gap-3 border-b border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
@@ -451,12 +442,14 @@ function PedidosActivosPanel({
 }
 
 function BoardActionButton({
+  ariaLabel,
   disabled = false,
   icon,
   label,
   onClick,
   tone
 }: {
+  ariaLabel?: string;
   disabled?: boolean;
   icon: JSX.Element;
   label: string;
@@ -472,6 +465,7 @@ function BoardActionButton({
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
       onClick={onClick}
       disabled={disabled}
       className={`inline-flex min-h-[52px] min-w-[84px] flex-col items-center justify-center rounded-lg border px-3 text-sm font-black leading-tight transition disabled:cursor-not-allowed disabled:opacity-50 ${toneClass} ${FOCUS_VISIBLE_CLASS}`}
@@ -498,7 +492,9 @@ function BoardActionStatus({
 
   return (
     <span
-      className={`inline-flex min-h-[52px] min-w-[84px] flex-col items-center justify-center rounded-lg border px-3 text-sm font-black leading-tight ${toneClass}`}
+      className={`inline-flex items-center justify-center rounded-full border font-black leading-tight ${
+        tone === "success" ? "min-h-[34px] gap-1 px-2.5 text-xs" : "min-h-[40px] gap-1.5 px-3 text-sm"
+      } ${toneClass}`}
     >
       {icon}
       {label}
@@ -506,18 +502,24 @@ function BoardActionStatus({
   );
 }
 
-function getCreatedDateLabel(value?: string) {
+export function getCreatedDateLabel(value?: string, currentYear = new Date().getFullYear()) {
   if (!value) {
     return "Sin fecha";
   }
 
+  const date = new Date(value);
+
   return new Intl.DateTimeFormat("es-CL", {
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    month: "2-digit",
-    year: "2-digit"
-  }).format(new Date(value));
+    month: "short",
+    ...(date.getFullYear() === currentYear ? {} : { year: "numeric" })
+  })
+    .format(date)
+    .replace(/-/g, " ");
+}
+
+export function formatProductCount(value: number) {
+  return `${value} ${value === 1 ? "producto" : "productos"}`;
 }
 
 function getPedidoActionState(estado: EstadoPedido) {
