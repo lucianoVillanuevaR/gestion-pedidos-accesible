@@ -1,14 +1,15 @@
+import { Prisma } from "@prisma/client";
 import { withProductImageUrl } from "./productImageUrl";
 
 export const PRODUCTO_CATALOG_INCLUDE = {
-  categorias: { orderBy: { nombre: "asc" } },
+  categorias: { orderBy: [{ orden: "asc" }, { nombre: "asc" }] },
   inventario: true,
   componentes: {
     include: { componente: { include: { inventario: true } } },
     orderBy: { id: "asc" }
   },
   variantes: { where: { disponible: true }, orderBy: { orden: "asc" } }
-} as const;
+} satisfies Prisma.ProductoInclude;
 
 export async function buildCategoriaReplacement(
   categoriaRepository: {
@@ -40,10 +41,14 @@ export function toProductoResponse<
       varianteId?: number | null;
       componente: { inventario?: { stockActual: number } | null };
     }>;
-    categorias?: Array<{ nombre: string }>;
+    categorias?: Array<{ nombre: string; orden?: number }>;
     imagenUrl?: string | null;
   }
 >(producto: T) {
+  const categoriaPrincipal =
+    producto.categorias?.find((categoria) => !["Destacados", "Promociones"].includes(categoria.nombre)) ??
+    producto.categorias?.find((categoria) => categoria.nombre !== "Destacados") ??
+    producto.categorias?.[0];
   const componentes = producto.componentes ?? [];
   const varianteIds = [...new Set(componentes.flatMap((item) => (item.varianteId ? [item.varianteId] : [])))];
   const getStockDisponible = (items: typeof componentes) =>
@@ -77,6 +82,7 @@ export function toProductoResponse<
 
   return withProductImageUrl({
     ...producto,
+    categoria: categoriaPrincipal?.nombre,
     disponibleConfigurado: producto.disponible,
     disponible: producto.disponible && (stockDisponible === null || stockDisponible > 0),
     requiereSeleccionVariante: varianteIds.length > 0,

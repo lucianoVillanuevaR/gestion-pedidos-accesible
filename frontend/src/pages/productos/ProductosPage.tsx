@@ -485,6 +485,7 @@ function ProductosPage() {
         setActiveCategory("Destacados");
         setDeletingCategory(null);
         setError(null);
+        setCategoryFeedback(`Categoría eliminada. ${grupo.label}.`);
         soundFeedback.success();
         speakAction(`Categoría eliminada. ${grupo.label}.`, `producto-category-deleted:${categoria.id}`, {
           cooldownMs: 1800,
@@ -506,7 +507,7 @@ function ProductosPage() {
 
   const handleToggleCategory = async (grupo: CategoriaGrupo) => {
     const categoria = remoteCategorias.find((item) => item.value === grupo.value);
-    if (!categoria?.id) return;
+    if (!categoria?.id || grupo.value === "Destacados") return;
 
     const nextActiva = grupo.activa === false;
     try {
@@ -578,13 +579,6 @@ function ProductosPage() {
             {grupos.map((grupo) => (
               <CategoriaBlock
                 key={grupo.value}
-                deleteCategoryDisabledReason={
-                  grupo.value === "Destacados"
-                    ? "Destacados es una vista del sistema y no se puede eliminar"
-                    : isCategoriaBase(grupo.value)
-                      ? "Las categorías base del sistema no se pueden eliminar"
-                      : undefined
-                }
                 isExpanded={expandedCategories.has(grupo.value)}
                 isOptionsOpen={openCategoryOptions === grupo.value}
                 onAddProduct={() => {
@@ -607,7 +601,9 @@ function ProductosPage() {
                       }
                     : undefined
                 }
-                onToggleCategory={grupo.id ? () => handleToggleCategory(grupo) : undefined}
+                onToggleCategory={
+                  grupo.id && grupo.value !== "Destacados" ? () => handleToggleCategory(grupo) : undefined
+                }
                 onOptionsOpenChange={(isOpen) => setOpenCategoryOptions(isOpen ? grupo.value : null)}
                 onEditProduct={handleOpenEditProduct}
                 onToggle={() => handleToggleCategoryBlock(grupo)}

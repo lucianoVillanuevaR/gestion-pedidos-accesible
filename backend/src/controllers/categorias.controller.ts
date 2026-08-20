@@ -1,16 +1,10 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
-import { isProtectedCategory } from "../domain/categoriaRules";
+import { DERIVED_CATEGORY_NAME, isProtectedCategory } from "../domain/categoriaRules";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateCategoriaActiva, validateCategoriaNombre } from "../validations/categorias.validation";
 
 type SerializedCategoria = { activa: boolean; id: number; nombre: string };
-
-const categoriaActivaRepository = prisma.categoria as unknown as {
-  create(args: unknown): Promise<SerializedCategoria>;
-  findMany(args: unknown): Promise<SerializedCategoria[]>;
-  update(args: unknown): Promise<SerializedCategoria>;
-};
 
 function serializeCategoria(categoria: SerializedCategoria) {
   return {
@@ -22,9 +16,10 @@ function serializeCategoria(categoria: SerializedCategoria) {
 
 export async function getCategorias(_req: Request, res: Response) {
   try {
-    const categorias = await categoriaActivaRepository.findMany({
+    const categorias = await prisma.categoria.findMany({
       orderBy: { nombre: "asc" },
-      select: { activa: true, id: true, nombre: true }
+      select: { activa: true, id: true, nombre: true },
+      where: { nombre: { not: DERIVED_CATEGORY_NAME } }
     });
 
     return res.json(categorias.map(serializeCategoria));
@@ -44,7 +39,7 @@ export async function createCategoria(req: Request, res: Response) {
     }
 
     const cleanName = (nombre as string).trim();
-    const categoria = await categoriaActivaRepository.create({
+    const categoria = await prisma.categoria.create({
       data: {
         descripcion: `Productos de ${cleanName}`,
         nombre: cleanName
@@ -88,7 +83,11 @@ export async function updateCategoria(req: Request, res: Response) {
       return res.status(404).json({ error: "Categoría no encontrada" });
     }
 
-    const categoria = await categoriaActivaRepository.update({
+    if (categoriaActual.nombre === DERIVED_CATEGORY_NAME) {
+      return res.status(409).json({ error: "Destacados es una vista derivada y no puede ocultarse" });
+    }
+
+    const categoria = await prisma.categoria.update({
       data: { activa: activa as boolean },
       where: { id: categoriaId },
       select: { activa: true, id: true, nombre: true }

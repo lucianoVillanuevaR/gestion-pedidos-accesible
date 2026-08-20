@@ -28,6 +28,9 @@ describe("categorías", () => {
 
     await getCategorias({} as never, res);
 
+    expect(categoria.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { nombre: { not: "Destacados" } } })
+    );
     expect(json).toHaveBeenCalledWith([{ activa: false, id: 1, nombre: "Completos" }]);
   });
 
@@ -70,13 +73,13 @@ describe("categorías", () => {
     expect(json).toHaveBeenCalledWith({ error: "Categoría no encontrada" });
   });
 
-  it("permite ocultar la vista derivada Destacados sin eliminar productos", async () => {
+  it("no permite ocultar Destacados como categoría administrable", async () => {
     categoria.findUnique.mockResolvedValue({ id: 3, nombre: "Destacados" });
-    categoria.update.mockResolvedValue({ activa: false, id: 3, nombre: "Destacados" });
-    const { json, res } = response();
+    const { json, res, status } = response();
     await updateCategoria({ body: { activa: false }, params: { id: "3" } } as never, res);
-    expect(categoria.update).toHaveBeenCalledWith(expect.objectContaining({ data: { activa: false } }));
-    expect(json).toHaveBeenCalledWith({ activa: false, id: 3, nombre: "Destacados" });
+    expect(status).toHaveBeenCalledWith(409);
+    expect(json).toHaveBeenCalledWith({ error: "Destacados es una vista derivada y no puede ocultarse" });
+    expect(categoria.update).not.toHaveBeenCalled();
   });
 
   it("impide eliminar una categoría base", async () => {
@@ -85,6 +88,23 @@ describe("categorías", () => {
     await deleteCategoria({ params: { id: "1" } } as never, res);
     expect(status).toHaveBeenCalledWith(409);
     expect(json).toHaveBeenCalledWith({ error: "No se puede eliminar una categoría base del sistema" });
+  });
+
+  it("rechaza un identificador inválido al eliminar", async () => {
+    const { json, res, status } = response();
+    await deleteCategoria({ params: { id: "abc" } } as never, res);
+    expect(status).toHaveBeenCalledWith(400);
+    expect(json).toHaveBeenCalledWith({ error: "ID de categoría inválido" });
+    expect(categoria.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("devuelve 404 al eliminar una categoría inexistente", async () => {
+    categoria.findUnique.mockResolvedValue(null);
+    const { json, res, status } = response();
+    await deleteCategoria({ params: { id: "99" } } as never, res);
+    expect(status).toHaveBeenCalledWith(404);
+    expect(json).toHaveBeenCalledWith({ error: "Categoría no encontrada" });
+    expect(categoria.delete).not.toHaveBeenCalled();
   });
 
   it("elimina una categoría personalizada vacía", async () => {

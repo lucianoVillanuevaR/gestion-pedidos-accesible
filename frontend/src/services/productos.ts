@@ -2,11 +2,15 @@ import type { CreateProductoPayload, Producto, UpdateProductoPayload } from "../
 import { resolveProductImage } from "../utils/productImages";
 import { apiRequest } from "./api";
 
-function normalizeProducto(producto: Producto & { precio: number | string }): Producto {
+type ProductoApi = Omit<Producto, "precio"> & { precio: number | string };
+
+export function normalizeProducto(producto: ProductoApi): Producto {
   const imagen = resolveProductImage(producto);
+  const categoria = producto.categoria?.trim() || producto.categorias?.[0]?.nombre.trim() || undefined;
 
   return {
     ...producto,
+    categoria,
     tipo: producto.tipo ?? "producto",
     controlaStock: producto.controlaStock ?? true,
     precio: typeof producto.precio === "string" ? Number(producto.precio) : producto.precio,
@@ -16,7 +20,7 @@ function normalizeProducto(producto: Producto & { precio: number | string }): Pr
 }
 
 async function readProductoResponse(path: string, fallbackMessage: string, init?: RequestInit) {
-  const producto = await apiRequest<Producto & { precio: number | string }>(path, { ...init, fallbackMessage });
+  const producto = await apiRequest<ProductoApi>(path, { ...init, fallbackMessage });
   return normalizeProducto(producto);
 }
 
@@ -25,7 +29,7 @@ export async function getProductos({
   signal
 }: { includeUnavailable?: boolean; signal?: AbortSignal } = {}): Promise<Producto[]> {
   const query = includeUnavailable ? "?includeUnavailable=true" : "";
-  const data = await apiRequest<Array<Producto & { precio: number | string }>>(`/productos${query}`, {
+  const data = await apiRequest<ProductoApi[]>(`/productos${query}`, {
     fallbackMessage: "Error cargando productos",
     signal
   });

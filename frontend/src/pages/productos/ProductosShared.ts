@@ -26,7 +26,7 @@ export const CATEGORIAS_CATALOGO: CategoriaCatalogoOption[] = [
   { activa: null, label: "Otros", value: "Otros" }
 ];
 
-export const BASE_CATEGORY_NAMES = new Set<CategoriaCatalogo>([
+const BASE_CATEGORY_NAMES = new Set<CategoriaCatalogo>([
   "Ahorros exclusivos",
   "Promociones",
   "Completos",

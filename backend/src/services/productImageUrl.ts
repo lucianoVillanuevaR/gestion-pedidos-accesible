@@ -6,12 +6,12 @@ function buildProductImageUrl(objectName: string | null | undefined) {
   return `${env.minio.publicUrl}/${env.minio.productBucket}/${objectName}`;
 }
 
-export function withProductImageUrl<T extends { categorias?: Array<{ nombre: string }>; imagenUrl?: string | null }>(
-  producto: T
-) {
+export function withProductImageUrl<
+  T extends { categoria?: string; categorias?: Array<{ nombre: string }>; imagenUrl?: string | null }
+>(producto: T) {
   return {
     ...producto,
-    categoria: producto.categorias?.[0]?.nombre,
+    categoria: producto.categoria ?? producto.categorias?.[0]?.nombre,
     imagenPublicUrl: buildProductImageUrl(producto.imagenUrl)
   };
 }

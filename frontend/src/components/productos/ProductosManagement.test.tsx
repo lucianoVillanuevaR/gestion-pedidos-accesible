@@ -40,6 +40,14 @@ const completos: CategoriaGrupo = {
   value: "Completos"
 };
 
+const colaciones: CategoriaGrupo = {
+  activa: true,
+  id: 9,
+  label: "Colaciones",
+  productos: [],
+  value: "Colaciones"
+};
+
 const categorias = [
   { activa: null, label: "Destacados", value: "Destacados" as const },
   { activa: true, label: "Completos", value: "Completos" as const },
@@ -69,11 +77,11 @@ describe("acciones de gestión de productos", () => {
     expect(screen.queryByRole("button", { name: "Eliminar categoría" })).toBeNull();
   });
 
-  it("abre las opciones de la categoría correcta y solicita eliminarla", () => {
+  it("abre las opciones de una categoría personalizada y solicita eliminarla", () => {
     const onDeleteCategory = vi.fn();
     render(
       <CategoriaBlock
-        grupo={completos}
+        grupo={colaciones}
         isExpanded
         onAddProduct={vi.fn()}
         onDeleteCategory={onDeleteCategory}
@@ -85,17 +93,37 @@ describe("acciones de gestión de productos", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Opciones de categoría Completos" }));
-    expect(screen.getByRole("button", { name: "Ocultar categoría Completos" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Opciones de categoría Colaciones" }));
+    expect(screen.getByRole("button", { name: "Ocultar categoría Colaciones" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Eliminar categoría" }));
     expect(onDeleteCategory).toHaveBeenCalledOnce();
   });
 
-  it("permite ocultar una categoría base y explica por qué no puede eliminarse", () => {
+  it("mantiene eliminar disponible aunque la categoría no tenga acción de visibilidad", () => {
+    const onDeleteCategory = vi.fn();
+    render(
+      <CategoriaBlock
+        grupo={colaciones}
+        isExpanded={false}
+        onAddProduct={vi.fn()}
+        onDeleteCategory={onDeleteCategory}
+        onEditProduct={vi.fn()}
+        onToggle={vi.fn()}
+        onToggleAvailability={vi.fn()}
+        updatingProductoId={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Opciones de categoría Colaciones" }));
+    expect(screen.queryByRole("button", { name: "Ocultar categoría Colaciones" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar categoría" }));
+    expect(onDeleteCategory).toHaveBeenCalledOnce();
+  });
+
+  it("permite ocultar una categoría base sin ofrecer eliminarla", () => {
     const onToggleCategory = vi.fn();
     render(
       <CategoriaBlock
-        deleteCategoryDisabledReason="Las categorías base del sistema no se pueden eliminar"
         grupo={completos}
         isExpanded={false}
         onAddProduct={vi.fn()}
@@ -112,13 +140,7 @@ describe("acciones de gestión de productos", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Opciones de categoría Completos" }));
     expect(categorySection?.className).toContain("overflow-visible");
-    expect(
-      screen
-        .getByRole("button", {
-          name: "Eliminar categoría no disponible: Las categorías base del sistema no se pueden eliminar"
-        })
-        .hasAttribute("disabled")
-    ).toBe(true);
+    expect(screen.queryByRole("button", { name: "Eliminar categoría" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Ocultar categoría Completos" }));
     expect(onToggleCategory).toHaveBeenCalledOnce();
   });
@@ -170,25 +192,40 @@ describe("acciones de gestión de productos", () => {
     expect(onToggleCategory).toHaveBeenCalledOnce();
   });
 
-  it("permite ocultar Destacados y mantiene su eliminación bloqueada", () => {
-    const onToggleCategory = vi.fn();
+  it("permite mostrar o eliminar una categoría personalizada oculta", () => {
     render(
       <CategoriaBlock
-        deleteCategoryDisabledReason="Destacados es una vista del sistema y no se puede eliminar"
+        grupo={{ ...colaciones, activa: false }}
+        isExpanded={false}
+        onAddProduct={vi.fn()}
+        onDeleteCategory={vi.fn()}
+        onEditProduct={vi.fn()}
+        onToggle={vi.fn()}
+        onToggleAvailability={vi.fn()}
+        onToggleCategory={vi.fn()}
+        updatingProductoId={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Opciones de categoría Colaciones" }));
+    expect(screen.getByRole("button", { name: "Mostrar categoría Colaciones" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Eliminar categoría" })).toBeTruthy();
+  });
+
+  it("mantiene Destacados como vista derivada sin menú de categoría", () => {
+    render(
+      <CategoriaBlock
         grupo={{ ...completos, label: "Destacados", value: "Destacados" }}
         isExpanded={false}
         onAddProduct={vi.fn()}
         onEditProduct={vi.fn()}
         onToggle={vi.fn()}
-        onToggleCategory={onToggleCategory}
         onToggleAvailability={vi.fn()}
         updatingProductoId={null}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Opciones de categoría Destacados" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ocultar categoría Destacados" }));
-    expect(onToggleCategory).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Opciones de categoría Destacados" })).toBeNull();
   });
 
   it("mantiene labels explícitos para editar y ocultar productos", () => {

@@ -90,20 +90,4 @@ describe("visibilidad de categorías en el catálogo de venta", () => {
     expect(visibles.map((producto) => producto.nombre)).toEqual(["Completo", "Chacarero destacado"]);
     expect(visibles.some((producto) => producto.nombre === "Luco oculto")).toBe(false);
   });
-
-  it("oculta la vista Destacados sin alterar la marca de sus productos", () => {
-    const conDestacadosOculto = categorias.map((categoria) =>
-      categoria.value === "Destacados" ? { ...categoria, activa: false } : categoria
-    );
-    const visibles = filterProductosByCategoriasActivas(productos, conDestacadosOculto).filter(
-      (producto) => producto.disponible !== false
-    );
-    const grupos = groupProductosByCategoria(
-      visibles,
-      conDestacadosOculto.filter((categoria) => categoria.activa !== false)
-    );
-
-    expect(grupos.some((grupo) => grupo.value === "Destacados")).toBe(false);
-    expect(productos.find((producto) => producto.id === 2)?.destacado).toBe(true);
-  });
 });

@@ -21,7 +21,6 @@ export function CategoriaBlock({
   isOptionsOpen: controlledIsOptionsOpen,
   onAddProduct,
   onDeleteCategory,
-  deleteCategoryDisabledReason,
   onEditProduct,
   onToggle,
   onToggleCategory,
@@ -34,7 +33,6 @@ export function CategoriaBlock({
   isOptionsOpen?: boolean;
   onAddProduct: () => void;
   onDeleteCategory?: () => void;
-  deleteCategoryDisabledReason?: string;
   onEditProduct: (producto: ProductoConCategoria) => void;
   onToggle: () => void;
   onToggleCategory?: () => void;
@@ -45,6 +43,7 @@ export function CategoriaBlock({
   const [internalIsOptionsOpen, setInternalIsOptionsOpen] = useState(false);
   const optionsRef = useRef<HTMLDivElement>(null);
   const isOptionsOpen = controlledIsOptionsOpen ?? internalIsOptionsOpen;
+  const hasCategoryOptions = Boolean(onToggleCategory || onDeleteCategory);
   const setIsOptionsOpen = useCallback(
     (isOpen: boolean) => {
       if (onOptionsOpenChange) {
@@ -118,7 +117,7 @@ export function CategoriaBlock({
             <Plus className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Agregar producto</span>
           </button>
-          {onToggleCategory && (
+          {hasCategoryOptions && (
             <div ref={optionsRef} className="relative">
               <button
                 type="button"
@@ -131,37 +130,32 @@ export function CategoriaBlock({
               </button>
               {isOptionsOpen && (
                 <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsOptionsOpen(false);
-                      onToggleCategory();
-                    }}
-                    className={`flex min-h-[42px] w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
-                    aria-label={`${grupo.activa === false ? "Mostrar" : "Ocultar"} categoría ${grupo.label}`}
-                  >
-                    {grupo.activa === false ? (
-                      <Eye className="h-4 w-4" aria-hidden="true" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" aria-hidden="true" />
-                    )}
-                    {grupo.activa === false ? "Mostrar categoría" : "Ocultar categoría"}
-                  </button>
-                  {(onDeleteCategory || deleteCategoryDisabledReason) && (
+                  {onToggleCategory && (
                     <button
                       type="button"
-                      disabled={Boolean(deleteCategoryDisabledReason)}
-                      title={deleteCategoryDisabledReason}
-                      aria-label={
-                        deleteCategoryDisabledReason
-                          ? `Eliminar categoría no disponible: ${deleteCategoryDisabledReason}`
-                          : "Eliminar categoría"
-                      }
                       onClick={() => {
                         setIsOptionsOpen(false);
-                        onDeleteCategory?.();
+                        onToggleCategory();
                       }}
-                      className={`flex min-h-[42px] w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent ${FOCUS_VISIBLE_CLASS}`}
+                      className={`flex min-h-[42px] w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+                      aria-label={`${grupo.activa === false ? "Mostrar" : "Ocultar"} categoría ${grupo.label}`}
+                    >
+                      {grupo.activa === false ? (
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" aria-hidden="true" />
+                      )}
+                      {grupo.activa === false ? "Mostrar categoría" : "Ocultar categoría"}
+                    </button>
+                  )}
+                  {onDeleteCategory && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOptionsOpen(false);
+                        onDeleteCategory();
+                      }}
+                      className={`flex min-h-[42px] w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-black text-red-700 transition hover:bg-red-50 ${FOCUS_VISIBLE_CLASS}`}
                     >
                       <Trash2 className="h-4 w-4" aria-hidden="true" />
                       Eliminar categoría

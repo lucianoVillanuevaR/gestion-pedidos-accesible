@@ -1,5 +1,6 @@
 export interface Producto {
   categoria?: string;
+  categorias?: Array<Pick<Categoria, "id" | "nombre">>;
   id: number;
   nombre: string;
   precio: number;

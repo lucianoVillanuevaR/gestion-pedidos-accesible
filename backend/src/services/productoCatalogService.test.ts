@@ -18,6 +18,28 @@ describe("respuesta del catálogo de productos", () => {
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { nombre: "Sandwich" } }));
   });
 
+  it("expone la categoría real antes que la detección por nombre", () => {
+    const response = toProductoResponse({
+      ...productoBase,
+      categorias: [
+        { nombre: "Destacados", orden: 1 },
+        { nombre: "Ahorros exclusivos", orden: 2 },
+        { nombre: "Sandwich", orden: 5 }
+      ]
+    });
+
+    expect(response.categoria).toBe("Ahorros exclusivos");
+  });
+
+  it("usa una categoría derivada solo cuando no existe una categoría principal", () => {
+    const response = toProductoResponse({
+      ...productoBase,
+      categorias: [{ nombre: "Promociones", orden: 3 }]
+    });
+
+    expect(response.categoria).toBe("Promociones");
+  });
+
   it("calcula la disponibilidad de una promoción según sus componentes", () => {
     const response = toProductoResponse({
       ...productoBase,

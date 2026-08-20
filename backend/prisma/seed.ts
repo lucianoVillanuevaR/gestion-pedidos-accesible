@@ -1,14 +1,13 @@
 /// <reference types="node" />
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { resolveSeedCategoryKeys, type SeedCategoryKey } from "./seedCatalogRules";
 
 const prisma = new PrismaClient();
 
 const DEFAULT_STOCK_ACTUAL = 50;
 const DEFAULT_STOCK_MINIMO = 10;
 const DEFAULT_DEMO_PASSWORD = "123456";
-
-type CategoryKey = "destacados" | "ahorros_exclusivos" | "promociones" | "completos" | "sandwich";
 
 type VariantSeed = {
   nombre: string;
@@ -22,18 +21,19 @@ type CategoryProductSeed = {
   precio: number;
   precioOriginal?: number;
   descuentoPorcentaje?: number;
+  destacado?: boolean;
   variantes?: VariantSeed[];
 };
 
 type ProductSeed = CategoryProductSeed & {
-  categorias: CategoryKey[];
+  categorias: SeedCategoryKey[];
   destacado: boolean;
   promocion: boolean;
   variantes?: VariantSeed[];
 };
 
 type CategoryDefinition = {
-  key: CategoryKey;
+  key: SeedCategoryKey;
   nombre: string;
   descripcion: string;
   orden: number;
@@ -43,47 +43,6 @@ type CategoryDefinition = {
 type SeedTransaction = Prisma.TransactionClient;
 
 const menuCatalog: CategoryDefinition[] = [
-  {
-    key: "destacados",
-    nombre: "Destacados",
-    descripcion: "Selección destacada y visible en la cabecera del menú.",
-    orden: 1,
-    productos: [
-      {
-        nombre: "2x1 Sandwich Italiano Carne a Elección",
-        precio: 7820,
-        precioOriginal: 11913,
-        descuentoPorcentaje: 34
-      },
-      {
-        nombre: "2x1 Completo Italiano o Alemán",
-        precio: 3900,
-        precioOriginal: 5571,
-        descuentoPorcentaje: 30,
-        variantes: buildVariants(["Italianos", "Alemanes"])
-      },
-      {
-        nombre: "2x1 Sandwich Inglesa, Carne y 2 ingredientes a Elección",
-        precio: 8300,
-        precioOriginal: 13811,
-        descuentoPorcentaje: 43
-      },
-      {
-        nombre: "ARMA TU SANDWICH",
-        precio: 5500,
-        precioOriginal: 7571,
-        descuentoPorcentaje: 27,
-        variantes: buildVariants(["churrasco", "pollo", "lomito", "mechada"])
-      },
-      {
-        nombre: "Completo Hass Italiano",
-        precio: 3500,
-        precioOriginal: 4857,
-        descuentoPorcentaje: 28,
-        variantes: buildVariants(["vienesa", "churrasco"])
-      }
-    ]
-  },
   {
     key: "ahorros_exclusivos",
     nombre: "Ahorros exclusivos",
@@ -95,22 +54,16 @@ const menuCatalog: CategoryDefinition[] = [
         precio: 5500,
         precioOriginal: 7571,
         descuentoPorcentaje: 27,
+        destacado: true,
         descripcion: "ELIGE LA CARNE DE TU SANDWICH Y 2 INGREDIENTES A ELECCIÓN",
         variantes: buildVariants(["churrasco", "pollo", "lomito", "mechada"])
-      },
-      {
-        nombre: "SANDWICH LUCO PATRÓN",
-        precio: 4900,
-        precioOriginal: 7000,
-        descuentoPorcentaje: 30,
-        descripcion: "SANDWICH DE CARNE A ELECCIÓN QUESO, CHOCLO, TOMATE, MAYONESA",
-        variantes: buildVariants(["churrasco", "pollo", "lomito"])
       },
       {
         nombre: "2x1 Completo Italiano o Alemán",
         precio: 3900,
         precioOriginal: 5571,
         descuentoPorcentaje: 30,
+        destacado: true,
         descripcion: "2 completos italianos, palta, tomate, mayonesa casera"
       },
       {
@@ -118,6 +71,7 @@ const menuCatalog: CategoryDefinition[] = [
         precio: 8300,
         precioOriginal: 13811,
         descuentoPorcentaje: 43,
+        destacado: true,
         descripcion: "2 sandwich iguales, carne y 2 ingredientes a elección"
       },
       {
@@ -132,6 +86,7 @@ const menuCatalog: CategoryDefinition[] = [
         precio: 7820,
         precioOriginal: 11913,
         descuentoPorcentaje: 34,
+        destacado: true,
         descripcion: "2x1 sandwich italiana, palta, tomate, mayonesa casera"
       }
     ]
@@ -178,6 +133,7 @@ const menuCatalog: CategoryDefinition[] = [
         nombre: "Completo Hass Italiano",
         precio: 3500,
         precioOriginal: 4857,
+        destacado: true,
         descripcion: "Completo italiano con carne a elección, palta, tomate y mayonesa casera",
         variantes: buildVariants(["vienesa", "churrasco"])
       },
@@ -252,7 +208,7 @@ function buildProductCatalog(catalog: CategoryDefinition[]): ProductSeed[] {
   for (const category of catalog) {
     for (const product of category.productos) {
       const current = mergedProducts.get(product.nombre);
-      const nextCategories = dedupeCategoryKeys([...(current?.categorias ?? []), category.key]);
+      const nextCategories = resolveSeedCategoryKeys(product.nombre, [...(current?.categorias ?? []), category.key]);
       const nextVariants = mergeVariants(current?.variantes, product.variantes);
 
       const mergedProduct: ProductSeed = {
@@ -272,7 +228,7 @@ function buildProductCatalog(catalog: CategoryDefinition[]): ProductSeed[] {
           product.descuentoPorcentaje
         ),
         categorias: nextCategories,
-        destacado: (current?.destacado ?? false) || category.key === "destacados",
+        destacado: (current?.destacado ?? false) || product.destacado === true,
         promocion: (current?.promocion ?? false) || category.key === "promociones",
         variantes: nextVariants
       };
@@ -282,10 +238,6 @@ function buildProductCatalog(catalog: CategoryDefinition[]): ProductSeed[] {
   }
 
   return Array.from(mergedProducts.values()).sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
-}
-
-function dedupeCategoryKeys(categoryKeys: CategoryKey[]): CategoryKey[] {
-  return Array.from(new Set(categoryKeys));
 }
 
 function pickPreferredDescription(current?: string, incoming?: string): string | undefined {
@@ -387,7 +339,7 @@ async function seedCategories(tx: SeedTransaction) {
   );
 }
 
-async function seedProducts(tx: SeedTransaction, categoryMap: Map<CategoryKey, number>) {
+async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKey, number>) {
   for (const product of products) {
     const categoryConnections = product.categorias.map((categoryKey) => {
       const categoryId = categoryMap.get(categoryKey);
