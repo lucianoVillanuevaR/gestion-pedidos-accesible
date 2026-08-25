@@ -5,9 +5,9 @@ function PdvOrderSummary() {
   const { pedidoDetalles, removeProduct } = usePdvViewContext();
 
   return (
-    <div className="min-h-[260px] flex-1 overflow-y-auto border-b border-dashed border-slate-300 bg-white p-3">
+    <div className="min-h-0 flex-1 overflow-y-auto border-b border-dashed border-slate-300 bg-white p-3">
       {pedidoDetalles.length === 0 ? (
-        <div className="flex h-full min-h-[360px] items-center justify-center text-center text-sm text-slate-500">
+        <div className="flex h-full items-center justify-center text-center text-sm text-slate-500">
           Agrega productos antes de aceptar el pedido
         </div>
       ) : (

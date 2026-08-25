@@ -99,10 +99,12 @@ export function usePdvProducts({
   const categoryFilters = useMemo<Array<{ label: string; value: FiltroCategoria }>>(() => {
     if (loadingCategorias) return [];
     const productosCatalogo = filterProductosByCategoriasActivas(productos, categoriasCatalogo);
-    return groupProductosByCategoria(productosCatalogo, categoriasActivas).map((grupo) => ({
+    const filtrosPorCategoria = groupProductosByCategoria(productosCatalogo, categoriasActivas).map((grupo) => ({
       label: grupo.label,
       value: grupo.value as FiltroCategoria
     }));
+
+    return [{ label: "Todos", value: "Todos" }, ...filtrosPorCategoria];
   }, [categoriasActivas, categoriasCatalogo, loadingCategorias, productos]);
 
   const productosFiltrados = useMemo(() => {
