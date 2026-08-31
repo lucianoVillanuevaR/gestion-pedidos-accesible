@@ -8,11 +8,11 @@ import AccessibilityPanel from "./AccessibilityPanel";
 const playSoundFeedback = vi.fn();
 
 vi.mock("../hooks/useSoundFeedback", () => ({
-  playSoundFeedback: (...args: unknown[]) => playSoundFeedback(...args),
+  playSoundFeedback: (...args: unknown[]) => playSoundFeedback(...args)
 }));
 
 vi.mock("../hooks/useVoice", () => ({
-  default: () => ({ cancel: vi.fn(), speak: vi.fn() }),
+  default: () => ({ cancel: vi.fn(), speak: vi.fn() })
 }));
 
 const defaultProps = {
@@ -30,7 +30,7 @@ const defaultProps = {
   onToggleVoice: vi.fn(),
   onToggleSound: vi.fn(),
   onSetSoundVolume: vi.fn(),
-  onReset: vi.fn(),
+  onReset: vi.fn()
 };
 
 describe("AccessibilityPanel", () => {
@@ -46,9 +46,7 @@ describe("AccessibilityPanel", () => {
 
     const { rerender } = render(<AccessibilityPanel {...defaultProps} />);
 
-    expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: "Cerrar panel de accesibilidad" }),
-    );
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cerrar panel de accesibilidad" }));
 
     rerender(<AccessibilityPanel {...defaultProps} isOpen={false} />);
 
@@ -85,29 +83,11 @@ describe("AccessibilityPanel", () => {
   });
 
   it("expone controles claros cuando modo fácil está activo", () => {
-    render(
-      <AccessibilityPanel
-        {...defaultProps}
-        isAccessible
-        isHighContrast
-        isVoiceEnabled
-        isSoundEnabled
-      />,
-    );
+    render(<AccessibilityPanel {...defaultProps} isAccessible isHighContrast isVoiceEnabled isSoundEnabled />);
 
-    expect(
-      screen
-        .getByRole("dialog", { name: "Opciones de accesibilidad" })
-        .getAttribute("aria-modal"),
-    ).toBe("true");
-    expect(
-      screen
-        .getByRole("switch", { name: "Modo fácil: Activado" })
-        .getAttribute("aria-checked"),
-    ).toBe("true");
-    expect(
-      screen.getByRole("button", { name: "Cerrar panel de accesibilidad" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Opciones de accesibilidad" }).getAttribute("aria-modal")).toBe("true");
+    expect(screen.getByRole("switch", { name: "Modo fácil: Activado" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("button", { name: "Cerrar panel de accesibilidad" })).toBeTruthy();
     expect(screen.getByText("Modo fácil")).toBeTruthy();
     expect(screen.getAllByText("Sí")).toHaveLength(4);
     expect(screen.queryByText("Accesibilidad")).toBeNull();
@@ -118,11 +98,7 @@ describe("AccessibilityPanel", () => {
     const user = userEvent.setup();
     const onSetSoundVolume = vi.fn();
     const { rerender } = render(
-      <AccessibilityPanel
-        {...defaultProps}
-        isSoundEnabled
-        onSetSoundVolume={onSetSoundVolume}
-      />,
+      <AccessibilityPanel {...defaultProps} isSoundEnabled onSetSoundVolume={onSetSoundVolume} />
     );
 
     await user.click(screen.getByRole("button", { name: "Normal" }));
@@ -132,32 +108,18 @@ describe("AccessibilityPanel", () => {
     expect(screen.queryByRole("heading", { name: "Sonido" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Fuerte" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Probar sonido" })).toBeNull();
-    expect(
-      screen.queryByText(
-        "Activa Sonidos en Ajustes rápidos para elegir el volumen.",
-      ),
-    ).toBeNull();
+    expect(screen.queryByText("Activa Sonidos en Ajustes rápidos para elegir el volumen.")).toBeNull();
   });
 
   it("reproduce una única confirmación al activar y ninguna al desactivar", async () => {
     const user = userEvent.setup();
-    const { rerender } = render(
-      <AccessibilityPanel {...defaultProps} soundVolume="normal" />,
-    );
+    const { rerender } = render(<AccessibilityPanel {...defaultProps} soundVolume="normal" />);
 
-    await user.click(
-      screen.getByRole("switch", { name: "Sonidos: Desactivado" }),
-    );
+    await user.click(screen.getByRole("switch", { name: "Sonidos: Desactivado" }));
     expect(playSoundFeedback).toHaveBeenCalledOnce();
     expect(playSoundFeedback).toHaveBeenCalledWith("success", "normal");
 
-    rerender(
-      <AccessibilityPanel
-        {...defaultProps}
-        isSoundEnabled
-        soundVolume="normal"
-      />,
-    );
+    rerender(<AccessibilityPanel {...defaultProps} isSoundEnabled soundVolume="normal" />);
     await user.click(screen.getByRole("switch", { name: "Sonidos: Activado" }));
     expect(playSoundFeedback).toHaveBeenCalledOnce();
   });
@@ -169,13 +131,7 @@ describe("AccessibilityPanel", () => {
     expect(screen.queryByRole("button", { name: "Probar sonido" })).toBeNull();
     expect(playSoundFeedback).not.toHaveBeenCalled();
 
-    rerender(
-      <AccessibilityPanel
-        {...defaultProps}
-        isSoundEnabled
-        soundVolume="loud"
-      />,
-    );
+    rerender(<AccessibilityPanel {...defaultProps} isSoundEnabled soundVolume="loud" />);
     await user.click(screen.getByRole("button", { name: "Probar sonido" }));
     expect(playSoundFeedback).toHaveBeenCalledWith("success", "loud");
   });

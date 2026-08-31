@@ -1,17 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
-import {
-  Check,
-  Contrast,
-  RotateCcw,
-  Sparkles,
-  Type,
-  Volume2,
-  X,
-} from "lucide-react";
-import type {
-  AccessibilityTextSize,
-  SoundVolumeLevel,
-} from "../constants/accessibility";
+import { Check, Contrast, RotateCcw, Sparkles, Type, Volume2, X } from "lucide-react";
+import type { AccessibilityTextSize, SoundVolumeLevel } from "../constants/accessibility";
 import useAccessibleDialog from "../hooks/useAccessibleDialog";
 import useVoice from "../hooks/useVoice";
 import { playSoundFeedback } from "../hooks/useSoundFeedback";
@@ -53,7 +42,7 @@ function AccessibilityToggle({
   disabled = false,
   icon,
   label,
-  onChange,
+  onChange
 }: AccessibilityToggleProps) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 first:pt-0 last:pb-0">
@@ -66,9 +55,7 @@ function AccessibilityToggle({
         </span>
         <div className="min-w-0">
           <p className="font-bold leading-snug text-slate-900">{label}</p>
-          <p className="mt-1 text-sm leading-snug text-slate-600">
-            {description}
-          </p>
+          <p className="mt-1 text-sm leading-snug text-slate-600">{description}</p>
         </div>
       </div>
 
@@ -87,9 +74,7 @@ function AccessibilityToggle({
       >
         <span
           className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
-            checked
-              ? "order-2 border-white bg-[#FECE00] text-slate-950"
-              : "border-slate-400 bg-slate-100"
+            checked ? "order-2 border-white bg-[#FECE00] text-slate-950" : "border-slate-400 bg-slate-100"
           }`}
           aria-hidden="true"
         >
@@ -117,7 +102,7 @@ function AccessibilityPanel({
   onToggleVoice,
   onToggleSound,
   onSetSoundVolume,
-  onReset,
+  onReset
 }: AccessibilityPanelProps) {
   const { cancel, speak } = useVoice({ enabled: true });
   const [statusMessage, setStatusMessage] = useState("");
@@ -128,7 +113,7 @@ function AccessibilityPanel({
     containerRef: dialogRef,
     enabled: isOpen,
     initialFocusRef: closeButtonRef,
-    onClose,
+    onClose
   });
 
   if (!isOpen) return null;
@@ -141,28 +126,24 @@ function AccessibilityPanel({
       cooldownMs: 700,
       force: true,
       interrupt: true,
-      delayMs: 0,
+      delayMs: 0
     });
   };
 
   const handleToggleVoice = () => {
     cancel();
-    speak(
-      isVoiceEnabled ? "Ayuda por voz desactivada." : "Ayuda por voz activada.",
-      {
-        priority: "high",
-        dedupeKey: "voice-toggle-confirmation",
-        force: true,
-        interrupt: true,
-        delayMs: 0,
-      },
-    );
+    speak(isVoiceEnabled ? "Ayuda por voz desactivada." : "Ayuda por voz activada.", {
+      priority: "high",
+      dedupeKey: "voice-toggle-confirmation",
+      force: true,
+      interrupt: true,
+      delayMs: 0
+    });
     onToggleVoice();
   };
 
   const handleReset = () => {
-    if (!window.confirm("¿Restablecer todos los ajustes de accesibilidad?"))
-      return;
+    if (!window.confirm("¿Restablecer todos los ajustes de accesibilidad?")) return;
     cancel();
     onReset();
     setStatusMessage("Ajustes de accesibilidad restablecidos.");
@@ -175,12 +156,12 @@ function AccessibilityPanel({
   }> = [
     { value: "small", label: "A-", name: "Pequeño" },
     { value: "normal", label: "A", name: "Normal" },
-    { value: "large", label: "A+", name: "Grande" },
+    { value: "large", label: "A+", name: "Grande" }
   ];
   const volumeOptions: Array<{ value: SoundVolumeLevel; label: string }> = [
     { value: "soft", label: "Suave" },
     { value: "normal", label: "Normal" },
-    { value: "loud", label: "Fuerte" },
+    { value: "loud", label: "Fuerte" }
   ];
   const sectionTitleClass = `font-black text-slate-900 ${isAccessible ? "text-xl" : "text-lg"}`;
   const optionButtonClass = (selected: boolean) =>
@@ -191,11 +172,7 @@ function AccessibilityPanel({
     }`;
 
   return (
-    <div
-      className="fixed inset-0 z-[200] bg-slate-950/35 no-print sm:p-4"
-      onClick={onClose}
-      role="presentation"
-    >
+    <div className="fixed inset-0 z-[200] bg-slate-950/35 no-print sm:p-4" onClick={onClose} role="presentation">
       <aside
         ref={dialogRef}
         role="dialog"
@@ -210,10 +187,7 @@ function AccessibilityPanel({
         <header className="z-10 shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2
-                id="accessibility-panel-title"
-                className="text-2xl font-black leading-tight text-slate-900"
-              >
+              <h2 id="accessibility-panel-title" className="text-2xl font-black leading-tight text-slate-900">
                 Opciones de accesibilidad
               </h2>
             </div>
@@ -221,10 +195,7 @@ function AccessibilityPanel({
               ref={closeButtonRef}
               type="button"
               onClick={() => {
-                announcePanelAction(
-                  "Cerrar panel de accesibilidad.",
-                  "accessibility-panel-close",
-                );
+                announcePanelAction("Cerrar panel de accesibilidad.", "accessibility-panel-close");
                 onClose();
               }}
               aria-label="Cerrar panel de accesibilidad"
@@ -250,10 +221,8 @@ function AccessibilityPanel({
                   icon={<Sparkles className="h-5 w-5" />}
                   onChange={() => {
                     announcePanelAction(
-                      isAccessible
-                        ? "Modo fácil desactivado."
-                        : "Modo fácil activado.",
-                      "accessibility-panel-easy-mode",
+                      isAccessible ? "Modo fácil desactivado." : "Modo fácil activado.",
+                      "accessibility-panel-easy-mode"
                     );
                     onToggleAccessible();
                   }}
@@ -265,10 +234,8 @@ function AccessibilityPanel({
                   icon={<Contrast className="h-5 w-5" />}
                   onChange={() => {
                     announcePanelAction(
-                      isHighContrast
-                        ? "Contraste alto desactivado."
-                        : "Contraste alto activado.",
-                      "accessibility-panel-contrast",
+                      isHighContrast ? "Contraste alto desactivado." : "Contraste alto activado.",
+                      "accessibility-panel-contrast"
                     );
                     onToggleContrast();
                   }}
@@ -282,10 +249,7 @@ function AccessibilityPanel({
                   onChange={handleToggleVoice}
                 />
                 {!isVoiceSupported && (
-                  <p
-                    className="py-3 text-sm font-semibold text-amber-900"
-                    role="status"
-                  >
+                  <p className="py-3 text-sm font-semibold text-amber-900" role="status">
                     La ayuda por voz no está disponible en este navegador.
                   </p>
                 )}
@@ -296,23 +260,17 @@ function AccessibilityPanel({
                   icon={<Volume2 className="h-5 w-5" />}
                   onChange={() => {
                     announcePanelAction(
-                      isSoundEnabled
-                        ? "Sonidos desactivados."
-                        : "Sonidos activados.",
-                      "accessibility-panel-sound",
+                      isSoundEnabled ? "Sonidos desactivados." : "Sonidos activados.",
+                      "accessibility-panel-sound"
                     );
                     onToggleSound();
-                    if (!isSoundEnabled)
-                      void playSoundFeedback("success", soundVolume);
+                    if (!isSoundEnabled) void playSoundFeedback("success", soundVolume);
                   }}
                 />
               </div>
             </section>
 
-            <section
-              className="border-t border-slate-200 pt-5"
-              aria-labelledby="text-settings-title"
-            >
+            <section className="border-t border-slate-200 pt-5" aria-labelledby="text-settings-title">
               <div className="flex items-center gap-2">
                 <Type className="h-5 w-5 text-yellow-700" aria-hidden="true" />
                 <h3 id="text-settings-title" className={sectionTitleClass}>
@@ -320,9 +278,7 @@ function AccessibilityPanel({
                 </h3>
               </div>
               <fieldset className="mt-3">
-                <legend className="font-bold text-slate-900">
-                  Tamaño del texto
-                </legend>
+                <legend className="font-bold text-slate-900">Tamaño del texto</legend>
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   {sizeOptions.map((option) => {
                     const selected = textSize === option.value;
@@ -335,22 +291,15 @@ function AccessibilityPanel({
                         onClick={() => {
                           announcePanelAction(
                             `Tamaño de texto ${option.name}.`,
-                            `accessibility-panel-text-size:${option.value}`,
+                            `accessibility-panel-text-size:${option.value}`
                           );
                           onSetTextSize(option.value);
                         }}
                         className={optionButtonClass(selected)}
                       >
-                        {selected && (
-                          <Check
-                            className="mr-1 inline h-4 w-4"
-                            aria-hidden="true"
-                          />
-                        )}
+                        {selected && <Check className="mr-1 inline h-4 w-4" aria-hidden="true" />}
                         {option.label}
-                        <span className="mt-0.5 block text-xs font-semibold">
-                          {option.name}
-                        </span>
+                        <span className="mt-0.5 block text-xs font-semibold">{option.name}</span>
                       </button>
                     );
                   })}
@@ -359,15 +308,9 @@ function AccessibilityPanel({
             </section>
 
             {isSoundEnabled && (
-              <section
-                className="border-t border-slate-200 pt-5"
-                aria-labelledby="sound-settings-title"
-              >
+              <section className="border-t border-slate-200 pt-5" aria-labelledby="sound-settings-title">
                 <div className="flex items-center gap-2">
-                  <Volume2
-                    className="h-5 w-5 text-yellow-700"
-                    aria-hidden="true"
-                  />
+                  <Volume2 className="h-5 w-5 text-yellow-700" aria-hidden="true" />
                   <h3 id="sound-settings-title" className={sectionTitleClass}>
                     Sonido
                   </h3>
@@ -385,31 +328,18 @@ function AccessibilityPanel({
                           onClick={() => onSetSoundVolume(option.value)}
                           className={optionButtonClass(selected)}
                         >
-                          {selected && (
-                            <Check
-                              className="mr-1 inline h-4 w-4"
-                              aria-hidden="true"
-                            />
-                          )}
+                          {selected && <Check className="mr-1 inline h-4 w-4" aria-hidden="true" />}
                           {option.label}
                         </button>
                       );
                     })}
                   </div>
                   <p className="sr-only" aria-live="polite">
-                    Nivel seleccionado:{" "}
-                    {
-                      volumeOptions.find(
-                        (option) => option.value === soundVolume,
-                      )?.label
-                    }
-                    .
+                    Nivel seleccionado: {volumeOptions.find((option) => option.value === soundVolume)?.label}.
                   </p>
                   <button
                     type="button"
-                    onClick={() =>
-                      void playSoundFeedback("success", soundVolume)
-                    }
+                    onClick={() => void playSoundFeedback("success", soundVolume)}
                     className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
                   >
                     <Volume2 className="h-5 w-5" aria-hidden="true" />
@@ -428,11 +358,7 @@ function AccessibilityPanel({
                 <RotateCcw className="h-5 w-5" aria-hidden="true" />
                 Restablecer ajustes
               </button>
-              <p
-                className="mt-3 text-sm font-semibold text-green-800"
-                role="status"
-                aria-live="polite"
-              >
+              <p className="mt-3 text-sm font-semibold text-green-800" role="status" aria-live="polite">
                 {statusMessage}
               </p>
             </div>
