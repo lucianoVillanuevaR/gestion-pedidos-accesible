@@ -15,7 +15,7 @@ async function openAccessibilityPanel(page: Page) {
     .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
     .first()
     .click();
-  await expect(page.getByRole("dialog", { name: /panel de opciones simples/i })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: /opciones de accesibilidad/i })).toBeVisible();
 }
 
 test("la entrada y el panel no tienen violaciones WCAG A/AA detectables", async ({ page }) => {
@@ -49,7 +49,7 @@ test("el panel encierra y restaura el foco usando solo teclado", async ({ page }
   await trigger.focus();
   await trigger.press("Enter");
   const closeButton = page.getByRole("button", {
-    name: "Cerrar panel de opciones"
+    name: "Cerrar panel de accesibilidad"
   });
   await expect(closeButton).toBeFocused();
   await page.keyboard.press("Escape");
@@ -58,8 +58,8 @@ test("el panel encierra y restaura el foco usando solo teclado", async ({ page }
 
 test("permite ampliar texto sin desbordamiento horizontal móvil", async ({ page }) => {
   await openAccessibilityPanel(page);
-  await page.getByRole("button", { name: "Tamaño de texto Grande" }).click();
-  await page.getByRole("button", { name: "Activar modo fácil" }).click();
+  await page.getByRole("button", { name: "Tamaño Grande" }).click();
+  await page.getByRole("switch", { name: "Modo fácil: Desactivado" }).click();
   const hasHorizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
   );
@@ -75,21 +75,19 @@ test("los controles de sonido reflejan y conservan sus preferencias", async ({ p
     .first()
     .click();
 
+  await expect(page.getByRole("button", { name: "Suave" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fuerte" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Probar sonido" })).toHaveCount(0);
+
+  await page.getByRole("switch", { name: "Sonidos: Desactivado" }).click();
+  await expect(page.getByRole("switch", { name: "Sonidos: Activado" })).toHaveAttribute("aria-checked", "true");
+
   const soft = page.getByRole("button", { name: "Suave" });
   const normal = page.getByRole("button", { name: "Normal", exact: true });
   const loud = page.getByRole("button", { name: "Fuerte" });
   const preview = page.getByRole("button", { name: "Probar sonido" });
 
-  await expect(soft).toBeDisabled();
-  await expect(normal).toBeDisabled();
-  await expect(loud).toBeDisabled();
-  await expect(preview).toBeDisabled();
-  await expect(soft).toHaveAttribute("aria-pressed", "false");
-  await expect(normal).toHaveAttribute("aria-pressed", "false");
-  await expect(loud).toHaveAttribute("aria-pressed", "false");
-
-  await page.getByRole("button", { name: "Activar sonidos" }).click();
-  await expect(page.getByRole("button", { name: "Desactivar sonidos" })).toHaveAttribute("aria-pressed", "true");
   await expect(soft).toBeEnabled();
   await expect(normal).toBeEnabled();
   await expect(loud).toBeEnabled();
@@ -105,13 +103,14 @@ test("los controles de sonido reflejan y conservan sus preferencias", async ({ p
     .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
     .first()
     .click();
-  await expect(page.getByRole("button", { name: "Desactivar sonidos" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Sonidos: Activado" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveAttribute("aria-pressed", "true");
 
+  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Restablecer ajustes" }).click();
-  await expect(page.getByRole("button", { name: "Activar sonidos" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Suave" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("button", { name: "Fuerte" })).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("button", { name: "Probar sonido" })).toBeDisabled();
+  await expect(page.getByRole("switch", { name: "Sonidos: Desactivado" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Suave" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Fuerte" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Probar sonido" })).toHaveCount(0);
 });
