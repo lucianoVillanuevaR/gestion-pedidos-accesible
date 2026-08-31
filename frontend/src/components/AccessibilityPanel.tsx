@@ -1,5 +1,17 @@
-import { useRef } from "react";
-import type { AccessibilityTextSize, SoundVolumeLevel } from "../constants/accessibility";
+import { useRef, useState, type ReactNode } from "react";
+import {
+  Check,
+  Contrast,
+  RotateCcw,
+  Sparkles,
+  Type,
+  Volume2,
+  X,
+} from "lucide-react";
+import type {
+  AccessibilityTextSize,
+  SoundVolumeLevel,
+} from "../constants/accessibility";
 import useAccessibleDialog from "../hooks/useAccessibleDialog";
 import useVoice from "../hooks/useVoice";
 import { playSoundFeedback } from "../hooks/useSoundFeedback";
@@ -23,6 +35,72 @@ type AccessibilityPanelProps = {
   onReset: () => void;
 };
 
+type AccessibilityToggleProps = {
+  checked: boolean;
+  description: string;
+  disabled?: boolean;
+  icon: ReactNode;
+  label: string;
+  onChange: () => void;
+};
+
+const focusClass =
+  "focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-yellow-400";
+
+function AccessibilityToggle({
+  checked,
+  description,
+  disabled = false,
+  icon,
+  label,
+  onChange,
+}: AccessibilityToggleProps) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 first:pt-0 last:pb-0">
+      <div className="flex min-w-0 items-start gap-3">
+        <span
+          className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-100 text-slate-900"
+          aria-hidden="true"
+        >
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="font-bold leading-snug text-slate-900">{label}</p>
+          <p className="mt-1 text-sm leading-snug text-slate-600">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={`${label}: ${checked ? "Activado" : "Desactivado"}`}
+        disabled={disabled}
+        onClick={onChange}
+        className={`inline-flex min-h-11 min-w-[92px] shrink-0 items-center gap-1.5 rounded-full border-2 px-2 py-1 font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${focusClass} ${
+          checked
+            ? "border-slate-900 bg-slate-900 text-white"
+            : "border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
+        }`}
+      >
+        <span
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-full border transition ${
+            checked
+              ? "order-2 border-white bg-[#FECE00] text-slate-950"
+              : "border-slate-400 bg-slate-100"
+          }`}
+          aria-hidden="true"
+        >
+          {checked && <Check className="h-4 w-4" strokeWidth={3} />}
+        </span>
+        <span className="text-xs">{checked ? "Sí" : "No"}</span>
+      </button>
+    </div>
+  );
+}
+
 function AccessibilityPanel({
   isOpen,
   onClose,
@@ -39,80 +117,55 @@ function AccessibilityPanel({
   onToggleVoice,
   onToggleSound,
   onSetSoundVolume,
-  onReset
+  onReset,
 }: AccessibilityPanelProps) {
   const { cancel, speak } = useVoice({ enabled: true });
+  const [statusMessage, setStatusMessage] = useState("");
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
   useAccessibleDialog({
     containerRef: dialogRef,
     enabled: isOpen,
     initialFocusRef: closeButtonRef,
-    onClose
+    onClose,
   });
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
-  const getButtonClass = (active: boolean) => {
-    const baseClass =
-      "min-h-[56px] rounded-xl border px-4 py-3 font-bold transition focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4";
-
-    if (isAccessible) {
-      return `${baseClass} text-lg ${
-        active
-          ? "border-slate-900 bg-slate-900 text-white focus-visible:outline-yellow-400"
-          : "border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
-      }`;
-    }
-
-    return `${baseClass} text-base ${
-      active
-        ? "border-[#FECE00] bg-[#FECE00] text-slate-950 focus-visible:outline-yellow-300"
-        : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50 focus-visible:outline-yellow-300"
-    }`;
-  };
-
-  const sectionClass = isAccessible
-    ? "rounded-2xl border-3 border-slate-900 bg-white p-6 space-y-4"
-    : "rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3";
-
-  const titleClass = isAccessible ? "text-2xl" : "text-lg";
-  const spacingClass = isAccessible ? "space-y-6" : "space-y-5";
-  const headerPaddingClass = isAccessible ? "px-6 py-5" : "px-5 py-4";
-  const contentPaddingClass = isAccessible ? "px-6 py-6" : "px-5 py-5";
   const announcePanelAction = (message: string, dedupeKey: string) => {
-    if (!isVoiceEnabled) {
-      return;
-    }
-
+    if (!isVoiceEnabled) return;
     speak(message, {
       priority: "high",
       dedupeKey,
       cooldownMs: 700,
       force: true,
       interrupt: true,
-      delayMs: 0
+      delayMs: 0,
     });
   };
 
   const handleToggleVoice = () => {
-    if (isVoiceEnabled) {
-      cancel();
-    }
-
-    if (!isVoiceEnabled) {
-      speak("Ayuda por voz activada.", {
+    cancel();
+    speak(
+      isVoiceEnabled ? "Ayuda por voz desactivada." : "Ayuda por voz activada.",
+      {
         priority: "high",
-        dedupeKey: "voice-enabled-confirmation",
+        dedupeKey: "voice-toggle-confirmation",
         force: true,
         interrupt: true,
-        delayMs: 0
-      });
-    }
-
+        delayMs: 0,
+      },
+    );
     onToggleVoice();
+  };
+
+  const handleReset = () => {
+    if (!window.confirm("¿Restablecer todos los ajustes de accesibilidad?"))
+      return;
+    cancel();
+    onReset();
+    setStatusMessage("Ajustes de accesibilidad restablecidos.");
   };
 
   const sizeOptions: Array<{
@@ -120,360 +173,269 @@ function AccessibilityPanel({
     label: string;
     name: string;
   }> = [
-    {
-      value: "small",
-      label: isAccessible ? " CHICA" : "A-",
-      name: "Pequeño"
-    },
-    {
-      value: "normal",
-      label: isAccessible ? " NORMAL" : "A",
-      name: "Normal"
-    },
-    {
-      value: "large",
-      label: isAccessible ? " GRANDE" : "A+",
-      name: "Grande"
-    }
+    { value: "small", label: "A-", name: "Pequeño" },
+    { value: "normal", label: "A", name: "Normal" },
+    { value: "large", label: "A+", name: "Grande" },
   ];
+  const volumeOptions: Array<{ value: SoundVolumeLevel; label: string }> = [
+    { value: "soft", label: "Suave" },
+    { value: "normal", label: "Normal" },
+    { value: "loud", label: "Fuerte" },
+  ];
+  const sectionTitleClass = `font-black text-slate-900 ${isAccessible ? "text-xl" : "text-lg"}`;
+  const optionButtonClass = (selected: boolean) =>
+    `relative min-h-12 rounded-lg border-2 px-2 py-2 font-bold transition ${focusClass} ${
+      selected
+        ? "border-slate-900 bg-[#FECE00] text-slate-950"
+        : "border-slate-300 bg-white text-slate-700 hover:border-slate-500 hover:bg-slate-50"
+    }`;
 
   return (
-    <div className="fixed inset-0 z-[200] px-3 py-4 no-print sm:px-4" onClick={onClose} role="presentation">
+    <div
+      className="fixed inset-0 z-[200] bg-slate-950/35 no-print sm:p-4"
+      onClick={onClose}
+      role="presentation"
+    >
       <aside
         ref={dialogRef}
-        aria-modal="true"
         role="dialog"
-        aria-label="Panel de opciones simples"
+        aria-modal="true"
+        aria-labelledby="accessibility-panel-title"
         tabIndex={-1}
-        className={`
-          ml-auto flex h-full w-full max-w-md flex-col overflow-hidden
-          ${
-            isAccessible
-              ? "rounded-3xl border-3 border-slate-900 bg-white shadow-2xl"
-              : "rounded-3xl bg-white shadow-2xl shadow-slate-900/20"
-          }
-        `}
+        className={`ml-auto flex h-full w-full max-w-[460px] flex-col overflow-hidden bg-white shadow-2xl sm:rounded-2xl ${
+          isAccessible ? "border-2 border-slate-900" : "border border-slate-200"
+        }`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div
-          className={`
-            border-b ${isAccessible ? "border-3 border-slate-900" : "border-slate-200"}
-            ${headerPaddingClass} sm:px-6
-          `}
-        >
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
+        <header className="z-10 shrink-0 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p
-                className={`
-                  font-bold uppercase tracking-[0.16em]
-                  ${isAccessible ? "text-xl text-slate-900" : "text-sm text-yellow-700"}
-                `}
-              >
-                {isAccessible ? "OPCIONES SIMPLES" : "Accesibilidad"}
-              </p>
               <h2
-                className={`
-                  mt-2 font-black text-slate-900
-                  ${isAccessible ? "text-3xl" : "text-2xl"}
-                `}
+                id="accessibility-panel-title"
+                className="text-2xl font-black leading-tight text-slate-900"
               >
-                {isAccessible ? "Usa el sistema más fácil" : "Opciones simples"}
+                Opciones de accesibilidad
               </h2>
-              <p
-                className={`
-                  mt-2 text-slate-600
-                  ${isAccessible ? "text-lg" : "text-sm"}
-                `}
-              >
-                {isAccessible
-                  ? "Ajusta el sistema para que sea más cómodo para ti"
-                  : "Ajustes claros para usar el sistema con más facilidad."}
-              </p>
             </div>
-
             <button
               ref={closeButtonRef}
               type="button"
               onClick={() => {
-                announcePanelAction("Cerrar panel de opciones.", "accessibility-panel-close");
+                announcePanelAction(
+                  "Cerrar panel de accesibilidad.",
+                  "accessibility-panel-close",
+                );
                 onClose();
               }}
-              aria-label="Cerrar panel de opciones"
-              className={`
-                inline-flex min-h-[56px] shrink-0 items-center justify-center whitespace-nowrap rounded-xl border px-3 font-bold transition sm:px-4
-                focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4
-                ${
-                  isAccessible
-                    ? "text-2xl border-2 border-slate-900 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
-                    : "text-lg border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
-                }
-              `}
+              aria-label="Cerrar panel de accesibilidad"
+              className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-3 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
             >
-              Cerrar
+              <X className="h-5 w-5" aria-hidden="true" />
+              <span>Cerrar</span>
             </button>
           </div>
-        </div>
+        </header>
 
-        <div className={`flex-1 overflow-y-auto ${contentPaddingClass} sm:px-6`}>
-          <div className={spacingClass}>
-            <section className={sectionClass}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "MODO FÁCIL" : "Modo accesible"}
-                  </h3>
-                  <p
-                    className={`
-                      mt-2 text-slate-700
-                      ${isAccessible ? "text-lg font-semibold" : "text-sm"}
-                    `}
-                  >
-                    {isAccessible
-                      ? "Texto grande • Botones enormes • Colores fuertes"
-                      : "Aumenta tamaño, mejora contraste y simplifica."}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">
+          <div className="space-y-5">
+            <section aria-labelledby="quick-settings-title">
+              <h3 id="quick-settings-title" className={sectionTitleClass}>
+                Ajustes rápidos
+              </h3>
+              <div className="mt-3 divide-y divide-slate-200">
+                <AccessibilityToggle
+                  checked={isAccessible}
+                  label="Modo fácil"
+                  description="Simplifica la interfaz."
+                  icon={<Sparkles className="h-5 w-5" />}
+                  onChange={() => {
                     announcePanelAction(
-                      isAccessible ? "Modo fácil desactivado." : "Modo fácil activado.",
-                      "accessibility-panel-accessible-mode"
+                      isAccessible
+                        ? "Modo fácil desactivado."
+                        : "Modo fácil activado.",
+                      "accessibility-panel-easy-mode",
                     );
                     onToggleAccessible();
                   }}
-                  aria-label={isAccessible ? "Desactivar modo fácil" : "Activar modo fácil"}
-                  aria-pressed={isAccessible}
-                  className={getButtonClass(isAccessible)}
-                >
-                  <span className={isAccessible ? "text-2xl" : ""}>{isAccessible ? "ACTIVADO" : "ACTIVAR"}</span>
-                </button>
-              </div>
-            </section>
-
-            <section className={sectionClass}>
-              <div>
-                <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                  {isAccessible ? "TAMAÑO DE LETRAS" : "Tamaño de texto"}
-                </h3>
-                <p
-                  className={`
-                    mt-2 text-slate-700
-                    ${isAccessible ? "text-lg font-semibold" : "text-sm"}
-                  `}
-                >
-                  {isAccessible ? "Elige el tamaño que te sea más cómodo" : "Ajuste simple para leer mejor."}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                {sizeOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      announcePanelAction(
-                        `Tamaño de texto ${option.name}.`,
-                        `accessibility-panel-text-size:${option.value}`
-                      );
-                      onSetTextSize(option.value);
-                    }}
-                    aria-label={`Tamaño de texto ${option.name}`}
-                    aria-pressed={textSize === option.value}
-                    className={getButtonClass(textSize === option.value)}
-                  >
-                    <span className={isAccessible ? "text-2xl" : ""}>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className={sectionClass}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "CONTRASTE FUERTE" : "Contraste alto"}
-                  </h3>
-                  <p
-                    className={`
-                      mt-2 text-slate-700
-                      ${isAccessible ? "text-lg font-semibold" : "text-sm"}
-                    `}
-                  >
-                    {isAccessible ? "Colores más fuertes para ver mejor" : "Mejora la visibilidad de los elementos."}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
+                />
+                <AccessibilityToggle
+                  checked={isHighContrast}
+                  label="Contraste alto"
+                  description="Mejora la visibilidad."
+                  icon={<Contrast className="h-5 w-5" />}
+                  onChange={() => {
                     announcePanelAction(
-                      isHighContrast ? "Contraste alto desactivado." : "Contraste alto activado.",
-                      "accessibility-panel-contrast"
+                      isHighContrast
+                        ? "Contraste alto desactivado."
+                        : "Contraste alto activado.",
+                      "accessibility-panel-contrast",
                     );
                     onToggleContrast();
                   }}
-                  aria-label={isHighContrast ? "Desactivar contraste alto" : "Activar contraste alto"}
-                  aria-pressed={isHighContrast}
-                  className={getButtonClass(isHighContrast)}
-                >
-                  <span className={isAccessible ? "text-2xl" : ""}>{isHighContrast ? "ACTIVADO" : "ACTIVAR"}</span>
-                </button>
-              </div>
-            </section>
-
-            <section className={sectionClass}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "AYUDA CON VOZ" : "Ayuda por voz"}
-                  </h3>
-                  <p
-                    className={`
-                      mt-2 text-slate-700
-                      ${isAccessible ? "text-lg font-semibold" : "text-sm"}
-                    `}
-                  >
-                    {isAccessible
-                      ? "El sistema te hablará mientras usas"
-                      : "El sistema leerá instrucciones y mensajes."}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleToggleVoice}
+                />
+                <AccessibilityToggle
+                  checked={isVoiceEnabled}
                   disabled={!isVoiceSupported}
-                  aria-label={isVoiceEnabled ? "Desactivar ayuda por voz" : "Activar ayuda por voz"}
-                  aria-pressed={isVoiceEnabled}
-                  className={`${getButtonClass(isVoiceEnabled)} disabled:cursor-not-allowed disabled:opacity-60`}
-                >
-                  <span className={isAccessible ? "text-2xl" : ""}>{isVoiceEnabled ? "ACTIVADO" : "ACTIVAR"}</span>
-                </button>
-              </div>
-              {!isVoiceSupported && (
-                <p
-                  className="rounded-xl border border-amber-700 bg-amber-50 p-3 font-bold text-amber-950"
-                  role="status"
-                >
-                  La ayuda por voz no está disponible en este navegador. Puedes usar un lector de pantalla externo.
-                </p>
-              )}
-            </section>
-
-            <section className={sectionClass}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className={`font-black text-slate-900 ${titleClass}`}>
-                    {isAccessible ? "SONIDOS DE AYUDA" : "Sonidos"}
-                  </h3>
+                  label="Ayuda por voz"
+                  description="Lee acciones importantes."
+                  icon={<Volume2 className="h-5 w-5" />}
+                  onChange={handleToggleVoice}
+                />
+                {!isVoiceSupported && (
                   <p
-                    className={`
-                      mt-2 text-slate-700
-                      ${isAccessible ? "text-lg font-semibold" : "text-sm"}
-                    `}
+                    className="py-3 text-sm font-semibold text-amber-900"
+                    role="status"
                   >
-                    {isAccessible
-                      ? "Soniditos que avisan cuando haces algo"
-                      : "Reproduce sonidos breves en acciones importantes."}
+                    La ayuda por voz no está disponible en este navegador.
                   </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
+                )}
+                <AccessibilityToggle
+                  checked={isSoundEnabled}
+                  label="Sonidos"
+                  description="Reproduce avisos."
+                  icon={<Volume2 className="h-5 w-5" />}
+                  onChange={() => {
                     announcePanelAction(
-                      isSoundEnabled ? "Sonidos desactivados." : "Sonidos activados.",
-                      "accessibility-panel-sound"
+                      isSoundEnabled
+                        ? "Sonidos desactivados."
+                        : "Sonidos activados.",
+                      "accessibility-panel-sound",
                     );
                     onToggleSound();
-                    if (!isSoundEnabled) {
+                    if (!isSoundEnabled)
                       void playSoundFeedback("success", soundVolume);
-                    }
                   }}
-                  aria-label={isSoundEnabled ? "Desactivar sonidos" : "Activar sonidos"}
-                  aria-pressed={isSoundEnabled}
-                  className={getButtonClass(isSoundEnabled)}
-                >
-                  <span className={isAccessible ? "text-2xl" : ""}>{isSoundEnabled ? "ACTIVADO" : "ACTIVAR"}</span>
-                </button>
+                />
               </div>
+            </section>
 
-              <fieldset className="space-y-3" disabled={!isSoundEnabled}>
-                <legend className={`font-black text-slate-900 ${isAccessible ? "text-xl" : "text-base"}`}>
-                  Volumen de los sonidos
+            <section
+              className="border-t border-slate-200 pt-5"
+              aria-labelledby="text-settings-title"
+            >
+              <div className="flex items-center gap-2">
+                <Type className="h-5 w-5 text-yellow-700" aria-hidden="true" />
+                <h3 id="text-settings-title" className={sectionTitleClass}>
+                  Texto
+                </h3>
+              </div>
+              <fieldset className="mt-3">
+                <legend className="font-bold text-slate-900">
+                  Tamaño del texto
                 </legend>
-                <div className="grid grid-cols-3 gap-2" role="group" aria-label="Nivel de volumen de los sonidos">
-                  {(
-                    [
-                      ["soft", "Suave"],
-                      ["normal", "Normal"],
-                      ["loud", "Fuerte"]
-                    ] as const
-                  ).map(([value, label]) => {
-                    const selected = isSoundEnabled && soundVolume === value;
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {sizeOptions.map((option) => {
+                    const selected = textSize === option.value;
                     return (
                       <button
-                        key={value}
+                        key={option.value}
                         type="button"
                         aria-pressed={selected}
-                        onClick={() => onSetSoundVolume(value)}
-                        className={`${getButtonClass(selected)} disabled:cursor-not-allowed disabled:opacity-50`}
+                        aria-label={`Tamaño ${option.name}`}
+                        onClick={() => {
+                          announcePanelAction(
+                            `Tamaño de texto ${option.name}.`,
+                            `accessibility-panel-text-size:${option.value}`,
+                          );
+                          onSetTextSize(option.value);
+                        }}
+                        className={optionButtonClass(selected)}
                       >
-                        {label}
+                        {selected && (
+                          <Check
+                            className="mr-1 inline h-4 w-4"
+                            aria-hidden="true"
+                          />
+                        )}
+                        {option.label}
+                        <span className="mt-0.5 block text-xs font-semibold">
+                          {option.name}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
-                <p className="font-semibold text-slate-700" aria-live="polite">
-                  {isSoundEnabled
-                    ? `Nivel seleccionado: ${
-                        soundVolume === "soft" ? "Suave" : soundVolume === "normal" ? "Normal" : "Fuerte"
-                      }`
-                    : "Activa los sonidos para configurar el volumen."}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => void playSoundFeedback("success", soundVolume)}
-                  className={`${getButtonClass(false)} w-full disabled:cursor-not-allowed disabled:opacity-50`}
-                >
-                  Probar sonido
-                </button>
               </fieldset>
             </section>
 
-            {isAccessible && (
-              <div className="contrast-panel-soft space-y-2 rounded-2xl border-3 border-green-900 bg-green-50 p-6">
-                <p className="contrast-important text-lg font-black text-green-900">MODO FÁCIL ACTIVADO</p>
-                <p className="contrast-body-text text-base font-semibold text-slate-800">
-                  Todos los textos, botones y espacios se ven más grandes ahora.
-                </p>
-                <p className="contrast-secondary-text text-sm text-slate-700">
-                  Presiona TAB para navegar • ESC para cerrar
-                </p>
-              </div>
+            {isSoundEnabled && (
+              <section
+                className="border-t border-slate-200 pt-5"
+                aria-labelledby="sound-settings-title"
+              >
+                <div className="flex items-center gap-2">
+                  <Volume2
+                    className="h-5 w-5 text-yellow-700"
+                    aria-hidden="true"
+                  />
+                  <h3 id="sound-settings-title" className={sectionTitleClass}>
+                    Sonido
+                  </h3>
+                </div>
+                <fieldset className="mt-3">
+                  <legend className="font-bold text-slate-900">Volumen</legend>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {volumeOptions.map((option) => {
+                      const selected = soundVolume === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => onSetSoundVolume(option.value)}
+                          className={optionButtonClass(selected)}
+                        >
+                          {selected && (
+                            <Check
+                              className="mr-1 inline h-4 w-4"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="sr-only" aria-live="polite">
+                    Nivel seleccionado:{" "}
+                    {
+                      volumeOptions.find(
+                        (option) => option.value === soundVolume,
+                      )?.label
+                    }
+                    .
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void playSoundFeedback("success", soundVolume)
+                    }
+                    className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
+                  >
+                    <Volume2 className="h-5 w-5" aria-hidden="true" />
+                    Probar sonido
+                  </button>
+                </fieldset>
+              </section>
             )}
 
-            <button
-              type="button"
-              onClick={() => {
-                announcePanelAction("Restablecer ajustes.", "accessibility-panel-reset");
-                cancel();
-                onReset();
-              }}
-              className={`
-                w-full min-h-[56px] rounded-xl border font-bold transition
-                focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-4
-                ${
-                  isAccessible
-                    ? "text-lg border-2 border-slate-300 bg-white text-slate-900 hover:bg-slate-100 focus-visible:outline-yellow-400"
-                    : "text-base border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-yellow-300"
-                }
-              `}
-            >
-              {isAccessible ? "RESTABLECER TODO" : "Restablecer ajustes"}
-            </button>
+            <div className="border-t border-slate-200 pt-5">
+              <button
+                type="button"
+                onClick={handleReset}
+                className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
+              >
+                <RotateCcw className="h-5 w-5" aria-hidden="true" />
+                Restablecer ajustes
+              </button>
+              <p
+                className="mt-3 text-sm font-semibold text-green-800"
+                role="status"
+                aria-live="polite"
+              >
+                {statusMessage}
+              </p>
+            </div>
           </div>
         </div>
       </aside>
