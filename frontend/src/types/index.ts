@@ -229,3 +229,32 @@ export type UpdateInventarioPayload = {
   stockActual?: number;
   stockMinimo?: number;
 };
+
+export type DashboardPeriod = "today" | "7d" | "30d";
+
+export interface AdminDashboardData {
+  period: DashboardPeriod;
+  range: { start: string; end: string; timeZone: string };
+  summary: {
+    sales: number;
+    orders: number;
+    averageTicket: number;
+    productsSold: number;
+  };
+  salesTimeline: Array<{ date: string; sales: number; orders: number }>;
+  topProducts: Array<{
+    productId: number;
+    productName: string;
+    imageUrl: string | null;
+    quantity: number;
+    sales: number;
+  }>;
+  ordersByHour: Array<{ hour: number; orders: number }>;
+  ordersToday: Record<EstadoPedido, number>;
+  criticalStock: Array<{
+    productId: number;
+    productName: string;
+    currentStock: number;
+    minimumStock: number;
+  }>;
+}

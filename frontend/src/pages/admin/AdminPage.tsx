@@ -1,6 +1,5 @@
 import { Check, Plus, Save, Search, Users, X } from "lucide-react";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Link } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import AlertMessage from "../../components/ui/AlertMessage";
 import EmptyState from "../../components/ui/EmptyState";
@@ -8,13 +7,9 @@ import LoadingState from "../../components/ui/LoadingState";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
-import { cargarCierresTurno } from "../../services/cierresTurno";
-import { getInventario } from "../../services/inventario";
-import { getPedidos } from "../../services/pedidos";
-import { getProductos } from "../../services/productos";
 import { createUsuario, getUsuarios, updateUsuario } from "../../services/usuarios";
-import type { AdminUser, CreateUserPayload, InventarioItem, PedidoResponse, Producto, UserRole } from "../../types";
-import { formatCurrency } from "../../utils/pdv";
+import type { AdminUser, CreateUserPayload, UserRole } from "../../types";
+import AdminDashboard from "./AdminDashboard";
 
 type AdminPageMode = "dashboard" | "usuarios";
 
@@ -100,142 +95,10 @@ function AdminShell({ children, title, description }: { children: ReactNode; tit
 }
 
 function AdminDashboardPage() {
-  const [pedidos, setPedidos] = useState<PedidoResponse[]>([]);
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [inventario, setInventario] = useState<InventarioItem[]>([]);
-  const [totalVendido, setTotalVendido] = useState(0);
-  const [ultimoCierre, setUltimoCierre] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = () => {
-    setIsLoading(true);
-    setError(null);
-    Promise.all([getPedidos(), getProductos({ includeUnavailable: true }), getInventario(), cargarCierresTurno()])
-      .then(([pedidosData, productosData, inventarioData, cierres]) => {
-        setPedidos(pedidosData);
-        setProductos(productosData);
-        setInventario(inventarioData);
-        setTotalVendido(cierres.reduce((total, cierre) => total + cierre.totalVendido, 0));
-        setUltimoCierre(cierres[0]?.fechaCierre ?? null);
-        setLastUpdated(new Date());
-      })
-      .catch((requestError) =>
-        setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el dashboard")
-      )
-      .finally(() => setIsLoading(false));
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const disponibles = productos.filter((producto) => producto.disponible !== false).length;
-  const stockCritico = inventario.filter((item) => item.estado === "bajo_stock" || item.estado === "sin_stock");
-  const pedidosPendientes = pedidos.filter((pedido) => pedido.estado === "pendiente").length;
-  const formatDateTime = (value: string | Date) =>
-    new Intl.DateTimeFormat("es-CL", {
-      dateStyle: "short",
-      timeStyle: "short"
-    }).format(new Date(value));
-
   return (
-    <AdminShell title="Dashboard Admin" description="Resumen general del sistema y estado operativo del local.">
-      {error && <ErrorAlert message={error} />}
-      {isLoading ? (
-        <LoadingState label="Cargando panel admin..." />
-      ) : (
-        <>
-          <section className="grid gap-4">
-            <article className="rounded-[10px] border border-slate-200 bg-white shadow-sm">
-              <header className="border-b border-slate-100 px-4 py-3">
-                <p className="text-[11px] font-black uppercase text-slate-500">Local</p>
-                <h2 className="text-base font-black text-slate-950">Estado del sistema</h2>
-              </header>
-              <div className="divide-y divide-slate-100">
-                <DashboardLine
-                  label="Último turno cerrado"
-                  value={ultimoCierre ? formatDateTime(ultimoCierre) : "No hay turnos cerrados"}
-                />
-                <DashboardLine label="Total vendido confirmado" value={formatCurrency(totalVendido)} />
-                <DashboardLine label="Pedidos pendientes" value={pedidosPendientes} />
-                <DashboardLine label="Productos disponibles" value={`${disponibles} de ${productos.length}`} />
-                <DashboardLine label="Última actualización" value={lastUpdated ? formatDateTime(lastUpdated) : "-"} />
-              </div>
-            </article>
-          </section>
-
-          <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-sm">
-            <header className="flex min-h-[58px] items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-              <div>
-                <p className="text-[11px] font-black uppercase text-slate-500">Inventario</p>
-                <h2 className="text-base font-black text-slate-950">Productos con bajo stock</h2>
-              </div>
-              <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 text-sm font-black text-slate-700">
-                {stockCritico.length}
-              </span>
-            </header>
-            {stockCritico.length === 0 ? (
-              <div className="px-4 py-6 text-sm font-bold text-slate-600">
-                Todos los productos están dentro del stock esperado.
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {stockCritico.map((item) => (
-                  <StockRiskRow key={item.productoId} item={item} />
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      )}
+    <AdminShell title="Resumen" description="Ventas y estado operativo del local.">
+      <AdminDashboard />
     </AdminShell>
-  );
-}
-
-function getEstadoClass(estado: InventarioItem["estado"]) {
-  if (estado === "sin_stock") return "border-red-200 bg-red-50 text-red-800";
-  if (estado === "bajo_stock") return "border-yellow-200 bg-[#FFF8DC] text-yellow-800";
-  return "border-emerald-200 bg-emerald-50 text-emerald-800";
-}
-
-function StockRiskRow({ item }: { item: InventarioItem }) {
-  return (
-    <article className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_120px_120px_120px_130px] lg:items-center">
-      <div className="min-w-0">
-        <p className="truncate text-sm font-black text-slate-950">{item.productoNombre}</p>
-        <p className="mt-1 text-xs font-bold text-slate-500">Producto con stock por revisar</p>
-      </div>
-      <p className="text-sm font-black text-slate-700">Stock {item.stockActual}</p>
-      <p className="text-sm font-black text-slate-700">Mínimo {item.stockMinimo}</p>
-      <span
-        className={`inline-flex min-h-[32px] items-center justify-center rounded-full border px-3 text-xs font-black ${getEstadoClass(item.estado)}`}
-      >
-        {getEstadoLabel(item.estado)}
-      </span>
-      <Link
-        to="/admin/inventario"
-        className={`inline-flex min-h-[36px] items-center justify-center rounded-lg border border-slate-900 bg-slate-900 px-3 text-sm font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
-      >
-        Revisar
-      </Link>
-    </article>
-  );
-}
-
-function getEstadoLabel(estado: InventarioItem["estado"]) {
-  if (estado === "sin_stock") return "Sin stock";
-  if (estado === "bajo_stock") return "Bajo stock";
-  return "Disponible";
-}
-
-function DashboardLine({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="flex min-h-[54px] items-center justify-between gap-3 px-4 py-3">
-      <p className="text-sm font-bold text-slate-600">{label}</p>
-      <p className="text-right text-sm font-black text-slate-950">{value}</p>
-    </div>
   );
 }
 

@@ -7,6 +7,7 @@ import authRoutes from "./auth.routes";
 import turnosRoutes from "./turnos.routes";
 import categoriasRoutes from "./categorias.routes";
 import usuariosRoutes from "./usuarios.routes";
+import adminRoutes from "./admin.routes";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/productos", productosRoutes);
 router.use("/pedidos", pedidosRoutes);
 router.use("/inventario", inventarioRoutes);
 router.use("/usuarios", usuariosRoutes);
+router.use("/admin", adminRoutes);
 
 export default router;
