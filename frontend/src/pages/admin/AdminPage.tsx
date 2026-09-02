@@ -19,7 +19,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   cocina: "Cocina"
 };
 
-const ROLE_PERMISSIONS: Array<{
+export const ROLE_PERMISSIONS: Array<{
   role: UserRole;
   permissions: Record<string, boolean>;
 }> = [
@@ -44,7 +44,7 @@ const ROLE_PERMISSIONS: Array<{
       Ventas: true,
       Usuarios: false,
       Cocina: true,
-      Reportes: true
+      Reportes: false
     }
   },
   {

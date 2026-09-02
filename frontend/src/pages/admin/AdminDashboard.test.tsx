@@ -57,6 +57,54 @@ describe("AdminDashboard", () => {
     await waitFor(() => expect(getAdminDashboard).toHaveBeenLastCalledWith("30d", expect.any(AbortSignal)));
   });
 
+  it("oculta los datos del período anterior mientras carga el nuevo", async () => {
+    const user = userEvent.setup();
+    let resolveRequest: (data: AdminDashboardData) => void = () => undefined;
+    const pendingRequest = new Promise<AdminDashboardData>((resolve) => {
+      resolveRequest = resolve;
+    });
+    const todayData: AdminDashboardData = {
+      ...dashboardData,
+      period: "today",
+      summary: { ...dashboardData.summary, sales: 12_000 }
+    };
+
+    vi.mocked(getAdminDashboard).mockResolvedValueOnce(dashboardData).mockReturnValueOnce(pendingRequest);
+    render(
+      <MemoryRouter>
+        <AdminDashboard />
+      </MemoryRouter>
+    );
+
+    await screen.findAllByText("$30.000");
+    await user.selectOptions(screen.getByLabelText("Período"), "today");
+
+    expect(await screen.findByText("Cargando resumen administrativo...")).toBeTruthy();
+    expect(screen.queryByText("$30.000")).toBeNull();
+
+    resolveRequest(todayData);
+    expect((await screen.findAllByText("$12.000")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Cargando resumen administrativo...")).toBeNull();
+  });
+
+  it("mantiene el manejo de errores sin volver a mostrar datos del período anterior", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getAdminDashboard)
+      .mockResolvedValueOnce(dashboardData)
+      .mockRejectedValueOnce(new Error("No se pudo cargar el nuevo período"));
+    render(
+      <MemoryRouter>
+        <AdminDashboard />
+      </MemoryRouter>
+    );
+
+    await screen.findAllByText("$30.000");
+    await user.selectOptions(screen.getByLabelText("Período"), "30d");
+
+    expect(await screen.findByText("No se pudo cargar el nuevo período")).toBeTruthy();
+    expect(screen.queryByText("$30.000")).toBeNull();
+  });
+
   it("muestra estados vacíos sin valores inválidos", async () => {
     vi.mocked(getAdminDashboard).mockResolvedValue({
       ...dashboardData,

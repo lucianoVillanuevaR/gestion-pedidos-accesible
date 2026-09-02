@@ -37,7 +37,9 @@ export default function AdminDashboard() {
     setError(null);
 
     getAdminDashboard(period, controller.signal)
-      .then(setData)
+      .then((nextData) => {
+        if (!controller.signal.aborted) setData(nextData);
+      })
       .catch((requestError) => {
         if (requestError instanceof DOMException && requestError.name === "AbortError") return;
         setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el resumen");
@@ -48,6 +50,8 @@ export default function AdminDashboard() {
 
     return () => controller.abort();
   }, [period]);
+
+  const currentData = data?.period === period ? data : null;
 
   return (
     <div className="space-y-4">
@@ -69,8 +73,8 @@ export default function AdminDashboard() {
       </div>
 
       {error && <ErrorAlert message={error} />}
-      {isLoading && !data ? <LoadingState label="Cargando resumen administrativo..." /> : null}
-      {data ? <DashboardContent data={data} /> : null}
+      {isLoading && !currentData ? <LoadingState label="Cargando resumen administrativo..." /> : null}
+      {currentData ? <DashboardContent data={currentData} /> : null}
     </div>
   );
 }
