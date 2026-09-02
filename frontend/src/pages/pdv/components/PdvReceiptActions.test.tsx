@@ -40,6 +40,7 @@ function buildContext(canPrintCurrentOrder: boolean): PdvViewContextValue {
     isHighContrast: false,
     isPanelOpen: false,
     isTurnoOpen: true,
+    isTurnoUpdating: false,
     items: {},
     loadProductos: noop,
     loadingError: null,
@@ -74,7 +75,7 @@ function buildContext(canPrintCurrentOrder: boolean): PdvViewContextValue {
     showResetConfirm: false,
     textColor: "",
     total: 0,
-    totalItems: 0
+    totalItems: 0,
   };
 }
 
@@ -85,10 +86,13 @@ describe("PdvReceiptActions", () => {
     render(
       <PdvViewProvider value={buildContext(false)}>
         <PdvReceiptActions />
-      </PdvViewProvider>
+      </PdvViewProvider>,
     );
 
-    expect((screen.getByRole("button", { name: /Imprimir/i }) as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: /Imprimir/i }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
     expect(screen.queryByText(/Imprimir #/i)).toBeNull();
   });
 
@@ -96,12 +100,24 @@ describe("PdvReceiptActions", () => {
     render(
       <PdvViewProvider value={buildContext(true)}>
         <PdvReceiptActions />
-      </PdvViewProvider>
+      </PdvViewProvider>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Imprimir/i }));
 
-    expect((screen.getByRole("button", { name: "Ticket de cocina" }) as HTMLButtonElement).disabled).toBe(false);
-    expect((screen.getByRole("button", { name: "Ticket de cliente" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Ticket de cocina",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Ticket de cliente",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
   });
 });

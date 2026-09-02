@@ -8,16 +8,25 @@ type ConfirmDialogProps = {
   onCancel: () => void;
   onConfirm: () => void;
   primaryLabel: string;
+  primaryDisabled?: boolean;
   title: string;
 };
 
-function ConfirmDialog({ children, description, onCancel, onConfirm, primaryLabel, title }: ConfirmDialogProps) {
+function ConfirmDialog({
+  children,
+  description,
+  onCancel,
+  onConfirm,
+  primaryDisabled = false,
+  primaryLabel,
+  title,
+}: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   useAccessibleDialog({
     containerRef: dialogRef,
     initialFocusRef: cancelButtonRef,
-    onClose: onCancel
+    onClose: onCancel,
   });
 
   return (
@@ -32,10 +41,16 @@ function ConfirmDialog({ children, description, onCancel, onConfirm, primaryLabe
     >
       <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white shadow-2xl">
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 id="pdv-confirm-title" className="text-xl font-black text-slate-950">
+          <h2
+            id="pdv-confirm-title"
+            className="text-xl font-black text-slate-950"
+          >
             {title}
           </h2>
-          <p id="pdv-confirm-description" className="mt-2 text-sm font-bold text-slate-600">
+          <p
+            id="pdv-confirm-description"
+            className="mt-2 text-sm font-bold text-slate-600"
+          >
             {description}
           </p>
         </div>
@@ -52,7 +67,8 @@ function ConfirmDialog({ children, description, onCancel, onConfirm, primaryLabe
           <button
             type="button"
             onClick={onConfirm}
-            className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
+            disabled={primaryDisabled}
+            className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
           >
             {primaryLabel}
           </button>
