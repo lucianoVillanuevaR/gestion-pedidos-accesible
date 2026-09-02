@@ -77,4 +77,70 @@ describe("AdminDashboard", () => {
     expect(screen.getByText("No hay productos con stock crítico.")).toBeTruthy();
     expect(screen.queryByText(/NaN|undefined|null/)).toBeNull();
   });
+
+  it("expone valores monetarios y tooltip del gráfico mediante teclado", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getAdminDashboard).mockResolvedValue(dashboardData);
+    render(
+      <MemoryRouter>
+        <AdminDashboard />
+      </MemoryRouter>
+    );
+
+    const point = await screen.findByLabelText(/Ventas: \$30\.000\. Pedidos: 3/);
+    expect(screen.getByText("$0")).toBeTruthy();
+
+    await user.tab();
+    await user.tab();
+
+    expect(document.activeElement).toBe(point);
+    expect(screen.getByText("Ventas: $30.000")).toBeTruthy();
+    expect(screen.getByText("Pedidos: 3")).toBeTruthy();
+    expect(screen.getByText("Ver datos del gráfico")).toBeTruthy();
+  });
+
+  it("mantiene los datos exactos colapsados inicialmente y permite expandirlos con teclado", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getAdminDashboard).mockResolvedValue(dashboardData);
+    render(
+      <MemoryRouter>
+        <AdminDashboard />
+      </MemoryRouter>
+    );
+
+    const disclosure = await screen.findByText("Ver datos del gráfico");
+    expect(disclosure.getAttribute("aria-expanded")).toBe("false");
+
+    disclosure.focus();
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => expect(disclosure.getAttribute("aria-expanded")).toBe("true"));
+  });
+
+  it("presenta los pedidos por hora en orden cronológico aunque el endpoint llegue desordenado", async () => {
+    vi.mocked(getAdminDashboard).mockResolvedValue({
+      ...dashboardData,
+      ordersByHour: [
+        { hour: 22, orders: 1 },
+        { hour: 12, orders: 4 },
+        { hour: 19, orders: 3 },
+        { hour: 14, orders: 2 },
+        { hour: 13, orders: 5 }
+      ]
+    });
+    render(
+      <MemoryRouter>
+        <AdminDashboard />
+      </MemoryRouter>
+    );
+
+    await screen.findByText("Pedidos por hora");
+    expect(screen.getAllByText(/^\d{2}:00$/).map((label) => label.textContent)).toEqual([
+      "12:00",
+      "13:00",
+      "14:00",
+      "19:00",
+      "22:00"
+    ]);
+  });
 });
