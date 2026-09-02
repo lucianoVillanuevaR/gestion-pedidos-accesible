@@ -2,22 +2,19 @@
 
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  abrirTurnoRemoto,
-  sincronizarTurnoActual,
-} from "../../../services/cierresTurno";
+import { abrirTurnoRemoto, sincronizarTurnoActual } from "../../../services/cierresTurno";
 import { usePdvTurno } from "./usePdvTurno";
 
 vi.mock("../../../services/cierresTurno", () => ({
   abrirTurnoRemoto: vi.fn(),
   guardarCierreTurno: vi.fn(),
-  sincronizarTurnoActual: vi.fn(),
+  sincronizarTurnoActual: vi.fn()
 }));
 vi.mock("../../pedidos/PedidosShared", () => ({
   readTurnoAbierto: () => false,
   setTurnoAbierto: vi.fn(),
   setTurnoFechaInicio: vi.fn(),
-  TURNO_ABIERTO_STORAGE_KEY: "turno",
+  TURNO_ABIERTO_STORAGE_KEY: "turno"
 }));
 
 function deferred<T>() {
@@ -43,8 +40,8 @@ describe("usePdvTurno", () => {
         announce: vi.fn(),
         onTurnoStateChange: vi.fn(),
         playSoundCue: vi.fn(),
-        showFeedback: vi.fn(),
-      }),
+        showFeedback: vi.fn()
+      })
     );
 
     let first!: Promise<void>;

@@ -7,7 +7,7 @@ import { loginRequest } from "../services/auth";
 
 vi.mock("../services/auth", () => ({
   getCurrentUser: vi.fn(),
-  loginRequest: vi.fn(),
+  loginRequest: vi.fn()
 }));
 
 describe("AuthContext", () => {
@@ -24,16 +24,14 @@ describe("AuthContext", () => {
         email: "admin@demo.cl",
         label: "Admin",
         role: "admin",
-        username: "admin",
-      },
+        username: "admin"
+      }
     });
     const { result } = renderHook(() => useAuthContext(), {
-      wrapper: AuthProvider,
+      wrapper: AuthProvider
     });
 
-    await act(() =>
-      result.current.login({ identifier: " ADMIN ", password: " clave " }),
-    );
+    await act(() => result.current.login({ identifier: " ADMIN ", password: " clave " }));
 
     expect(loginRequest).toHaveBeenCalledWith("admin", " clave ");
   });

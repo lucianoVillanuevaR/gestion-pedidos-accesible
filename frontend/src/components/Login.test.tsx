@@ -9,7 +9,7 @@ import Login from "./Login";
 const login = vi.fn();
 
 vi.mock("../contexts/AuthContext", () => ({
-  useAuthContext: () => ({ login }),
+  useAuthContext: () => ({ login })
 }));
 vi.mock("../contexts/AccessibilityContext", () => ({
   useAccessibilityContext: () => ({
@@ -19,12 +19,12 @@ vi.mock("../contexts/AccessibilityContext", () => ({
     isVoiceEnabled: false,
     isSoundEnabled: false,
     soundVolume: "soft",
-    openAccessibilityPanel: vi.fn(),
-  }),
+    openAccessibilityPanel: vi.fn()
+  })
 }));
 vi.mock("../hooks/useVoice", () => ({ default: () => ({ speak: vi.fn() }) }));
 vi.mock("../hooks/useSoundFeedback", () => ({
-  useSoundFeedback: () => ({ error: vi.fn(), success: vi.fn() }),
+  useSoundFeedback: () => ({ error: vi.fn(), success: vi.fn() })
 }));
 
 function deferred<T>() {
@@ -40,13 +40,10 @@ async function renderFilledLogin() {
   render(
     <MemoryRouter>
       <Login />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
   await user.type(screen.getByLabelText("Usuario o correo"), "admin");
-  await user.type(
-    screen.getByLabelText("Contraseña", { exact: true }),
-    "12345678",
-  );
+  await user.type(screen.getByLabelText("Contraseña", { exact: true }), "12345678");
   return user;
 }
 
@@ -65,13 +62,23 @@ describe("Login", () => {
     await user.dblClick(button);
 
     expect(login).toHaveBeenCalledOnce();
-    expect((screen.getByRole("button", { name: "Ingresando..." }) as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Ingresando..."
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(true);
     expect(button.closest("form")?.getAttribute("aria-busy")).toBe("true");
 
     pending.resolve({ ok: false, message: "Credenciales inválidas" });
-    expect((await screen.findByRole("button", { name: "Ingresar al sistema" }) as HTMLButtonElement).disabled).toBe(
-      false
-    );
+    expect(
+      (
+        (await screen.findByRole("button", {
+          name: "Ingresar al sistema"
+        })) as HTMLButtonElement
+      ).disabled
+    ).toBe(false);
   });
 
   it("vuelve a permitir un intento después de un fallo", async () => {

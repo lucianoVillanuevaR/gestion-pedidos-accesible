@@ -3,22 +3,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { createPedido, getPedidos, updatePedido } from "../../services/pedidos";
 import useVoice from "../../hooks/useVoice";
-import type {
-  CreatePedidoPayload,
-  MetodoPago,
-  PedidoResponse,
-} from "../../types";
-import {
-  formatCurrency,
-  getPaymentLabel,
-  type FiltroCategoria,
-} from "../../utils/pdv";
+import type { CreatePedidoPayload, MetodoPago, PedidoResponse } from "../../types";
+import { formatCurrency, getPaymentLabel, type FiltroCategoria } from "../../utils/pdv";
 import { validatePedidoSubmit } from "../../validations/pedido.validation";
 import { ACCESSIBLE_STEP_COUNT } from "./PdvShared";
-import {
-  getPedidoDisplayNumber,
-  withPedidoNumerosTurno,
-} from "../pedidos/PedidosShared";
+import { getPedidoDisplayNumber, withPedidoNumerosTurno } from "../pedidos/PedidosShared";
 import { usePdvFeedback } from "./hooks/usePdvFeedback";
 import { usePdvOrderDraft } from "./hooks/usePdvOrderDraft";
 import { usePdvPedidoEditing } from "./hooks/usePdvPedidoEditing";
@@ -27,11 +16,7 @@ import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { usePdvTurno } from "./hooks/usePdvTurno";
 import { usePdvPrinting } from "./hooks/usePdvPrinting";
 import PdvFacilView from "./PdvFacilView";
-import {
-  buildPedidoSaveErrorFeedback,
-  buildPedidoValidationFeedback,
-  isStockError,
-} from "./PdvFeedbackHelpers";
+import { buildPedidoSaveErrorFeedback, buildPedidoValidationFeedback, isStockError } from "./PdvFeedbackHelpers";
 import PdvNormalView from "./PdvNormalView";
 import PdvPageStatus from "./components/PdvPageStatus";
 import PdvPrintTicket from "./components/PdvPrintTicket";
@@ -40,15 +25,10 @@ import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
 import { getPdvKeyboardAction } from "./pdvKeyboardNavigation";
 
 function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
-  const maxPedidoNumber = withPedidoNumerosTurno(pedidos).reduce(
-    (maxNumber, pedido) => {
-      const displayNumber = Number(getPedidoDisplayNumber(pedido));
-      return Number.isFinite(displayNumber)
-        ? Math.max(maxNumber, displayNumber)
-        : maxNumber;
-    },
-    0,
-  );
+  const maxPedidoNumber = withPedidoNumerosTurno(pedidos).reduce((maxNumber, pedido) => {
+    const displayNumber = Number(getPedidoDisplayNumber(pedido));
+    return Number.isFinite(displayNumber) ? Math.max(maxNumber, displayNumber) : maxNumber;
+  }, 0);
 
   return maxPedidoNumber + 1;
 }
@@ -61,9 +41,7 @@ function buildCantidadProductoText(cantidad: number, nombre: string) {
   return `${cantidad} unidades de ${nombre}`;
 }
 
-function buildDetalleProductoText(
-  item: PdvViewContextValue["pedidoDetalles"][number],
-) {
+function buildDetalleProductoText(item: PdvViewContextValue["pedidoDetalles"][number]) {
   const opcion = item.variante
     ? `, opción ${item.variante.nombre}`
     : item.personalizacion?.combinacion
@@ -76,19 +54,12 @@ function buildDetalleProductoText(
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const {
-    isHighContrast,
-    isVoiceEnabled,
-    isSoundEnabled,
-    soundVolume,
-    isPanelOpen,
-    openAccessibilityPanel,
-  } = useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume, isPanelOpen, openAccessibilityPanel } =
+    useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakManualRead } = useVoice({ enabled: true });
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<FiltroCategoria>("Destacados");
+  const [selectedCategory, setSelectedCategory] = useState<FiltroCategoria>("Destacados");
 
   const [searchTerm, setSearchTerm] = useState("");
   const {
@@ -99,14 +70,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     loadProductos,
     productos,
     productosFiltrados,
-    setLoadingError,
+    setLoadingError
   } = usePdvProducts({ searchTerm, selectedCategory });
 
   useEffect(() => {
     if (categoryFilters.length === 0) return;
-    if (
-      !categoryFilters.some((category) => category.value === selectedCategory)
-    ) {
+    if (!categoryFilters.some((category) => category.value === selectedCategory)) {
       setSelectedCategory(categoryFilters[0].value);
     }
   }, [categoryFilters, selectedCategory]);
@@ -120,10 +89,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const initialProductHandledRef = useRef(false);
   const lastAnnouncedAccessibleStepKeyRef = useRef("");
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
-  const playSoundCue = useCallback(
-    (cue: "error" | "success" | "warning") => soundFeedback[cue](),
-    [soundFeedback],
-  );
+  const playSoundCue = useCallback((cue: "error" | "success" | "warning") => soundFeedback[cue](), [soundFeedback]);
   const { feedback, feedbackRef, setFeedback, showFeedback } = usePdvFeedback();
 
   useEffect(() => {
@@ -140,14 +106,14 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         speak(message, options);
       }
     },
-    [isVoiceEnabled, speak],
+    [isVoiceEnabled, speak]
   );
 
   const { handleToggleTurno, isTurnoOpen, isTurnoUpdating } = usePdvTurno({
     announce,
     onTurnoStateChange: () => setAccessibleStep(1),
     playSoundCue,
-    showFeedback,
+    showFeedback
   });
 
   const announcePdvControl = useCallback(
@@ -157,25 +123,19 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         dedupeKey,
         cooldownMs: 700,
         interrupt: true,
-        force: true,
+        force: true
       });
     },
-    [speak],
+    [speak]
   );
 
   const selectCategory = useCallback(
     (value: FiltroCategoria, label?: string) => {
-      const categoryLabel =
-        label ??
-        categoryFilters.find((filter) => filter.value === value)?.label ??
-        value;
+      const categoryLabel = label ?? categoryFilters.find((filter) => filter.value === value)?.label ?? value;
       setSelectedCategory(value);
-      announcePdvControl(
-        `Categoría ${categoryLabel}.`,
-        `pdv-category:${value}`,
-      );
+      announcePdvControl(`Categoría ${categoryLabel}.`, `pdv-category:${value}`);
     },
-    [announcePdvControl, categoryFilters],
+    [announcePdvControl, categoryFilters]
   );
 
   const announceSearchBar = useCallback(() => {
@@ -206,7 +166,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       priority: "high",
       dedupeKey: "pdv-turno-cerrado-action",
       cooldownMs: 1800,
-      interrupt: true,
+      interrupt: true
     });
   }, [announce, playSoundCue]);
 
@@ -235,7 +195,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     setShowResetConfirm,
     showResetConfirm,
     total,
-    totalItems,
+    totalItems
   } = usePdvOrderDraft({
     announce,
     isTurnoOpen,
@@ -243,7 +203,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     playSoundCue,
     productos,
     setFeedback,
-    showFeedback,
+    showFeedback
   });
 
   const { cancelEditingPedido, editingPedido } = usePdvPedidoEditing({
@@ -253,14 +213,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     loadingProductos,
     navigate,
     search: location.search,
-    showFeedback,
+    showFeedback
   });
 
   useEffect(() => {
     if (editingPedido) {
-      setNextPedidoNumber(
-        Number(getPedidoDisplayNumber(editingPedido)) || editingPedido.id,
-      );
+      setNextPedidoNumber(Number(getPedidoDisplayNumber(editingPedido)) || editingPedido.id);
     }
   }, [editingPedido]);
 
@@ -269,7 +227,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     isTurnoOpen,
     metodoPago,
     observacion,
-    totalProductos: pedidoDetalles.length,
+    totalProductos: pedidoDetalles.length
   });
   const puedeRegistrar = !submitValidationError && !sending;
 
@@ -286,30 +244,23 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         dedupeKey: "read-summary-turno-cerrado",
         force: true,
         interrupt: true,
-        rate: 0.82,
+        rate: 0.82
       });
       return;
     }
 
-    const clienteText = clienteNombre.trim()
-      ? `Cliente: ${clienteNombre.trim()}.`
-      : "Falta nombre del cliente.";
+    const clienteText = clienteNombre.trim() ? `Cliente: ${clienteNombre.trim()}.` : "Falta nombre del cliente.";
     const metodoPagoText =
-      metodoPago !== ""
-        ? `Tipo de pago: ${getPaymentLabel(metodoPago)}.`
-        : "Falta método de pago.";
+      metodoPago !== "" ? `Tipo de pago: ${getPaymentLabel(metodoPago)}.` : "Falta método de pago.";
 
     if (pedidoDetalles.length === 0) {
-      speakManualRead(
-        `Pedido número ${nextPedidoNumber}. ${clienteText} Pedido vacío. ${metodoPagoText}`,
-        {
-          priority: "high",
-          dedupeKey: "read-summary-empty",
-          force: true,
-          interrupt: true,
-          rate: 0.82,
-        },
-      );
+      speakManualRead(`Pedido número ${nextPedidoNumber}. ${clienteText} Pedido vacío. ${metodoPagoText}`, {
+        priority: "high",
+        dedupeKey: "read-summary-empty",
+        force: true,
+        interrupt: true,
+        rate: 0.82
+      });
       return;
     }
 
@@ -321,7 +272,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       `Productos del pedido: ${itemLines.join("; ")}.`,
       `Total de productos: ${totalItems}.`,
       metodoPagoText,
-      `Total a pagar: ${formatCurrency(total)}.`,
+      `Total a pagar: ${formatCurrency(total)}.`
     ];
 
     if (observacion.trim()) {
@@ -333,7 +284,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       dedupeKey: "read-summary",
       force: true,
       interrupt: true,
-      rate: isAccessible ? 0.8 : 0.86,
+      rate: isAccessible ? 0.8 : 0.86
     });
   }, [
     clienteNombre,
@@ -345,7 +296,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     pedidoDetalles,
     speakManualRead,
     total,
-    totalItems,
+    totalItems
   ]);
 
   useEffect(() => {
@@ -357,15 +308,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       handleReadPedidoSummary();
     };
 
-    window.addEventListener(
-      "riquisimo:read-pedido-summary",
-      handleReadSummaryRequest,
-    );
-    return () =>
-      window.removeEventListener(
-        "riquisimo:read-pedido-summary",
-        handleReadSummaryRequest,
-      );
+    window.addEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
+    return () => window.removeEventListener("riquisimo:read-pedido-summary", handleReadSummaryRequest);
   }, [handleReadPedidoSummary]);
 
   useEffect(() => {
@@ -390,15 +334,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     addProduct(producto);
     setAccessibleStep(3);
     navigate(location.pathname, { replace: true, state: null });
-  }, [
-    addProduct,
-    isAccessible,
-    loadingProductos,
-    location.pathname,
-    location.state,
-    navigate,
-    productos,
-  ]);
+  }, [addProduct, isAccessible, loadingProductos, location.pathname, location.state, navigate, productos]);
 
   const handleSubmit = async () => {
     if (sendingRef.current) return;
@@ -414,7 +350,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         priority: "high",
         dedupeKey: `submit-error:${validationFeedback.message}`,
         cooldownMs: 2500,
-        interrupt: true,
+        interrupt: true
       });
       return;
     }
@@ -425,11 +361,11 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         productoId: item.productoId,
         cantidad: item.cantidad,
         varianteId: item.variante?.id,
-        personalizacion: item.personalizacion,
+        personalizacion: item.personalizacion
       })),
       ...(!editingPedido && { idempotencyKey: idempotencyKeyRef.current }),
       metodoPago: metodoPago as MetodoPago,
-      observacion: observacion.trim() || undefined,
+      observacion: observacion.trim() || undefined
     };
 
     try {
@@ -439,17 +375,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         editingPedido
           ? await updatePedido(editingPedido.id, {
               ...payload,
-              expectedUpdatedAt: editingPedido.updatedAt ?? "",
+              expectedUpdatedAt: editingPedido.updatedAt ?? ""
             })
           : await createPedido(payload)
       ) as PedidoResponse;
-      const numeroPedido = editingPedido
-        ? getPedidoDisplayNumber(editingPedido)
-        : pedidoCreado.numeroTurno;
+      const numeroPedido = editingPedido ? getPedidoDisplayNumber(editingPedido) : pedidoCreado.numeroTurno;
       setNextPedidoNumber((currentNumber) =>
-        typeof numeroPedido === "number" && Number.isFinite(numeroPedido)
-          ? numeroPedido + 1
-          : currentNumber + 1,
+        typeof numeroPedido === "number" && Number.isFinite(numeroPedido) ? numeroPedido + 1 : currentNumber + 1
       );
       const successMsg = editingPedido
         ? `Pedido #${numeroPedido} modificado`
@@ -458,10 +390,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           : "Pedido registrado";
       showFeedback({
         type: "success",
-        title: editingPedido
-          ? "Pedido modificado correctamente"
-          : "Pedido creado correctamente",
-        message: successMsg,
+        title: editingPedido ? "Pedido modificado correctamente" : "Pedido creado correctamente",
+        message: successMsg
       });
       clearPedidoForm();
       if (!editingPedido) idempotencyKeyRef.current = crypto.randomUUID();
@@ -476,37 +406,29 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           priority: "high",
           dedupeKey: "pedido-registrado",
           cooldownMs: 3000,
-          interrupt: true,
-        },
+          interrupt: true
+        }
       );
       if (editingPedido) {
         navigate(isAccessible ? "/pedidos/facil" : "/pedidos", {
-          replace: true,
+          replace: true
         });
         return;
       }
       shouldResetAccessibleFlow = isAccessible;
       void refreshNextPedidoNumber();
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Error al registrar pedido";
-      showFeedback(
-        buildPedidoSaveErrorFeedback(
-          message || "Error al registrar",
-          Boolean(editingPedido),
-        ),
-      );
+      const message = error instanceof Error ? error.message : "Error al registrar pedido";
+      showFeedback(buildPedidoSaveErrorFeedback(message || "Error al registrar", Boolean(editingPedido)));
       playSoundCue(isStockError(message) ? "warning" : "error");
       announce(
-        isStockError(message)
-          ? "Stock insuficiente para registrar el pedido"
-          : "No pudimos registrar el pedido",
+        isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido",
         {
           priority: "high",
           dedupeKey: "pedido-registrado-error",
           cooldownMs: 3000,
-          interrupt: true,
-        },
+          interrupt: true
+        }
       );
     } finally {
       sendingRef.current = false;
@@ -525,14 +447,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   };
 
   const handlePrintError = useCallback(() => {
-    const msg =
-      "No se pudo abrir la impresión. Revisa que el navegador permita imprimir.";
+    const msg = "No se pudo abrir la impresión. Revisa que el navegador permita imprimir.";
     showFeedback({ type: "error", title: "No se pudo imprimir", message: msg });
     announce(msg, {
       priority: "high",
       dedupeKey: "print-error",
       cooldownMs: 2500,
-      interrupt: true,
+      interrupt: true
     });
   }, [announce, showFeedback]);
 
@@ -540,29 +461,17 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     customerTicketRef,
     kitchenTicketRef,
     handlePrintCustomer: handlePrint,
-    handlePrintKitchen,
+    handlePrintKitchen
   } = usePdvPrinting({ onPrintError: handlePrintError });
 
-  const bgWrapper = isHighContrast
-    ? "bg-black"
-    : isAccessible
-      ? "bg-white"
-      : "bg-[#F7F7F7]";
-  const textColor = isHighContrast
-    ? "text-white"
-    : isAccessible
-      ? "text-slate-950"
-      : "text-[#1F2937]";
+  const bgWrapper = isHighContrast ? "bg-black" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
+  const textColor = isHighContrast ? "text-white" : isAccessible ? "text-slate-950" : "text-[#1F2937]";
   const cardBorder = isHighContrast
     ? "border-2 border-yellow-400"
     : isAccessible
       ? "border-2 border-slate-900"
       : "border border-slate-200";
-  const panelBg = isHighContrast
-    ? "bg-black contrast-panel"
-    : isAccessible
-      ? "bg-white"
-      : "bg-[#F7F7F7]";
+  const panelBg = isHighContrast ? "bg-black contrast-panel" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
   const quickActionButtonClass = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 font-bold text-[13px] whitespace-nowrap transition ${
     isHighContrast
       ? "contrast-button-secondary"
@@ -600,7 +509,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
           return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
       }
     },
-    [editingPedido, isTurnoOpen, metodoPago, total],
+    [editingPedido, isTurnoOpen, metodoPago, total]
   );
 
   const getAccessibleStepValidation = useCallback(
@@ -631,14 +540,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
       return null;
     },
-    [
-      clienteNombre,
-      isAccessible,
-      isTurnoOpen,
-      metodoPago,
-      pedidoDetalles.length,
-      submitValidationError,
-    ],
+    [clienteNombre, isAccessible, isTurnoOpen, metodoPago, pedidoDetalles.length, submitValidationError]
   );
 
   const accessibleStepValidation = getAccessibleStepValidation(accessibleStep);
@@ -662,16 +564,9 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       cooldownMs: 0,
       delayMs: 120,
       force: true,
-      interrupt: true,
+      interrupt: true
     });
-  }, [
-    accessibleStep,
-    announce,
-    getAccessibleStepMessage,
-    isAccessible,
-    isTurnoOpen,
-    isVoiceEnabled,
-  ]);
+  }, [accessibleStep, announce, getAccessibleStepMessage, isAccessible, isTurnoOpen, isVoiceEnabled]);
 
   const goNextAccessibleStep = useCallback(() => {
     const validationMessage = getAccessibleStepValidation(accessibleStep);
@@ -683,7 +578,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         priority: "high",
         dedupeKey: `pdv-step-validation:${accessibleStep}:${validationMessage}`,
         cooldownMs: 1800,
-        interrupt: true,
+        interrupt: true
       });
       return;
     }
@@ -692,13 +587,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       const nextStep = Math.min(ACCESSIBLE_STEP_COUNT, currentStep + 1);
       return nextStep;
     });
-  }, [
-    accessibleStep,
-    announce,
-    getAccessibleStepValidation,
-    playSoundCue,
-    showFeedback,
-  ]);
+  }, [accessibleStep, announce, getAccessibleStepValidation, playSoundCue, showFeedback]);
 
   const goPrevAccessibleStep = useCallback(() => {
     setAccessibleStep((currentStep) => {
@@ -770,9 +659,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     increaseProduct,
     isAccessible,
     isEditingPedido: Boolean(editingPedido),
-    editingPedidoNumber: editingPedido
-      ? getPedidoDisplayNumber(editingPedido)
-      : null,
+    editingPedidoNumber: editingPedido ? getPedidoDisplayNumber(editingPedido) : null,
     isHighContrast,
     isPanelOpen,
     isTurnoOpen,
@@ -811,23 +698,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     showResetConfirm,
     textColor,
     total,
-    totalItems,
+    totalItems
   } satisfies PdvViewContextValue;
 
   return (
     <PdvViewProvider value={viewContext}>
-      <main
-        className={`min-h-screen ${bgWrapper} ${textColor}`}
-        aria-busy={sending || isTurnoUpdating}
-      >
+      <main className={`min-h-screen ${bgWrapper} ${textColor}`} aria-busy={sending || isTurnoUpdating}>
         <div
           className={`w-full print:px-0 print:py-0 ${isAccessible ? "mx-auto max-w-[1520px] px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6" : "px-0 py-0"}`}
           style={{
-            backgroundColor: isHighContrast
-              ? "#000000"
-              : isAccessible
-                ? "white"
-                : "#F7F7F7",
+            backgroundColor: isHighContrast ? "#000000" : isAccessible ? "white" : "#F7F7F7"
           }}
         >
           <PdvPageStatus
@@ -863,7 +743,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
               numeroPedido: nextPedidoNumber,
               observacion,
               pedidoDetalles,
-              total,
+              total
             }}
           />
         </div>

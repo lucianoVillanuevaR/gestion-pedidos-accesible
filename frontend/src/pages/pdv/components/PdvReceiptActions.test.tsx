@@ -75,7 +75,7 @@ function buildContext(canPrintCurrentOrder: boolean): PdvViewContextValue {
     showResetConfirm: false,
     textColor: "",
     total: 0,
-    totalItems: 0,
+    totalItems: 0
   };
 }
 
@@ -86,13 +86,10 @@ describe("PdvReceiptActions", () => {
     render(
       <PdvViewProvider value={buildContext(false)}>
         <PdvReceiptActions />
-      </PdvViewProvider>,
+      </PdvViewProvider>
     );
 
-    expect(
-      (screen.getByRole("button", { name: /Imprimir/i }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
+    expect((screen.getByRole("button", { name: /Imprimir/i }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByText(/Imprimir #/i)).toBeNull();
   });
 
@@ -100,7 +97,7 @@ describe("PdvReceiptActions", () => {
     render(
       <PdvViewProvider value={buildContext(true)}>
         <PdvReceiptActions />
-      </PdvViewProvider>,
+      </PdvViewProvider>
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Imprimir/i }));
@@ -108,16 +105,16 @@ describe("PdvReceiptActions", () => {
     expect(
       (
         screen.getByRole("button", {
-          name: "Ticket de cocina",
+          name: "Ticket de cocina"
         }) as HTMLButtonElement
-      ).disabled,
+      ).disabled
     ).toBe(false);
     expect(
       (
         screen.getByRole("button", {
-          name: "Ticket de cliente",
+          name: "Ticket de cliente"
         }) as HTMLButtonElement
-      ).disabled,
+      ).disabled
     ).toBe(false);
   });
 });

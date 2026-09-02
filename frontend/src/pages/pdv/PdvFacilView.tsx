@@ -6,20 +6,13 @@ import {
   Eye,
   LockKeyhole,
   Printer,
-  UnlockKeyhole,
+  UnlockKeyhole
 } from "lucide-react";
 import { useState } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
-import {
-  PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH,
-  sanitizeClienteNombreInput,
-} from "../../validations/pedido.validation";
+import { PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH, sanitizeClienteNombreInput } from "../../validations/pedido.validation";
 import { formatCurrency, getPaymentLabel } from "../../utils/pdv";
-import {
-  PAYMENT_OPTIONS,
-  ProductCard,
-  usesProductConfigurator,
-} from "./PdvShared";
+import { PAYMENT_OPTIONS, ProductCard, usesProductConfigurator } from "./PdvShared";
 import PdvFeedbackMessage from "./components/PdvFeedbackMessage";
 import AccessibleDialog from "./components/AccessibleDialog";
 import { usePdvViewContext } from "./PdvViewContext";
@@ -65,41 +58,39 @@ function PdvFacilView() {
     sending,
     setAccessibleStep,
     setClienteNombre,
-    total,
+    total
   } = usePdvViewContext();
 
   const stepGuidance = !isTurnoOpen
     ? {
         title: "Abre turno",
-        description: "Turno cerrado. Abre turno para registrar pedidos.",
+        description: "Turno cerrado. Abre turno para registrar pedidos."
       }
     : [
         {
           title: "Elige una categoría",
-          description: "",
+          description: ""
         },
         {
           title: "Elige un producto",
-          description:
-            "Selecciona un producto y usa los botones grandes para indicar la cantidad.",
+          description: "Selecciona un producto y usa los botones grandes para indicar la cantidad."
         },
         {
           title: "Revisa tu pedido",
-          description:
-            "Confirma lo que elegiste antes de seguir al siguiente paso.",
+          description: "Confirma lo que elegiste antes de seguir al siguiente paso."
         },
         {
           title: "Datos del comprador",
-          description: "Ingresa el nombre del comprador.",
+          description: "Ingresa el nombre del comprador."
         },
         {
           title: "Selecciona el pago",
-          description: "Escoge un método de pago con una sola pulsación.",
+          description: "Escoge un método de pago con una sola pulsación."
         },
         {
           title: isEditingPedido ? "Guardar cambios" : "Registrar pedido",
-          description: "",
-        },
+          description: ""
+        }
       ][accessibleStep - 1];
   const visibleStepNumber = isTurnoOpen ? accessibleStep : 1;
 
@@ -112,9 +103,7 @@ function PdvFacilView() {
               Paso {visibleStepNumber}: {stepGuidance.title}
             </h1>
             {isEditingPedido && (
-              <p className="mt-3 text-xl font-black text-yellow-700">
-                Modificando pedido #{editingPedidoNumber}
-              </p>
+              <p className="mt-3 text-xl font-black text-yellow-700">Modificando pedido #{editingPedidoNumber}</p>
             )}
             {stepGuidance.description && (
               <p
@@ -131,9 +120,7 @@ function PdvFacilView() {
                 type="button"
                 onClick={cancelEditingPedido}
                 className={`min-h-[56px] rounded-2xl border-2 px-5 text-lg font-black ${
-                  isHighContrast
-                    ? "contrast-button-secondary"
-                    : "border-red-700 bg-white text-red-800"
+                  isHighContrast ? "contrast-button-secondary" : "border-red-700 bg-white text-red-800"
                 }`}
               >
                 Cancelar modificación
@@ -167,13 +154,7 @@ function PdvFacilView() {
               ) : (
                 <UnlockKeyhole aria-hidden="true" className="h-6 w-6" />
               )}
-              <span>
-                {isTurnoUpdating
-                  ? "Procesando..."
-                  : isTurnoOpen
-                    ? "Cerrar turno"
-                    : "Abrir turno"}
-              </span>
+              <span>{isTurnoUpdating ? "Procesando..." : isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
             </button>
 
             <EasyModeActions />
@@ -182,12 +163,7 @@ function PdvFacilView() {
       </header>
 
       {feedback && (
-        <PdvFeedbackMessage
-          feedback={feedback}
-          isAccessible
-          isHighContrast={isHighContrast}
-          className={cardBorder}
-        />
+        <PdvFeedbackMessage feedback={feedback} isAccessible isHighContrast={isHighContrast} className={cardBorder} />
       )}
 
       {!isTurnoOpen && (
@@ -197,10 +173,7 @@ function PdvFacilView() {
           role="alert"
         >
           <div className="mx-auto max-w-3xl text-center">
-            <h2
-              id="turno-cerrado-title"
-              className="text-3xl font-black text-slate-950"
-            >
+            <h2 id="turno-cerrado-title" className="text-3xl font-black text-slate-950">
               Paso 1: Abre turno
             </h2>
             <p
@@ -223,9 +196,7 @@ function PdvFacilView() {
             </button>
             <p
               className={`mt-5 rounded-2xl border px-4 py-3 text-lg font-black ${
-                isHighContrast
-                  ? "border-yellow-400 text-yellow-200"
-                  : "border-slate-300 bg-slate-50 text-slate-800"
+                isHighContrast ? "border-yellow-400 text-yellow-200" : "border-slate-300 bg-slate-50 text-slate-800"
               }`}
             >
               Las categorías y productos quedan bloqueados hasta abrir turno.
@@ -243,18 +214,13 @@ function PdvFacilView() {
         >
           <div className="flex items-center justify-center gap-3">
             <AlertTriangle className="h-6 w-6 shrink-0" aria-hidden="true" />
-            <p className="text-center text-lg font-black">
-              {accessibleStepValidation}
-            </p>
+            <p className="text-center text-lg font-black">{accessibleStepValidation}</p>
           </div>
         </div>
       )}
 
       {isTurnoOpen && accessibleStep === 1 && (
-        <section
-          aria-labelledby="step1"
-          className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}
-        >
+        <section aria-labelledby="step1" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step1" className="sr-only">
             Paso 1: Elige categoría
           </h2>
@@ -288,9 +254,7 @@ function PdvFacilView() {
           </div>
 
           <div className="mt-6 border-t border-slate-200 pt-5">
-            <p className="mb-3 text-base font-semibold text-slate-600">
-              Accesos rápidos
-            </p>
+            <p className="mb-3 text-base font-semibold text-slate-600">Accesos rápidos</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
@@ -323,22 +287,15 @@ function PdvFacilView() {
       )}
 
       {isTurnoOpen && accessibleStep === 2 && (
-        <section
-          aria-labelledby="step2"
-          className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}
-        >
+        <section aria-labelledby="step2" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step2" className="sr-only">
             Paso 2: Elige producto
           </h2>
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
             {accessibleProductos.length === 0 ? (
               <div className="rounded-xl border-2 border-dashed p-8 text-center col-span-2">
-                <p className="font-bold text-lg">
-                  No hay productos en esta categoría.
-                </p>
-                <p className="mt-2">
-                  Prueba otra categoría o selecciona "Ver todos".
-                </p>
+                <p className="font-bold text-lg">No hay productos en esta categoría.</p>
+                <p className="mt-2">Prueba otra categoría o selecciona "Ver todos".</p>
                 <div className="mt-4 flex justify-center">
                   <button
                     type="button"
@@ -354,11 +311,7 @@ function PdvFacilView() {
                 <div key={producto.id}>
                   <ProductCard
                     producto={producto}
-                    cantidad={
-                      usesProductConfigurator(producto)
-                        ? 0
-                        : items[producto.id] || 0
-                    }
+                    cantidad={usesProductConfigurator(producto) ? 0 : items[producto.id] || 0}
                     isAccessible
                     isHighContrast={isHighContrast}
                     onIncrease={() => increaseProduct(producto)}
@@ -379,18 +332,13 @@ function PdvFacilView() {
       )}
 
       {isTurnoOpen && accessibleStep === 3 && (
-        <section
-          aria-labelledby="step3"
-          className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}
-        >
+        <section aria-labelledby="step3" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step3" className="sr-only">
             Paso 3: Revisa tu pedido
           </h2>
           {pedidoDetalles.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed p-8 text-center">
-              <p className="font-bold text-lg">
-                Todavía no hay productos agregados.
-              </p>
+              <p className="font-bold text-lg">Todavía no hay productos agregados.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -402,9 +350,7 @@ function PdvFacilView() {
                   <div>
                     <p className="font-black text-lg">{item.producto.nombre}</p>
                     {item.variante && (
-                      <p className="text-base font-black text-yellow-700">
-                        Opción: {item.variante.nombre}
-                      </p>
+                      <p className="text-base font-black text-yellow-700">Opción: {item.variante.nombre}</p>
                     )}
                     {item.personalizacion?.combinacion && (
                       <p className="text-base font-black text-yellow-700">
@@ -412,23 +358,17 @@ function PdvFacilView() {
                       </p>
                     )}
                     {item.personalizacion?.aderezos.length ? (
-                      <p className="text-base text-slate-600">
-                        Aderezos: {item.personalizacion.aderezos.join(", ")}
-                      </p>
+                      <p className="text-base text-slate-600">Aderezos: {item.personalizacion.aderezos.join(", ")}</p>
                     ) : null}
                     {item.personalizacion?.comentario && (
-                      <p className="text-base italic text-slate-600">
-                        “{item.personalizacion.comentario}”
-                      </p>
+                      <p className="text-base italic text-slate-600">“{item.personalizacion.comentario}”</p>
                     )}
                     <p className="text-slate-600">
                       {item.cantidad} x {formatCurrency(item.producto.precio)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <p className="font-black text-lg">
-                      {formatCurrency(item.subtotal)}
-                    </p>
+                    <p className="font-black text-lg">{formatCurrency(item.subtotal)}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -458,19 +398,13 @@ function PdvFacilView() {
       )}
 
       {isTurnoOpen && accessibleStep === 4 && (
-        <section
-          aria-labelledby="step4"
-          className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}
-        >
+        <section aria-labelledby="step4" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step4" className="sr-only">
             Paso 4: Datos del comprador
           </h2>
 
           <div className="mb-5">
-            <label
-              htmlFor="accessibleClienteNombre"
-              className="mb-2 block font-bold text-base"
-            >
+            <label htmlFor="accessibleClienteNombre" className="mb-2 block font-bold text-base">
               Nombre del comprador <span aria-hidden="true">*</span>
             </label>
             <input
@@ -480,9 +414,7 @@ function PdvFacilView() {
               required
               value={clienteNombre}
               maxLength={PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH}
-              onChange={(event) =>
-                setClienteNombre(sanitizeClienteNombreInput(event.target.value))
-              }
+              onChange={(event) => setClienteNombre(sanitizeClienteNombreInput(event.target.value))}
               placeholder="Ej: Juan Pérez"
               className="min-h-[58px] w-full rounded-xl border-2 border-slate-300 bg-white px-4 py-3 text-lg font-bold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-4 focus:ring-slate-900 focus:ring-offset-2"
             />
@@ -498,10 +430,7 @@ function PdvFacilView() {
       )}
 
       {isTurnoOpen && accessibleStep === 5 && (
-        <section
-          aria-labelledby="step5"
-          className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}
-        >
+        <section aria-labelledby="step5" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step5" className="sr-only">
             Paso 5: Método de pago
           </h2>
@@ -524,10 +453,7 @@ function PdvFacilView() {
                   }`}
                   aria-pressed={active}
                 >
-                  <option.Icon
-                    className="h-6 w-6 shrink-0"
-                    aria-hidden="true"
-                  />
+                  <option.Icon className="h-6 w-6 shrink-0" aria-hidden="true" />
                   <span>{option.label}</span>
                   {active ? (
                     <span
@@ -537,10 +463,7 @@ function PdvFacilView() {
                       Seleccionado
                     </span>
                   ) : (
-                    <span
-                      className="h-7 w-7 rounded-full border-2 border-slate-400 bg-white"
-                      aria-hidden="true"
-                    />
+                    <span className="h-7 w-7 rounded-full border-2 border-slate-400 bg-white" aria-hidden="true" />
                   )}
                 </button>
               );
@@ -557,10 +480,7 @@ function PdvFacilView() {
       )}
 
       {isTurnoOpen && accessibleStep === 6 && (
-        <section
-          aria-labelledby="step6"
-          className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}
-        >
+        <section aria-labelledby="step6" className={`rounded-2xl ${cardBorder} p-6 ${panelBg}`}>
           <h2 id="step6" className="sr-only">
             Paso 6: Confirmar pedido
           </h2>
@@ -637,9 +557,7 @@ function PdvFacilView() {
                 type="button"
                 onClick={() => setIsSubmitConfirmOpen(true)}
                 disabled={!puedeRegistrar}
-                aria-describedby={
-                  accessibleStepValidation ? "facil-step-validation" : undefined
-                }
+                aria-describedby={accessibleStepValidation ? "facil-step-validation" : undefined}
                 className={`rounded-lg border-2 py-4 px-6 font-black text-lg ${puedeRegistrar ? "border-emerald-900 bg-emerald-700 text-white hover:bg-emerald-800" : "border-slate-300 bg-slate-300 text-slate-500"} ${isHighContrast && puedeRegistrar ? "contrast-button-success" : ""}`}
                 style={{ minHeight: 64 }}
               >
@@ -664,10 +582,7 @@ function PdvFacilView() {
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2
-                id="resumen-pedido-title"
-                className="text-3xl font-black text-slate-950"
-              >
+              <h2 id="resumen-pedido-title" className="text-3xl font-black text-slate-950">
                 Resumen del pedido
               </h2>
               <p className="mt-2 text-lg font-bold text-slate-700">
@@ -692,13 +607,9 @@ function PdvFacilView() {
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-xl font-black text-slate-950">
-                      {item.producto.nombre}
-                    </p>
+                    <p className="text-xl font-black text-slate-950">{item.producto.nombre}</p>
                     {item.variante && (
-                      <p className="mt-1 text-base font-black text-yellow-700">
-                        Opción: {item.variante.nombre}
-                      </p>
+                      <p className="mt-1 text-base font-black text-yellow-700">Opción: {item.variante.nombre}</p>
                     )}
                     {item.personalizacion?.combinacion && (
                       <p className="mt-1 text-base font-black text-yellow-700">
@@ -711,17 +622,13 @@ function PdvFacilView() {
                       </p>
                     ) : null}
                     {item.personalizacion?.comentario && (
-                      <p className="mt-1 text-base italic text-slate-600">
-                        “{item.personalizacion.comentario}”
-                      </p>
+                      <p className="mt-1 text-base italic text-slate-600">“{item.personalizacion.comentario}”</p>
                     )}
                     <p className="mt-2 text-base font-bold text-slate-600">
                       {item.cantidad} x {formatCurrency(item.producto.precio)}
                     </p>
                   </div>
-                  <p className="text-xl font-black text-slate-950">
-                    {formatCurrency(item.subtotal)}
-                  </p>
+                  <p className="text-xl font-black text-slate-950">{formatCurrency(item.subtotal)}</p>
                 </div>
               </article>
             ))}
@@ -734,9 +641,7 @@ function PdvFacilView() {
             </div>
             <div className="flex items-center justify-between gap-3">
               <span>Método de pago</span>
-              <span>
-                {metodoPago ? getPaymentLabel(metodoPago) : "Sin seleccionar"}
-              </span>
+              <span>{metodoPago ? getPaymentLabel(metodoPago) : "Sin seleccionar"}</span>
             </div>
             <div className="flex items-center justify-between gap-3 border-t border-slate-300 pt-3 text-2xl">
               <span>Total</span>
@@ -762,17 +667,10 @@ function PdvFacilView() {
           onClose={() => setIsSubmitConfirmOpen(false)}
           panelClassName={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
         >
-          <h2
-            id="confirmar-pedido-title"
-            className="text-3xl font-black text-slate-950"
-          >
-            {isEditingPedido
-              ? "¿Deseas guardar los cambios?"
-              : "¿Deseas registrar este pedido?"}
+          <h2 id="confirmar-pedido-title" className="text-3xl font-black text-slate-950">
+            {isEditingPedido ? "¿Deseas guardar los cambios?" : "¿Deseas registrar este pedido?"}
           </h2>
-          <p className="mt-3 text-xl font-bold text-slate-700">
-            Total a pagar: {formatCurrency(total)}
-          </p>
+          <p className="mt-3 text-xl font-bold text-slate-700">Total a pagar: {formatCurrency(total)}</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
@@ -802,10 +700,7 @@ function PdvFacilView() {
           onClose={() => setIsCloseTurnoConfirmOpen(false)}
           panelClassName={`w-full max-w-xl rounded-[28px] p-6 shadow-2xl ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
         >
-          <h2
-            id="confirmar-cierre-turno-title"
-            className="text-3xl font-black text-slate-950"
-          >
+          <h2 id="confirmar-cierre-turno-title" className="text-3xl font-black text-slate-950">
             ¿Deseas cerrar el turno?
           </h2>
           <p className="mt-3 text-xl font-bold text-slate-700">
@@ -841,7 +736,7 @@ function AccessibleStepNavigation({
   isHighContrast,
   onNext,
   onPrevious,
-  validationError,
+  validationError
 }: {
   isHighContrast: boolean;
   onNext: () => void;
@@ -863,9 +758,7 @@ function AccessibleStepNavigation({
         disabled={Boolean(validationError)}
         aria-describedby={validationError ? "facil-step-validation" : undefined}
         className={`ml-auto rounded-lg px-4 py-3 font-bold ${
-          validationError
-            ? "cursor-not-allowed bg-slate-300 text-slate-500"
-            : "bg-slate-900 text-white"
+          validationError ? "cursor-not-allowed bg-slate-300 text-slate-500" : "bg-slate-900 text-white"
         } ${isHighContrast && !validationError ? "contrast-button-primary" : ""}`}
       >
         Continuar

@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from "react";
+import { createContext, useContext, type Dispatch, type RefObject, type SetStateAction } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import type { MetodoPago, Producto } from "../../types";
 import type { FiltroCategoria } from "../../utils/pdv";

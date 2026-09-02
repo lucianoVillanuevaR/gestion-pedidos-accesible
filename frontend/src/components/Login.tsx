@@ -1,11 +1,4 @@
-import {
-  Accessibility,
-  CheckCircle2,
-  ChevronDown,
-  Eye,
-  EyeOff,
-  Volume2,
-} from "lucide-react";
+import { Accessibility, CheckCircle2, ChevronDown, Eye, EyeOff, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import fondoR from "../assets/fondoR.webp";
@@ -23,8 +16,7 @@ type FeedbackState = {
   message: string;
 };
 
-const LOGIN_HELP_MESSAGE =
-  "Ingrese su correo y contraseña. Luego presione Ingresar al sistema.";
+const LOGIN_HELP_MESSAGE = "Ingrese su correo y contraseña. Luego presione Ingresar al sistema.";
 const EASY_MODE_TOAST_DURATION_MS = 4000;
 
 function Login() {
@@ -37,7 +29,7 @@ function Login() {
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>({
     type: "",
-    message: "",
+    message: ""
   });
   const [showEasyModeToast, setShowEasyModeToast] = useState(false);
   const navigateTimerRef = useRef<number | null>(null);
@@ -51,7 +43,7 @@ function Login() {
     isVoiceEnabled,
     isSoundEnabled,
     soundVolume,
-    openAccessibilityPanel,
+    openAccessibilityPanel
   } = useAccessibilityContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const { speak: speakHelp } = useVoice({ enabled: true });
@@ -135,9 +127,7 @@ function Login() {
 
       navigateTimerRef.current = window.setTimeout(() => {
         const defaultRoute = getDefaultRouteForRole(result.user.role);
-        const nextRoute = isAccessible
-          ? (getEasyRoute(defaultRoute) ?? defaultRoute)
-          : defaultRoute;
+        const nextRoute = isAccessible ? (getEasyRoute(defaultRoute) ?? defaultRoute) : defaultRoute;
         navigate(nextRoute, { replace: true });
       }, 700);
     } finally {
@@ -157,7 +147,7 @@ function Login() {
       dedupeKey: "login-help",
       force: true,
       interrupt: true,
-      priority: "high",
+      priority: "high"
     });
   };
 
@@ -211,7 +201,7 @@ function Login() {
           isAccessible
             ? undefined
             : {
-                backgroundImage: `url(${fondoR})`,
+                backgroundImage: `url(${fondoR})`
               }
         }
       >
@@ -225,19 +215,13 @@ function Login() {
               <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
               Modo fácil activado.
             </p>
-            <p className="mt-1 text-sm font-semibold leading-snug">
-              Al iniciar sesión entrarás al modo fácil.
-            </p>
+            <p className="mt-1 text-sm font-semibold leading-snug">Al iniciar sesión entrarás al modo fácil.</p>
           </div>
         )}
 
         <section className={`relative w-full max-w-md ${cardClass}`}>
           <div className={isAccessible ? "space-y-8" : "space-y-7"}>
-            <header
-              className={
-                isAccessible ? "space-y-5 text-center" : "space-y-4 text-center"
-              }
-            >
+            <header className={isAccessible ? "space-y-5 text-center" : "space-y-4 text-center"}>
               <div
                 className={`mx-auto inline-flex justify-center rounded-2xl ${
                   isAccessible
@@ -248,41 +232,21 @@ function Login() {
                 <img
                   src={logoRiq}
                   alt="Logo de Riquísimo S.P.A"
-                  className={
-                    isAccessible
-                      ? "h-24 w-32 object-contain"
-                      : "h-20 w-28 object-contain"
-                  }
+                  className={isAccessible ? "h-24 w-32 object-contain" : "h-20 w-28 object-contain"}
                 />
               </div>
 
               <h1
-                className={
-                  isAccessible
-                    ? "text-[32px] font-bold text-slate-900"
-                    : "text-3xl font-bold text-slate-900"
-                }
+                className={isAccessible ? "text-[32px] font-bold text-slate-900" : "text-3xl font-bold text-slate-900"}
               >
                 Riquísimo S.P.A
               </h1>
 
-              <p
-                className={
-                  isAccessible
-                    ? "text-xl text-slate-700"
-                    : "text-sm text-slate-600"
-                }
-              >
+              <p className={isAccessible ? "text-xl text-slate-700" : "text-sm text-slate-600"}>
                 Sistema de gestión de pedidos
               </p>
 
-              <p
-                className={
-                  isAccessible
-                    ? "text-lg font-semibold text-slate-800"
-                    : "text-sm text-slate-500"
-                }
-              >
+              <p className={isAccessible ? "text-lg font-semibold text-slate-800" : "text-sm text-slate-500"}>
                 Iniciar sesión
               </p>
             </header>
@@ -311,9 +275,7 @@ function Login() {
                   }}
                   onFocus={() => handleFieldFocus("Ingrese su correo")}
                   className={inputClass}
-                  aria-describedby={
-                    feedback.message ? "login-feedback" : undefined
-                  }
+                  aria-describedby={feedback.message ? "login-feedback" : undefined}
                 />
               </div>
 
@@ -336,42 +298,26 @@ function Login() {
                     }}
                     onFocus={() => handleFieldFocus("Ingrese su contraseña")}
                     className={passwordInputClass}
-                    aria-describedby={
-                      feedback.message ? "login-feedback" : undefined
-                    }
+                    aria-describedby={feedback.message ? "login-feedback" : undefined}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     className={passwordToggleClass}
-                    aria-label={
-                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                    }
+                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                     aria-pressed={showPassword}
-                    title={
-                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-                    }
+                    title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {showPassword ? (
-                      <EyeOff
-                        className={isAccessible ? "h-6 w-6" : "h-5 w-5"}
-                        aria-hidden="true"
-                      />
+                      <EyeOff className={isAccessible ? "h-6 w-6" : "h-5 w-5"} aria-hidden="true" />
                     ) : (
-                      <Eye
-                        className={isAccessible ? "h-6 w-6" : "h-5 w-5"}
-                        aria-hidden="true"
-                      />
+                      <Eye className={isAccessible ? "h-6 w-6" : "h-5 w-5"} aria-hidden="true" />
                     )}
                   </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className={submitButtonClass}
-                disabled={isSubmitting}
-              >
+              <button type="submit" className={submitButtonClass} disabled={isSubmitting}>
                 {isSubmitting ? "Ingresando..." : "Ingresar al sistema"}
               </button>
 
@@ -388,20 +334,11 @@ function Login() {
                   ) : (
                     <Accessibility className="h-4 w-4" aria-hidden="true" />
                   )}
-                  <span>
-                    {isAccessible ? "Modo fácil activo" : "Accesibilidad"}
-                  </span>
+                  <span>{isAccessible ? "Modo fácil activo" : "Accesibilidad"}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleReadHelp}
-                  className={supportButtonClass}
-                >
-                  <Volume2
-                    className={isAccessible ? "h-5 w-5" : "h-4 w-4"}
-                    aria-hidden="true"
-                  />
+                <button type="button" onClick={handleReadHelp} className={supportButtonClass}>
+                  <Volume2 className={isAccessible ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
                   <span>Leer ayuda</span>
                 </button>
               </div>
@@ -420,14 +357,10 @@ function Login() {
             )}
 
             {DEMO_USERS.length > 0 && (
-              <div
-                className={`rounded-lg ${isAccessible ? "border border-slate-300" : "border border-slate-200"}`}
-              >
+              <div className={`rounded-lg ${isAccessible ? "border border-slate-300" : "border border-slate-200"}`}>
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowDemoAccounts((currentValue) => !currentValue)
-                  }
+                  onClick={() => setShowDemoAccounts((currentValue) => !currentValue)}
                   className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-left font-semibold transition ${
                     isAccessible
                       ? "min-h-[60px] bg-slate-50 text-slate-900 text-lg hover:bg-slate-100"
@@ -447,10 +380,7 @@ function Login() {
                     className={`space-y-3 border-t p-4 ${isAccessible ? "border-slate-300 bg-white" : "border-slate-200 bg-white"}`}
                   >
                     {DEMO_USERS.map((user) => (
-                      <div
-                        key={user.email}
-                        className="space-y-1 rounded-lg bg-slate-50 p-3"
-                      >
+                      <div key={user.email} className="space-y-1 rounded-lg bg-slate-50 p-3">
                         <p
                           className={
                             isAccessible
@@ -460,22 +390,10 @@ function Login() {
                         >
                           {user.label}
                         </p>
-                        <p
-                          className={
-                            isAccessible
-                              ? "text-base text-slate-700"
-                              : "text-xs text-slate-600"
-                          }
-                        >
+                        <p className={isAccessible ? "text-base text-slate-700" : "text-xs text-slate-600"}>
                           {user.email}
                         </p>
-                        <p
-                          className={
-                            isAccessible
-                              ? "text-base text-slate-700"
-                              : "text-xs text-slate-600"
-                          }
-                        >
+                        <p className={isAccessible ? "text-base text-slate-700" : "text-xs text-slate-600"}>
                           {user.password}
                         </p>
                       </div>

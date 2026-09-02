@@ -1,19 +1,6 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type PropsWithChildren,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { getCurrentUser, loginRequest } from "../services/auth";
-import {
-  clearAuthSession,
-  getAuthToken,
-  readAuthUser,
-  storeAuthSession,
-  storeAuthUser,
-} from "../services/authStorage";
+import { clearAuthSession, getAuthToken, readAuthUser, storeAuthSession, storeAuthUser } from "../services/authStorage";
 import type { AuthUser } from "../types";
 
 type LoginPayload = {
@@ -21,9 +8,7 @@ type LoginPayload = {
   password: string;
 };
 
-type LoginResult =
-  | { ok: true; user: AuthUser }
-  | { ok: false; message: string };
+type LoginResult = { ok: true; user: AuthUser } | { ok: false; message: string };
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -64,15 +49,8 @@ function AuthProvider({ children }: PropsWithChildren) {
       setUser(null);
     };
 
-    window.addEventListener(
-      "riquisimo:authorization-error",
-      handleAuthorizationError,
-    );
-    return () =>
-      window.removeEventListener(
-        "riquisimo:authorization-error",
-        handleAuthorizationError,
-      );
+    window.addEventListener("riquisimo:authorization-error", handleAuthorizationError);
+    return () => window.removeEventListener("riquisimo:authorization-error", handleAuthorizationError);
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {
@@ -87,27 +65,21 @@ function AuthProvider({ children }: PropsWithChildren) {
         }
 
         try {
-          const { token, user: nextUser } = await loginRequest(
-            normalizedIdentifier,
-            password,
-          );
+          const { token, user: nextUser } = await loginRequest(normalizedIdentifier, password);
           storeAuthSession(token, nextUser);
           setUser(nextUser);
           return { ok: true, user: nextUser };
         } catch (error) {
           return {
             ok: false,
-            message:
-              error instanceof Error
-                ? error.message
-                : "No fue posible iniciar sesión",
+            message: error instanceof Error ? error.message : "No fue posible iniciar sesión"
           };
         }
       },
       logout: () => {
         clearAuthSession();
         setUser(null);
-      },
+      }
     };
   }, [user]);
 
