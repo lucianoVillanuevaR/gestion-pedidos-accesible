@@ -1,4 +1,4 @@
-export const DASHBOARD_PERIODS = ["today", "7d", "30d"] as const;
+const DASHBOARD_PERIODS = ["today", "7d", "30d"] as const;
 export type DashboardPeriod = (typeof DASHBOARD_PERIODS)[number];
 
 export const BUSINESS_TIME_ZONE = "America/Santiago";
