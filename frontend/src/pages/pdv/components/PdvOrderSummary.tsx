@@ -1,3 +1,4 @@
+import { ShoppingBasket } from "lucide-react";
 import { formatCurrency } from "../../../utils/pdv";
 import { usePdvViewContext } from "../PdvViewContext";
 
@@ -5,10 +6,16 @@ function PdvOrderSummary() {
   const { pedidoDetalles, removeProduct } = usePdvViewContext();
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto border-b border-dashed border-slate-300 bg-white p-3">
+    <div
+      className="min-h-0 flex-1 overflow-y-auto border-b border-dashed border-slate-300 bg-white p-3"
+      tabIndex={0}
+      aria-label="Productos del pedido"
+    >
       {pedidoDetalles.length === 0 ? (
-        <div className="flex h-full items-center justify-center text-center text-sm text-slate-500">
-          Agrega productos antes de aceptar el pedido
+        <div className="flex h-full flex-col items-center justify-center px-4 text-center text-slate-500">
+          <ShoppingBasket className="mb-3 h-8 w-8 text-slate-400" aria-hidden="true" />
+          <p className="text-sm font-bold text-slate-700">No hay productos en el pedido</p>
+          <p className="mt-1 max-w-xs text-sm">Selecciona productos del catálogo para comenzar.</p>
         </div>
       ) : (
         <div className="space-y-2">

@@ -318,6 +318,33 @@ textarea:focus-visible,
   outline-offset: 2px;
 }
 
+/* Evita que el autofill del navegador cambie la apariencia de los campos del formulario de usuarios. */
+.admin-form-input:not(:disabled):not([readonly]):-webkit-autofill,
+.admin-form-input:not(:disabled):not([readonly]):-webkit-autofill:hover,
+.admin-form-input:not(:disabled):not([readonly]):-webkit-autofill:focus {
+  border-color: #cbd5e1;
+  border-radius: 0.75rem;
+  caret-color: #020617;
+  -webkit-text-fill-color: #020617;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+}
+
+.admin-form-input:not(:disabled):not([readonly]):-webkit-autofill:focus-visible {
+  outline: 4px solid #020617;
+  outline-offset: 2px;
+}
+
+html[data-contrast="true"] .admin-form-input:not(:disabled):not([readonly]):-webkit-autofill,
+html[data-contrast="true"] .admin-form-input:not(:disabled):not([readonly]):-webkit-autofill:hover,
+html[data-contrast="true"] .admin-form-input:not(:disabled):not([readonly]):-webkit-autofill:focus {
+  border-color: var(--contrast-accent) !important;
+  caret-color: var(--contrast-text);
+  -webkit-text-fill-color: var(--contrast-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--contrast-surface) inset;
+  box-shadow: 0 0 0 1000px var(--contrast-surface) inset;
+}
+
 html[data-accessible="true"] button:focus-visible,
 html[data-accessible="true"] input:focus-visible,
 html[data-accessible="true"] select:focus-visible,

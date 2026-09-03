@@ -141,7 +141,7 @@ export function usePdvOrderDraft({
           message
         });
         playSoundCue("warning");
-        announce(message, {
+        announce("Cantidad máxima alcanzada.", {
           priority: "high",
           dedupeKey: `quantity-max:${producto.id}`,
           cooldownMs: 1800,
@@ -222,6 +222,12 @@ export function usePdvOrderDraft({
           message
         });
         playSoundCue("warning");
+        announce("Cantidad máxima alcanzada.", {
+          priority: "high",
+          dedupeKey: `quantity-max:${producto.id}`,
+          cooldownMs: 1800,
+          interrupt: true
+        });
         return;
       }
 
@@ -236,7 +242,7 @@ export function usePdvOrderDraft({
       playSoundCue("success");
       announce(`${producto.nombre}${variante ? `, ${variante.nombre}` : ""} agregado. Cantidad ${nextQuantity}.`, {
         priority: "normal",
-        dedupeKey: `product-added:${producto.id}:${nextQuantity}`,
+        dedupeKey: `product-add:${producto.id}:${nextQuantity}`,
         cooldownMs: 1800
       });
     },
@@ -283,9 +289,10 @@ export function usePdvOrderDraft({
 
       const nextQuantity = (items[producto.id] || 0) + 1;
       setItemQuantity(producto, nextQuantity);
+      if (nextQuantity > PEDIDO_MAX_CANTIDAD_DETALLE) return;
       announce(`${producto.nombre}. Cantidad ${nextQuantity}.`, {
         priority: "low",
-        dedupeKey: `quantity-up:${producto.id}:${nextQuantity}`,
+        dedupeKey: `quantity:${producto.id}:${nextQuantity}`,
         cooldownMs: 1500
       });
     },
@@ -304,16 +311,16 @@ export function usePdvOrderDraft({
 
       if (currentQuantity <= 1) {
         announce(`${producto.nombre} quitado del pedido.`, {
-          priority: "low",
-          dedupeKey: `product-removed:${producto.id}`,
-          cooldownMs: 1500
+          priority: "normal",
+          dedupeKey: `product-remove:${producto.id}`,
+          cooldownMs: 1600
         });
         return;
       }
 
       announce(`${producto.nombre}. Cantidad ${currentQuantity - 1}.`, {
         priority: "low",
-        dedupeKey: `quantity-down:${producto.id}:${currentQuantity - 1}`,
+        dedupeKey: `quantity:${producto.id}:${currentQuantity - 1}`,
         cooldownMs: 1500
       });
     },
@@ -323,6 +330,7 @@ export function usePdvOrderDraft({
   const removeProduct = useCallback(
     (itemKey: string) => {
       if (!(itemKey in items)) return;
+      const removedItem = pedidoDetalles.find((item) => item.itemKey === itemKey);
 
       setItems((prevItems) => {
         const newItems = { ...prevItems };
@@ -336,13 +344,13 @@ export function usePdvOrderDraft({
         return next;
       });
 
-      announce("Producto eliminado del pedido.", {
+      announce(`${removedItem?.producto.nombre ?? "Producto"} eliminado.`, {
         priority: "normal",
-        dedupeKey: "product-removed",
-        cooldownMs: 1500
+        dedupeKey: `product-remove:${removedItem?.productoId ?? itemKey}`,
+        cooldownMs: 1600
       });
     },
-    [announce, items, playSoundCue]
+    [announce, items, pedidoDetalles, playSoundCue]
   );
 
   const resetPedido = useCallback(() => {
@@ -376,8 +384,8 @@ export function usePdvOrderDraft({
 
       announce(voiceMessage, {
         priority: "normal",
-        dedupeKey: `payment-${value}`,
-        cooldownMs: 1400
+        dedupeKey: `payment:${value}`,
+        cooldownMs: 1600
       });
     },
     [announce]

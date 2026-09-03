@@ -13,16 +13,21 @@ type PdvProductTileProps = {
 };
 
 function PdvProductTile({ cantidad, disabled, onAdd, onDecrease, onIncrease, producto }: PdvProductTileProps) {
+  const addProductLabel = disabled
+    ? `${producto.nombre} no disponible mientras el turno está cerrado`
+    : `Agregar ${producto.nombre}`;
+
   return (
     <article
       className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-yellow-400 hover:shadow-md"}`}
+      aria-disabled={disabled || undefined}
     >
       <button
         type="button"
         onClick={onAdd}
         disabled={disabled}
         className="block w-full text-left disabled:cursor-not-allowed"
-        aria-label={`Agregar ${producto.nombre}`}
+        aria-label={addProductLabel}
       >
         <div className="relative h-[120px] overflow-hidden bg-slate-300">
           <ProductImage
@@ -51,7 +56,7 @@ function PdvProductTile({ cantidad, disabled, onAdd, onDecrease, onIncrease, pro
           onClick={onAdd}
           disabled={disabled}
           className="rounded-full p-1 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed"
-          aria-label={`Agregar ${producto.nombre}`}
+          aria-label={addProductLabel}
         >
           <Info className="h-5 w-5" aria-hidden="true" />
         </button>
@@ -76,11 +81,6 @@ function PdvProductTile({ cantidad, disabled, onAdd, onDecrease, onIncrease, pro
           >
             +
           </button>
-        </div>
-      )}
-      {disabled && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/45 px-2 text-center text-xs font-black text-slate-700">
-          Abrir turno
         </div>
       )}
     </article>

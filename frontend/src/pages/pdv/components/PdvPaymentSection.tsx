@@ -65,18 +65,20 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
         )}
         <div className="grid grid-cols-3 gap-2">
           {PAYMENT_OPTIONS.map((option) => {
-            const active = metodoPago === option.value;
+            const active = isTurnoOpen && metodoPago === option.value;
             return (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => selectMetodoPago(option.value)}
-                className={`flex min-h-[42px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-yellow-300 ${
+                disabled={!isTurnoOpen}
+                className={`flex min-h-[42px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-yellow-300 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-500 ${
                   active
                     ? "border-[#FECE00] bg-[#FECE00] text-slate-950"
                     : "border-slate-300 bg-white text-slate-950 hover:bg-yellow-50"
                 }`}
                 aria-pressed={active}
+                aria-disabled={!isTurnoOpen}
               >
                 <option.Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 <span className="text-xs">{option.label}</span>

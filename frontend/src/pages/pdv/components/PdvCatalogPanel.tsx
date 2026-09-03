@@ -66,7 +66,7 @@ function PdvCatalogPanel() {
         <div className="shrink-0 border-b border-slate-200 bg-slate-100 px-3 py-1.5">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
             <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-              <label htmlFor="searchProducto" className="relative block w-full sm:max-w-[250px]">
+              <label htmlFor="searchProducto" className="relative block w-full sm:max-w-[360px]">
                 <span className="sr-only">Buscar producto</span>
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-700"
@@ -110,17 +110,6 @@ function PdvCatalogPanel() {
           tabIndex={0}
           aria-label="Catálogo de productos desplazable"
         >
-          {!isTurnoOpen && (
-            <PdvFeedbackMessage
-              className="mb-4"
-              feedback={{
-                type: "error",
-                title: "Turno cerrado",
-                message: "Abre turno para registrar pedidos."
-              }}
-              isHighContrast={isHighContrast}
-            />
-          )}
           {isCloseTurnoBlockedFeedback && feedback && (
             <div ref={feedbackRef} tabIndex={-1} className="mb-4 outline-none">
               <PdvFeedbackMessage feedback={feedback} isHighContrast={isHighContrast} className="w-full" />

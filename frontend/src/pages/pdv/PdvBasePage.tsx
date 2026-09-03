@@ -51,6 +51,20 @@ function buildDetalleProductoText(item: PdvViewContextValue["pedidoDetalles"][nu
   return `${buildCantidadProductoText(item.cantidad, item.producto.nombre)}${opcion}`;
 }
 
+function getValidationVoiceMessage(message: string) {
+  if (message === "No hay productos seleccionados" || message.startsWith("Agrega al menos un producto")) {
+    return "Agrega al menos un producto.";
+  }
+  if (message === "El nombre del cliente es obligatorio") return "Ingresa el nombre del cliente.";
+  if (message === "Selecciona método de pago" || message.startsWith("Selecciona un método de pago")) {
+    return "Selecciona un método de pago.";
+  }
+  if (message.includes("abrir turno") || message.startsWith("Turno cerrado")) {
+    return "Abre turno para registrar pedidos.";
+  }
+  return message;
+}
+
 function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -109,6 +123,16 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     [isVoiceEnabled, speak]
   );
 
+  useEffect(() => {
+    if (loadingError !== "No fue posible cargar productos") return;
+    announce("No se pudieron cargar los productos.", {
+      priority: "high",
+      dedupeKey: "catalog-load-error",
+      cooldownMs: 2200,
+      interrupt: true
+    });
+  }, [announce, loadingError]);
+
   const { handleToggleTurno, isTurnoOpen, isTurnoUpdating } = usePdvTurno({
     announce,
     onTurnoStateChange: () => setAccessibleStep(1),
@@ -160,12 +184,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   }, [refreshNextPedidoNumber]);
 
   const notifyTurnoClosed = useCallback(() => {
-    const message = "Debe abrir turno antes de registrar pedidos.";
+    const message = "Abre turno para registrar pedidos.";
     playSoundCue("warning");
     announce(message, {
       priority: "high",
-      dedupeKey: "pdv-turno-cerrado-action",
-      cooldownMs: 1800,
+      dedupeKey: "turno-closed-action",
+      cooldownMs: 2200,
       interrupt: true
     });
   }, [announce, playSoundCue]);
@@ -207,6 +231,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   });
 
   const { cancelEditingPedido, editingPedido } = usePdvPedidoEditing({
+    announce,
     clearPedidoForm,
     isAccessible,
     loadPedidoForEditing,
@@ -346,10 +371,10 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       const validationFeedback = buildPedidoValidationFeedback(message);
       showFeedback(validationFeedback);
       playSoundCue("error");
-      announce(validationFeedback.message, {
+      announce(getValidationVoiceMessage(message), {
         priority: "high",
-        dedupeKey: `submit-error:${validationFeedback.message}`,
-        cooldownMs: 2500,
+        dedupeKey: `validation:${message}`,
+        cooldownMs: 2200,
         interrupt: true
       });
       return;
@@ -398,14 +423,14 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       playSoundCue("success");
       announce(
         editingPedido
-          ? `Pedido número ${numeroPedido} modificado correctamente.`
+          ? `Pedido número ${numeroPedido} modificado.`
           : numeroPedido
-            ? `Pedido número ${numeroPedido} registrado correctamente.`
-            : "Pedido registrado correctamente.",
+            ? `Pedido número ${numeroPedido} registrado.`
+            : "Pedido registrado.",
         {
           priority: "high",
-          dedupeKey: "pedido-registrado",
-          cooldownMs: 3000,
+          dedupeKey: editingPedido ? `pedido-updated:${numeroPedido}` : `pedido-created:${numeroPedido ?? "new"}`,
+          cooldownMs: 2200,
           interrupt: true
         }
       );
@@ -422,11 +447,11 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       showFeedback(buildPedidoSaveErrorFeedback(message || "Error al registrar", Boolean(editingPedido)));
       playSoundCue(isStockError(message) ? "warning" : "error");
       announce(
-        isStockError(message) ? "Stock insuficiente para registrar el pedido" : "No pudimos registrar el pedido",
+        isStockError(message) ? "Stock insuficiente." : "No se pudo registrar el pedido.",
         {
           priority: "high",
-          dedupeKey: "pedido-registrado-error",
-          cooldownMs: 3000,
+          dedupeKey: isStockError(message) ? "stock-insufficient" : "pedido-register-error",
+          cooldownMs: 2200,
           interrupt: true
         }
       );
@@ -449,7 +474,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   const handlePrintError = useCallback(() => {
     const msg = "No se pudo abrir la impresión. Revisa que el navegador permita imprimir.";
     showFeedback({ type: "error", title: "No se pudo imprimir", message: msg });
-    announce(msg, {
+    announce("No se pudo abrir la impresión.", {
       priority: "high",
       dedupeKey: "print-error",
       cooldownMs: 2500,
@@ -494,22 +519,22 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
       switch (step) {
         case 1:
-          return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Elige una categoría de productos.`;
+          return `Paso 1 de ${ACCESSIBLE_STEP_COUNT}. Elige una categoría.`;
         case 2:
-          return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto. Usa los botones grandes para agregar o cambiar cantidad.`;
+          return `Paso 2 de ${ACCESSIBLE_STEP_COUNT}. Elige un producto.`;
         case 3:
-          return "Paso 3: Revisa tu pedido. Confirma lo que elegiste antes de seguir al siguiente paso.";
+          return `Paso 3 de ${ACCESSIBLE_STEP_COUNT}. Revisa tu pedido.`;
         case 4:
-          return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Ingresa el nombre del comprador.`;
+          return `Paso 4 de ${ACCESSIBLE_STEP_COUNT}. Ingresa el nombre del cliente.`;
         case 5:
-          return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Selecciona el método de pago: efectivo, tarjeta o transferencia.`;
+          return `Paso 5 de ${ACCESSIBLE_STEP_COUNT}. Selecciona el método de pago.`;
         case ACCESSIBLE_STEP_COUNT:
-          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. ${editingPedido ? "Guardar cambios" : "Registrar pedido"}. Total ${formatCurrency(total)}. ${metodoPago ? `Pago ${getPaymentLabel(metodoPago)}.` : "Falta método de pago."} Puedes ${editingPedido ? "guardar los cambios" : "registrar el pedido"} si todo está correcto.`;
+          return `Paso 6 de ${ACCESSIBLE_STEP_COUNT}. Revisa y ${editingPedido ? "guarda los cambios" : "registra el pedido"}.`;
         default:
           return `Paso ${step} de ${ACCESSIBLE_STEP_COUNT}.`;
       }
     },
-    [editingPedido, isTurnoOpen, metodoPago, total]
+    [editingPedido, isTurnoOpen]
   );
 
   const getAccessibleStepValidation = useCallback(
@@ -574,7 +599,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     if (validationMessage) {
       showFeedback(buildPedidoValidationFeedback(validationMessage));
       playSoundCue("error");
-      announce(validationMessage, {
+      announce(getValidationVoiceMessage(validationMessage), {
         priority: "high",
         dedupeKey: `pdv-step-validation:${accessibleStep}:${validationMessage}`,
         cooldownMs: 1800,

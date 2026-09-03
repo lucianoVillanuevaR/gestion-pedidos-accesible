@@ -63,6 +63,12 @@ export function usePdvTurno({
             message: closeError
           });
           playSoundCue("warning");
+          announce("No se pudo cerrar el turno.", {
+            priority: "high",
+            dedupeKey: "turno-close-error",
+            cooldownMs: 2200,
+            interrupt: true
+          });
           return;
         }
 
@@ -76,7 +82,7 @@ export function usePdvTurno({
           playSoundCue("success");
           announce(message, {
             priority: "high",
-            dedupeKey: "pdv-turno-cerrado",
+            dedupeKey: "turno-close",
             cooldownMs: 2200,
             interrupt: true
           });
@@ -86,6 +92,12 @@ export function usePdvTurno({
             type: "error",
             title: "No se pudo cerrar el turno",
             message: error instanceof Error ? error.message : "No fue posible cerrar el turno"
+          });
+          announce("No se pudo cerrar el turno.", {
+            priority: "high",
+            dedupeKey: "turno-close-error",
+            cooldownMs: 2200,
+            interrupt: true
           });
         }
         return;
@@ -101,7 +113,7 @@ export function usePdvTurno({
         playSoundCue("success");
         announce(message, {
           priority: "high",
-          dedupeKey: "pdv-turno-abierto",
+          dedupeKey: "turno-open",
           cooldownMs: 2200,
           interrupt: true
         });
@@ -111,6 +123,12 @@ export function usePdvTurno({
           type: "error",
           title: "No se pudo abrir el turno",
           message: error instanceof Error ? error.message : "No fue posible abrir el turno"
+        });
+        announce("No se pudo abrir el turno.", {
+          priority: "high",
+          dedupeKey: "turno-open-error",
+          cooldownMs: 2200,
+          interrupt: true
         });
       }
     } finally {
