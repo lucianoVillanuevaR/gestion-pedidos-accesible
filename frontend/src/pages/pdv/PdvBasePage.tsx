@@ -446,15 +446,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       const message = error instanceof Error ? error.message : "Error al registrar pedido";
       showFeedback(buildPedidoSaveErrorFeedback(message || "Error al registrar", Boolean(editingPedido)));
       playSoundCue(isStockError(message) ? "warning" : "error");
-      announce(
-        isStockError(message) ? "Stock insuficiente." : "No se pudo registrar el pedido.",
-        {
-          priority: "high",
-          dedupeKey: isStockError(message) ? "stock-insufficient" : "pedido-register-error",
-          cooldownMs: 2200,
-          interrupt: true
-        }
-      );
+      announce(isStockError(message) ? "Stock insuficiente." : "No se pudo registrar el pedido.", {
+        priority: "high",
+        dedupeKey: isStockError(message) ? "stock-insufficient" : "pedido-register-error",
+        cooldownMs: 2200,
+        interrupt: true
+      });
     } finally {
       sendingRef.current = false;
       setSending(false);

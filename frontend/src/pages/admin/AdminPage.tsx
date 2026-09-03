@@ -242,9 +242,7 @@ function AdminUsersPage() {
         activo: !usuario.activo
       });
       setUsuarios((current) => current.map((item) => (item.id === saved.id ? saved : item)));
-      const successMessage = saved.activo
-        ? "Usuario activado correctamente."
-        : "Usuario desactivado correctamente.";
+      const successMessage = saved.activo ? "Usuario activado correctamente." : "Usuario desactivado correctamente.";
       setMessage(successMessage);
       soundFeedback.success();
       void speak(successMessage, {
