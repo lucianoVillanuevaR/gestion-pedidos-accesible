@@ -8,7 +8,7 @@ import {
   PEDIDO_OBSERVACION_MAX_LENGTH,
   TRANSICIONES_ESTADO_PERMITIDAS,
   type EstadoPedidoValido,
-  type MetodoPagoValido,
+  type MetodoPagoValido
 } from "../domain/pedidoRules";
 
 type PedidoDetalleInput = {
@@ -18,8 +18,7 @@ type PedidoDetalleInput = {
   personalizacion?: unknown;
 };
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function validateIdempotencyKey(value: unknown) {
   if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
@@ -41,9 +40,7 @@ export function validateMetodoPago(metodoPago: string) {
   return `Método de pago inválido. Debe ser uno de: ${METODOS_PAGO_VALIDOS.join(", ")}`;
 }
 
-export function validatePedidoDetalles(
-  detalles: PedidoDetalleInput[] | undefined,
-) {
+export function validatePedidoDetalles(detalles: PedidoDetalleInput[] | undefined) {
   if (!Array.isArray(detalles) || detalles.length === 0) {
     return "El pedido debe tener al menos un detalle";
   }
@@ -82,17 +79,13 @@ export function validatePedidoDetalles(
       if (
         !Array.isArray(personalizacion.aderezos) ||
         personalizacion.aderezos.length > 3 ||
-        personalizacion.aderezos.some(
-          (item) =>
-            typeof item !== "string" || !item.trim() || item.length > 40,
-        )
+        personalizacion.aderezos.some((item) => typeof item !== "string" || !item.trim() || item.length > 40)
       ) {
         return "Detalle inválido: selecciona hasta 3 aderezos válidos";
       }
       if (
         personalizacion.comentario !== undefined &&
-        (typeof personalizacion.comentario !== "string" ||
-          personalizacion.comentario.trim().length > 200)
+        (typeof personalizacion.comentario !== "string" || personalizacion.comentario.trim().length > 200)
       ) {
         return "Detalle inválido: el comentario no puede superar 200 caracteres";
       }
@@ -114,15 +107,11 @@ export function validatePedidoDetalles(
             (item) =>
               !item ||
               typeof item !== "object" ||
-              !Number.isInteger(
-                Number((item as { componenteId?: unknown }).componenteId),
-              ) ||
+              !Number.isInteger(Number((item as { componenteId?: unknown }).componenteId)) ||
               Number((item as { componenteId?: unknown }).componenteId) <= 0 ||
-              !Number.isInteger(
-                Number((item as { cantidad?: unknown }).cantidad),
-              ) ||
+              !Number.isInteger(Number((item as { cantidad?: unknown }).cantidad)) ||
               Number((item as { cantidad?: unknown }).cantidad) <= 0 ||
-              Number((item as { cantidad?: unknown }).cantidad) > 10,
+              Number((item as { cantidad?: unknown }).cantidad) > 10
           )
         ) {
           return "Detalle inválido: la combinación de la promoción no es válida";
@@ -132,8 +121,7 @@ export function validatePedidoDetalles(
 
     if (
       detalle.varianteId !== undefined &&
-      (!Number.isInteger(Number(detalle.varianteId)) ||
-        Number(detalle.varianteId) <= 0)
+      (!Number.isInteger(Number(detalle.varianteId)) || Number(detalle.varianteId) <= 0)
     ) {
       return "Detalle inválido: varianteId debe ser un entero positivo";
     }
@@ -163,10 +151,7 @@ export function validateEstadoPedido(estado: string) {
   return `Estado inválido. Debe ser uno de: ${ESTADOS_PEDIDO_VALIDOS.join(", ")}`;
 }
 
-export function validateTransicionEstadoPedido(
-  estadoActual: string,
-  estadoNuevo: string,
-) {
+export function validateTransicionEstadoPedido(estadoActual: string, estadoNuevo: string) {
   const estadoActualError = validateEstadoPedido(estadoActual);
 
   if (estadoActualError) {
@@ -183,8 +168,7 @@ export function validateTransicionEstadoPedido(
     return null;
   }
 
-  const allowedStates =
-    TRANSICIONES_ESTADO_PERMITIDAS[estadoActual as EstadoPedidoValido];
+  const allowedStates = TRANSICIONES_ESTADO_PERMITIDAS[estadoActual as EstadoPedidoValido];
 
   if (!allowedStates.includes(estadoNuevo as EstadoPedidoValido)) {
     return `Cambio de estado no permitido: ${estadoActual} → ${estadoNuevo}`;
@@ -193,30 +177,17 @@ export function validateTransicionEstadoPedido(
   return null;
 }
 
-export function validatePedidoTextFields(
-  clienteNombre?: unknown,
-  observacion?: unknown,
-) {
-  if (
-    clienteNombre !== undefined &&
-    clienteNombre !== null &&
-    typeof clienteNombre !== "string"
-  ) {
+export function validatePedidoTextFields(clienteNombre?: unknown, observacion?: unknown) {
+  if (clienteNombre !== undefined && clienteNombre !== null && typeof clienteNombre !== "string") {
     return "El nombre del cliente debe ser texto";
   }
 
-  if (
-    observacion !== undefined &&
-    observacion !== null &&
-    typeof observacion !== "string"
-  ) {
+  if (observacion !== undefined && observacion !== null && typeof observacion !== "string") {
     return "La observación debe ser texto";
   }
 
-  const clienteNombreLimpio =
-    typeof clienteNombre === "string" ? clienteNombre.trim() : "";
-  const observacionLimpia =
-    typeof observacion === "string" ? observacion.trim() : "";
+  const clienteNombreLimpio = typeof clienteNombre === "string" ? clienteNombre.trim() : "";
+  const observacionLimpia = typeof observacion === "string" ? observacion.trim() : "";
 
   if (!clienteNombreLimpio) {
     return "El nombre del cliente es obligatorio";

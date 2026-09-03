@@ -6,12 +6,7 @@ export type InventarioUpdateInput = {
 const POSTGRES_INTEGER_MAX = 2_147_483_647;
 
 function validateNonNegativeInteger(value: unknown, fieldName: string) {
-  if (
-    typeof value !== "number" ||
-    !Number.isFinite(value) ||
-    !Number.isInteger(value) ||
-    value < 0
-  ) {
+  if (typeof value !== "number" || !Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
     return `${fieldName} debe ser un número entero entre 0 y ${POSTGRES_INTEGER_MAX}`;
   }
 
