@@ -23,6 +23,7 @@ import PdvPrintTicket from "./components/PdvPrintTicket";
 import PdvProductConfigurator from "./components/PdvProductConfigurator";
 import { PdvViewProvider, type PdvViewContextValue } from "./PdvViewContext";
 import { getPdvKeyboardAction } from "./pdvKeyboardNavigation";
+import { generateIdempotencyKey } from "../../utils/idempotencyKey";
 
 function getNextPedidoNumberFromPedidos(pedidos: PedidoResponse[]) {
   const maxPedidoNumber = withPedidoNumerosTurno(pedidos).reduce((maxNumber, pedido) => {
@@ -96,7 +97,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
-  const idempotencyKeyRef = useRef(crypto.randomUUID());
+  const idempotencyKeyRef = useRef(generateIdempotencyKey());
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [nextPedidoNumber, setNextPedidoNumber] = useState(1);
 
@@ -419,7 +420,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         message: successMsg
       });
       clearPedidoForm();
-      if (!editingPedido) idempotencyKeyRef.current = crypto.randomUUID();
+      if (!editingPedido) idempotencyKeyRef.current = generateIdempotencyKey();
       playSoundCue("success");
       announce(
         editingPedido
