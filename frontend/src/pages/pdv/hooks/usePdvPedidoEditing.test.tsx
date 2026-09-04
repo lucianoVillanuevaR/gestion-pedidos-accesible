@@ -24,11 +24,13 @@ describe("edición de pedidos en modo fácil", () => {
   it("carga el pedido por ID y permite cancelar hacia pedidos fáciles", async () => {
     vi.mocked(getPedido).mockResolvedValue(pedido);
     const loadPedidoForEditing = vi.fn();
+    const announce = vi.fn();
     const clearPedidoForm = vi.fn();
     const navigate = vi.fn();
 
     const { result } = renderHook(() =>
       usePdvPedidoEditing({
+        announce,
         clearPedidoForm,
         isAccessible: true,
         loadPedidoForEditing,
@@ -42,6 +44,11 @@ describe("edición de pedidos en modo fácil", () => {
     await waitFor(() => expect(loadPedidoForEditing).toHaveBeenCalledWith(pedido));
     expect(getPedido).toHaveBeenCalledWith(7, expect.any(AbortSignal));
     expect(result.current.editingPedido).toEqual(pedido);
+    expect(announce).toHaveBeenCalledWith("Pedido número 7 cargado para edición.", {
+      priority: "normal",
+      dedupeKey: "pedido-edit-loaded:7",
+      cooldownMs: 1600
+    });
 
     act(() => result.current.cancelEditingPedido());
     expect(clearPedidoForm).toHaveBeenCalledOnce();
@@ -57,6 +64,7 @@ describe("edición de pedidos en modo fácil", () => {
 
     renderHook(() =>
       usePdvPedidoEditing({
+        announce: vi.fn(),
         clearPedidoForm: vi.fn(),
         isAccessible: true,
         loadPedidoForEditing: vi.fn(),

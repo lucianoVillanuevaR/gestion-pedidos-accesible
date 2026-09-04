@@ -1,5 +1,5 @@
 import { Check, Plus, Save, Search, Users, X } from "lucide-react";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
 import AlertMessage from "../../components/ui/AlertMessage";
 import EmptyState from "../../components/ui/EmptyState";
@@ -7,6 +7,8 @@ import LoadingState from "../../components/ui/LoadingState";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
+import useAccessibleDialog from "../../hooks/useAccessibleDialog";
+import useVoice from "../../hooks/useVoice";
 import { createUsuario, getUsuarios, updateUsuario } from "../../services/usuarios";
 import type { AdminUser, CreateUserPayload, UserRole } from "../../types";
 import AdminDashboard from "./AdminDashboard";
@@ -103,8 +105,9 @@ function AdminDashboardPage() {
 }
 
 function AdminUsersPage() {
-  const { isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { isSoundEnabled, isVoiceEnabled, soundVolume } = useAccessibilityContext();
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
+  const { speak } = useVoice({ enabled: isVoiceEnabled });
   const emptyUser: CreateUserPayload = {
     email: "",
     label: "",
@@ -123,6 +126,7 @@ function AdminUsersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const savingRef = useRef(false);
 
   const load = () => {
     setIsLoading(true);
@@ -140,6 +144,8 @@ function AdminUsersPage() {
   }, []);
 
   const startEdit = (usuario: AdminUser) => {
+    setError(null);
+    setMessage(null);
     setEditing(usuario);
     setDraft({
       activo: usuario.activo,
@@ -154,23 +160,36 @@ function AdminUsersPage() {
   };
 
   const startCreate = () => {
+    setError(null);
+    setMessage(null);
     setEditing(null);
     setDraft(emptyUser);
     setPassword("");
     setIsUserModalOpen(true);
   };
 
-  const closeUserModal = () => {
+  const closeUserModal = useCallback(() => {
+    if (savingRef.current) return;
     setIsUserModalOpen(false);
     setEditing(null);
-    setDraft(emptyUser);
+    setDraft({
+      email: "",
+      label: "",
+      password: "",
+      role: "cajero",
+      username: "",
+      activo: true
+    });
     setPassword("");
-  };
+  }, []);
 
   const saveUser = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (savingRef.current) return;
+    savingRef.current = true;
     setError(null);
     setMessage(null);
+    const isEditing = Boolean(editing);
     try {
       setSavingId(editing?.id ?? "new");
       const saved = editing
@@ -186,12 +205,26 @@ function AdminUsersPage() {
       setEditing(null);
       setPassword("");
       setIsUserModalOpen(false);
-      setMessage("Usuario guardado correctamente.");
+      const successMessage = isEditing ? "Usuario actualizado correctamente." : "Usuario creado correctamente.";
+      setMessage(successMessage);
       soundFeedback.success();
+      void speak(successMessage, {
+        priority: "high",
+        dedupeKey: isEditing ? "admin-user-updated" : "admin-user-created",
+        cooldownMs: 2200,
+        interrupt: true
+      });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo guardar usuario");
       soundFeedback.error();
+      void speak("No se pudo guardar el usuario.", {
+        priority: "high",
+        dedupeKey: "admin-user-save-error",
+        cooldownMs: 2200,
+        interrupt: true
+      });
     } finally {
+      savingRef.current = false;
       setSavingId(null);
     }
   };
@@ -203,15 +236,30 @@ function AdminUsersPage() {
 
     setSavingId(usuario.id);
     setError(null);
+    setMessage(null);
     try {
       const saved = await updateUsuario(usuario.id, {
         activo: !usuario.activo
       });
       setUsuarios((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+      const successMessage = saved.activo ? "Usuario activado correctamente." : "Usuario desactivado correctamente.";
+      setMessage(successMessage);
       soundFeedback.success();
+      void speak(successMessage, {
+        priority: "high",
+        dedupeKey: saved.activo ? `admin-user-activated:${saved.id}` : `admin-user-deactivated:${saved.id}`,
+        cooldownMs: 2200,
+        interrupt: true
+      });
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar estado");
       soundFeedback.error();
+      void speak("No se pudo cambiar el estado del usuario.", {
+        priority: "high",
+        dedupeKey: "admin-user-status-error",
+        cooldownMs: 2200,
+        interrupt: true
+      });
     } finally {
       setSavingId(null);
     }
@@ -234,7 +282,7 @@ function AdminUsersPage() {
       description="Revisa los permisos por rol y administra los usuarios creados del sistema."
     >
       {message && <AlertMessage message={message} tone="success" />}
-      {error && <ErrorAlert message={error} />}
+      {error && !isUserModalOpen && <ErrorAlert message={error} />}
       <section className="overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-sm">
         <header className="flex min-h-[58px] items-center justify-between gap-3 border-b border-slate-100 px-4">
           <div>
@@ -377,6 +425,7 @@ function AdminUsersPage() {
         <UserFormModal
           draft={draft}
           editing={editing}
+          error={error}
           isSaving={savingId !== null}
           onClose={closeUserModal}
           onDraftChange={setDraft}
@@ -413,7 +462,7 @@ function AdminInput({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`min-h-[44px] w-full rounded-xl border border-slate-300 px-3 font-bold text-slate-950 ${FOCUS_VISIBLE_CLASS}`}
+        className={`admin-form-input min-h-[44px] w-full rounded-xl border border-slate-300 bg-white px-3 font-bold text-slate-950 ${FOCUS_VISIBLE_CLASS}`}
       />
     </label>
   );
@@ -422,6 +471,7 @@ function AdminInput({
 function UserFormModal({
   draft,
   editing,
+  error,
   isSaving,
   onClose,
   onDraftChange,
@@ -431,6 +481,7 @@ function UserFormModal({
 }: {
   draft: CreateUserPayload;
   editing: AdminUser | null;
+  error: string | null;
   isSaving: boolean;
   onClose: () => void;
   onDraftChange: (draft: CreateUserPayload) => void;
@@ -438,23 +489,45 @@ function UserFormModal({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   password: string;
 }) {
+  const dialogRef = useRef<HTMLFormElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const isSavingRef = useRef(isSaving);
+  useEffect(() => {
+    isSavingRef.current = isSaving;
+  }, [isSaving]);
+  const handleDialogClose = useCallback(() => {
+    if (!isSavingRef.current) onClose();
+  }, [onClose]);
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose: handleDialogClose
+  });
+
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-3">
+    <div className="fixed inset-0 z-[120] !mt-0 flex items-center justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-[1px]">
       <form
+        ref={dialogRef}
         onSubmit={onSubmit}
         className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-2xl"
-        aria-label={editing ? "Editar usuario" : "Crear usuario"}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="user-form-title"
+        aria-busy={isSaving}
+        tabIndex={-1}
       >
         <header className="flex min-h-[64px] items-center justify-between gap-3 border-b border-slate-200 px-5">
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase text-slate-500">Equipo y roles</p>
-            <h2 className="truncate text-xl font-black text-slate-950">
+            <h2 id="user-form-title" className="truncate text-xl font-black text-slate-950">
               {editing ? "Editar usuario" : "Crear usuario"}
             </h2>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
+            disabled={isSaving}
             className={`inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-950 transition hover:bg-slate-100 ${FOCUS_VISIBLE_CLASS}`}
             aria-label="Cerrar"
           >
@@ -463,6 +536,7 @@ function UserFormModal({
         </header>
 
         <div className="grid gap-4 overflow-y-auto bg-slate-50 p-5">
+          {error && <ErrorAlert message={error} />}
           <label className="block">
             <span className="mb-1 block text-sm font-black text-slate-700">Rol</span>
             <select
@@ -510,7 +584,8 @@ function UserFormModal({
           <button
             type="button"
             onClick={onClose}
-            className={`min-h-[44px] flex-1 rounded-xl border border-slate-300 px-4 font-black text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
+            disabled={isSaving}
+            className={`min-h-[44px] flex-1 rounded-xl border border-slate-300 px-4 font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
           >
             Cancelar
           </button>

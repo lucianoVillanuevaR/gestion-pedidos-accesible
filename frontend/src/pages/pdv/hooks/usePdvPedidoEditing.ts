@@ -3,8 +3,12 @@ import type { NavigateFunction } from "react-router-dom";
 import { getPedido } from "../../../services/pedidos";
 import type { PedidoResponse } from "../../../types";
 import type { FeedbackState } from "../PdvShared";
+import { getPedidoDisplayNumber } from "../../pedidos/PedidosShared";
+
+type Announce = (message: string, options?: Record<string, unknown>) => void;
 
 export function usePdvPedidoEditing({
+  announce,
   clearPedidoForm,
   isAccessible,
   loadPedidoForEditing,
@@ -13,6 +17,7 @@ export function usePdvPedidoEditing({
   search,
   showFeedback
 }: {
+  announce: Announce;
   clearPedidoForm: () => void;
   isAccessible: boolean;
   loadPedidoForEditing: (pedido: PedidoResponse) => void;
@@ -53,7 +58,12 @@ export function usePdvPedidoEditing({
     if (!editingPedido || loadingProductos || loadedPedidoIdRef.current === editingPedido.id) return;
     loadPedidoForEditing(editingPedido);
     loadedPedidoIdRef.current = editingPedido.id;
-  }, [editingPedido, loadPedidoForEditing, loadingProductos]);
+    announce(`Pedido número ${getPedidoDisplayNumber(editingPedido)} cargado para edición.`, {
+      priority: "normal",
+      dedupeKey: `pedido-edit-loaded:${editingPedido.id}`,
+      cooldownMs: 1600
+    });
+  }, [announce, editingPedido, loadPedidoForEditing, loadingProductos]);
 
   const cancelEditingPedido = useCallback(() => {
     clearPedidoForm();
