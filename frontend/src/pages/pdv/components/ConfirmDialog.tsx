@@ -8,10 +8,19 @@ type ConfirmDialogProps = {
   onCancel: () => void;
   onConfirm: () => void;
   primaryLabel: string;
+  primaryDisabled?: boolean;
   title: string;
 };
 
-function ConfirmDialog({ children, description, onCancel, onConfirm, primaryLabel, title }: ConfirmDialogProps) {
+function ConfirmDialog({
+  children,
+  description,
+  onCancel,
+  onConfirm,
+  primaryDisabled = false,
+  primaryLabel,
+  title
+}: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   useAccessibleDialog({
@@ -52,7 +61,8 @@ function ConfirmDialog({ children, description, onCancel, onConfirm, primaryLabe
           <button
             type="button"
             onClick={onConfirm}
-            className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black ${FOCUS_VISIBLE_CLASS}`}
+            disabled={primaryDisabled}
+            className={`min-h-[46px] rounded-xl border border-slate-900 bg-slate-900 px-4 font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
           >
             {primaryLabel}
           </button>

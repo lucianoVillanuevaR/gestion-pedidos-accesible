@@ -36,6 +36,7 @@ export type PdvViewContextValue = {
   editingPedidoNumber: number | string | null;
   isPanelOpen: boolean;
   isTurnoOpen: boolean;
+  isTurnoUpdating: boolean;
   items: Record<string, number>;
   loadingError: string | null;
   loadingProductos: boolean;

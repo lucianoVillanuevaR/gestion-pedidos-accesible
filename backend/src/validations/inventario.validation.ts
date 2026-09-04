@@ -3,11 +3,15 @@ export type InventarioUpdateInput = {
   stockMinimo?: unknown;
 };
 
-function validateNonNegativeInteger(value: unknown, fieldName: string) {
-  const numericValue = Number(value);
+const POSTGRES_INTEGER_MAX = 2_147_483_647;
 
-  if (!Number.isInteger(numericValue) || numericValue < 0) {
-    return `${fieldName} debe ser un número entero mayor o igual a 0`;
+function validateNonNegativeInteger(value: unknown, fieldName: string) {
+  if (typeof value !== "number" || !Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+    return `${fieldName} debe ser un número entero entre 0 y ${POSTGRES_INTEGER_MAX}`;
+  }
+
+  if (value > POSTGRES_INTEGER_MAX) {
+    return `${fieldName} no puede superar ${POSTGRES_INTEGER_MAX}`;
   }
 
   return null;
@@ -23,7 +27,7 @@ export function validateInventarioUpdate(input: InventarioUpdateInput) {
       return { error };
     }
 
-    data.stockActual = Number(input.stockActual);
+    data.stockActual = input.stockActual as number;
   }
 
   if (input.stockMinimo !== undefined) {
@@ -33,7 +37,7 @@ export function validateInventarioUpdate(input: InventarioUpdateInput) {
       return { error };
     }
 
-    data.stockMinimo = Number(input.stockMinimo);
+    data.stockMinimo = input.stockMinimo as number;
   }
 
   if (Object.keys(data).length === 0) {

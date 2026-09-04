@@ -16,7 +16,7 @@ export type HistorialTurno = Omit<CierreTurno, "pedidos"> & {
 export type HistorialDateFilter = "all" | "month" | "today" | "week";
 export type HistorialEstadoFilter = EstadoPedido | "todos";
 export type HistorialMetodoFilter = MetodoPago | "todos";
-export const HISTORIAL_PAGE_SIZE = 8;
+const HISTORIAL_PAGE_SIZE = 8;
 
 export type HistorialPedidoGroup = {
   dateKey: string;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../../services/cierresTurno";
 import { validateTurnoClose } from "../../../validations/turno.validation";
 import {
@@ -24,6 +24,8 @@ export function usePdvTurno({
   showFeedback: (feedback: FeedbackState) => void;
 }) {
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
+  const [isTurnoUpdating, setIsTurnoUpdating] = useState(false);
+  const updatingRef = useRef(false);
 
   useEffect(() => {
     void sincronizarTurnoActual()
@@ -47,29 +49,59 @@ export function usePdvTurno({
   }, []);
 
   const handleToggleTurno = useCallback(async () => {
-    if (isTurnoOpen) {
-      const closeError = validateTurnoClose(isTurnoOpen);
-      if (closeError) {
-        showFeedback({
-          type: "error",
-          title: "No se pudo cerrar el turno",
-          message: closeError
-        });
-        playSoundCue("warning");
+    if (updatingRef.current) return;
+    updatingRef.current = true;
+    setIsTurnoUpdating(true);
+
+    try {
+      if (isTurnoOpen) {
+        const closeError = validateTurnoClose(isTurnoOpen);
+        if (closeError) {
+          showFeedback({
+            type: "error",
+            title: "No se pudo cerrar el turno",
+            message: closeError
+          });
+          playSoundCue("warning");
+          return;
+        }
+
+        try {
+          await guardarCierreTurno();
+          setTurnoAbierto(false);
+          setIsTurnoOpen(false);
+          onTurnoStateChange();
+          const message = "Turno cerrado correctamente.";
+          showFeedback({ type: "success", title: "Turno cerrado", message });
+          playSoundCue("success");
+          announce(message, {
+            priority: "high",
+            dedupeKey: "pdv-turno-cerrado",
+            cooldownMs: 2200,
+            interrupt: true
+          });
+        } catch (error) {
+          playSoundCue("error");
+          showFeedback({
+            type: "error",
+            title: "No se pudo cerrar el turno",
+            message: error instanceof Error ? error.message : "No fue posible cerrar el turno"
+          });
+        }
         return;
       }
 
       try {
-        await guardarCierreTurno();
-        setTurnoAbierto(false);
-        setIsTurnoOpen(false);
+        const turno = await abrirTurnoRemoto();
+        setTurnoAbierto(true);
+        setTurnoFechaInicio(turno.fechaInicio);
+        setIsTurnoOpen(true);
         onTurnoStateChange();
-        const message = "Turno cerrado correctamente.";
-        showFeedback({ type: "success", title: "Turno cerrado", message });
+        const message = "Turno abierto correctamente.";
         playSoundCue("success");
         announce(message, {
           priority: "high",
-          dedupeKey: "pdv-turno-cerrado",
+          dedupeKey: "pdv-turno-abierto",
           cooldownMs: 2200,
           interrupt: true
         });
@@ -77,39 +109,19 @@ export function usePdvTurno({
         playSoundCue("error");
         showFeedback({
           type: "error",
-          title: "No se pudo cerrar el turno",
-          message: error instanceof Error ? error.message : "No fue posible cerrar el turno"
+          title: "No se pudo abrir el turno",
+          message: error instanceof Error ? error.message : "No fue posible abrir el turno"
         });
       }
-      return;
-    }
-
-    try {
-      const turno = await abrirTurnoRemoto();
-      setTurnoAbierto(true);
-      setTurnoFechaInicio(turno.fechaInicio);
-      setIsTurnoOpen(true);
-      onTurnoStateChange();
-      const message = "Turno abierto correctamente.";
-      playSoundCue("success");
-      announce(message, {
-        priority: "high",
-        dedupeKey: "pdv-turno-abierto",
-        cooldownMs: 2200,
-        interrupt: true
-      });
-    } catch (error) {
-      playSoundCue("error");
-      showFeedback({
-        type: "error",
-        title: "No se pudo abrir el turno",
-        message: error instanceof Error ? error.message : "No fue posible abrir el turno"
-      });
+    } finally {
+      updatingRef.current = false;
+      setIsTurnoUpdating(false);
     }
   }, [announce, isTurnoOpen, onTurnoStateChange, playSoundCue, showFeedback]);
 
   return {
     handleToggleTurno,
-    isTurnoOpen
+    isTurnoOpen,
+    isTurnoUpdating
   };
 }

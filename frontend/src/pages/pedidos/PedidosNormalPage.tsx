@@ -250,7 +250,7 @@ export function NormalPedidoRow({
   );
 }
 
-export function NormalPedidoActions({
+function NormalPedidoActions({
   isUpdating,
   onEditPedido,
   onOpenModal,

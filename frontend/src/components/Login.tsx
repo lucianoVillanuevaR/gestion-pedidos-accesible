@@ -24,6 +24,8 @@ function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [showDemoAccounts, setShowDemoAccounts] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>({
     type: "",
@@ -103,26 +105,35 @@ function Login() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const result = await login({ identifier, password });
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
 
-    if (!result.ok) {
-      announceError(result.message);
-      return;
+    try {
+      const result = await login({ identifier, password });
+
+      if (!result.ok) {
+        announceError(result.message);
+        return;
+      }
+
+      setFeedback({ type: "success", message: "Bienvenido al sistema" });
+      soundFeedback.success();
+      speak("Bienvenido al sistema");
+
+      if (navigateTimerRef.current) {
+        window.clearTimeout(navigateTimerRef.current);
+      }
+
+      navigateTimerRef.current = window.setTimeout(() => {
+        const defaultRoute = getDefaultRouteForRole(result.user.role);
+        const nextRoute = isAccessible ? (getEasyRoute(defaultRoute) ?? defaultRoute) : defaultRoute;
+        navigate(nextRoute, { replace: true });
+      }, 700);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
-
-    setFeedback({ type: "success", message: "Bienvenido al sistema" });
-    soundFeedback.success();
-    speak("Bienvenido al sistema");
-
-    if (navigateTimerRef.current) {
-      window.clearTimeout(navigateTimerRef.current);
-    }
-
-    navigateTimerRef.current = window.setTimeout(() => {
-      const defaultRoute = getDefaultRouteForRole(result.user.role);
-      const nextRoute = isAccessible ? (getEasyRoute(defaultRoute) ?? defaultRoute) : defaultRoute;
-      navigate(nextRoute, { replace: true });
-    }, 700);
   };
 
   const handleFieldFocus = (message: string) => {
@@ -240,7 +251,12 @@ function Login() {
               </p>
             </header>
 
-            <form onSubmit={handleSubmit} className={isAccessible ? "space-y-7" : "space-y-6"} noValidate>
+            <form
+              onSubmit={handleSubmit}
+              className={isAccessible ? "space-y-7" : "space-y-6"}
+              aria-busy={isSubmitting}
+              noValidate
+            >
               <div className={isAccessible ? "space-y-3" : "space-y-2"}>
                 <label htmlFor="identifier" className={labelClass}>
                   Usuario o correo
@@ -301,8 +317,8 @@ function Login() {
                 </div>
               </div>
 
-              <button type="submit" className={submitButtonClass}>
-                Ingresar al sistema
+              <button type="submit" className={submitButtonClass} disabled={isSubmitting}>
+                {isSubmitting ? "Ingresando..." : "Ingresar al sistema"}
               </button>
 
               <div className="grid gap-3 sm:grid-cols-2">

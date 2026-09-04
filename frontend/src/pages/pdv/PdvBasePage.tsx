@@ -81,6 +81,8 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   }, [categoryFilters, selectedCategory]);
 
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
+  const idempotencyKeyRef = useRef(crypto.randomUUID());
   const [accessibleStep, setAccessibleStep] = useState<number>(1);
   const [nextPedidoNumber, setNextPedidoNumber] = useState(1);
 
@@ -107,7 +109,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     [isVoiceEnabled, speak]
   );
 
-  const { handleToggleTurno, isTurnoOpen } = usePdvTurno({
+  const { handleToggleTurno, isTurnoOpen, isTurnoUpdating } = usePdvTurno({
     announce,
     onTurnoStateChange: () => setAccessibleStep(1),
     playSoundCue,
@@ -335,6 +337,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
   }, [addProduct, isAccessible, loadingProductos, location.pathname, location.state, navigate, productos]);
 
   const handleSubmit = async () => {
+    if (sendingRef.current) return;
     setFeedback(null);
     let shouldResetAccessibleFlow = false;
 
@@ -360,11 +363,13 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         varianteId: item.variante?.id,
         personalizacion: item.personalizacion
       })),
+      ...(!editingPedido && { idempotencyKey: idempotencyKeyRef.current }),
       metodoPago: metodoPago as MetodoPago,
       observacion: observacion.trim() || undefined
     };
 
     try {
+      sendingRef.current = true;
       setSending(true);
       const pedidoCreado = (
         editingPedido
@@ -389,6 +394,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         message: successMsg
       });
       clearPedidoForm();
+      if (!editingPedido) idempotencyKeyRef.current = crypto.randomUUID();
       playSoundCue("success");
       announce(
         editingPedido
@@ -425,6 +431,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
         }
       );
     } finally {
+      sendingRef.current = false;
       setSending(false);
 
       if (shouldResetAccessibleFlow) {
@@ -656,6 +663,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
     isHighContrast,
     isPanelOpen,
     isTurnoOpen,
+    isTurnoUpdating,
     items,
     loadingError,
     loadingProductos,
@@ -695,7 +703,7 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
 
   return (
     <PdvViewProvider value={viewContext}>
-      <main className={`min-h-screen ${bgWrapper} ${textColor}`}>
+      <main className={`min-h-screen ${bgWrapper} ${textColor}`} aria-busy={sending || isTurnoUpdating}>
         <div
           className={`w-full print:px-0 print:py-0 ${isAccessible ? "mx-auto max-w-[1520px] px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6" : "px-0 py-0"}`}
           style={{

@@ -44,6 +44,7 @@ function PdvFacilView() {
     isEditingPedido,
     editingPedidoNumber,
     isTurnoOpen,
+    isTurnoUpdating,
     items,
     metodoPago,
     navigate,
@@ -128,6 +129,7 @@ function PdvFacilView() {
             <button
               type="button"
               onClick={() => {
+                if (isTurnoUpdating) return;
                 if (isTurnoOpen) {
                   setIsCloseTurnoConfirmOpen(true);
                   return;
@@ -135,6 +137,7 @@ function PdvFacilView() {
 
                 handleToggleTurno();
               }}
+              disabled={isTurnoUpdating}
               className={`inline-flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border px-4 py-3 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
                 isHighContrast
                   ? isTurnoOpen
@@ -151,7 +154,7 @@ function PdvFacilView() {
               ) : (
                 <UnlockKeyhole aria-hidden="true" className="h-6 w-6" />
               )}
-              <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
+              <span>{isTurnoUpdating ? "Procesando..." : isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
             </button>
 
             <EasyModeActions />
@@ -181,6 +184,7 @@ function PdvFacilView() {
             <button
               type="button"
               onClick={handleToggleTurno}
+              disabled={isTurnoUpdating}
               className={`mt-6 inline-flex min-h-[72px] min-w-[240px] items-center justify-center gap-3 rounded-2xl border px-6 text-xl font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
                 isHighContrast
                   ? "contrast-button-primary"
@@ -188,7 +192,7 @@ function PdvFacilView() {
               }`}
             >
               <UnlockKeyhole aria-hidden="true" className="h-7 w-7" />
-              Abrir turno
+              {isTurnoUpdating ? "Abriendo..." : "Abrir turno"}
             </button>
             <p
               className={`mt-5 rounded-2xl border px-4 py-3 text-lg font-black ${
@@ -716,9 +720,10 @@ function PdvFacilView() {
                 setIsCloseTurnoConfirmOpen(false);
                 handleToggleTurno();
               }}
+              disabled={isTurnoUpdating}
               className="min-h-[56px] rounded-2xl border-2 border-red-800 bg-red-700 px-5 text-lg font-black text-white hover:bg-red-800"
             >
-              Sí, cerrar turno
+              {isTurnoUpdating ? "Cerrando..." : "Sí, cerrar turno"}
             </button>
           </div>
         </AccessibleDialog>

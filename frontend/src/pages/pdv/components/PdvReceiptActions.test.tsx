@@ -40,6 +40,7 @@ function buildContext(canPrintCurrentOrder: boolean): PdvViewContextValue {
     isHighContrast: false,
     isPanelOpen: false,
     isTurnoOpen: true,
+    isTurnoUpdating: false,
     items: {},
     loadProductos: noop,
     loadingError: null,
@@ -101,7 +102,19 @@ describe("PdvReceiptActions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Imprimir/i }));
 
-    expect((screen.getByRole("button", { name: "Ticket de cocina" }) as HTMLButtonElement).disabled).toBe(false);
-    expect((screen.getByRole("button", { name: "Ticket de cliente" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Ticket de cocina"
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Ticket de cliente"
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  validateIdempotencyKey,
   validateMetodoPago,
   validatePedidoDetalles,
   validatePedidoTextFields,
@@ -7,6 +8,14 @@ import {
 } from "./pedidos.validation";
 
 describe("validaciones de pedidos", () => {
+  it("acepta UUID válidos y rechaza claves de idempotencia inválidas", () => {
+    expect(validateIdempotencyKey("550e8400-e29b-41d4-a716-446655440000")).toBeNull();
+
+    for (const value of [undefined, "", null, 123, "uuid-invalido", "550e8400-e29b-41d4-a716"]) {
+      expect(validateIdempotencyKey(value)).toContain("UUID válido");
+    }
+  });
+
   it("valida métodos de pago", () => {
     expect(validateMetodoPago("efectivo")).toBeNull();
     expect(validateMetodoPago("cheque")).toContain("Método de pago inválido");

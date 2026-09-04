@@ -97,6 +97,7 @@ model Inventario {
 
 model Pedido {
   id            Int             @id @default(autoincrement())
+  idempotencyKey String?         @unique @map("idempotency_key") @db.VarChar(36)
   total         Decimal         @db.Decimal(10, 2)
   estado        String          @default("pendiente")
   metodoPago    String

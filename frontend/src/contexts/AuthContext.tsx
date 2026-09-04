@@ -59,14 +59,13 @@ function AuthProvider({ children }: PropsWithChildren) {
       isAuthenticated: Boolean(user),
       login: async ({ identifier, password }) => {
         const normalizedIdentifier = identifier.trim().toLowerCase();
-        const normalizedPassword = password.trim();
 
-        if (!normalizedIdentifier || !normalizedPassword) {
+        if (!normalizedIdentifier || password.trim().length === 0) {
           return { ok: false, message: "Debe completar usuario y contraseña" };
         }
 
         try {
-          const { token, user: nextUser } = await loginRequest(normalizedIdentifier, normalizedPassword);
+          const { token, user: nextUser } = await loginRequest(normalizedIdentifier, password);
           storeAuthSession(token, nextUser);
           setUser(nextUser);
           return { ok: true, user: nextUser };

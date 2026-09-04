@@ -49,6 +49,7 @@ function PdvNormalView() {
     isEditingPedido,
     editingPedidoNumber,
     isTurnoOpen,
+    isTurnoUpdating,
     clienteNombre,
     metodoPago,
     nextPedidoNumber,
@@ -79,6 +80,7 @@ function PdvNormalView() {
     feedback.message.startsWith("No puedes cerrar el turno mientras existan pedidos activos");
 
   const handleTurnoButtonClick = () => {
+    if (isTurnoUpdating) return;
     if (isTurnoOpen) {
       setShowCloseTurnoConfirm(true);
       return;
@@ -125,6 +127,7 @@ function PdvNormalView() {
             <button
               type="button"
               onClick={handleTurnoButtonClick}
+              disabled={isTurnoUpdating}
               className={`inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border px-3 text-xs font-black transition ${
                 isTurnoOpen
                   ? "border-red-800 bg-red-700 text-white hover:bg-red-800"
@@ -139,7 +142,7 @@ function PdvNormalView() {
               ) : (
                 <UnlockKeyhole className="h-4 w-4" aria-hidden="true" />
               )}
-              <span>{isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
+              <span>{isTurnoUpdating ? "Procesando..." : isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
             </button>
           </div>
           <div className="flex items-center justify-end border-t border-yellow-300 bg-yellow-50 px-4 py-1 text-xs font-bold text-slate-700">
@@ -226,6 +229,7 @@ function PdvNormalView() {
           primaryLabel="Abrir turno"
           onCancel={() => setShowOpenTurnoConfirm(false)}
           onConfirm={handleConfirmOpenTurno}
+          primaryDisabled={isTurnoUpdating}
         >
           <TurnoDialogDetails cashierLabel="Cajero actual" dateLabel="Fecha y hora" dateValue={fullDate} />
         </ConfirmDialog>
@@ -238,6 +242,7 @@ function PdvNormalView() {
           primaryLabel="Cerrar turno"
           onCancel={() => setShowCloseTurnoConfirm(false)}
           onConfirm={handleConfirmCloseTurno}
+          primaryDisabled={isTurnoUpdating}
         >
           <TurnoDialogDetails
             cashierLabel="Cajero que cierra"
@@ -264,6 +269,7 @@ function PdvNormalView() {
           }
           onCancel={() => setShowSubmitConfirm(false)}
           onConfirm={handleConfirmSubmit}
+          primaryDisabled={sending}
         >
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-bold text-slate-700">
             <p>

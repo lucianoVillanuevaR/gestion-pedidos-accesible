@@ -15,6 +15,7 @@ import { RequestError } from "../utils/httpErrors";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import {
   validateEstadoPedido,
+  validateIdempotencyKey,
   validateMetodoPago,
   validatePedidoDetalles,
   validatePedidoTextFields,
@@ -32,6 +33,7 @@ const PEDIDO_WITH_DETALLES_INCLUDE = {
 
 interface CrearPedidoBody {
   detalles: PedidoDetalleInput[];
+  idempotencyKey: string;
   metodoPago: string;
   clienteNombre: string;
   observacion?: string;
@@ -85,7 +87,13 @@ function pedidoAuditSnapshot(pedido: {
 
 export const crearPedido = async (req: Request, res: Response) => {
   try {
-    const { clienteNombre, detalles, metodoPago, observacion } = req.body as CrearPedidoBody;
+    const { clienteNombre, detalles, idempotencyKey, metodoPago, observacion } = req.body as CrearPedidoBody;
+
+    const idempotencyKeyError = validateIdempotencyKey(idempotencyKey);
+
+    if (idempotencyKeyError) {
+      return res.status(400).json({ error: idempotencyKeyError });
+    }
 
     const metodoPagoError = validateMetodoPago(metodoPago);
 
@@ -107,35 +115,98 @@ export const crearPedido = async (req: Request, res: Response) => {
 
     const detallesNormalizados = normalizePedidoDetalles(detalles);
 
-    const pedido = await prisma.$transaction(async (tx) => {
-      await lockTurnOperations(tx);
-      const turno = await tx.turno.findFirst({ where: { estado: "abierto" } });
-      if (!turno) {
-        throw new RequestError(409, "Debes abrir turno antes de registrar un pedido");
-      }
+    let transactionResult;
 
-      const { detallesData, total } = await preparePedidoWrite(tx, detallesNormalizados);
+    try {
+      transactionResult = await prisma.$transaction(async (tx) => {
+        await lockTurnOperations(tx);
 
-      const pedidoCreado = await tx.pedido.create({
-        data: {
-          turnoId: turno.id,
-          total,
-          estado: "pendiente",
-          metodoPago,
-          clienteNombre: clienteNombre.trim(),
-          observacion: observacion?.trim() || null,
-          detalles: {
-            create: detallesData
-          }
-        },
+        const pedidoExistente = await tx.pedido.findUnique({
+          where: { idempotencyKey },
+          include: PEDIDO_WITH_DETALLES_INCLUDE
+        });
+
+        if (pedidoExistente) {
+          const numeroTurno = await tx.pedido.count({
+            where: {
+              turnoId: pedidoExistente.turnoId,
+              OR: [
+                { createdAt: { lt: pedidoExistente.createdAt } },
+                {
+                  createdAt: pedidoExistente.createdAt,
+                  id: { lte: pedidoExistente.id }
+                }
+              ]
+            }
+          });
+          return {
+            pedido: { ...pedidoExistente, numeroTurno },
+            statusCode: 200
+          };
+        }
+
+        const turno = await tx.turno.findFirst({
+          where: { estado: "abierto" }
+        });
+        if (!turno) {
+          throw new RequestError(409, "Debes abrir turno antes de registrar un pedido");
+        }
+
+        const { detallesData, total } = await preparePedidoWrite(tx, detallesNormalizados);
+
+        const pedidoCreado = await tx.pedido.create({
+          data: {
+            idempotencyKey,
+            turnoId: turno.id,
+            total,
+            estado: "pendiente",
+            metodoPago,
+            clienteNombre: clienteNombre.trim(),
+            observacion: observacion?.trim() || null,
+            detalles: {
+              create: detallesData
+            }
+          },
+          include: PEDIDO_WITH_DETALLES_INCLUDE
+        });
+
+        const numeroTurno = await tx.pedido.count({
+          where: { turnoId: turno.id }
+        });
+        return { pedido: { ...pedidoCreado, numeroTurno }, statusCode: 201 };
+      });
+    } catch (error) {
+      const isIdempotencyConflict =
+        typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+
+      if (!isIdempotencyConflict) throw error;
+
+      const pedidoExistente = await prisma.pedido.findUnique({
+        where: { idempotencyKey },
         include: PEDIDO_WITH_DETALLES_INCLUDE
       });
 
-      const numeroTurno = await tx.pedido.count({ where: { turnoId: turno.id } });
-      return { ...pedidoCreado, numeroTurno };
-    });
+      if (!pedidoExistente) throw error;
 
-    res.status(201).json(withPedidoProductImageUrls(pedido));
+      const numeroTurno = await prisma.pedido.count({
+        where: {
+          turnoId: pedidoExistente.turnoId,
+          OR: [
+            { createdAt: { lt: pedidoExistente.createdAt } },
+            {
+              createdAt: pedidoExistente.createdAt,
+              id: { lte: pedidoExistente.id }
+            }
+          ]
+        }
+      });
+      transactionResult = {
+        pedido: { ...pedidoExistente, numeroTurno },
+        statusCode: 200
+      };
+    }
+
+    res.status(transactionResult.statusCode).json(withPedidoProductImageUrls(transactionResult.pedido));
   } catch (error) {
     if (error instanceof RequestError) {
       return res.status(error.statusCode).json({ error: error.message });

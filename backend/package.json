@@ -11,6 +11,8 @@
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
+    "seed:dashboard": "tsx prisma/seed-dashboard.ts",
+    "seed:dashboard:clean": "tsx prisma/seed-dashboard.ts --clean",
     "seed:prod": "node dist/prisma/seed.js",
     "inventory:repair": "node dist/src/scripts/repairInventory.js",
     "inventory:repair:dev": "tsx src/scripts/repairInventory.ts",
