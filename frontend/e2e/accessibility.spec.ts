@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { ACCESSIBILITY_MODE_STORAGE_KEY } from "../src/constants/accessibility";
 import { loginAs, type DemoRole } from "./helpers/auth";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
@@ -51,6 +52,15 @@ for (const { role, routes } of authenticatedRoutes) {
     for (const route of routes) {
       await page.goto(route);
       await expect(page.locator("#main-content")).toBeVisible();
+      if (role === "cajero" && route === "/pdv") {
+        await expect(page.getByRole("textbox", { name: "Barra de búsqueda de productos" })).toBeVisible();
+        await expect(page.locator('nav[aria-label="Categorías de productos"]')).toBeAttached();
+        await expect(page.getByText("Productos del pedido", { exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Aceptar" })).toBeAttached();
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)
+        ).toBe(true);
+      }
       await expectNoDetectableViolations(page);
     }
   });
@@ -100,7 +110,10 @@ test("limita modo fácil al PDV, conserva su preferencia y permite ampliar texto
   expect(hasHorizontalOverflow).toBe(false);
 
   await page.goto("/pdv");
-  await expect(page).toHaveURL(/\/modo-facil$/);
+  await expect(page).toHaveURL(/\/pdv$/);
+  await expect
+    .poll(() => page.evaluate((key) => window.localStorage.getItem(key), ACCESSIBILITY_MODE_STORAGE_KEY))
+    .toBe("true");
 });
 
 test("los controles de sonido reflejan y conservan sus preferencias", async ({ page }) => {

@@ -63,7 +63,7 @@ function AppLayout() {
       isAdminPage);
   const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]";
   const mainContentClass = isFullWidthPage
-    ? `px-0 py-0 ${isPdvNormalPage ? "h-[calc(100dvh-56px)] overflow-hidden" : ""}`
+    ? `px-0 py-0 ${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-[calc(100dvh-56px)] lg:min-h-0 lg:overflow-hidden" : ""}`
     : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isPdvEasyMode ? "lg:px-10" : ""}`;
   const appBackgroundClass = isHighContrast
     ? "bg-black text-white"
@@ -109,7 +109,9 @@ function AppLayout() {
   }, [isSidebarOpen]);
 
   return (
-    <div className={`${isPdvNormalPage ? "h-dvh overflow-hidden" : "min-h-screen"} ${appBackgroundClass}`}>
+    <div
+      className={`${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-dvh lg:overflow-hidden" : "min-h-screen"} ${appBackgroundClass}`}
+    >
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
       </a>
@@ -133,7 +135,7 @@ function AppLayout() {
       )}
 
       <div
-        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-14" : ""} ${isPdvNormalPage ? "h-dvh overflow-hidden" : ""}`}
+        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-14" : ""} ${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-dvh lg:overflow-hidden" : ""}`}
       >
         {!hideSidebar && (
           <header
@@ -180,7 +182,7 @@ function AppLayout() {
         )}
 
         <div id="main-content" tabIndex={-1} className={mainContentClass}>
-          <div className={`${pageShellClass} ${isPdvNormalPage ? "h-full" : ""}`}>
+          <div className={`${pageShellClass} ${isPdvNormalPage ? "min-h-screen lg:h-full lg:min-h-0" : ""}`}>
             <Outlet />
           </div>
         </div>

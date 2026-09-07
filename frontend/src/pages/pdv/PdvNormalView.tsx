@@ -113,13 +113,13 @@ function PdvNormalView() {
   };
 
   return (
-    <div className="grid h-[calc(100dvh-56px)] min-h-0 overflow-hidden bg-slate-100 print:block md:grid-cols-[162px_minmax(0,1fr)] xl:grid-cols-[162px_minmax(0,1fr)_400px] 2xl:grid-cols-[162px_minmax(0,1fr)_430px]">
+    <div className="grid min-h-screen min-w-0 grid-cols-1 overflow-visible bg-slate-100 print:block lg:h-[calc(100dvh-56px)] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:overflow-hidden xl:grid-cols-[162px_minmax(0,1fr)_400px] 2xl:grid-cols-[162px_minmax(0,1fr)_430px]">
       <PdvCatalogPanel />
 
-      <aside className="flex h-full min-h-0 flex-col border-l border-slate-200 bg-white print:static print:block print:min-h-0 print:border-0 print:bg-transparent">
+      <aside className="flex h-auto min-h-0 min-w-0 flex-col border-t border-slate-200 bg-white print:static print:block print:min-h-0 print:border-0 print:bg-transparent lg:h-full lg:border-l lg:border-t-0">
         <div className="bg-[#FECE00] text-slate-950 no-print print:hidden">
-          <div className="flex min-h-[42px] items-center justify-between gap-2 px-3">
-            <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-h-[42px] flex-wrap items-center justify-between gap-2 px-3 py-1 sm:flex-nowrap sm:py-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="text-2xl font-light leading-none">#{editingPedidoNumber ?? nextPedidoNumber}</span>
               <span className="rounded-full border border-white/70 px-2 py-0.5 text-xs font-bold">En el local</span>
               {isEditingPedido && <span className="text-sm font-black">Modificando pedido</span>}
