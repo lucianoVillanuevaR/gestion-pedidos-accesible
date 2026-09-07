@@ -81,6 +81,7 @@ function AppRoutes() {
             <Route path="/inventario/facil" element={<InventarioPage isAccessible />} />
 
             <Route path="/historial-pedidos" element={<CocinaHistorialPage />} />
+            <Route path="/historial-pedidos/facil" element={<CocinaHistorialPage />} />
           </Route>
 
           <Route element={<RequireRole allowedRoles={["cocina", "admin"]} />}>

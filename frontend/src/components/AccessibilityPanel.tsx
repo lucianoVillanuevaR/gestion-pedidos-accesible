@@ -9,6 +9,7 @@ type AccessibilityPanelProps = {
   isOpen: boolean;
   onClose: () => void;
   isAccessible: boolean;
+  showEasyMode?: boolean;
   textSize: AccessibilityTextSize;
   isHighContrast: boolean;
   isVoiceEnabled: boolean;
@@ -90,6 +91,7 @@ function AccessibilityPanel({
   isOpen,
   onClose,
   isAccessible,
+  showEasyMode = true,
   textSize,
   isHighContrast,
   isVoiceEnabled,
@@ -214,19 +216,21 @@ function AccessibilityPanel({
                 Ajustes rápidos
               </h3>
               <div className="mt-3 divide-y divide-slate-200">
-                <AccessibilityToggle
-                  checked={isAccessible}
-                  label="Modo fácil"
-                  description="Simplifica la interfaz."
-                  icon={<Sparkles className="h-5 w-5" />}
-                  onChange={() => {
-                    announcePanelAction(
-                      isAccessible ? "Modo fácil desactivado." : "Modo fácil activado.",
-                      "accessibility-panel-easy-mode"
-                    );
-                    onToggleAccessible();
-                  }}
-                />
+                {showEasyMode && (
+                  <AccessibilityToggle
+                    checked={isAccessible}
+                    label="Modo fácil"
+                    description="Simplifica la interfaz del punto de venta."
+                    icon={<Sparkles className="h-5 w-5" />}
+                    onChange={() => {
+                      announcePanelAction(
+                        isAccessible ? "Modo fácil desactivado." : "Modo fácil activado.",
+                        "accessibility-panel-easy-mode"
+                      );
+                      onToggleAccessible();
+                    }}
+                  />
+                )}
                 <AccessibilityToggle
                   checked={isHighContrast}
                   label="Contraste alto"

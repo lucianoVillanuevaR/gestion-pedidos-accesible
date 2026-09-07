@@ -94,6 +94,16 @@ describe("AccessibilityPanel", () => {
     expect(screen.queryByRole("heading", { name: "Acciones" })).toBeNull();
   });
 
+  it("oculta modo fácil fuera del PDV y mantiene las ayudas globales", () => {
+    render(<AccessibilityPanel {...defaultProps} showEasyMode={false} />);
+
+    expect(screen.queryByRole("switch", { name: /Modo fácil/ })).toBeNull();
+    expect(screen.getByRole("switch", { name: "Contraste alto: Desactivado" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tamaño Pequeño" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tamaño Normal" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Tamaño Grande" })).toBeTruthy();
+  });
+
   it("permite elegir volumen y oculta los controles cuando los sonidos están apagados", async () => {
     const user = userEvent.setup();
     const onSetSoundVolume = vi.fn();

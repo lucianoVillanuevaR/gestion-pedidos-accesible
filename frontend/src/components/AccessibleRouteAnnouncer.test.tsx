@@ -7,6 +7,7 @@ describe("getRouteMessage", () => {
     expect(getRouteMessage("/pdv/facil")).toContain("Nuevo pedido en modo fácil");
     expect(getRouteMessage("/pedidos/facil")).toContain("Pedidos en modo fácil");
     expect(getRouteMessage("/inventario/facil")).toContain("Inventario en modo fácil");
+    expect(getRouteMessage("/historial-pedidos/facil")).toContain("Historial de turnos en modo fácil");
   });
 
   it("falls back to route metadata for known standard routes", () => {
