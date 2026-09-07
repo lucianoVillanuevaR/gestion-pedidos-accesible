@@ -1,11 +1,9 @@
 import { Menu } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import logoRiq from "../assets/logoRiq.png";
 import {
-  getEasyRoute,
   getRouteMeta,
-  getStandardRoute,
   isCocinaRoute,
   isEasyRoute,
   isHistorialPedidosRoute,
@@ -18,16 +16,27 @@ import {
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import AppSidebar from "./AppSidebar";
 
+export function getAppLayoutChrome(pathname: string) {
+  const isEasyPage = isEasyRoute(pathname);
+
+  return {
+    hideSidebar: isEasyPage,
+    showNormalTopBar: !isEasyPage,
+    sidebarOffsetClass: isEasyPage ? "" : "lg:pl-[240px]"
+  };
+}
+
 function AppLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isAccessible, isHighContrast } = useAccessibilityContext();
 
   const currentRoute = getRouteMeta(location.pathname);
-  const isEasyPage = isEasyRoute(location.pathname);
   const isPdvPage = isPdvRoute(location.pathname);
-  const isPdvNormalPage = location.pathname === "/pdv" && !isAccessible;
+  const isEasyPage = isEasyRoute(location.pathname);
+  const isPdvEasyMode = isAccessible && location.pathname === "/pdv/facil";
+  const { hideSidebar, showNormalTopBar, sidebarOffsetClass } = getAppLayoutChrome(location.pathname);
+  const isPdvNormalPage = location.pathname === "/pdv" && !isPdvEasyMode;
   const isPedidosPage = isPedidosRoute(location.pathname);
   const isProductosPage = isProductosRoute(location.pathname);
   const isInventarioPage = isInventarioRoute(location.pathname);
@@ -44,7 +53,7 @@ function AppLayout() {
     isHistorialPedidosPage ||
     isAdminPage;
   const showBrandTopBar =
-    !isAccessible &&
+    showNormalTopBar &&
     (isPdvPage ||
       isPedidosPage ||
       isProductosPage ||
@@ -52,15 +61,13 @@ function AppLayout() {
       isCocinaPage ||
       isHistorialPedidosPage ||
       isAdminPage);
-  const hideSidebar = isEasyPage || (isAccessible && (location.pathname === "/pdv" || isHistorialPedidosPage));
-  const sidebarOffsetClass = hideSidebar ? "" : isAccessible ? "lg:pl-[368px]" : "lg:pl-[240px]";
   const pageShellClass = isFullWidthPage ? "w-full" : "mx-auto w-full max-w-[1400px]";
   const mainContentClass = isFullWidthPage
-    ? `px-0 py-0 ${isPdvNormalPage ? "h-[calc(100dvh-56px)] overflow-hidden" : ""}`
-    : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isAccessible ? "lg:px-10" : ""}`;
+    ? `px-0 py-0 ${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-[calc(100dvh-56px)] lg:min-h-0 lg:overflow-hidden" : ""}`
+    : `px-4 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-8 ${isPdvEasyMode ? "lg:px-10" : ""}`;
   const appBackgroundClass = isHighContrast
     ? "bg-black text-white"
-    : isAccessible
+    : isPdvEasyMode
       ? "bg-[#F3F4F6] text-slate-950"
       : isPedidosPage || isProductosPage || isInventarioPage || isCocinaPage || isHistorialPedidosPage || isAdminPage
         ? "bg-slate-50 text-slate-950"
@@ -69,16 +76,6 @@ function AppLayout() {
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [location.pathname]);
-
-  useEffect(() => {
-    const nextPath = isAccessible
-      ? getEasyRoute(location.pathname, { useEasyHome: true })
-      : getStandardRoute(location.pathname);
-
-    if (nextPath) {
-      navigate(nextPath, { replace: true });
-    }
-  }, [isAccessible, location.pathname, navigate]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -112,7 +109,9 @@ function AppLayout() {
   }, [isSidebarOpen]);
 
   return (
-    <div className={`${isPdvNormalPage ? "h-dvh overflow-hidden" : "min-h-screen"} ${appBackgroundClass}`}>
+    <div
+      className={`${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-dvh lg:overflow-hidden" : "min-h-screen"} ${appBackgroundClass}`}
+    >
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
       </a>
@@ -136,7 +135,7 @@ function AppLayout() {
       )}
 
       <div
-        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-14" : ""} ${isPdvNormalPage ? "h-dvh overflow-hidden" : ""}`}
+        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-14" : ""} ${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-dvh lg:overflow-hidden" : ""}`}
       >
         {!hideSidebar && (
           <header
@@ -147,7 +146,7 @@ function AppLayout() {
             }`}
           >
             <div
-              className={`mx-auto flex w-full max-w-[1400px] items-center gap-3 px-4 ${isAccessible ? "min-h-[80px] py-4" : "min-h-[68px] py-3"}`}
+              className={`mx-auto flex w-full max-w-[1400px] items-center gap-3 px-4 ${isPdvEasyMode ? "min-h-[80px] py-4" : "min-h-[68px] py-3"}`}
             >
               <button
                 type="button"
@@ -155,7 +154,7 @@ function AppLayout() {
                 className={`inline-flex min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
                   isHighContrast
                     ? "contrast-button-secondary"
-                    : isAccessible
+                    : isPdvEasyMode
                       ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-900"
                       : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200 focus-visible:ring-yellow-400"
                 }`}
@@ -163,17 +162,17 @@ function AppLayout() {
                 aria-expanded={isSidebarOpen}
                 aria-controls="main-sidebar"
               >
-                <Menu className={isAccessible ? "h-6 w-6" : "h-5 w-5"} />
+                <Menu className={isPdvEasyMode ? "h-6 w-6" : "h-5 w-5"} />
               </button>
 
               <div className="min-w-0">
                 <p
-                  className={`font-black leading-tight ${isAccessible ? "text-xl" : "text-sm"} ${isHighContrast ? "text-white" : "text-slate-900"}`}
+                  className={`font-black leading-tight ${isPdvEasyMode ? "text-xl" : "text-sm"} ${isHighContrast ? "text-white" : "text-slate-900"}`}
                 >
                   {currentRoute?.label ?? "Riquísimo"}
                 </p>
                 <p
-                  className={`mt-1 truncate ${isAccessible ? "text-sm" : "text-xs"} ${isHighContrast ? "text-white/60" : "text-slate-500"}`}
+                  className={`mt-1 truncate ${isPdvEasyMode ? "text-sm" : "text-xs"} ${isHighContrast ? "text-white/60" : "text-slate-500"}`}
                 >
                   {currentRoute?.description ?? "Sistema de pedidos"}
                 </p>
@@ -183,7 +182,7 @@ function AppLayout() {
         )}
 
         <div id="main-content" tabIndex={-1} className={mainContentClass}>
-          <div className={`${pageShellClass} ${isPdvNormalPage ? "h-full" : ""}`}>
+          <div className={`${pageShellClass} ${isPdvNormalPage ? "min-h-screen lg:h-full lg:min-h-0" : ""}`}>
             <Outlet />
           </div>
         </div>

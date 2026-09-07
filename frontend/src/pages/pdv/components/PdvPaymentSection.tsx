@@ -63,7 +63,7 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
             <span>{acceptHelpMessage}</span>
           </p>
         )}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {PAYMENT_OPTIONS.map((option) => {
             const active = isTurnoOpen && metodoPago === option.value;
             return (
@@ -88,7 +88,7 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1.1fr] gap-1.5 p-3 no-print print:hidden">
+      <div className="grid grid-cols-1 gap-2 p-3 no-print print:hidden sm:grid-cols-[1fr_1.1fr]">
         <button
           type="button"
           onClick={isEditingPedido ? cancelEditingPedido : openResetConfirm}

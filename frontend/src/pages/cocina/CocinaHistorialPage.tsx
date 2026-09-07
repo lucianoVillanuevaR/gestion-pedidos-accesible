@@ -33,10 +33,18 @@ export function getInitialHistorialDateFilter(isAccessible: boolean): HistorialD
   return isAccessible ? "all" : "week";
 }
 
+export function getHistorialViewMode(pathname: string): "admin" | "easy" | "normal" {
+  if (pathname.startsWith("/admin/")) return "admin";
+  if (pathname === "/historial-pedidos/facil") return "easy";
+  return "normal";
+}
+
 export default function CocinaHistorialPage() {
   const location = useLocation();
-  const isAdminView = location.pathname.startsWith("/admin/");
-  const { isAccessible, isHighContrast, isVoiceEnabled } = useAccessibilityContext();
+  const viewMode = getHistorialViewMode(location.pathname);
+  const isAdminView = viewMode === "admin";
+  const isEasyHistoryView = viewMode === "easy";
+  const { isHighContrast, isVoiceEnabled } = useAccessibilityContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const { speak: speakForced } = useVoice({ enabled: isVoiceEnabled });
   const [cierres, setCierres] = useState<CierreTurno[]>([]);
@@ -44,7 +52,9 @@ export default function CocinaHistorialPage() {
   const [turnoViewById, setTurnoViewById] = useState<Record<string, "pedidos" | "resumen">>({});
   const [selectedPedido, setSelectedPedido] = useState<HistorialPedidoDetalle | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState<HistorialDateFilter>(() => getInitialHistorialDateFilter(isAccessible));
+  const [dateFilter, setDateFilter] = useState<HistorialDateFilter>(() =>
+    getInitialHistorialDateFilter(isEasyHistoryView)
+  );
   const [estadoFilter, setEstadoFilter] = useState<HistorialEstadoFilter>("todos");
   const [metodoFilter, setMetodoFilter] = useState<HistorialMetodoFilter>("todos");
   const [liveMessage, setLiveMessage] = useState("Historial de turnos listo para consultar.");
@@ -165,7 +175,7 @@ export default function CocinaHistorialPage() {
     window.requestAnimationFrame(() => window.print());
   };
 
-  if (isAccessible) {
+  if (isEasyHistoryView) {
     return (
       <HistorialFacilView
         dateFilter={dateFilter}

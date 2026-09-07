@@ -63,11 +63,11 @@ function readSoundVolumeStorage(): SoundVolumeLevel {
     : DEFAULT_SOUND_VOLUME;
 }
 
-function getFontSizeForState(textSize: AccessibilityTextSize, isAccessible: boolean) {
+function getFontSizeForState(textSize: AccessibilityTextSize) {
   const sizeMap: Record<AccessibilityTextSize, string> = {
-    small: isAccessible ? "18px" : "14px",
-    normal: isAccessible ? "20px" : "16px",
-    large: isAccessible ? "24px" : "18px"
+    small: "14px",
+    normal: "16px",
+    large: "18px"
   };
 
   return sizeMap[textSize];
@@ -143,7 +143,6 @@ function useAccessibility(): AccessibilityState {
     const doc = window.document.documentElement;
     const body = window.document.body;
 
-    doc.dataset.accessible = String(isAccessible);
     doc.dataset.contrast = String(isHighContrast);
     doc.dataset.voice = String(isVoiceEnabled);
     doc.dataset.sound = String(isSoundEnabled);
@@ -151,12 +150,11 @@ function useAccessibility(): AccessibilityState {
     doc.dataset.textSize = textSize;
     doc.dataset.reducedMotion = String(prefersReducedMotion);
 
-    body.dataset.accessible = String(isAccessible);
     body.dataset.contrast = String(isHighContrast);
     body.dataset.sound = String(isSoundEnabled);
     body.dataset.textSize = textSize;
 
-    doc.style.fontSize = getFontSizeForState(textSize, isAccessible);
+    doc.style.fontSize = getFontSizeForState(textSize);
 
     if (prefersReducedMotion) {
       doc.classList.add("reduce-motion");

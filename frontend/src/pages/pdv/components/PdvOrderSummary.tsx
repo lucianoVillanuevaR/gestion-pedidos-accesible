@@ -7,7 +7,7 @@ function PdvOrderSummary() {
 
   return (
     <div
-      className="min-h-0 flex-1 overflow-y-auto border-b border-dashed border-slate-300 bg-white p-3"
+      className="min-h-[240px] flex-1 overflow-visible border-b border-dashed border-slate-300 bg-white p-3 lg:min-h-0 lg:overflow-y-auto"
       tabIndex={0}
       aria-label="Productos del pedido"
     >

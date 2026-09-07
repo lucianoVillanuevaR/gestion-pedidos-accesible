@@ -22,6 +22,7 @@ const ROUTE_MESSAGES: Record<string, string> = {
   "/preparacion/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",
   "/cocina/facil": "Preparación en modo fácil. Aquí aparecen los pedidos que deben prepararse.",
   "/historial-pedidos": "Historial de turnos.",
+  "/historial-pedidos/facil": "Historial de turnos en modo fácil.",
   "/inventario": "Inventario. Control de stock y disponibilidad."
 };
 

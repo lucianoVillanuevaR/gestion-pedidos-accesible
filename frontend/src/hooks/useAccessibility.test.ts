@@ -82,7 +82,7 @@ describe("useAccessibility", () => {
       isSoundEnabled: true,
       soundVolume: "normal"
     });
-    expect(document.documentElement.style.fontSize).toBe("24px");
+    expect(document.documentElement.style.fontSize).toBe("18px");
   });
 
   it("persiste y refleja los cambios de tamaño y contraste en el documento", () => {

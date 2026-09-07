@@ -34,7 +34,7 @@ function PdvCatalogPanel() {
   return (
     <>
       <nav
-        className="hidden min-h-0 border-r border-slate-200 bg-slate-50 print:hidden md:block"
+        className="hidden min-h-0 border-r border-slate-200 bg-slate-50 print:hidden xl:block"
         aria-label="Categorías de productos"
       >
         <div className="sticky top-0">
@@ -66,7 +66,7 @@ function PdvCatalogPanel() {
         <div className="shrink-0 border-b border-slate-200 bg-slate-100 px-3 py-1.5">
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
             <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-              <label htmlFor="searchProducto" className="relative block w-full sm:max-w-[360px]">
+              <label htmlFor="searchProducto" className="relative block w-full lg:max-w-[360px]">
                 <span className="sr-only">Buscar producto</span>
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-700"
@@ -87,7 +87,7 @@ function PdvCatalogPanel() {
             </div>
           </div>
 
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1 md:hidden">
+          <div className="mt-2 flex max-w-full gap-2 overflow-x-auto pb-1 xl:hidden">
             {categoryFilters.map((filtro) => (
               <button
                 key={filtro.value}
@@ -106,7 +106,7 @@ function PdvCatalogPanel() {
         </div>
 
         <div
-          className="min-h-0 flex-1 overflow-y-auto px-4 py-4"
+          className="min-h-0 flex-1 overflow-visible px-3 py-4 sm:px-4 lg:overflow-y-auto"
           tabIndex={0}
           aria-label="Catálogo de productos desplazable"
         >
@@ -121,7 +121,7 @@ function PdvCatalogPanel() {
               <p className="font-bold text-base">No hay productos en esta categoría</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7">
               {productosFiltrados.map((producto) => (
                 <PdvProductTile
                   key={producto.id}

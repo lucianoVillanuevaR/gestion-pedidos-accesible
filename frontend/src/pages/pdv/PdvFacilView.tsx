@@ -61,38 +61,32 @@ function PdvFacilView() {
     total
   } = usePdvViewContext();
 
-  const stepGuidance = !isTurnoOpen
-    ? {
-        title: "Abre turno",
-        description: "Turno cerrado. Abre turno para registrar pedidos."
-      }
-    : [
-        {
-          title: "Elige una categoría",
-          description: ""
-        },
-        {
-          title: "Elige un producto",
-          description: "Selecciona un producto y usa los botones grandes para indicar la cantidad."
-        },
-        {
-          title: "Revisa tu pedido",
-          description: "Confirma lo que elegiste antes de seguir al siguiente paso."
-        },
-        {
-          title: "Datos del comprador",
-          description: "Ingresa el nombre del comprador."
-        },
-        {
-          title: "Selecciona el pago",
-          description: "Escoge un método de pago con una sola pulsación."
-        },
-        {
-          title: isEditingPedido ? "Guardar cambios" : "Registrar pedido",
-          description: ""
-        }
-      ][accessibleStep - 1];
-  const visibleStepNumber = isTurnoOpen ? accessibleStep : 1;
+  const stepGuidance = [
+    {
+      title: "Elige una categoría",
+      description: ""
+    },
+    {
+      title: "Elige un producto",
+      description: "Selecciona un producto y usa los botones grandes para indicar la cantidad."
+    },
+    {
+      title: "Revisa tu pedido",
+      description: "Confirma lo que elegiste antes de seguir al siguiente paso."
+    },
+    {
+      title: "Datos del comprador",
+      description: "Ingresa el nombre del comprador."
+    },
+    {
+      title: "Selecciona el pago",
+      description: "Escoge un método de pago con una sola pulsación."
+    },
+    {
+      title: isEditingPedido ? "Guardar cambios" : "Registrar pedido",
+      description: ""
+    }
+  ][accessibleStep - 1];
 
   return (
     <div className="space-y-5">
@@ -100,12 +94,12 @@ function PdvFacilView() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <h1 className="mt-3 font-black tracking-tight text-[2rem] sm:text-[2.35rem]">
-              Paso {visibleStepNumber}: {stepGuidance.title}
+              {isTurnoOpen ? `Paso ${accessibleStep}: ${stepGuidance.title}` : "Crear pedido paso a paso"}
             </h1>
             {isEditingPedido && (
               <p className="mt-3 text-xl font-black text-yellow-700">Modificando pedido #{editingPedidoNumber}</p>
             )}
-            {stepGuidance.description && (
+            {isTurnoOpen && stepGuidance.description && (
               <p
                 className={`mt-3 max-w-2xl text-lg leading-relaxed ${isHighContrast ? "contrast-body-text" : "text-slate-600"}`}
               >
@@ -126,36 +120,25 @@ function PdvFacilView() {
                 Cancelar modificación
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                if (isTurnoUpdating) return;
-                if (isTurnoOpen) {
+            {isTurnoOpen && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (isTurnoUpdating) return;
                   setIsCloseTurnoConfirmOpen(true);
-                  return;
-                }
-
-                handleToggleTurno();
-              }}
-              disabled={isTurnoUpdating}
-              className={`inline-flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border px-4 py-3 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
-                isHighContrast
-                  ? isTurnoOpen
+                }}
+                disabled={isTurnoUpdating}
+                className={`inline-flex min-h-[56px] items-center justify-center gap-3 rounded-2xl border px-4 py-3 font-black transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${
+                  isHighContrast
                     ? "contrast-button-danger"
-                    : "contrast-button-primary"
-                  : isTurnoOpen
-                    ? "border-red-800 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
-                    : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-700"
-              }`}
-              aria-pressed={isTurnoOpen}
-            >
-              {isTurnoOpen ? (
+                    : "border-red-800 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
+                }`}
+                aria-pressed="true"
+              >
                 <LockKeyhole aria-hidden="true" className="h-6 w-6" />
-              ) : (
-                <UnlockKeyhole aria-hidden="true" className="h-6 w-6" />
-              )}
-              <span>{isTurnoUpdating ? "Procesando..." : isTurnoOpen ? "Cerrar turno" : "Abrir turno"}</span>
-            </button>
+                <span>{isTurnoUpdating ? "Procesando..." : "Cerrar turno"}</span>
+              </button>
+            )}
 
             <EasyModeActions />
           </div>

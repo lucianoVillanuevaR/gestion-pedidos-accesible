@@ -47,7 +47,7 @@ const EASY_ACTIONS: EasyAction[] = [
     label: "Pedidos recientes",
     description: "Ver pedidos y turnos cerrados.",
     icon: History,
-    path: "/historial-pedidos"
+    path: "/historial-pedidos/facil"
   },
   {
     ariaLabel: "Cerrar turno",

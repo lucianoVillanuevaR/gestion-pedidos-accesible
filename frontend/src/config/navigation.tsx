@@ -130,6 +130,7 @@ const EASY_ROUTE_BY_STANDARD_PATH: Record<string, string> = {
   "/preparacion": "/preparacion/facil",
   "/productos": "/productos/facil",
   "/inventario": "/inventario/facil",
+  "/historial-pedidos": "/historial-pedidos/facil",
   "/cocina": "/cocina/facil"
 };
 
@@ -146,6 +147,7 @@ const STANDARD_ROUTE_BY_EASY_PATH: Record<string, string> = {
   "/preparacion/facil": "/preparacion",
   "/productos/facil": "/productos",
   "/inventario/facil": "/inventario",
+  "/historial-pedidos/facil": "/historial-pedidos",
   "/cocina/facil": "/cocina"
 };
 
@@ -179,6 +181,14 @@ export function isPdvRoute(pathname: string) {
   return pathname === "/pdv" || pathname === "/pdv/facil";
 }
 
+export function isPdvEasyModeRoute(pathname: string) {
+  return isPdvRoute(pathname) || pathname === "/modo-facil";
+}
+
+export function isEasyModeControlRoute(pathname: string) {
+  return pathname === "/pdv" || isEasyRoute(pathname);
+}
+
 export function isPedidosRoute(pathname: string) {
   return (
     pathname === "/pedidos" ||
@@ -203,7 +213,7 @@ export function isCocinaRoute(pathname: string) {
 }
 
 export function isHistorialPedidosRoute(pathname: string) {
-  return pathname === "/historial-pedidos";
+  return pathname === "/historial-pedidos" || pathname === "/historial-pedidos/facil";
 }
 
 export function isInventarioRoute(pathname: string) {
