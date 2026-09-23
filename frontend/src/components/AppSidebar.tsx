@@ -235,7 +235,9 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                 <Accessibility className={isAccessible ? "h-6 w-6" : "h-[18px] w-[18px]"} aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className={`block font-bold leading-tight tracking-normal ${isAccessible ? "text-lg" : "text-sm"}`}>
+                <span
+                  className={`block font-bold leading-tight tracking-normal ${isAccessible ? "text-lg" : "text-sm"}`}
+                >
                   {isAccessible ? "Opciones de ayuda" : "Accesibilidad"}
                 </span>
               </span>

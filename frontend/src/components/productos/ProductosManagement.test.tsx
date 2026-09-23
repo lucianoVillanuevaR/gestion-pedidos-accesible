@@ -226,9 +226,11 @@ describe("acciones de gestión de productos", () => {
     );
 
     expect(
-      (screen.getByRole("button", {
-        name: "Opciones de categoría Destacados no disponibles"
-      }) as HTMLButtonElement).disabled
+      (
+        screen.getByRole("button", {
+          name: "Opciones de categoría Destacados no disponibles"
+        }) as HTMLButtonElement
+      ).disabled
     ).toBe(true);
   });
 

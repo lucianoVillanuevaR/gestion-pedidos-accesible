@@ -308,11 +308,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
             ) : (
               <div className="grid gap-3">
                 {inventarioFacilFiltrado.map((item) => (
-                  <InventarioFacilRow
-                    key={item.productoId}
-                    item={item}
-                    isHighContrast={isHighContrast}
-                  />
+                  <InventarioFacilRow key={item.productoId} item={item} isHighContrast={isHighContrast} />
                 ))}
               </div>
             )}
