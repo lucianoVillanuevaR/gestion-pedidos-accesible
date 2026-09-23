@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
+import { withProductImageUrl } from "../services/productImageService";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateInventarioUpdate } from "../validations/inventario.validation";
 
@@ -25,14 +26,18 @@ function toInventarioResponse(item: {
   producto: {
     disponible: boolean;
     id: number;
+    imagenUrl: string | null;
     nombre: string;
     tipo: "producto" | "promo" | "combo";
     controlaStock: boolean;
   };
 }) {
+  const productoConImagen = withProductImageUrl(item.producto);
+
   return {
     productoId: item.productoId,
     productoNombre: item.producto.nombre,
+    imagenUrl: productoConImagen.imagenPublicUrl,
     productoDisponible: item.producto.disponible,
     tipo: item.producto.tipo,
     controlaStock: item.producto.controlaStock,

@@ -212,7 +212,7 @@ describe("acciones de gestión de productos", () => {
     expect(screen.getByRole("button", { name: "Eliminar categoría" })).toBeTruthy();
   });
 
-  it("mantiene Destacados como vista derivada sin menú de categoría", () => {
+  it("muestra en Destacados el control de opciones sin habilitar acciones de categoría", () => {
     render(
       <CategoriaBlock
         grupo={{ ...completos, label: "Destacados", value: "Destacados" }}
@@ -225,7 +225,11 @@ describe("acciones de gestión de productos", () => {
       />
     );
 
-    expect(screen.queryByRole("button", { name: "Opciones de categoría Destacados" })).toBeNull();
+    expect(
+      (screen.getByRole("button", {
+        name: "Opciones de categoría Destacados no disponibles"
+      }) as HTMLButtonElement).disabled
+    ).toBe(true);
   });
 
   it("mantiene labels explícitos para editar y ocultar productos", () => {

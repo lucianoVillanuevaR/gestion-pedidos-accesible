@@ -2,6 +2,7 @@ import { ChevronDown, ChevronUp, PackageCheck, RefreshCw, Save, Search, Warehous
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";
+import ProductImage from "../../components/productos/ProductImage";
 import AlertMessage from "../../components/ui/AlertMessage";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
@@ -11,6 +12,7 @@ import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { getInventario, updateInventario } from "../../services/inventario";
 import type { InventarioEstado, InventarioItem } from "../../types";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
+import { resolveProductImage } from "../../utils/productImages";
 import {
   countInventarioFacil,
   filterInventarioFacil,
@@ -306,18 +308,11 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
             ) : (
               <div className="grid gap-3">
                 {inventarioFacilFiltrado.map((item) => (
-                  <article
+                  <InventarioFacilRow
                     key={item.productoId}
-                    className={`rounded-2xl px-4 py-2 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
-                  >
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-950 sm:text-xl">{item.productoNombre}</h2>
-                        <p className="mt-1 text-lg font-bold text-slate-700">Stock: {item.stockActual}</p>
-                      </div>
-                      <AccessibleStockBadge estado={item.estado} isHighContrast={isHighContrast} />
-                    </div>
-                  </article>
+                    item={item}
+                    isHighContrast={isHighContrast}
+                  />
                 ))}
               </div>
             )}
@@ -514,12 +509,51 @@ function AccessibleStockFilter({
 function AccessibleStockBadge({ estado, isHighContrast }: { estado: InventarioEstado; isHighContrast: boolean }) {
   return (
     <span
-      className={`inline-flex min-h-[40px] items-center justify-center self-start rounded-xl border-2 px-4 text-base font-black sm:self-auto ${
+      className={`inline-flex min-h-[40px] shrink-0 items-center justify-center rounded-xl border-2 px-4 text-base font-black ${
         isHighContrast ? "contrast-panel-soft border-yellow-400" : getEstadoClass(estado)
       }`}
     >
       {getInventarioFacilEstadoLabel(estado)}
     </span>
+  );
+}
+
+export function InventarioFacilRow({ item, isHighContrast }: { item: InventarioItem; isHighContrast: boolean }) {
+  const imageUrl = resolveProductImage({
+    imagen: undefined,
+    imagenPublicUrl: item.imagenUrl,
+    imagenUrl: null,
+    nombre: item.productoNombre
+  });
+  const imageClass = `h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 object-cover sm:h-20 sm:w-20 ${
+    isHighContrast ? "contrast-panel-soft border-yellow-400" : "border-slate-300 bg-slate-100"
+  }`;
+
+  return (
+    <article
+      className={`rounded-2xl px-3 py-3 sm:px-4 ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
+    >
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+        <ProductImage
+          alt=""
+          decorative
+          src={imageUrl}
+          className={imageClass}
+          emptyClassName={`inline-flex items-center justify-center text-slate-500 ${imageClass}`}
+          emptyLabel="icon"
+          showEmptyOnError
+        />
+        <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 sm:gap-x-4">
+          <h2 className="col-span-2 break-words text-lg font-bold leading-tight text-slate-950 sm:col-span-1 sm:text-xl">
+            {item.productoNombre}
+          </h2>
+          <p className="col-start-1 row-start-2 text-lg font-bold text-slate-700">Stock: {item.stockActual}</p>
+          <div className="col-start-2 row-start-2 sm:row-span-2 sm:row-start-1">
+            <AccessibleStockBadge estado={item.estado} isHighContrast={isHighContrast} />
+          </div>
+        </div>
+      </div>
+    </article>
   );
 }
 

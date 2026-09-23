@@ -7,6 +7,7 @@ import { InventarioRow } from "./InventarioPage";
 
 const item: InventarioItem = {
   estado: "disponible",
+  imagenUrl: "/media/productos/completo-aleman.webp",
   productoDisponible: true,
   productoId: 1,
   productoNombre: "Completo Alemán",
@@ -39,9 +40,10 @@ describe("fila de inventario normal", () => {
   afterEach(cleanup);
 
   it("muestra Guardado deshabilitado cuando no existen cambios", () => {
-    const { onSave } = renderRow();
+    const { container, onSave } = renderRow();
     const button = screen.getByRole("button", { name: "Guardado" });
 
+    expect(container.querySelector("img")).toBeNull();
     expect(button.hasAttribute("disabled")).toBe(true);
     fireEvent.click(button);
     expect(onSave).not.toHaveBeenCalled();

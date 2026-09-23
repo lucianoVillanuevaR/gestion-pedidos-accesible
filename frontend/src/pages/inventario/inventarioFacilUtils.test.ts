@@ -10,6 +10,7 @@ import {
 const items: InventarioItem[] = [
   {
     estado: "disponible",
+    imagenUrl: null,
     productoDisponible: true,
     productoId: 1,
     productoNombre: "Completo Alemán",
@@ -18,6 +19,7 @@ const items: InventarioItem[] = [
   },
   {
     estado: "bajo_stock",
+    imagenUrl: null,
     productoDisponible: true,
     productoId: 2,
     productoNombre: "Completo italiano",
@@ -26,6 +28,7 @@ const items: InventarioItem[] = [
   },
   {
     estado: "sin_stock",
+    imagenUrl: null,
     productoDisponible: false,
     productoId: 3,
     productoNombre: "Barros Luco",

@@ -217,6 +217,7 @@ export type InventarioEstado = "disponible" | "bajo_stock" | "sin_stock";
 
 export interface InventarioItem {
   estado: InventarioEstado;
+  imagenUrl: string | null;
   productoDisponible: boolean;
   productoId: number;
   productoNombre: string;
