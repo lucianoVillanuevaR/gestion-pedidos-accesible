@@ -225,9 +225,11 @@ export interface InventarioItem {
   stockMinimo: number;
   tipo?: TipoProducto;
   controlaStock?: boolean;
+  updatedAt: string;
 }
 
 export type UpdateInventarioPayload = {
+  expectedUpdatedAt: string;
   stockActual?: number;
   stockMinimo?: number;
 };

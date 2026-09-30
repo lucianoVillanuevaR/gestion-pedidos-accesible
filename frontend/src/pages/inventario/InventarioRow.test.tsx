@@ -12,7 +12,8 @@ const item: InventarioItem = {
   productoId: 1,
   productoNombre: "Completo Alemán",
   stockActual: 30,
-  stockMinimo: 10
+  stockMinimo: 10,
+  updatedAt: "2026-09-23T18:00:00.000Z"
 };
 
 function renderRow(draftValues = { stockActual: "30", stockMinimo: "10" }) {

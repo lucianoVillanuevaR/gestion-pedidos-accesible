@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../../contexts/AccessibilityContext";
 import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
-import type { EstadoPedido, PedidoDetalleResponse, PedidoResponse } from "../../../types";
+import type { EstadoPedido, PedidoDetalleResponse, PedidoResponse, UserRole } from "../../../types";
 import { formatCurrency } from "../../../utils/formatters";
 import {
   ESTADO_META,
@@ -87,13 +87,15 @@ export function PedidoModal({
   isUpdating,
   onClose,
   onEstadoChange,
-  onOpenModal
+  onOpenModal,
+  role
 }: {
   activeModal: PedidoModalState;
   isUpdating: boolean;
   onClose: () => void;
   onEstadoChange: (pedido: PedidoResponse, estado: EstadoPedido) => void;
   onOpenModal: (modal: ActiveModal) => void;
+  role: UserRole;
 }) {
   const { isAccessible } = useAccessibilityContext();
   const { action, pedido } = activeModal;
@@ -144,7 +146,7 @@ export function PedidoModal({
   }
 
   if (action === "state") {
-    const allowedOptions = getAllowedEstadoOptions(pedido.estado);
+    const allowedOptions = getAllowedEstadoOptions(pedido.estado, role);
     const unavailableMessage =
       pedido.estado === "entregado"
         ? "Pedido finalizado"

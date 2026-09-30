@@ -30,6 +30,7 @@ function renderNormalView(overrides: Partial<CocinaViewProps> = {}) {
     onOpenModal: vi.fn(),
     onRefresh: vi.fn(),
     pedidos: [pedidoPendiente],
+    role: "cocina",
     updatingPedidoId: null,
     urgentCount: 1,
     ...overrides
@@ -78,5 +79,14 @@ describe("vista normal de preparación", () => {
     renderNormalView({ isFullscreen: true });
 
     expect(screen.getByRole("button", { name: "Salir de pantalla completa" })).toBeTruthy();
+  });
+
+  it("mantiene la vista de cocina en solo lectura para administración", () => {
+    renderNormalView({ role: "admin" });
+
+    expect(screen.queryByRole("button", { name: "Avanzar todos" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "En preparación" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Listo" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Entregar" })).toBeNull();
   });
 });

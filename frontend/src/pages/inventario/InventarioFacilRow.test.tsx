@@ -12,7 +12,8 @@ const item: InventarioItem = {
   productoId: 1,
   productoNombre: "Completo Alemán",
   stockActual: 2,
-  stockMinimo: 5
+  stockMinimo: 5,
+  updatedAt: "2026-09-23T18:00:00.000Z"
 };
 
 describe("fila de inventario fácil", () => {

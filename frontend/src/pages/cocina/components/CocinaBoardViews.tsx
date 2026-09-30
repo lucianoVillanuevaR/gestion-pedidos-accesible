@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import EasyModeActions from "../../../components/EasyModeActions";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
-import type { EstadoPedido, PedidoResponse } from "../../../types";
+import type { EstadoPedido, PedidoResponse, UserRole } from "../../../types";
 import {
   PedidoModal,
   StatusBadge,
@@ -31,6 +31,7 @@ export type CocinaViewProps = {
   onOpenModal: (modal: ActiveModal) => void;
   onRefresh: () => void;
   pedidos: PedidoResponse[];
+  role: UserRole;
   updatingPedidoId: number | null;
   urgentCount: number;
 };
@@ -41,6 +42,7 @@ type TicketProps = {
   onEstadoChange: (pedido: PedidoResponse, estado: EstadoPedido) => void;
   onOpenModal: (modal: ActiveModal) => void;
   pedido: PedidoResponse;
+  role: UserRole;
 };
 
 export function CocinaNormalView({
@@ -58,6 +60,7 @@ export function CocinaNormalView({
   onOpenModal,
   onRefresh,
   pedidos,
+  role,
   updatingPedidoId,
   urgentCount
 }: CocinaViewProps) {
@@ -72,19 +75,21 @@ export function CocinaNormalView({
           <KitchenTitlePill counts={counts} isHighContrast={isHighContrast} />
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={onAdvanceVisible}
-              disabled={pedidos.length === 0 || updatingPedidoId !== null}
-              className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                isHighContrast
-                  ? "contrast-button-primary"
-                  : "border border-yellow-400 bg-[#FECE00] text-slate-950 shadow-md hover:bg-[#FFD633]"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              <Check className="h-5 w-5" aria-hidden="true" />
-              Avanzar todos
-            </button>
+            {role === "cocina" && (
+              <button
+                type="button"
+                onClick={onAdvanceVisible}
+                disabled={pedidos.length === 0 || updatingPedidoId !== null}
+                className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isHighContrast
+                    ? "contrast-button-primary"
+                    : "border border-yellow-400 bg-[#FECE00] text-slate-950 shadow-md hover:bg-[#FFD633]"
+                } ${FOCUS_VISIBLE_CLASS}`}
+              >
+                <Check className="h-5 w-5" aria-hidden="true" />
+                Avanzar todos
+              </button>
+            )}
             <IconButton
               label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
               onClick={onFullscreenToggle}
@@ -141,6 +146,7 @@ export function CocinaNormalView({
                   onEstadoChange={onEstadoChange}
                   onOpenModal={onOpenModal}
                   pedido={pedido}
+                  role={role}
                 />
               ))
             )}
@@ -154,6 +160,7 @@ export function CocinaNormalView({
             onClose={() => onOpenModal(null)}
             onEstadoChange={onEstadoChange}
             onOpenModal={onOpenModal}
+            role={role}
           />
         )}
       </section>
@@ -176,6 +183,7 @@ export function CocinaFacilView({
   onOpenModal,
   onRefresh,
   pedidos,
+  role,
   updatingPedidoId,
   urgentCount
 }: CocinaViewProps) {
@@ -252,7 +260,7 @@ export function CocinaFacilView({
 
         <div className={`grid gap-3 rounded-[26px] p-3 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}>
           <p className="text-lg font-black text-slate-950">Controles de preparación</p>
-          <div className="grid gap-2 sm:grid-cols-2 md:min-w-[540px]">
+          <div className={`grid gap-2 ${role === "cocina" ? "sm:grid-cols-2 md:min-w-[540px]" : "md:min-w-[260px]"}`}>
             <button
               type="button"
               onClick={onAutoRefreshToggle}
@@ -267,19 +275,21 @@ export function CocinaFacilView({
             >
               {isAutoRefreshEnabled ? "Automática: Activada" : "Automática: Desactivada"}
             </button>
-            <button
-              type="button"
-              onClick={onAdvanceVisible}
-              disabled={pedidos.length === 0 || updatingPedidoId !== null}
-              aria-label="Avanzar todas al siguiente estado"
-              className={`min-h-[52px] rounded-xl border-2 px-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                isHighContrast
-                  ? "contrast-button-primary"
-                  : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              Avanzar todas
-            </button>
+            {role === "cocina" && (
+              <button
+                type="button"
+                onClick={onAdvanceVisible}
+                disabled={pedidos.length === 0 || updatingPedidoId !== null}
+                aria-label="Avanzar todas al siguiente estado"
+                className={`min-h-[52px] rounded-xl border-2 px-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isHighContrast
+                    ? "contrast-button-primary"
+                    : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                } ${FOCUS_VISIBLE_CLASS}`}
+              >
+                Avanzar todas
+              </button>
+            )}
           </div>
         </div>
 
@@ -307,6 +317,7 @@ export function CocinaFacilView({
                 onEstadoChange={onEstadoChange}
                 onOpenModal={onOpenModal}
                 pedido={pedido}
+                role={role}
               />
             ))}
           </div>
@@ -319,6 +330,7 @@ export function CocinaFacilView({
             onClose={() => onOpenModal(null)}
             onEstadoChange={onEstadoChange}
             onOpenModal={onOpenModal}
+            role={role}
           />
         )}
       </section>
@@ -378,8 +390,8 @@ function CocinaSummary({
   );
 }
 
-function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido }: TicketProps) {
-  const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
+function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido, role }: TicketProps) {
+  const { delayed, isPending, isPreparing, numeroPedido } = getKitchenTicketState(pedido);
   const comentarios = getKitchenComments(pedido);
 
   return (
@@ -433,69 +445,61 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
         <p className="mt-3 text-xs font-black uppercase text-slate-600">Haz clic para ver todos los detalles</p>
       </button>
 
-      <div className="mt-4 grid gap-2">
-        <div className="grid grid-cols-2 gap-2" aria-label="Flujo del pedido">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (isPending) {
-                onEstadoChange(pedido, "en_preparacion");
-              }
-            }}
-            disabled={!isPending || isUpdating}
-            className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
-              isPreparing
-                ? "border-yellow-300 bg-yellow-100 text-yellow-900"
-                : isPending
-                  ? "border-yellow-600 bg-yellow-500 text-slate-950 hover:bg-yellow-600"
+      {role === "cocina" && (
+        <div className="mt-4 grid gap-2">
+          <div className="grid grid-cols-2 gap-2" aria-label="Flujo del pedido">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isPending) {
+                  onEstadoChange(pedido, "en_preparacion");
+                }
+              }}
+              disabled={!isPending || isUpdating}
+              className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
+                isPreparing
+                  ? "border-yellow-300 bg-yellow-100 text-yellow-900"
+                  : isPending
+                    ? "border-yellow-600 bg-yellow-500 text-slate-950 hover:bg-yellow-600"
+                    : "border-slate-200 bg-slate-100 text-slate-400"
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              {isPreparing ? "En preparación" : isUpdating && isPending ? "Guardando..." : "En preparación"}
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isPreparing) {
+                  onEstadoChange(pedido, "listo");
+                }
+              }}
+              disabled={!isPreparing || isUpdating}
+              className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
+                isPreparing
+                  ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
                   : "border-slate-200 bg-slate-100 text-slate-400"
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            {isPreparing ? "En preparación" : isUpdating && isPending ? "Guardando..." : "En preparación"}
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (isPreparing) {
-                onEstadoChange(pedido, "listo");
-              }
-            }}
-            disabled={!isPreparing || isUpdating}
-            className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
-              isPreparing
-                ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-                : "border-slate-200 bg-slate-100 text-slate-400"
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            {isUpdating && isPreparing ? "Guardando..." : "Listo"}
-          </button>
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              {isUpdating && isPreparing ? "Guardando..." : "Listo"}
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            if (isReady) {
-              onEstadoChange(pedido, "entregado");
-            }
-          }}
-          disabled={!isReady || isUpdating}
-          className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
-            isReady
-              ? "border-slate-900 bg-slate-900 text-white hover:bg-black"
-              : "border-slate-200 bg-slate-100 text-slate-400"
-          } ${FOCUS_VISIBLE_CLASS}`}
-        >
-          {isUpdating && isReady ? "Guardando..." : "Entregar"}
-        </button>
-      </div>
+      )}
     </article>
   );
 }
 
-function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido }: TicketProps) {
-  const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
+function AccessibleKitchenTicket({
+  isHighContrast,
+  isUpdating,
+  onEstadoChange,
+  onOpenModal,
+  pedido,
+  role
+}: TicketProps) {
+  const { delayed, isPending, isPreparing, numeroPedido } = getKitchenTicketState(pedido);
   const interactionProps = getKitchenTicketInteractionProps(pedido, onOpenModal);
   const comentarios = getKitchenComments(pedido);
 
@@ -548,63 +552,48 @@ function AccessibleKitchenTicket({ isHighContrast, isUpdating, onEstadoChange, o
         )}
       </div>
 
-      <div className="mt-5 grid gap-3">
-        <div className="grid gap-3 sm:grid-cols-2" aria-label="Flujo del pedido">
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (isPending) {
-                onEstadoChange(pedido, "en_preparacion");
-              }
-            }}
-            disabled={!isPending || isUpdating}
-            className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
-              isPreparing
-                ? "border-yellow-400 bg-yellow-100 text-yellow-950"
-                : isPending
-                  ? "border-yellow-700 bg-yellow-600 text-white hover:bg-yellow-700"
+      {role === "cocina" && (
+        <div className="mt-5 grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2" aria-label="Flujo del pedido">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isPending) {
+                  onEstadoChange(pedido, "en_preparacion");
+                }
+              }}
+              disabled={!isPending || isUpdating}
+              className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
+                isPreparing
+                  ? "border-yellow-400 bg-yellow-100 text-yellow-950"
+                  : isPending
+                    ? "border-yellow-700 bg-yellow-600 text-white hover:bg-yellow-700"
+                    : "border-slate-300 bg-slate-100 text-slate-400"
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              {isUpdating && isPending ? "Guardando..." : "En preparación"}
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isPreparing) {
+                  onEstadoChange(pedido, "listo");
+                }
+              }}
+              disabled={!isPreparing || isUpdating}
+              className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
+                isPreparing
+                  ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
                   : "border-slate-300 bg-slate-100 text-slate-400"
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            {isUpdating && isPending ? "Guardando..." : "En preparación"}
-          </button>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (isPreparing) {
-                onEstadoChange(pedido, "listo");
-              }
-            }}
-            disabled={!isPreparing || isUpdating}
-            className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
-              isPreparing
-                ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-                : "border-slate-300 bg-slate-100 text-slate-400"
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            {isUpdating && isPreparing ? "Guardando..." : "Listo"}
-          </button>
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              {isUpdating && isPreparing ? "Guardando..." : "Listo"}
+            </button>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            if (isReady && window.confirm("¿Deseas marcar este pedido como entregado?")) {
-              onEstadoChange(pedido, "entregado");
-            }
-          }}
-          disabled={!isReady || isUpdating}
-          className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
-            isReady
-              ? "border-slate-950 bg-slate-950 text-white hover:bg-black"
-              : "border-slate-300 bg-slate-100 text-slate-400"
-          } ${FOCUS_VISIBLE_CLASS}`}
-        >
-          {isUpdating && isReady ? "Guardando..." : "Entregar"}
-        </button>
-      </div>
+      )}
     </article>
   );
 }

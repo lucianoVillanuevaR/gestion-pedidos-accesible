@@ -54,9 +54,5 @@ export function getNextCocinaEstado(estado: EstadoPedido) {
     return "listo";
   }
 
-  if (estado === "listo") {
-    return "entregado";
-  }
-
   return null;
 }

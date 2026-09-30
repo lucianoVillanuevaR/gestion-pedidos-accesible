@@ -73,7 +73,7 @@ describe("validaciones de productos", () => {
         precio: 3900,
         tipo: "promo",
         controlaStock: false,
-        componentes: [{ componenteId: "7", cantidad: "2" }]
+        componentes: [{ componenteId: "7", cantidad: 2 }]
       })
     ).toMatchObject({
       data: {
@@ -84,12 +84,30 @@ describe("validaciones de productos", () => {
     });
   });
 
-  it("rechaza cantidades inválidas y stock propio en promos", () => {
+  it.each([0, -1, 1.5, "2", Number.NaN, Number.POSITIVE_INFINITY, 2_147_483_648])(
+    "rechaza la cantidad de componente inválida %s",
+    (cantidad) => {
+      expect(
+        validateProductoUpdate({
+          componentes: [{ componenteId: 7, cantidad }]
+        }).error
+      ).toContain("entero entre 1 y 2147483647");
+    }
+  );
+
+  it("acepta el máximo entero de PostgreSQL como cantidad de componente", () => {
     expect(
       validateProductoUpdate({
-        componentes: [{ componenteId: 7, cantidad: 0 }]
-      }).error
-    ).toContain("entero positivo");
+        componentes: [{ componenteId: 7, cantidad: 2_147_483_647 }]
+      })
+    ).toEqual({
+      data: {
+        componentes: [{ componenteId: 7, cantidad: 2_147_483_647 }]
+      }
+    });
+  });
+
+  it("rechaza stock propio en promociones y combos", () => {
     expect(validateProductoUpdate({ tipo: "combo", controlaStock: true })).toEqual({
       error: "Las promociones y combos no pueden controlar stock propio"
     });

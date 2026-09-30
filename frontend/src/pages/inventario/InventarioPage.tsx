@@ -173,6 +173,7 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
       setError(null);
       setMessage(null);
       const updatedItem = await updateInventario(item.productoId, {
+        expectedUpdatedAt: item.updatedAt,
         stockActual,
         stockMinimo
       });

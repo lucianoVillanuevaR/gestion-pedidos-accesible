@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   pedidoCount: vi.fn(),
   pedidoFindUnique: vi.fn(),
   preparePedidoWrite: vi.fn(),
+  restorePedidoStock: vi.fn(),
   transaction: vi.fn()
 }));
 
@@ -24,11 +25,11 @@ vi.mock("../services/pedidoWriteService", () => ({
   assertPedidoCanBeUpdated: vi.fn(),
   normalizePedidoDetalles: (detalles: unknown) => detalles,
   preparePedidoWrite: mocks.preparePedidoWrite,
-  restorePedidoStock: vi.fn(),
+  restorePedidoStock: mocks.restorePedidoStock,
   shouldRestoreStockOnStateChange: vi.fn()
 }));
 
-import { crearPedido } from "./pedidos.controller";
+import { actualizarEstadoPedido, crearPedido } from "./pedidos.controller";
 
 describe("crearPedido", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -307,4 +308,53 @@ describe("crearPedido", () => {
     expect(status).toHaveBeenCalledWith(200);
     expect(json).toHaveBeenCalledWith(expect.objectContaining({ id: 42, numeroTurno: 7 }));
   });
+});
+
+describe("actualizarEstadoPedido", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each([
+    ["cocina", "pendiente", "cancelado"],
+    ["cocina", "en_preparacion", "cancelado"],
+    ["cocina", "listo", "entregado"],
+    ["cajero", "pendiente", "en_preparacion"],
+    ["cajero", "en_preparacion", "listo"],
+    ["admin", "listo", "entregado"],
+    ["admin", "pendiente", "en_preparacion"],
+    ["admin", "en_preparacion", "listo"]
+  ] as const)(
+    "rechaza %s: %s → %s antes de restaurar stock o escribir cambios",
+    async (role, currentState, nextState) => {
+      const tx = {
+        pedido: {
+          findUnique: vi.fn().mockResolvedValue({
+            id: 42,
+            estado: currentState,
+            updatedAt: new Date("2026-08-18T18:25:00.000Z"),
+            detalles: []
+          }),
+          updateMany: vi.fn()
+        },
+        pedidoHistorial: { create: vi.fn() }
+      };
+      mocks.transaction.mockImplementation((callback: (client: typeof tx) => unknown) => callback(tx));
+      const json = vi.fn();
+      const status = vi.fn().mockReturnValue({ json });
+
+      await actualizarEstadoPedido(
+        {
+          authUser: { id: 7, role, username: role },
+          body: { estado: nextState },
+          params: { id: "42" }
+        } as never,
+        { json, status } as never
+      );
+
+      expect(status).toHaveBeenCalledWith(403);
+      expect(json).toHaveBeenCalledWith({ error: "No tienes permisos para realizar esta transición." });
+      expect(mocks.restorePedidoStock).not.toHaveBeenCalled();
+      expect(tx.pedido.updateMany).not.toHaveBeenCalled();
+      expect(tx.pedidoHistorial.create).not.toHaveBeenCalled();
+    }
+  );
 });

@@ -37,6 +37,7 @@ type ProductoValidationResult = {
 };
 
 const TIPOS_PRODUCTO = ["producto", "promo", "combo"] as const;
+export const PRODUCTO_COMPONENTE_CANTIDAD_MAX = 2_147_483_647;
 
 function validateTipoYComponentes(input: ProductoInput, partial: boolean) {
   const data: Pick<ProductoValidationResult, "tipo" | "controlaStock" | "componentes"> = {};
@@ -66,7 +67,7 @@ function validateTipoYComponentes(input: ProductoInput, partial: boolean) {
     for (const raw of input.componentes) {
       if (!raw || typeof raw !== "object") return { error: "Cada componente debe ser válido" };
       const componenteId = Number((raw as { componenteId?: unknown }).componenteId);
-      const cantidad = Number((raw as { cantidad?: unknown }).cantidad);
+      const cantidadRaw = (raw as { cantidad?: unknown }).cantidad;
       const varianteRaw = (raw as { varianteId?: unknown }).varianteId;
       const varianteId = varianteRaw === undefined || varianteRaw === null ? undefined : Number(varianteRaw);
       if (!Number.isInteger(componenteId) || componenteId <= 0) {
@@ -74,9 +75,15 @@ function validateTipoYComponentes(input: ProductoInput, partial: boolean) {
           error: "Cada componente debe tener un componenteId entero positivo"
         };
       }
-      if (!Number.isInteger(cantidad) || cantidad <= 0) {
+      if (
+        typeof cantidadRaw !== "number" ||
+        !Number.isFinite(cantidadRaw) ||
+        !Number.isInteger(cantidadRaw) ||
+        cantidadRaw <= 0 ||
+        cantidadRaw > PRODUCTO_COMPONENTE_CANTIDAD_MAX
+      ) {
         return {
-          error: "La cantidad de cada componente debe ser un entero positivo"
+          error: `La cantidad de cada componente debe ser un entero entre 1 y ${PRODUCTO_COMPONENTE_CANTIDAD_MAX}`
         };
       }
       if (varianteId !== undefined && (!Number.isInteger(varianteId) || varianteId <= 0)) {
@@ -86,7 +93,7 @@ function validateTipoYComponentes(input: ProductoInput, partial: boolean) {
       ids.add(componenteId);
       componentes.push({
         componenteId,
-        cantidad,
+        cantidad: cantidadRaw,
         ...(varianteId !== undefined && { varianteId })
       });
     }

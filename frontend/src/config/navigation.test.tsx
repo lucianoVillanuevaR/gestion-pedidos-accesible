@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getEasyRoute,
+  getSidebarNavigation,
   getStandardRoute,
   isEasyModeControlRoute,
   isEasyRoute,
@@ -72,5 +73,11 @@ describe("navigation route helpers", () => {
     expect(isPdvEasyModeRoute("/admin")).toBe(false);
     expect(isPdvEasyModeRoute("/admin/productos")).toBe(false);
     expect(isPdvEasyModeRoute("/cocina")).toBe(false);
+  });
+
+  it("ofrece a Admin un acceso visible a la gestión autorizada de pedidos", () => {
+    expect(getSidebarNavigation("admin")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ label: "Pedidos", path: "/admin/pedidos" })])
+    );
   });
 });

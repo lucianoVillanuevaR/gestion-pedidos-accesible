@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  inventarioUpsert: vi.fn(),
+  inventarioFindUniqueOrThrow: vi.fn(),
+  inventarioUpdateMany: vi.fn(),
   productoFindMany: vi.fn(),
   productoFindUnique: vi.fn(),
   withProductImageUrl: vi.fn((producto: { imagenUrl?: string | null }) => ({
@@ -12,7 +13,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../config/prisma", () => ({
   default: {
-    inventario: { upsert: mocks.inventarioUpsert },
+    inventario: {
+      findUniqueOrThrow: mocks.inventarioFindUniqueOrThrow,
+      updateMany: mocks.inventarioUpdateMany
+    },
     producto: { findMany: mocks.productoFindMany, findUnique: mocks.productoFindUnique }
   }
 }));
@@ -33,7 +37,7 @@ describe("getInventario", () => {
         disponible: true,
         id: 1,
         imagenUrl: "completo-aleman.webp",
-        inventario: { stockActual: 27, stockMinimo: 5 },
+        inventario: { stockActual: 27, stockMinimo: 5, updatedAt: new Date("2026-09-23T18:00:00.000Z") },
         nombre: "Completo Alemán",
         tipo: "producto"
       },
@@ -42,7 +46,7 @@ describe("getInventario", () => {
         disponible: true,
         id: 2,
         imagenUrl: null,
-        inventario: { stockActual: 2, stockMinimo: 3 },
+        inventario: { stockActual: 2, stockMinimo: 3, updatedAt: new Date("2026-09-23T18:01:00.000Z") },
         nombre: "Barros Luco",
         tipo: "producto"
       }
@@ -67,7 +71,8 @@ describe("getInventario", () => {
         productoNombre: "Completo Alemán",
         stockActual: 27,
         stockMinimo: 5,
-        tipo: "producto"
+        tipo: "producto",
+        updatedAt: "2026-09-23T18:00:00.000Z"
       },
       {
         controlaStock: true,
@@ -78,7 +83,8 @@ describe("getInventario", () => {
         productoNombre: "Barros Luco",
         stockActual: 2,
         stockMinimo: 3,
-        tipo: "producto"
+        tipo: "producto",
+        updatedAt: "2026-09-23T18:01:00.000Z"
       }
     ]);
     expect(mocks.withProductImageUrl).toHaveBeenCalledTimes(2);
@@ -93,17 +99,33 @@ describe("getInventario", () => {
       nombre: "Completo Alemán",
       tipo: "producto"
     });
-    mocks.inventarioUpsert.mockResolvedValue({ stockActual: 4, stockMinimo: 5 });
+    mocks.inventarioUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.inventarioFindUniqueOrThrow.mockResolvedValue({
+      stockActual: 4,
+      stockMinimo: 5,
+      updatedAt: new Date("2026-09-23T18:05:00.000Z")
+    });
     const json = vi.fn();
     const status = vi.fn().mockReturnValue({ json });
 
     await updateInventarioProducto(
-      { body: { stockActual: 4, stockMinimo: 5 }, params: { productoId: "1" } } as never,
+      {
+        body: {
+          expectedUpdatedAt: "2026-09-23T18:00:00.000Z",
+          stockActual: 4,
+          stockMinimo: 5
+        },
+        params: { productoId: "1" }
+      } as never,
       { json, status } as never
     );
 
     expect(mocks.productoFindUnique).toHaveBeenCalledWith({ where: { id: 1 } });
-    expect(mocks.inventarioUpsert).toHaveBeenCalledOnce();
+    expect(mocks.inventarioUpdateMany).toHaveBeenCalledOnce();
+    expect(mocks.inventarioUpdateMany.mock.calls[0][0]).toMatchObject({
+      data: { stockActual: 4, stockMinimo: 5 },
+      where: { productoId: 1, updatedAt: new Date("2026-09-23T18:00:00.000Z") }
+    });
     expect(json).toHaveBeenCalledWith({
       controlaStock: true,
       estado: "bajo_stock",
@@ -113,8 +135,66 @@ describe("getInventario", () => {
       productoNombre: "Completo Alemán",
       stockActual: 4,
       stockMinimo: 5,
-      tipo: "producto"
+      tipo: "producto",
+      updatedAt: "2026-09-23T18:05:00.000Z"
     });
     expect(status).not.toHaveBeenCalled();
+  });
+
+  it("rechaza con 409 una segunda edición basada en una versión obsoleta", async () => {
+    mocks.productoFindUnique.mockResolvedValue({
+      controlaStock: true,
+      disponible: true,
+      id: 1,
+      imagenUrl: null,
+      nombre: "Completo Alemán",
+      tipo: "producto"
+    });
+    mocks.inventarioUpdateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+    mocks.inventarioFindUniqueOrThrow.mockResolvedValueOnce({
+      stockActual: 15,
+      stockMinimo: 5,
+      updatedAt: new Date("2026-09-23T18:05:00.000Z")
+    });
+    const firstJson = vi.fn();
+    const firstStatus = vi.fn().mockReturnValue({ json: firstJson });
+    const secondJson = vi.fn();
+    const secondStatus = vi.fn().mockReturnValue({ json: secondJson });
+    const staleBody = { expectedUpdatedAt: "2026-09-23T18:00:00.000Z", stockActual: 15 };
+
+    await updateInventarioProducto(
+      { body: staleBody, params: { productoId: "1" } } as never,
+      { json: firstJson, status: firstStatus } as never
+    );
+    await updateInventarioProducto(
+      { body: { ...staleBody, stockActual: 18 }, params: { productoId: "1" } } as never,
+      { json: secondJson, status: secondStatus } as never
+    );
+
+    expect(firstStatus).not.toHaveBeenCalled();
+    expect(firstJson).toHaveBeenCalledWith(expect.objectContaining({ stockActual: 15 }));
+    expect(secondStatus).toHaveBeenCalledWith(409);
+    expect(secondJson).toHaveBeenCalledWith({
+      error: "El inventario cambió mientras lo revisabas. Actualiza e intenta nuevamente."
+    });
+    expect(mocks.inventarioFindUniqueOrThrow).toHaveBeenCalledOnce();
+  });
+
+  it("detecta como conflicto una versión invalidada por un cambio de stock de pedido", async () => {
+    mocks.productoFindUnique.mockResolvedValue({ controlaStock: true, id: 1, tipo: "producto" });
+    mocks.inventarioUpdateMany.mockResolvedValue({ count: 0 });
+    const json = vi.fn();
+    const status = vi.fn().mockReturnValue({ json });
+
+    await updateInventarioProducto(
+      {
+        body: { expectedUpdatedAt: "2026-09-23T18:00:00.000Z", stockMinimo: 8 },
+        params: { productoId: "1" }
+      } as never,
+      { json, status } as never
+    );
+
+    expect(status).toHaveBeenCalledWith(409);
+    expect(mocks.inventarioFindUniqueOrThrow).not.toHaveBeenCalled();
   });
 });

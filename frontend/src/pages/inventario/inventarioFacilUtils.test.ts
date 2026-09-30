@@ -15,7 +15,8 @@ const items: InventarioItem[] = [
     productoId: 1,
     productoNombre: "Completo Alemán",
     stockActual: 12,
-    stockMinimo: 3
+    stockMinimo: 3,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   },
   {
     estado: "bajo_stock",
@@ -24,7 +25,8 @@ const items: InventarioItem[] = [
     productoId: 2,
     productoNombre: "Completo italiano",
     stockActual: 2,
-    stockMinimo: 3
+    stockMinimo: 3,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   },
   {
     estado: "sin_stock",
@@ -33,7 +35,8 @@ const items: InventarioItem[] = [
     productoId: 3,
     productoNombre: "Barros Luco",
     stockActual: 0,
-    stockMinimo: 2
+    stockMinimo: 2,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   }
 ];
 

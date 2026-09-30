@@ -34,6 +34,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT}
       CLIENT_URL: ${CLIENT_URL}
       DATABASE_URL: ${DATABASE_URL}
@@ -50,6 +51,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      minio:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     healthcheck:
@@ -122,6 +125,12 @@ services:
     volumes:
       - minio_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data:

@@ -4,11 +4,12 @@ import { Link } from "react-router-dom";
 import EasyModeActions from "../../components/EasyModeActions";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
-import { ESTADOS_PEDIDO_ACTIVOS } from "../../domain/pedidoRules";
+import { useAuthContext } from "../../contexts/AuthContext";
+import { canRoleTransitionPedido, ESTADOS_PEDIDO_ACTIVOS } from "../../domain/pedidoRules";
 import useVoice from "../../hooks/useVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
-import type { EstadoPedido, PedidoResponse } from "../../types";
+import type { EstadoPedido, PedidoResponse, UserRole } from "../../types";
 import {
   ESTADO_META,
   formatCurrency,
@@ -41,6 +42,7 @@ const EASY_SOFT_PANEL_CLASS = "border-slate-200 bg-slate-50";
 
 function PedidosFacilPage() {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { user } = useAuthContext();
   const { speak } = useVoice({ enabled: isVoiceEnabled });
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [searchTerm, setSearchTerm] = useState("");
@@ -408,6 +410,7 @@ function PedidosFacilPage() {
             }}
             onReadPedido={handleReadPedido}
             pedidos={pedidosMostrados}
+            role={user?.role ?? "cajero"}
             updatingPedidoId={updatingPedidoId}
           />
         )}
@@ -419,6 +422,7 @@ function PedidosFacilPage() {
             onClose={() => setActiveModal(null)}
             onEstadoChange={handleAccessibleEstadoChange}
             onOpenModal={setActiveModal}
+            role={user?.role ?? "cajero"}
           />
         )}
 
@@ -454,6 +458,7 @@ function AccessiblePedidosList({
   onOpenModal,
   onReadPedido,
   pedidos,
+  role,
   updatingPedidoId
 }: {
   isHighContrast: boolean;
@@ -461,6 +466,7 @@ function AccessiblePedidosList({
   onOpenModal: (modal: ActiveModal) => void;
   onReadPedido: (pedido: PedidoResponse) => void;
   pedidos: PedidoResponse[];
+  role: UserRole;
   updatingPedidoId: number | null;
 }) {
   if (pedidos.length === 0) {
@@ -487,6 +493,7 @@ function AccessiblePedidosList({
           onOpenModal={onOpenModal}
           onReadPedido={onReadPedido}
           pedido={pedido}
+          role={role}
         />
       ))}
     </section>
@@ -499,7 +506,8 @@ function AccessiblePedidoCard({
   onOpenModal,
   onEditPedido,
   onReadPedido,
-  pedido
+  pedido,
+  role
 }: {
   isHighContrast: boolean;
   isUpdating: boolean;
@@ -507,9 +515,13 @@ function AccessiblePedidoCard({
   onEditPedido: (pedido: PedidoResponse) => void;
   onReadPedido: (pedido: PedidoResponse) => void;
   pedido: PedidoResponse;
+  role: UserRole;
 }) {
   const cliente = pedido.clienteNombre?.trim() || "Sin nombre";
   const numeroPedido = getPedidoDisplayNumber(pedido);
+  const hasAllowedEstadoChange = (["en_preparacion", "listo", "entregado", "cancelado"] as const).some((estado) =>
+    canRoleTransitionPedido(role, pedido.estado, estado)
+  );
 
   return (
     <article
@@ -579,16 +591,18 @@ function AccessiblePedidoCard({
               Modificar pedido
             </Link>
           )}
-          <button
-            type="button"
-            onClick={() => onOpenModal({ action: "state", pedido })}
-            disabled={isUpdating || pedido.estado === "entregado" || pedido.estado === "cancelado"}
-            className={`min-h-[56px] rounded-2xl border-2 px-4 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isHighContrast ? "contrast-button-primary" : EASY_PRIMARY_BUTTON_CLASS
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            Cambiar estado
-          </button>
+          {hasAllowedEstadoChange && (
+            <button
+              type="button"
+              onClick={() => onOpenModal({ action: "state", pedido })}
+              disabled={isUpdating}
+              className={`min-h-[56px] rounded-2xl border-2 px-4 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isHighContrast ? "contrast-button-primary" : EASY_PRIMARY_BUTTON_CLASS
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              Cambiar estado
+            </button>
+          )}
         </div>
       </div>
     </article>

@@ -1,7 +1,8 @@
 import cors from "cors";
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import { env } from "./config/env";
-import { ensureProductBucket } from "./config/minio";
+import { ensureProductBucketWithRetry } from "./config/minio";
+import { errorHandler } from "./middlewares/errorHandler";
 import routes from "./routes";
 
 const app = express();
@@ -25,27 +26,16 @@ app.use(express.json({ limit: "100kb" }));
 
 app.use("/api", routes);
 
-app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
-  // Express identifica los handlers de error por recibir cuatro argumentos.
-  void next;
-
-  if (error instanceof SyntaxError && "body" in error) {
-    return res.status(400).json({ error: "JSON inválido" });
-  }
-
-  if (error instanceof Error && "type" in error && error.type === "entity.too.large") {
-    return res.status(413).json({ error: "Payload demasiado grande" });
-  }
-
-  console.error("Error no controlado:", error);
-  return res.status(500).json({ error: "Error interno del servidor" });
-});
+app.use(errorHandler);
 
 async function startServer() {
   try {
-    await ensureProductBucket();
+    await ensureProductBucketWithRetry();
   } catch (error) {
-    console.warn("MinIO no está disponible al iniciar; las imágenes funcionarán en modo degradado.", error);
+    console.warn(
+      "MinIO no está disponible después de los reintentos; las imágenes funcionarán en modo degradado.",
+      error
+    );
   }
 
   app.listen(env.port, () => {

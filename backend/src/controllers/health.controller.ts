@@ -13,14 +13,18 @@ export async function getReady(_request: Request, response: Response) {
   try {
     await prisma.$queryRaw`SELECT 1`;
   } catch {
-    return response.status(503).json({ status: "no_disponible", postgres: false, minio: false });
+    return response.status(503).json({ status: "no_disponible", database: false, minio: false });
   }
 
-  let minio = true;
+  let minio: boolean;
   try {
-    await minioClient.bucketExists(productBucket);
+    minio = await minioClient.bucketExists(productBucket);
   } catch {
     minio = false;
   }
-  return response.json({ status: "listo", postgres: true, minio });
+  if (!minio) {
+    return response.status(503).json({ status: "no_disponible", database: true, minio: false });
+  }
+
+  return response.json({ status: "listo", database: true, minio: true });
 }
