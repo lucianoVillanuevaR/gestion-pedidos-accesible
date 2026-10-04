@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { canRoleTransitionPedido } from "../domain/pedidoRules";
 import {
   validateIdempotencyKey,
   validateMetodoPago,
@@ -110,5 +111,31 @@ describe("validaciones de pedidos", () => {
   it("limita el nombre y la observación", () => {
     expect(validatePedidoTextFields("A".repeat(81), "")).toContain("80 caracteres");
     expect(validatePedidoTextFields("Ana", "A".repeat(301))).toContain("300 caracteres");
+  });
+});
+
+describe("autorización de transiciones por rol", () => {
+  it.each([
+    ["cocina", "pendiente", "en_preparacion", true],
+    ["cocina", "en_preparacion", "listo", true],
+    ["cocina", "pendiente", "cancelado", false],
+    ["cocina", "en_preparacion", "cancelado", false],
+    ["cocina", "listo", "entregado", false],
+    ["cajero", "pendiente", "cancelado", true],
+    ["cajero", "en_preparacion", "cancelado", true],
+    ["cajero", "listo", "entregado", true],
+    ["cajero", "pendiente", "en_preparacion", false],
+    ["cajero", "en_preparacion", "listo", false],
+    ["admin", "pendiente", "cancelado", true],
+    ["admin", "en_preparacion", "cancelado", true],
+    ["admin", "listo", "entregado", false],
+    ["admin", "pendiente", "en_preparacion", false],
+    ["admin", "en_preparacion", "listo", false]
+  ] as const)("%s: %s → %s = %s", (role, current, next, expected) => {
+    expect(canRoleTransitionPedido(role, current, next)).toBe(expected);
+  });
+
+  it("permite repetir el estado sin producir una transición", () => {
+    expect(canRoleTransitionPedido("cocina", "pendiente", "pendiente")).toBe(true);
   });
 });

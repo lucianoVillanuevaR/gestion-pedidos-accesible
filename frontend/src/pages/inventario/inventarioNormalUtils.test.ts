@@ -5,27 +5,33 @@ import { filterInventarioNormal, hasInventarioDraftChanges } from "./inventarioN
 const items: InventarioItem[] = [
   {
     estado: "disponible",
+    imagenUrl: null,
     productoDisponible: true,
     productoId: 1,
     productoNombre: "Completo Alemán",
     stockActual: 30,
-    stockMinimo: 10
+    stockMinimo: 10,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   },
   {
     estado: "bajo_stock",
+    imagenUrl: null,
     productoDisponible: true,
     productoId: 2,
     productoNombre: "Barros Luco",
     stockActual: 2,
-    stockMinimo: 5
+    stockMinimo: 5,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   },
   {
     estado: "sin_stock",
+    imagenUrl: null,
     productoDisponible: false,
     productoId: 3,
     productoNombre: "Chacarero",
     stockActual: 0,
-    stockMinimo: 4
+    stockMinimo: 4,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   }
 ];
 

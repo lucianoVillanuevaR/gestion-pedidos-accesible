@@ -10,27 +10,33 @@ import {
 const items: InventarioItem[] = [
   {
     estado: "disponible",
+    imagenUrl: null,
     productoDisponible: true,
     productoId: 1,
     productoNombre: "Completo Alemán",
     stockActual: 12,
-    stockMinimo: 3
+    stockMinimo: 3,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   },
   {
     estado: "bajo_stock",
+    imagenUrl: null,
     productoDisponible: true,
     productoId: 2,
     productoNombre: "Completo italiano",
     stockActual: 2,
-    stockMinimo: 3
+    stockMinimo: 3,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   },
   {
     estado: "sin_stock",
+    imagenUrl: null,
     productoDisponible: false,
     productoId: 3,
     productoNombre: "Barros Luco",
     stockActual: 0,
-    stockMinimo: 2
+    stockMinimo: 2,
+    updatedAt: "2026-09-23T18:00:00.000Z"
   }
 ];
 

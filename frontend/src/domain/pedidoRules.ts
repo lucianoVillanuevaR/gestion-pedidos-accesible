@@ -1,4 +1,4 @@
-import type { EstadoPedido, MetodoPago } from "../types";
+import type { EstadoPedido, MetodoPago, UserRole } from "../types";
 
 // Reglas de UX. El backend conserva y aplica obligatoriamente los mismos límites.
 export const PEDIDO_CLIENTE_NOMBRE_MAX_LENGTH = 80;
@@ -27,3 +27,26 @@ export const TRANSICIONES_ESTADO_PERMITIDAS: Readonly<Record<EstadoPedido, reado
   entregado: [],
   cancelado: []
 };
+
+const TRANSICIONES_PEDIDO_POR_ROL: Readonly<
+  Record<UserRole, Readonly<Partial<Record<EstadoPedido, readonly EstadoPedido[]>>>>
+> = {
+  cocina: {
+    pendiente: ["en_preparacion"],
+    en_preparacion: ["listo"]
+  },
+  cajero: {
+    pendiente: ["cancelado"],
+    en_preparacion: ["cancelado"],
+    listo: ["entregado"]
+  },
+  admin: {
+    pendiente: ["cancelado"],
+    en_preparacion: ["cancelado"]
+  }
+};
+
+export function canRoleTransitionPedido(role: UserRole, estadoActual: EstadoPedido, estadoNuevo: EstadoPedido) {
+  if (estadoActual === estadoNuevo) return true;
+  return TRANSICIONES_PEDIDO_POR_ROL[role][estadoActual]?.includes(estadoNuevo) ?? false;
+}

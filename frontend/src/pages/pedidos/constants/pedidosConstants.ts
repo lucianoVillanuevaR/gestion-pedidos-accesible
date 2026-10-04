@@ -1,5 +1,5 @@
-import { TRANSICIONES_ESTADO_PERMITIDAS } from "../../../domain/pedidoRules";
-import type { EstadoPedido, PedidoResponse } from "../../../types";
+import { canRoleTransitionPedido } from "../../../domain/pedidoRules";
+import type { EstadoPedido, PedidoResponse, UserRole } from "../../../types";
 
 export type EstadoFilter = EstadoPedido | "todos";
 type ModalAction = "detail" | "state" | "finish" | "cancel";
@@ -64,6 +64,6 @@ const CAMBIO_ESTADO_OPTIONS: Array<{ label: string; value: EstadoPedido }> = [
   { label: "Cancelar pedido", value: "cancelado" }
 ];
 
-export function getAllowedEstadoOptions(estado: EstadoPedido) {
-  return CAMBIO_ESTADO_OPTIONS.filter((option) => TRANSICIONES_ESTADO_PERMITIDAS[estado].includes(option.value));
+export function getAllowedEstadoOptions(estado: EstadoPedido, role: UserRole) {
+  return CAMBIO_ESTADO_OPTIONS.filter((option) => canRoleTransitionPedido(role, estado, option.value));
 }

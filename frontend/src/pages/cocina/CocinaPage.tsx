@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import type { EstadoPedido, PedidoResponse } from "../../types";
@@ -29,6 +30,7 @@ export function CocinaFacilPage() {
 
 function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { user } = useAuthContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true);
@@ -103,6 +105,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   };
 
   const handleAdvanceVisible = async () => {
+    if (user?.role !== "cocina") return;
     const pedidosToUpdate = cocinaPedidos.filter((pedido) => getNextCocinaEstado(pedido.estado));
     let hasSuccess = false;
     let hasError = false;
@@ -134,6 +137,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     onOpenModal: setActiveModal,
     onRefresh: handleRefresh,
     pedidos: cocinaPedidos,
+    role: user?.role ?? "cocina",
     updatingPedidoId,
     urgentCount
   };

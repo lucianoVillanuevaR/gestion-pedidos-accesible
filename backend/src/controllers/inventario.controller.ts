@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
+import { withProductImageUrl } from "../services/productImageService";
 import { parsePositiveIntegerId, validatePositiveIntegerId } from "../validations/common.validation";
 import { validateInventarioUpdate } from "../validations/inventario.validation";
-
-const DEFAULT_STOCK_ACTUAL = 0;
-const DEFAULT_STOCK_MINIMO = 0;
 
 function getEstadoInventario(stockActual: number, stockMinimo: number) {
   if (stockActual <= 0) {
@@ -22,22 +20,28 @@ function toInventarioResponse(item: {
   productoId: number;
   stockActual: number;
   stockMinimo: number;
+  updatedAt: Date;
   producto: {
     disponible: boolean;
     id: number;
+    imagenUrl: string | null;
     nombre: string;
     tipo: "producto" | "promo" | "combo";
     controlaStock: boolean;
   };
 }) {
+  const productoConImagen = withProductImageUrl(item.producto);
+
   return {
     productoId: item.productoId,
     productoNombre: item.producto.nombre,
+    imagenUrl: productoConImagen.imagenPublicUrl,
     productoDisponible: item.producto.disponible,
     tipo: item.producto.tipo,
     controlaStock: item.producto.controlaStock,
     stockActual: item.stockActual,
     stockMinimo: item.stockMinimo,
+    updatedAt: item.updatedAt.toISOString(),
     estado: getEstadoInventario(item.stockActual, item.stockMinimo)
   };
 }
@@ -63,7 +67,8 @@ export const getInventario = async (_req: Request, res: Response) => {
           producto,
           productoId: producto.id,
           stockActual: producto.inventario.stockActual,
-          stockMinimo: producto.inventario.stockMinimo
+          stockMinimo: producto.inventario.stockMinimo,
+          updatedAt: producto.inventario.updatedAt
         })
       ];
     });
@@ -102,22 +107,28 @@ export const updateInventarioProducto = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Este producto no controla stock propio" });
     }
 
-    const item = await prisma.inventario.upsert({
-      create: {
-        productoId,
-        stockActual: validation.data.stockActual ?? DEFAULT_STOCK_ACTUAL,
-        stockMinimo: validation.data.stockMinimo ?? DEFAULT_STOCK_MINIMO
-      },
-      update: validation.data,
-      where: { productoId }
+    const { expectedUpdatedAt, ...stockData } = validation.data;
+    const nextUpdatedAt = new Date(Math.max(Date.now(), expectedUpdatedAt.getTime() + 1));
+    const updated = await prisma.inventario.updateMany({
+      data: { ...stockData, updatedAt: nextUpdatedAt },
+      where: { productoId, updatedAt: expectedUpdatedAt }
     });
+
+    if (updated.count === 0) {
+      return res.status(409).json({
+        error: "El inventario cambió mientras lo revisabas. Actualiza e intenta nuevamente."
+      });
+    }
+
+    const item = await prisma.inventario.findUniqueOrThrow({ where: { productoId } });
 
     res.json(
       toInventarioResponse({
         producto,
         productoId,
         stockActual: item.stockActual,
-        stockMinimo: item.stockMinimo
+        stockMinimo: item.stockMinimo,
+        updatedAt: item.updatedAt
       })
     );
   } catch (error) {

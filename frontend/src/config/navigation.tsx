@@ -51,6 +51,13 @@ const APP_NAVIGATION_ITEMS: AppNavigationItem[] = [
     allowedRoles: ["admin"]
   },
   {
+    label: "Pedidos",
+    path: "/admin/pedidos",
+    description: "Gestionar pedidos activos",
+    icon: ClipboardList,
+    allowedRoles: ["admin"]
+  },
+  {
     label: "Reportes",
     path: "/admin/reportes",
     description: "Historial y ventas",

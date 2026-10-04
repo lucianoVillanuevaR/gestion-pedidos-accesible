@@ -44,6 +44,7 @@ export function CategoriaBlock({
   const optionsRef = useRef<HTMLDivElement>(null);
   const isOptionsOpen = controlledIsOptionsOpen ?? internalIsOptionsOpen;
   const hasCategoryOptions = Boolean(onToggleCategory || onDeleteCategory);
+  const showCategoryOptions = hasCategoryOptions || grupo.value === "Destacados";
   const setIsOptionsOpen = useCallback(
     (isOpen: boolean) => {
       if (onOptionsOpenChange) {
@@ -117,13 +118,21 @@ export function CategoriaBlock({
             <Plus className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Agregar producto</span>
           </button>
-          {hasCategoryOptions && (
+          {showCategoryOptions && (
             <div ref={optionsRef} className="relative">
               <button
                 type="button"
-                onClick={() => setIsOptionsOpen(!isOptionsOpen)}
-                aria-expanded={isOptionsOpen}
-                aria-label={`Opciones de categoría ${grupo.label}`}
+                onClick={() => {
+                  if (hasCategoryOptions) setIsOptionsOpen(!isOptionsOpen);
+                }}
+                aria-expanded={hasCategoryOptions ? isOptionsOpen : undefined}
+                aria-label={
+                  hasCategoryOptions
+                    ? `Opciones de categoría ${grupo.label}`
+                    : `Opciones de categoría ${grupo.label} no disponibles`
+                }
+                disabled={!hasCategoryOptions}
+                title={!hasCategoryOptions ? "Destacados se administra desde cada producto" : undefined}
                 className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 ${FOCUS_VISIBLE_CLASS}`}
               >
                 <Ellipsis className="h-5 w-5" aria-hidden="true" />

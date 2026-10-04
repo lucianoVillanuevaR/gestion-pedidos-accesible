@@ -42,7 +42,15 @@ describe("fila normal de pedidos", () => {
   it("presenta Finalizado como estado no interactivo y mantiene Ver", () => {
     const onOpenModal = vi.fn();
     const pedido = makePedido(2);
-    render(<NormalPedidoRow isUpdating={false} onEditPedido={vi.fn()} onOpenModal={onOpenModal} pedido={pedido} />);
+    render(
+      <NormalPedidoRow
+        isUpdating={false}
+        onEditPedido={vi.fn()}
+        onOpenModal={onOpenModal}
+        pedido={pedido}
+        role="cajero"
+      />
+    );
 
     expect(screen.getByText("Finalizado")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Finalizado" })).toBeNull();
@@ -52,7 +60,9 @@ describe("fila normal de pedidos", () => {
 
   it("conserva cliente, estado, total y método de pago", () => {
     const pedido = makePedido(1);
-    render(<NormalPedidoRow isUpdating={false} onEditPedido={vi.fn()} onOpenModal={vi.fn()} pedido={pedido} />);
+    render(
+      <NormalPedidoRow isUpdating={false} onEditPedido={vi.fn()} onOpenModal={vi.fn()} pedido={pedido} role="cajero" />
+    );
 
     expect(screen.getByText("Cliente: Sofía")).toBeTruthy();
     expect(screen.getByText("Entregado")).toBeTruthy();
@@ -66,6 +76,55 @@ describe("fila normal de pedidos", () => {
   it("omite el año actual y conserva un año anterior", () => {
     expect(getCreatedDateLabel("2026-08-19T20:34:00.000Z", 2026)).toBe("19 ago");
     expect(getCreatedDateLabel("2025-08-19T20:34:00.000Z", 2026)).toContain("2025");
+  });
+
+  it("permite a Admin cancelar en preparación sin mostrar preparación ni entrega", () => {
+    const onOpenModal = vi.fn();
+    const pedido = makePedido(1, "en_preparacion");
+
+    render(
+      <NormalPedidoRow
+        isUpdating={false}
+        onEditPedido={vi.fn()}
+        onOpenModal={onOpenModal}
+        pedido={pedido}
+        role="admin"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(onOpenModal).toHaveBeenCalledWith({ action: "cancel", pedido });
+    expect(screen.queryByRole("button", { name: "Estado" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Finalizar" })).toBeNull();
+  });
+
+  it("no muestra entrega a Admin para un pedido listo", () => {
+    render(
+      <NormalPedidoRow
+        isUpdating={false}
+        onEditPedido={vi.fn()}
+        onOpenModal={vi.fn()}
+        pedido={makePedido(1, "listo")}
+        role="admin"
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Finalizar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Estado" })).toBeNull();
+  });
+
+  it("mantiene la entrega visible para Cajero cuando el pedido está listo", () => {
+    render(
+      <NormalPedidoRow
+        isUpdating={false}
+        onEditPedido={vi.fn()}
+        onOpenModal={vi.fn()}
+        pedido={makePedido(1, "listo")}
+        role="cajero"
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Finalizar" })).toBeTruthy();
   });
 });
 

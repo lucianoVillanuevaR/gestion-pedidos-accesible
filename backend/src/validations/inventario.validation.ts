@@ -1,4 +1,5 @@
 export type InventarioUpdateInput = {
+  expectedUpdatedAt?: unknown;
   stockActual?: unknown;
   stockMinimo?: unknown;
 };
@@ -18,7 +19,21 @@ function validateNonNegativeInteger(value: unknown, fieldName: string) {
 }
 
 export function validateInventarioUpdate(input: InventarioUpdateInput) {
-  const data: { stockActual?: number; stockMinimo?: number } = {};
+  const data: { expectedUpdatedAt: Date; stockActual?: number; stockMinimo?: number } = {
+    expectedUpdatedAt: new Date(0)
+  };
+
+  if (typeof input.expectedUpdatedAt !== "string" || !input.expectedUpdatedAt.trim()) {
+    return { error: "expectedUpdatedAt es obligatorio" };
+  }
+
+  const expectedUpdatedAt = new Date(input.expectedUpdatedAt);
+
+  if (Number.isNaN(expectedUpdatedAt.getTime())) {
+    return { error: "expectedUpdatedAt debe ser una fecha válida" };
+  }
+
+  data.expectedUpdatedAt = expectedUpdatedAt;
 
   if (input.stockActual !== undefined) {
     const error = validateNonNegativeInteger(input.stockActual, "stockActual");
@@ -40,7 +55,7 @@ export function validateInventarioUpdate(input: InventarioUpdateInput) {
     data.stockMinimo = input.stockMinimo as number;
   }
 
-  if (Object.keys(data).length === 0) {
+  if (data.stockActual === undefined && data.stockMinimo === undefined) {
     return { error: "Debe enviar stockActual o stockMinimo" };
   }
 

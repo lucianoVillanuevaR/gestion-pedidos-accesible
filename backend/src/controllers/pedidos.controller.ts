@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../config/prisma";
+import { canRoleTransitionPedido } from "../domain/pedidoRules";
 import type { AuthenticatedRequest } from "../middlewares/auth";
 import { lockTurnOperations } from "../services/databaseLocks";
 import { withProductImageUrl } from "../services/productImageService";
@@ -313,7 +314,8 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
     }
 
     const pedidoId = parsePositiveIntegerId(id);
-    const usuarioId = (req as AuthenticatedRequest).authUser.id;
+    const authUser = (req as AuthenticatedRequest).authUser;
+    const usuarioId = authUser.id;
     const pedidoActualizado = await prisma.$transaction(async (tx) => {
       const pedido = await tx.pedido.findUnique({
         where: { id: pedidoId },
@@ -323,6 +325,9 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
 
       const transicionError = validateTransicionEstadoPedido(pedido.estado, estado);
       if (transicionError) throw new RequestError(400, transicionError);
+      if (!canRoleTransitionPedido(authUser.role, pedido.estado, estado)) {
+        throw new RequestError(403, "No tienes permisos para realizar esta transición.");
+      }
       if (pedido.estado === estado) {
         return tx.pedido.findUniqueOrThrow({
           where: { id: pedidoId },

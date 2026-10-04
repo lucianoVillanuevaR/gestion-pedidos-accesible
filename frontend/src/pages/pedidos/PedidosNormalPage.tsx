@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
-import type { EstadoPedido, PedidoResponse } from "../../types";
+import { canRoleTransitionPedido } from "../../domain/pedidoRules";
+import type { EstadoPedido, PedidoResponse, UserRole } from "../../types";
 import {
   EmptyPedidosMessage,
   ESTADO_META,
@@ -29,6 +31,7 @@ import {
 
 function PedidosNormalPage() {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { user } = useAuthContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,6 +119,7 @@ function PedidosNormalPage() {
             pedidos={filteredPedidos}
             onEditPedido={(pedido) => navigate(`/pdv?editar=${pedido.id}`)}
             onOpenModal={setActiveModal}
+            role={user?.role ?? "cajero"}
             updatingPedidoId={updatingPedidoId}
           />
         )}
@@ -127,6 +131,7 @@ function PedidosNormalPage() {
             onClose={() => setActiveModal(null)}
             onEstadoChange={handleNormalEstadoChange}
             onOpenModal={setActiveModal}
+            role={user?.role ?? "cajero"}
           />
         )}
       </section>
@@ -138,11 +143,13 @@ function NormalPedidosList({
   onEditPedido,
   onOpenModal,
   pedidos,
+  role,
   updatingPedidoId
 }: {
   onEditPedido: (pedido: PedidoResponse) => void;
   onOpenModal: (modal: ActiveModal) => void;
   pedidos: PedidoResponse[];
+  role: UserRole;
   updatingPedidoId: number | null;
 }) {
   if (pedidos.length === 0) {
@@ -167,6 +174,7 @@ function NormalPedidosList({
             onEditPedido={onEditPedido}
             onOpenModal={onOpenModal}
             pedido={pedido}
+            role={role}
           />
         ))}
       </div>
@@ -178,12 +186,14 @@ export function NormalPedidoRow({
   isUpdating,
   onEditPedido,
   onOpenModal,
-  pedido
+  pedido,
+  role
 }: {
   isUpdating: boolean;
   onEditPedido: (pedido: PedidoResponse) => void;
   onOpenModal: (modal: ActiveModal) => void;
   pedido: PedidoResponse;
+  role: UserRole;
 }) {
   const createdAt = getCreatedDateLabel(pedido.createdAt);
   const delayed = isPedidoDelayed(pedido);
@@ -245,6 +255,7 @@ export function NormalPedidoRow({
         onEditPedido={onEditPedido}
         onOpenModal={onOpenModal}
         pedido={pedido}
+        role={role}
       />
     </article>
   );
@@ -254,14 +265,16 @@ function NormalPedidoActions({
   isUpdating,
   onEditPedido,
   onOpenModal,
-  pedido
+  pedido,
+  role
 }: {
   isUpdating: boolean;
   onEditPedido: (pedido: PedidoResponse) => void;
   onOpenModal: (modal: ActiveModal) => void;
   pedido: PedidoResponse;
+  role: UserRole;
 }) {
-  const actions = getPedidoActionState(pedido.estado);
+  const actions = getPedidoActionState(pedido.estado, role);
 
   return (
     <div className="flex flex-wrap gap-2 md:flex-nowrap md:justify-end">
@@ -522,7 +535,11 @@ export function formatProductCount(value: number) {
   return `${value} ${value === 1 ? "producto" : "productos"}`;
 }
 
-function getPedidoActionState(estado: EstadoPedido) {
+function getPedidoActionState(estado: EstadoPedido, role: UserRole) {
+  const canCancel = canRoleTransitionPedido(role, estado, "cancelado");
+  const canFinish = canRoleTransitionPedido(role, estado, "entregado");
+  const canPrepare = canRoleTransitionPedido(role, estado, "en_preparacion");
+  const canMarkReady = canRoleTransitionPedido(role, estado, "listo");
   const actionStateByEstado: Record<
     EstadoPedido,
     {
@@ -545,21 +562,21 @@ function getPedidoActionState(estado: EstadoPedido) {
       statusLabel: "Finalizado"
     },
     en_preparacion: {
-      showCancel: true,
+      showCancel: canCancel,
       showFinish: false,
-      showState: true,
+      showState: canMarkReady,
       statusLabel: null
     },
     listo: {
       showCancel: false,
-      showFinish: true,
+      showFinish: canFinish,
       showState: false,
       statusLabel: null
     },
     pendiente: {
-      showCancel: true,
+      showCancel: canCancel,
       showFinish: false,
-      showState: true,
+      showState: canPrepare,
       statusLabel: null
     }
   };
