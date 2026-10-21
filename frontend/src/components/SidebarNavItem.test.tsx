@@ -20,12 +20,7 @@ describe("SidebarNavItem", () => {
   it("marca semánticamente la página actual con un bloque amarillo rectangular", () => {
     render(
       <MemoryRouter initialEntries={["/pedidos"]}>
-        <SidebarNavItem
-          isAccessible={false}
-          isHighContrast={false}
-          item={item}
-          onNavigate={vi.fn()}
-        />
+        <SidebarNavItem isAccessible={false} isHighContrast={false} item={item} onNavigate={vi.fn()} />
       </MemoryRouter>
     );
 
@@ -43,12 +38,7 @@ describe("SidebarNavItem", () => {
   it("no presenta una opción inactiva como página actual", () => {
     render(
       <MemoryRouter initialEntries={["/pdv"]}>
-        <SidebarNavItem
-          isAccessible={false}
-          isHighContrast={false}
-          item={item}
-          onNavigate={vi.fn()}
-        />
+        <SidebarNavItem isAccessible={false} isHighContrast={false} item={item} onNavigate={vi.fn()} />
       </MemoryRouter>
     );
 

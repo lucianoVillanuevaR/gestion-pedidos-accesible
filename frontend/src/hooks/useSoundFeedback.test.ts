@@ -93,10 +93,9 @@ describe("useSoundFeedback", () => {
   });
 
   it("refuerza las alertas de pedido sin superar el límite seguro de ganancia", async () => {
-    const { result, rerender } = renderHook(
-      ({ level }) => useSoundFeedback(true, level),
-      { initialProps: { level: "normal" as SoundVolumeLevel } }
-    );
+    const { result, rerender } = renderHook(({ level }) => useSoundFeedback(true, level), {
+      initialProps: { level: "normal" as SoundVolumeLevel }
+    });
 
     await act(async () => void (await result.current.notification()));
     expect(gain.gain.exponentialRampToValueAtTime.mock.calls[0][0]).toBeCloseTo(0.153125);
