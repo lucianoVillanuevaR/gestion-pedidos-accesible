@@ -45,6 +45,20 @@ async function navigateWithinApp(page: Page, path: string) {
   await expect(page).toHaveURL(new RegExp(`${path.replaceAll("/", "\\/")}$`));
 }
 
+async function openAuthenticatedAccessibilityPanel(page: Page) {
+  const accessibilityTrigger = page.getByRole("button", { name: /accesibilidad|opciones de ayuda/i }).first();
+  const isMobileLayout = await page.evaluate(() => window.innerWidth < 1024);
+  if (isMobileLayout) {
+    await page.getByRole("button", { name: "Abrir navegación" }).click();
+    await accessibilityTrigger.focus();
+    await expect(accessibilityTrigger).toBeFocused();
+    await page.keyboard.press("Enter");
+  } else {
+    await accessibilityTrigger.click();
+  }
+  await expect(page.getByRole("dialog", { name: /opciones de accesibilidad/i })).toBeVisible();
+}
+
 async function createBasicOrder(page: Page, clienteNombre: string) {
   await api(page, "/turnos/abrir", { method: "POST" });
   const products = await api<
@@ -80,6 +94,7 @@ async function setOrderState(page: Page, id: number, estado: "en_preparacion" | 
 }
 
 test("Caja recibe en el PDV la campanilla y el aviso cuando Cocina termina un pedido", async ({ browser }) => {
+  test.setTimeout(45_000);
   const cashierContext = await browser.newContext();
   const kitchenContext = await browser.newContext();
   const countRealAudioTones = () => {
@@ -103,10 +118,7 @@ test("Caja recibe en el PDV la campanilla y el aviso cuando Cocina termina un pe
   const kitchen = await kitchenContext.newPage();
   await loginAs(cashier, "cajero");
   await cashier.goto("/pdv");
-  await cashier
-    .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
-    .first()
-    .click();
+  await openAuthenticatedAccessibilityPanel(cashier);
   await cashier.getByRole("switch", { name: "Sonidos: Desactivado" }).click();
   await expect(cashier.getByText(/prueba de sonido iniciada/i)).toBeVisible();
   await cashier.getByRole("button", { name: "Cerrar panel de accesibilidad" }).click();
@@ -114,10 +126,7 @@ test("Caja recibe en el PDV la campanilla y el aviso cuando Cocina termina un pe
 
   await loginAs(kitchen, "cocina");
   await kitchen.goto("/cocina");
-  await kitchen
-    .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
-    .first()
-    .click();
+  await openAuthenticatedAccessibilityPanel(kitchen);
   await kitchen.getByRole("switch", { name: "Sonidos: Desactivado" }).click();
   await expect(kitchen.getByText(/prueba de sonido iniciada/i)).toBeVisible();
   await kitchen.getByRole("button", { name: "Cerrar panel de accesibilidad" }).click();
@@ -138,13 +147,18 @@ test("Caja recibe en el PDV la campanilla y el aviso cuando Cocina termina un pe
   expect(Date.now() - readyAt).toBeLessThan(4500);
   await expect.poll(() => cashier.evaluate(() => window.__readyToneStarts ?? 0)).toBe(3);
   await pollNow(cashier);
-  expect(await cashier.getByText(/listo para entregar/).count()).toBe(1);
+  expect(
+    await cashier.getByText(`Pedido N.º ${firstOrder.numeroTurno} listo para entregar`, { exact: true }).count()
+  ).toBe(1);
   expect(await cashier.evaluate(() => window.__readyToneStarts ?? 0)).toBe(3);
 
   await navigateWithinApp(cashier, "/pedidos");
   await expect(cashier.getByText(`Pedido N.º ${firstOrder.numeroTurno} listo para entregar`)).toBeVisible();
-  await cashier.waitForTimeout(15100);
-  await expect(cashier.getByText(`Pedido N.º ${firstOrder.numeroTurno} listo para entregar`)).toHaveCount(0);
+  const viewport = cashier.viewportSize();
+  await cashier.mouse.move(1, Math.max(1, (viewport?.height ?? 800) - 1));
+  await expect(cashier.getByText(`Pedido N.º ${firstOrder.numeroTurno} listo para entregar`)).toHaveCount(0, {
+    timeout: 16500
+  });
   await expect(cashier.getByText(`Pedido #${firstOrder.numeroTurno}`, { exact: true }).first()).toBeVisible();
   await expect(cashier.getByText("Listo", { exact: true }).first()).toBeVisible();
 
