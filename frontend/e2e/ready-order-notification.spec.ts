@@ -1,0 +1,230 @@
+import { expect, test, type Page } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
+
+declare global {
+  interface Window {
+    __readyToneStarts?: number;
+  }
+}
+
+async function api<T>(page: Page, path: string, init: RequestInit = {}) {
+  return page.evaluate(
+    async ({ init, path }) => {
+      const token = window.sessionStorage.getItem("riquisimo-auth-token");
+      const response = await fetch(`/api${path}`, {
+        ...init,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...init.headers,
+        },
+      });
+      const body = await response.json();
+      if (!response.ok && response.status !== 409) {
+        throw new Error(body.error ?? `HTTP ${response.status}`);
+      }
+      return body as T;
+    },
+    { init, path },
+  );
+}
+
+async function pollNow(page: Page) {
+  const response = page.waitForResponse(
+    (candidate) =>
+      candidate.url().endsWith("/api/pedidos") &&
+      candidate.request().method() === "GET",
+  );
+  await page.evaluate(() =>
+    document.dispatchEvent(new Event("visibilitychange")),
+  );
+  await response;
+}
+
+async function navigateWithinApp(page: Page, path: string) {
+  await page.evaluate((nextPath) => {
+    window.history.pushState({}, "", nextPath);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, path);
+  await expect(page).toHaveURL(new RegExp(`${path.replaceAll("/", "\\/")}$`));
+}
+
+async function createBasicOrder(page: Page, clienteNombre: string) {
+  await api(page, "/turnos/abrir", { method: "POST" });
+  const products = await api<
+    Array<{
+      id: number;
+      disponible?: boolean;
+      requiereSeleccionVariante?: boolean;
+      tipo?: string;
+    }>
+  >(page, "/productos");
+  const product = products.find(
+    (candidate) =>
+      candidate.disponible !== false &&
+      candidate.tipo === "producto" &&
+      !candidate.requiereSeleccionVariante,
+  );
+  if (!product)
+    throw new Error("No existe un producto básico disponible para la prueba");
+
+  return api<{ id: number; numeroTurno: number }>(page, "/pedidos", {
+    method: "POST",
+    body: JSON.stringify({
+      clienteNombre,
+      detalles: [{ productoId: product.id, cantidad: 1 }],
+      idempotencyKey: crypto.randomUUID(),
+      metodoPago: "efectivo",
+    }),
+  });
+}
+
+async function setOrderState(
+  page: Page,
+  id: number,
+  estado: "en_preparacion" | "listo",
+) {
+  await api(page, `/pedidos/${id}/estado`, {
+    method: "PATCH",
+    body: JSON.stringify({ estado }),
+  });
+}
+
+test("Caja recibe en el PDV la campanilla y el aviso cuando Cocina termina un pedido", async ({
+  browser,
+}) => {
+  const cashierContext = await browser.newContext();
+  const kitchenContext = await browser.newContext();
+  const countRealAudioTones = () => {
+    const AudioContextClass = window.AudioContext;
+    if (!AudioContextClass) return;
+    const originalCreateOscillator =
+      AudioContextClass.prototype.createOscillator;
+    AudioContextClass.prototype.createOscillator = function (...args) {
+      const oscillator = originalCreateOscillator.apply(this, args);
+      const originalStart = oscillator.start.bind(oscillator);
+      oscillator.start = (...startArgs) => {
+        window.__readyToneStarts = (window.__readyToneStarts ?? 0) + 1;
+        return originalStart(...startArgs);
+      };
+      return oscillator;
+    };
+  };
+  await cashierContext.addInitScript(countRealAudioTones);
+  await kitchenContext.addInitScript(countRealAudioTones);
+
+  const cashier = await cashierContext.newPage();
+  const kitchen = await kitchenContext.newPage();
+  await loginAs(cashier, "cajero");
+  await cashier.goto("/pdv");
+  await cashier
+    .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
+    .first()
+    .click();
+  await cashier.getByRole("switch", { name: "Sonidos: Desactivado" }).click();
+  await expect(cashier.getByText(/prueba de sonido iniciada/i)).toBeVisible();
+  await cashier
+    .getByRole("button", { name: "Cerrar panel de accesibilidad" })
+    .click();
+  await cashier.evaluate(() => (window.__readyToneStarts = 0));
+
+  await loginAs(kitchen, "cocina");
+  await kitchen.goto("/cocina");
+  await kitchen
+    .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
+    .first()
+    .click();
+  await kitchen.getByRole("switch", { name: "Sonidos: Desactivado" }).click();
+  await expect(kitchen.getByText(/prueba de sonido iniciada/i)).toBeVisible();
+  await kitchen
+    .getByRole("button", { name: "Cerrar panel de accesibilidad" })
+    .click();
+  await kitchen.evaluate(() => (window.__readyToneStarts = 0));
+
+  const firstOrder = await createBasicOrder(cashier, "Prueba Caja");
+  await pollNow(cashier);
+  await pollNow(kitchen);
+  await expect
+    .poll(() => kitchen.evaluate(() => window.__readyToneStarts ?? 0))
+    .toBe(2);
+  await expect(
+    kitchen.getByText(`Pedido #${firstOrder.numeroTurno}`, { exact: true }),
+  ).toBeVisible();
+  await setOrderState(kitchen, firstOrder.id, "en_preparacion");
+  await setOrderState(kitchen, firstOrder.id, "listo");
+
+  const readyAt = Date.now();
+  await expect(
+    cashier.getByText(
+      `Pedido N.º ${firstOrder.numeroTurno} listo para entregar`,
+    ),
+  ).toBeVisible({
+    timeout: 4500,
+  });
+  expect(Date.now() - readyAt).toBeLessThan(4500);
+  await expect
+    .poll(() => cashier.evaluate(() => window.__readyToneStarts ?? 0))
+    .toBe(3);
+  await pollNow(cashier);
+  expect(await cashier.getByText(/listo para entregar/).count()).toBe(1);
+  expect(await cashier.evaluate(() => window.__readyToneStarts ?? 0)).toBe(3);
+
+  await navigateWithinApp(cashier, "/pedidos");
+  await expect(
+    cashier.getByText(
+      `Pedido N.º ${firstOrder.numeroTurno} listo para entregar`,
+    ),
+  ).toBeVisible();
+  await cashier.waitForTimeout(15100);
+  await expect(
+    cashier.getByText(
+      `Pedido N.º ${firstOrder.numeroTurno} listo para entregar`,
+    ),
+  ).toHaveCount(0);
+  await expect(
+    cashier
+      .getByText(`Pedido #${firstOrder.numeroTurno}`, { exact: true })
+      .first(),
+  ).toBeVisible();
+  await expect(
+    cashier.getByText("Listo", { exact: true }).first(),
+  ).toBeVisible();
+
+  await cashier.evaluate(() => {
+    window.localStorage.setItem("riquisimo.modoAccesible", "true");
+    window.localStorage.setItem("riquisimo.contraste", "true");
+    window.localStorage.setItem("riquisimo.sonidos", "false");
+  });
+  await cashier.goto("/pdv/facil");
+  await expect(cashier.locator("html")).toHaveAttribute(
+    "data-contrast",
+    "true",
+  );
+
+  const secondOrder = await createBasicOrder(cashier, "Prueba Fácil");
+  await pollNow(cashier);
+  await setOrderState(kitchen, secondOrder.id, "en_preparacion");
+  await setOrderState(kitchen, secondOrder.id, "listo");
+  await pollNow(cashier);
+
+  await expect(
+    cashier.getByText(
+      `Pedido N.º ${secondOrder.numeroTurno} listo para entregar`,
+    ),
+  ).toBeVisible();
+  expect(await cashier.evaluate(() => window.__readyToneStarts ?? 0)).toBe(0);
+  await navigateWithinApp(cashier, "/pedidos/facil");
+  await expect(
+    cashier.getByText(
+      `Pedido N.º ${secondOrder.numeroTurno} listo para entregar`,
+    ),
+  ).toBeVisible();
+  await expect(
+    cashier
+      .getByText(`Pedido #${secondOrder.numeroTurno}`, { exact: true })
+      .first(),
+  ).toBeVisible();
+
+  await cashierContext.close();
+  await kitchenContext.close();
+});

@@ -13,9 +13,11 @@ import { asyncHandler } from "../middlewares/asyncHandler";
 const pedidosRoutes = Router();
 
 pedidosRoutes.post("/", requireAuth, requireRole("cajero", "admin"), asyncHandler(crearPedido));
+// Matriz: activos = todos los roles operativos; detalle = pedido del turno abierto (admin puede auditar cualquiera);
+// historial de cambios = solo administración.
 pedidosRoutes.get("/", requireAuth, asyncHandler(getPedidos));
 pedidosRoutes.get("/:id", requireAuth, asyncHandler(getPedidoById));
-pedidosRoutes.get("/:id/historial", requireAuth, asyncHandler(getPedidoHistorial));
+pedidosRoutes.get("/:id/historial", requireAuth, requireRole("admin"), asyncHandler(getPedidoHistorial));
 pedidosRoutes.put("/:id", requireAuth, requireRole("cajero", "admin"), asyncHandler(actualizarPedido));
 pedidosRoutes.patch(
   "/:id/estado",

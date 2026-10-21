@@ -15,6 +15,7 @@ import {
 } from "../config/navigation";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import AppSidebar from "./AppSidebar";
+import ReadyOrderNotifier from "./ReadyOrderNotifier";
 
 export function getAppLayoutChrome(pathname: string) {
   const isEasyPage = isEasyRoute(pathname);
@@ -115,6 +116,8 @@ function AppLayout() {
       <a href="#main-content" className="skip-link">
         Saltar al contenido principal
       </a>
+
+      <ReadyOrderNotifier />
 
       {showBrandTopBar && (
         <header className="fixed inset-x-0 top-0 z-[60] hidden min-h-[56px] items-center overflow-hidden border-b border-yellow-300 bg-[#FECE00] px-4 text-slate-950 shadow-sm lg:flex">

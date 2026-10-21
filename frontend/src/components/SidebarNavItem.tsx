@@ -20,7 +20,7 @@ function SidebarNavItem({ isAccessible, isHighContrast, item, onNavigate, pathOv
       end
       onClick={() => onNavigate()}
       className={({ isActive }) => {
-        const baseClass = `group flex w-full items-center rounded-2xl border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+        const baseClass = `group flex w-full self-stretch items-center rounded-none border text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 ${
           isAccessible ? "min-h-[68px] gap-4 px-4 py-3" : "min-h-[48px] gap-2.5 px-2.5 py-2"
         }`;
 
@@ -30,20 +30,20 @@ function SidebarNavItem({ isAccessible, isHighContrast, item, onNavigate, pathOv
               ? "contrast-button-primary"
               : "contrast-button-secondary"
             : isActive
-              ? "border-[#FECE00] bg-[#FECE00] text-slate-950 shadow-sm shadow-[#FECE00]/20"
-              : "border-slate-200 bg-white text-slate-950 hover:bg-slate-50 hover:border-slate-300"
+              ? "border-2 border-l-[8px] border-slate-950 bg-[#FECE00] text-slate-950 shadow-sm hover:bg-[#FFD633] focus-visible:bg-[#FECE00]"
+              : "border-slate-300 bg-white text-slate-950 hover:border-slate-950 hover:bg-slate-950 hover:text-white focus-visible:border-slate-950 focus-visible:bg-slate-950 focus-visible:text-white"
         }`;
       }}
     >
       {({ isActive }) => (
         <>
           <span
-            className={`flex shrink-0 items-center justify-center rounded-xl border transition ${
+            className={`flex shrink-0 items-center justify-center rounded-none border transition ${
               isHighContrast
                 ? "border-current bg-black/10"
                 : isActive
-                  ? "border-yellow-300 bg-[#FFF8DC]"
-                  : "border-slate-200 bg-slate-900/5"
+                  ? "border-slate-950 bg-[#FECE00] group-hover:bg-[#FFD633]"
+                  : "border-slate-200 bg-slate-900/5 group-hover:border-white/70 group-hover:bg-white/10 group-hover:text-white group-focus-visible:border-white/70 group-focus-visible:bg-white/10 group-focus-visible:text-white"
             }`}
             aria-hidden="true"
           >
@@ -57,7 +57,11 @@ function SidebarNavItem({ isAccessible, isHighContrast, item, onNavigate, pathOv
             {showDescription && (
               <span
                 className={`mt-0.5 block text-[11px] leading-snug ${
-                  isHighContrast ? "contrast-secondary-text" : isActive ? "text-slate-700/80" : "text-slate-600"
+                  isHighContrast
+                    ? "contrast-secondary-text"
+                    : isActive
+                      ? "text-slate-700/80 group-hover:text-slate-800"
+                      : "text-slate-600 group-hover:text-slate-200 group-focus-visible:text-slate-200"
                 }`}
               >
                 {item.description}

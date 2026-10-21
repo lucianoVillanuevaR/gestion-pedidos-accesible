@@ -268,7 +268,17 @@ function AccessibilityPanel({
                       "accessibility-panel-sound"
                     );
                     onToggleSound();
-                    if (!isSoundEnabled) void playSoundFeedback("success", soundVolume);
+                    if (!isSoundEnabled) {
+                      void playSoundFeedback("success", soundVolume).then((played) =>
+                        setStatusMessage(
+                          played
+                            ? "Sonidos activados. Prueba de sonido iniciada."
+                            : "Sonidos activados, pero el navegador bloqueó el audio. Usa Probar sonido nuevamente."
+                        )
+                      );
+                    } else {
+                      setStatusMessage("Sonidos desactivados.");
+                    }
                   }}
                 />
               </div>
@@ -343,7 +353,16 @@ function AccessibilityPanel({
                   </p>
                   <button
                     type="button"
-                    onClick={() => void playSoundFeedback("success", soundVolume)}
+                    onClick={() => {
+                      setStatusMessage("Prueba de sonido iniciada.");
+                      void playSoundFeedback("orderReady", soundVolume).then((played) =>
+                        !played
+                          ? setStatusMessage(
+                              "El navegador bloqueó el audio. Revisa los permisos de sonido del sitio y vuelve a intentarlo."
+                            )
+                          : undefined
+                      );
+                    }}
                     className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
                   >
                     <Volume2 className="h-5 w-5" aria-hidden="true" />

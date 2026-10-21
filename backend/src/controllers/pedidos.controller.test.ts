@@ -351,10 +351,45 @@ describe("actualizarEstadoPedido", () => {
       );
 
       expect(status).toHaveBeenCalledWith(403);
-      expect(json).toHaveBeenCalledWith({ error: "No tienes permisos para realizar esta transición." });
+      expect(json).toHaveBeenCalledWith({
+        error: "No tienes permisos para realizar esta transición."
+      });
       expect(mocks.restorePedidoStock).not.toHaveBeenCalled();
       expect(tx.pedido.updateMany).not.toHaveBeenCalled();
       expect(tx.pedidoHistorial.create).not.toHaveBeenCalled();
     }
   );
+
+  it("mantiene una cancelación repetida sin devolver stock ni duplicar historial", async () => {
+    const pedidoCancelado = {
+      id: 42,
+      estado: "cancelado",
+      updatedAt: new Date("2026-08-18T18:25:00.000Z"),
+      detalles: []
+    };
+    const tx = {
+      pedido: {
+        findUnique: vi.fn().mockResolvedValue(pedidoCancelado),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(pedidoCancelado),
+        updateMany: vi.fn()
+      },
+      pedidoHistorial: { create: vi.fn() }
+    };
+    mocks.transaction.mockImplementation((callback: (client: typeof tx) => unknown) => callback(tx));
+    const json = vi.fn();
+
+    await actualizarEstadoPedido(
+      {
+        authUser: { id: 7, role: "cajero", username: "caja" },
+        body: { estado: "cancelado" },
+        params: { id: "42" }
+      } as never,
+      { json, status: vi.fn() } as never
+    );
+
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ estado: "cancelado" }));
+    expect(mocks.restorePedidoStock).not.toHaveBeenCalled();
+    expect(tx.pedido.updateMany).not.toHaveBeenCalled();
+    expect(tx.pedidoHistorial.create).not.toHaveBeenCalled();
+  });
 });
