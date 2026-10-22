@@ -37,23 +37,23 @@ export const ESTADO_OPTIONS: EstadoOption[] = [
 export const ESTADO_META: Record<EstadoPedido, EstadoMeta> = {
   pendiente: {
     label: "Pendiente",
-    className: "border-yellow-200 bg-yellow-100 text-yellow-900"
+    className: "contrast-badge border-yellow-200 bg-yellow-100 text-yellow-900"
   },
   en_preparacion: {
     label: "En preparación",
-    className: "border-yellow-200 bg-yellow-100 text-yellow-900"
+    className: "contrast-badge border-yellow-200 bg-yellow-100 text-yellow-900"
   },
   listo: {
     label: "Listo",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-900"
+    className: "contrast-badge border-emerald-200 bg-emerald-100 text-emerald-900"
   },
   entregado: {
     label: "Entregado",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-900"
+    className: "contrast-badge border-emerald-200 bg-emerald-100 text-emerald-900"
   },
   cancelado: {
     label: "Cancelado",
-    className: "border-red-200 bg-red-100 text-red-900"
+    className: "contrast-badge border-red-200 bg-red-100 text-red-900"
   }
 };
 

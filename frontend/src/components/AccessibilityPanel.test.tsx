@@ -2,7 +2,7 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AccessibilityPanel from "./AccessibilityPanel";
 
 const playSoundFeedback = vi.fn();
@@ -37,6 +37,10 @@ describe("AccessibilityPanel", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+  });
+
+  beforeEach(() => {
+    playSoundFeedback.mockResolvedValue(true);
   });
 
   it("mueve el foco al panel y lo devuelve al elemento que lo abrió", () => {
@@ -117,7 +121,11 @@ describe("AccessibilityPanel", () => {
     rerender(<AccessibilityPanel {...defaultProps} />);
     expect(screen.queryByRole("heading", { name: "Sonido" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Fuerte" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Probar sonido" })).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: "Probar sonido"
+      })
+    ).toBeNull();
     expect(screen.queryByText("Activa Sonidos en Ajustes rápidos para elegir el volumen.")).toBeNull();
   });
 
@@ -138,11 +146,26 @@ describe("AccessibilityPanel", () => {
     const user = userEvent.setup();
     const { rerender } = render(<AccessibilityPanel {...defaultProps} />);
 
-    expect(screen.queryByRole("button", { name: "Probar sonido" })).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: "Probar sonido"
+      })
+    ).toBeNull();
     expect(playSoundFeedback).not.toHaveBeenCalled();
 
     rerender(<AccessibilityPanel {...defaultProps} isSoundEnabled soundVolume="loud" />);
     await user.click(screen.getByRole("button", { name: "Probar sonido" }));
-    expect(playSoundFeedback).toHaveBeenCalledWith("success", "loud");
+    expect(playSoundFeedback).toHaveBeenCalledWith("orderReady", "loud");
+    expect((await screen.findByRole("status")).textContent).toContain("Prueba de sonido iniciada.");
+  });
+
+  it("informa cuando el navegador bloquea el audio", async () => {
+    playSoundFeedback.mockResolvedValue(false);
+    const user = userEvent.setup();
+    render(<AccessibilityPanel {...defaultProps} isSoundEnabled />);
+
+    await user.click(screen.getByRole("button", { name: "Probar sonido" }));
+
+    expect((await screen.findByRole("status")).textContent).toMatch(/navegador bloqueó el audio/i);
   });
 });

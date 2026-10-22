@@ -250,8 +250,12 @@ export const getPedidoById = async (req: Request, res: Response) => {
     }
 
     const pedidoId = parsePositiveIntegerId(id);
-    const pedido = await prisma.pedido.findUnique({
-      where: { id: pedidoId },
+    const authUser = (req as AuthenticatedRequest).authUser;
+    const pedido = await prisma.pedido.findFirst({
+      where: {
+        id: pedidoId,
+        ...(authUser.role === "admin" ? {} : { turno: { estado: "abierto" } })
+      },
       include: PEDIDO_WITH_DETALLES_INCLUDE
     });
 
