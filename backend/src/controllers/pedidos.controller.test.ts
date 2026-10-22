@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   lockTurnOperations: vi.fn(),
   pedidoCount: vi.fn(),
+  pedidoFindFirst: vi.fn(),
   pedidoFindUnique: vi.fn(),
   preparePedidoWrite: vi.fn(),
   restorePedidoStock: vi.fn(),
@@ -12,7 +13,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({
   default: {
     $transaction: mocks.transaction,
-    pedido: { count: mocks.pedidoCount, findUnique: mocks.pedidoFindUnique }
+    pedido: {
+      count: mocks.pedidoCount,
+      findFirst: mocks.pedidoFindFirst,
+      findUnique: mocks.pedidoFindUnique
+    }
   }
 }));
 vi.mock("../services/databaseLocks", () => ({
@@ -29,7 +34,56 @@ vi.mock("../services/pedidoWriteService", () => ({
   shouldRestoreStockOnStateChange: vi.fn()
 }));
 
-import { actualizarEstadoPedido, crearPedido } from "./pedidos.controller";
+import { actualizarEstadoPedido, crearPedido, getPedidoById } from "./pedidos.controller";
+
+describe("getPedidoById", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("oculta a roles operativos los pedidos de turnos cerrados", async () => {
+    mocks.pedidoFindFirst.mockResolvedValue(null);
+    const json = vi.fn();
+    const status = vi.fn().mockReturnValue({ json });
+
+    await getPedidoById(
+      {
+        authUser: { id: 2, role: "cajero", username: "caja" },
+        params: { id: "42" }
+      } as never,
+      { json, status } as never
+    );
+
+    expect(mocks.pedidoFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 42, turno: { estado: "abierto" } }
+      })
+    );
+    expect(status).toHaveBeenCalledWith(404);
+    expect(json).toHaveBeenCalledWith({ error: "Pedido no encontrado" });
+  });
+
+  it("permite al administrador consultar un pedido histórico autorizado", async () => {
+    const createdAt = new Date("2026-08-18T18:25:00.000Z");
+    mocks.pedidoFindFirst.mockResolvedValue({
+      id: 42,
+      turnoId: 8,
+      createdAt,
+      detalles: []
+    });
+    mocks.pedidoCount.mockResolvedValue(7);
+    const json = vi.fn();
+
+    await getPedidoById(
+      {
+        authUser: { id: 1, role: "admin", username: "admin" },
+        params: { id: "42" }
+      } as never,
+      { json, status: vi.fn() } as never
+    );
+
+    expect(mocks.pedidoFindFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 42 } }));
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ id: 42, numeroTurno: 7 }));
+  });
+});
 
 describe("crearPedido", () => {
   beforeEach(() => vi.clearAllMocks());

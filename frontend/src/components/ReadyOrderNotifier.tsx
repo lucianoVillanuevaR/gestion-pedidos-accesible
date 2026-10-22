@@ -2,13 +2,14 @@ import { BellRing, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type MouseEvent } from "react";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
-import { useSoundFeedback } from "../hooks/useSoundFeedback";
+import { AUDIO_FEEDBACK_STARTED_EVENT, useSoundFeedback } from "../hooks/useSoundFeedback";
 import { getPedidos } from "../services/pedidos";
 import type { EstadoPedido, PedidoResponse } from "../types";
 import { getPedidoDisplayNumber, withPedidoNumerosTurno } from "../pages/pedidos/PedidosShared";
 
 export const READY_ORDER_POLL_MS = 3000;
 export const READY_ORDER_VISIBLE_MS = 15000;
+export const MAX_VISIBLE_READY_ORDERS = 3;
 
 export function findNewlyReadyOrders(previousStates: Map<number, EstadoPedido>, pedidos: PedidoResponse[]) {
   return pedidos.filter(
@@ -115,6 +116,16 @@ export default function ReadyOrderNotifier() {
     soundEnabledRef.current = isSoundEnabled;
   }, [isSoundEnabled, soundFeedback.orderReady]);
 
+  useEffect(() => {
+    if (!isSoundEnabled) setAudioBlocked(false);
+  }, [isSoundEnabled]);
+
+  useEffect(() => {
+    const clearAudioBlocked = () => setAudioBlocked(false);
+    window.addEventListener(AUDIO_FEEDBACK_STARTED_EVENT, clearAudioBlocked);
+    return () => window.removeEventListener(AUDIO_FEEDBACK_STARTED_EVENT, clearAudioBlocked);
+  }, []);
+
   const dismiss = useCallback((id: number) => {
     setReadyOrders((current) => current.filter((pedido) => pedido.id !== id));
   }, []);
@@ -147,7 +158,7 @@ export default function ReadyOrderNotifier() {
             });
             if (soundEnabledRef.current) {
               void soundRef.current().then((played) => {
-                if (active && !played) setAudioBlocked(true);
+                if (active) setAudioBlocked(soundEnabledRef.current ? !played : false);
               });
             }
           }
@@ -179,18 +190,33 @@ export default function ReadyOrderNotifier() {
 
   if (user?.role !== "cajero" || (readyOrders.length === 0 && !audioBlocked)) return null;
 
+  const visibleReadyOrders = readyOrders.slice(0, MAX_VISIBLE_READY_ORDERS);
+  const pendingReadyOrderCount = readyOrders.length - visibleReadyOrders.length;
+
   return (
     <section className="fixed right-3 top-3 z-[190] grid w-[min(92vw,420px)] gap-2 no-print lg:top-16">
-      {readyOrders.map((pedido) => (
+      {visibleReadyOrders.map((pedido) => (
         <ReadyOrderToast key={pedido.id} isHighContrast={isHighContrast} onDismiss={dismiss} pedido={pedido} />
       ))}
+      {pendingReadyOrderCount > 0 && (
+        <p
+          aria-live="polite"
+          className={`rounded-xl border-2 p-3 text-sm font-bold ${
+            isHighContrast ? "contrast-panel" : "border-slate-700 bg-white text-slate-950"
+          }`}
+          role="status"
+        >
+          {pendingReadyOrderCount} {pendingReadyOrderCount === 1 ? "aviso pendiente" : "avisos pendientes"}. Puedes
+          consultar todos los pedidos listos en Pedidos activos.
+        </p>
+      )}
       {audioBlocked && (
         <p
           aria-live="polite"
           className={`rounded-xl border-2 p-3 text-sm font-bold ${isHighContrast ? "contrast-panel" : "border-amber-700 bg-amber-50 text-amber-950"}`}
           role="status"
         >
-          El navegador bloqueó el sonido. Abre Accesibilidad, activa Sonidos y usa “Probar sonido”.
+          No fue posible iniciar el audio. Abre Accesibilidad, activa Sonidos y usa “Probar sonido”.
         </p>
       )}
     </section>

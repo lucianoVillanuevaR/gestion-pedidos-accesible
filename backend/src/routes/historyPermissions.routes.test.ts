@@ -27,6 +27,20 @@ function responseStub() {
 }
 
 describe("permisos de historiales", () => {
+  it("rechaza con 401 una consulta de cierres sin autenticación", async () => {
+    const response = responseStub();
+    const next = vi.fn();
+
+    await route(turnosRouter, "/cierres")?.stack[0].handle(
+      { header: vi.fn().mockReturnValue(undefined) } as never,
+      response as never,
+      next
+    );
+
+    expect(response.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it.each(["cajero", "cocina"])("rechaza historial detallado de pedido para %s", (role) => {
     const response = responseStub();
     const next = vi.fn();

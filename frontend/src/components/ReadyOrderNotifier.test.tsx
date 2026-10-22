@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PedidoResponse } from "../types";
 import ReadyOrderNotifier, {
+  MAX_VISIBLE_READY_ORDERS,
   READY_ORDER_POLL_MS,
   READY_ORDER_VISIBLE_MS,
   findNewlyReadyOrders
@@ -11,6 +12,7 @@ import ReadyOrderNotifier, {
 
 const mocks = vi.hoisted(() => ({
   getPedidos: vi.fn(),
+  isSoundEnabled: true,
   orderReady: vi.fn().mockResolvedValue(true)
 }));
 
@@ -20,11 +22,12 @@ vi.mock("../contexts/AuthContext", () => ({
 vi.mock("../contexts/AccessibilityContext", () => ({
   useAccessibilityContext: () => ({
     isHighContrast: false,
-    isSoundEnabled: true,
+    isSoundEnabled: mocks.isSoundEnabled,
     soundVolume: "normal"
   })
 }));
 vi.mock("../hooks/useSoundFeedback", () => ({
+  AUDIO_FEEDBACK_STARTED_EVENT: "riquisimo:audio-feedback-started",
   useSoundFeedback: () => ({ orderReady: mocks.orderReady })
 }));
 vi.mock("../services/pedidos", () => ({
@@ -46,6 +49,8 @@ describe("notificador global de pedidos listos", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
+    mocks.isSoundEnabled = true;
+    mocks.orderReady.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -157,6 +162,53 @@ describe("notificador global de pedidos listos", () => {
     expect(screen.getByText("Pedido N.º 1 listo para entregar")).toBeTruthy();
     expect(screen.getByText("Pedido N.º 2 listo para entregar")).toBeTruthy();
     expect(mocks.orderReady).toHaveBeenCalledOnce();
+  });
+
+  it("limita las tarjetas visibles y conserva el resto en una cola", async () => {
+    const initial = Array.from({ length: 5 }, (_, index) =>
+      pedido("en_preparacion", { id: 100 + index, numeroTurno: index + 1 })
+    );
+    const ready = initial.map((item) => ({ ...item, estado: "listo" as const }));
+    mocks.getPedidos.mockResolvedValueOnce(initial).mockResolvedValue(ready);
+    render(<ReadyOrderNotifier />);
+    await act(async () => undefined);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(READY_ORDER_POLL_MS)));
+
+    expect(screen.getAllByRole("button", { name: /Cerrar aviso del pedido/ })).toHaveLength(MAX_VISIBLE_READY_ORDERS);
+    expect(screen.getByText(/2 avisos pendientes/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar aviso del pedido 1" }));
+    expect(screen.getByText("Pedido N.º 4 listo para entregar")).toBeTruthy();
+    expect(screen.getByText(/1 aviso pendiente/)).toBeTruthy();
+  });
+
+  it("retira el aviso de bloqueo después de una reproducción posterior exitosa", async () => {
+    mocks.orderReady.mockResolvedValueOnce(false);
+    mocks.getPedidos.mockResolvedValueOnce([pedido("en_preparacion")]).mockResolvedValue([pedido("listo")]);
+    render(<ReadyOrderNotifier />);
+    await act(async () => undefined);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(READY_ORDER_POLL_MS)));
+    await act(async () => undefined);
+
+    expect(screen.getByText(/No fue posible iniciar el audio/)).toBeTruthy();
+    act(() => window.dispatchEvent(new Event("riquisimo:audio-feedback-started")));
+    expect(screen.queryByText(/No fue posible iniciar el audio/)).toBeNull();
+  });
+
+  it("retira el aviso de bloqueo cuando el usuario desactiva Sonidos", async () => {
+    mocks.orderReady.mockResolvedValueOnce(false);
+    mocks.getPedidos.mockResolvedValueOnce([pedido("en_preparacion")]).mockResolvedValue([pedido("listo")]);
+    const view = render(<ReadyOrderNotifier />);
+    await act(async () => undefined);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(READY_ORDER_POLL_MS)));
+    await act(async () => undefined);
+    expect(screen.getByText(/No fue posible iniciar el audio/)).toBeTruthy();
+
+    mocks.isSoundEnabled = false;
+    view.rerender(<ReadyOrderNotifier />);
+    await act(async () => undefined);
+
+    expect(screen.queryByText(/No fue posible iniciar el audio/)).toBeNull();
   });
 
   it("permite cerrar inmediatamente con X y devuelve el foco al contenido principal", async () => {

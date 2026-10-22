@@ -1,6 +1,17 @@
 import { Prisma } from "@prisma/client";
-import { describe, expect, it } from "vitest";
-import { serializeCierreTurno, serializeTurno } from "./turnos.controller";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  turnoFindMany: vi.fn()
+}));
+
+vi.mock("../config/prisma", () => ({
+  default: {
+    turno: { findMany: mocks.turnoFindMany }
+  }
+}));
+
+import { getCierres, serializeCierreTurno, serializeTurno } from "./turnos.controller";
 
 const usuarioActual = {
   label: "Administrador nuevo",
@@ -100,5 +111,30 @@ describe("serialización de turnos", () => {
       totalVendido: 3500,
       usuario: usuarioActual
     });
+  });
+});
+
+describe("autorización de cierres", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("limita al cajero a los turnos que abrió", async () => {
+    mocks.turnoFindMany.mockResolvedValue([turnoBase()]);
+    const json = vi.fn();
+
+    await getCierres({ authUser: { id: 7, role: "cajero", username: "caja" } } as never, { json } as never);
+
+    expect(mocks.turnoFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { estado: "cerrado", usuarioId: 7 } })
+    );
+    expect(json).toHaveBeenCalledWith({ turnos: [expect.objectContaining({ id: 7 })] });
+  });
+
+  it("permite al administrador consultar todos los turnos cerrados", async () => {
+    mocks.turnoFindMany.mockResolvedValue([]);
+
+    await getCierres({ authUser: { id: 1, role: "admin", username: "admin" } } as never, { json: vi.fn() } as never);
+
+    expect(mocks.turnoFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: { estado: "cerrado" } }));
+    expect(mocks.turnoFindMany.mock.calls[0][0].where).not.toHaveProperty("usuarioId");
   });
 });

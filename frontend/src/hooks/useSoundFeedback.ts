@@ -3,6 +3,8 @@ import type { SoundVolumeLevel } from "../constants/accessibility";
 
 export type SoundFeedbackType = "success" | "error" | "warning" | "notification" | "orderReady";
 
+export const AUDIO_FEEDBACK_STARTED_EVENT = "riquisimo:audio-feedback-started";
+
 type ToneStep = {
   delayMs?: number;
   durationMs: number;
@@ -126,6 +128,7 @@ export async function playSoundFeedback(type: SoundFeedbackType, volumeLevel: So
       oscillator.start(startAt);
       oscillator.stop(endAt + 0.02);
     }
+    window.dispatchEvent(new Event(AUDIO_FEEDBACK_STARTED_EVENT));
     return true;
   } catch {
     // El audio es una mejora progresiva: nunca debe interrumpir la acción principal.

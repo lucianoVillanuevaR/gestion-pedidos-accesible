@@ -137,9 +137,13 @@ export async function cerrarTurno(req: Request, res: Response) {
   return res.json({ turno: serializeTurno(result.turno) });
 }
 
-export async function getCierres(_req: Request, res: Response) {
+export async function getCierres(req: Request, res: Response) {
+  const auth = (req as AuthenticatedRequest).authUser;
   const turnos = await prisma.turno.findMany({
-    where: { estado: "cerrado" },
+    where: {
+      estado: "cerrado",
+      ...(auth.role === "admin" ? {} : { usuarioId: auth.id })
+    },
     orderBy: { fechaCierre: "desc" },
     include: turnoCloseInclude
   });
