@@ -259,6 +259,27 @@ html[data-contrast="true"] .contrast-button-success {
   border-color: #86efac !important;
 }
 
+html[data-contrast="true"] .pdv-category-option[aria-pressed="false"]:hover {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html[data-contrast="true"] .pdv-category-option[aria-pressed="false"]:active {
+  background-color: var(--contrast-accent) !important;
+  color: #111827 !important;
+  box-shadow: inset 0 0 0 3px #000000 !important;
+}
+
+html[data-contrast="true"] .pdv-category-option[aria-pressed="true"]:hover {
+  background-color: #fde047 !important;
+}
+
+html[data-contrast="true"] .pdv-category-option[aria-pressed="true"]:active {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  box-shadow: inset 0 0 0 3px #000000 !important;
+}
+
 html[data-contrast="true"] .contrast-badge {
   background-color: var(--contrast-surface) !important;
   color: var(--contrast-accent) !important;

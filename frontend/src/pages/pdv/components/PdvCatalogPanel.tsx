@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import PdvFeedbackMessage from "./PdvFeedbackMessage";
 import { usesProductConfigurator } from "../PdvShared";
 import PdvProductTile from "./PdvProductTile";
@@ -42,22 +42,38 @@ function PdvCatalogPanel() {
             Categorías
           </div>
           <div className="divide-y divide-slate-200">
-            {categoryFilters.map((filtro) => (
-              <button
-                key={filtro.value}
-                type="button"
-                onClick={() => selectCategory(filtro.value, filtro.label)}
-                className={`flex min-h-[44px] w-full items-center justify-between px-3 text-left text-sm font-bold uppercase transition ${
-                  selectedCategory === filtro.value
-                    ? "bg-yellow-50 text-slate-950"
-                    : "bg-slate-50 text-slate-800 hover:bg-white"
-                } ${isHighContrast ? "contrast-button-secondary" : ""}`}
-                aria-current={selectedCategory === filtro.value ? "page" : undefined}
-              >
-                <span className="truncate">{filtro.label}</span>
-                {selectedCategory === filtro.value && <span className="text-lg leading-none">›</span>}
-              </button>
-            ))}
+            {categoryFilters.map((filtro) => {
+              const isSelected = selectedCategory === filtro.value;
+
+              return (
+                <button
+                  key={filtro.value}
+                  type="button"
+                  onClick={() => selectCategory(filtro.value, filtro.label)}
+                  className={`pdv-category-option group flex min-h-[44px] w-full touch-manipulation items-center gap-2 px-3 py-2 text-left text-sm font-bold uppercase transition-colors duration-200 motion-reduce:transition-none focus-visible:z-10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-slate-950 ${
+                    isHighContrast
+                      ? isSelected
+                        ? "contrast-button-primary border-l-[6px] border-l-slate-950 shadow-inner"
+                        : "contrast-button-secondary"
+                      : isSelected
+                        ? "border-l-[6px] border-l-slate-950 bg-[#FECE00] text-slate-950 shadow-sm hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
+                        : "bg-white text-slate-900 hover:bg-[#111827] hover:text-white active:bg-black active:text-white active:shadow-inner"
+                  }`}
+                  aria-current={isSelected ? "page" : undefined}
+                  aria-pressed={isSelected}
+                >
+                  <span className="line-clamp-2 min-w-0 flex-1 whitespace-normal break-words leading-tight">
+                    {filtro.label}
+                  </span>
+                  {isSelected && (
+                    <span className="flex shrink-0 items-center" aria-hidden="true">
+                      <Check className="h-4 w-4" strokeWidth={3} />
+                    </span>
+                  )}
+                  {isSelected && <span className="sr-only">Seleccionada</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
       </nav>
@@ -88,20 +104,30 @@ function PdvCatalogPanel() {
           </div>
 
           <div className="mt-2 flex max-w-full gap-2 overflow-x-auto pb-1 xl:hidden">
-            {categoryFilters.map((filtro) => (
-              <button
-                key={filtro.value}
-                type="button"
-                onClick={() => selectCategory(filtro.value, filtro.label)}
-                className={`h-9 shrink-0 rounded-full border px-3 text-xs font-black uppercase ${
-                  selectedCategory === filtro.value
-                    ? "border-[#FECE00] bg-[#FECE00] text-slate-950"
-                    : "border-slate-300 bg-white text-slate-700"
-                }`}
-              >
-                {filtro.label}
-              </button>
-            ))}
+            {categoryFilters.map((filtro) => {
+              const isSelected = selectedCategory === filtro.value;
+
+              return (
+                <button
+                  key={filtro.value}
+                  type="button"
+                  onClick={() => selectCategory(filtro.value, filtro.label)}
+                  className={`pdv-category-option h-9 shrink-0 touch-manipulation rounded-full border px-3 text-xs font-black uppercase transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 ${
+                    isHighContrast
+                      ? isSelected
+                        ? "contrast-button-primary"
+                        : "contrast-button-secondary"
+                      : isSelected
+                        ? "border-[#FECE00] bg-[#FECE00] text-slate-950 hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
+                        : "border-slate-300 bg-white text-slate-700 hover:border-black hover:bg-[#111827] hover:text-white active:border-black active:bg-black active:text-white active:shadow-inner"
+                  }`}
+                  aria-pressed={isSelected}
+                >
+                  {filtro.label}
+                  {isSelected && <span className="sr-only">, seleccionada</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
 

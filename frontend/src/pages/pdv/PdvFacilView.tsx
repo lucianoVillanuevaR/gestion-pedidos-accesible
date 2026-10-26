@@ -216,14 +216,14 @@ function PdvFacilView() {
                   selectCategory(filtro.value, filtro.label);
                   goNextAccessibleStep();
                 }}
-                className={`min-h-[56px] rounded-xl font-bold text-lg flex items-center justify-center gap-2 focus:outline-none focus:ring-4 ${
+                className={`pdv-category-option flex min-h-[56px] touch-manipulation items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-lg font-bold transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 ${
                   selectedCategory === filtro.value
-                    ? "bg-slate-900 text-white border-2 border-slate-900"
-                    : "bg-white text-slate-900 border-2 border-slate-300"
+                    ? "border-slate-950 bg-[#FECE00] text-slate-950 shadow-sm hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
+                    : "border-slate-300 bg-white text-slate-900 hover:border-black hover:bg-[#111827] hover:text-white active:border-black active:bg-black active:text-white active:shadow-inner"
                 } ${isHighContrast ? (selectedCategory === filtro.value ? "contrast-button-primary" : "contrast-button-secondary") : ""}`}
                 aria-pressed={selectedCategory === filtro.value}
               >
-                <span>{filtro.label}</span>
+                <span className="min-w-0 break-words leading-tight">{filtro.label}</span>
                 {selectedCategory === filtro.value && (
                   <span
                     className={`inline-flex items-center gap-2 rounded-full border-2 px-3 py-1 text-base font-black ${isHighContrast ? "border-yellow-300 bg-yellow-300 text-black" : "border-white bg-white text-slate-950"}`}
