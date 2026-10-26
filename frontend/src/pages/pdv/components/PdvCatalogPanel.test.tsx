@@ -1,26 +1,18 @@
 // @vitest-environment jsdom
 
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PdvViewProvider, type PdvViewContextValue } from "../PdvViewContext";
 import PdvCatalogPanel from "./PdvCatalogPanel";
 
-function buildContext(
-  overrides: Partial<PdvViewContextValue> = {},
-): PdvViewContextValue {
+function buildContext(overrides: Partial<PdvViewContextValue> = {}): PdvViewContextValue {
   return {
     addProduct: vi.fn(),
     announceSearchBar: vi.fn(),
     categoryFilters: [
       { label: "Todos", value: "Todos" },
-      { label: "Ahorros exclusivos", value: "Ahorros exclusivos" },
+      { label: "Ahorros exclusivos", value: "Ahorros exclusivos" }
     ],
     decreaseProduct: vi.fn(),
     feedback: null,
@@ -36,7 +28,7 @@ function buildContext(
     selectedCategory: "Ahorros exclusivos",
     selectCategory: vi.fn(),
     setSearchTerm: vi.fn(),
-    ...overrides,
+    ...overrides
   } as PdvViewContextValue;
 }
 
@@ -44,7 +36,7 @@ function renderPanel(context: PdvViewContextValue) {
   return render(
     <PdvViewProvider value={context}>
       <PdvCatalogPanel />
-    </PdvViewProvider>,
+    </PdvViewProvider>
   );
 }
 
@@ -55,10 +47,10 @@ describe("PdvCatalogPanel", () => {
     renderPanel(buildContext());
 
     const categoryNavigation = screen.getByRole("navigation", {
-      name: "Categorías de productos",
+      name: "Categorías de productos"
     });
     const selectedButton = within(categoryNavigation).getByRole("button", {
-      name: /Ahorros exclusivos/i,
+      name: /Ahorros exclusivos/i
     });
     const label = within(selectedButton).getByText("Ahorros exclusivos");
 
@@ -74,10 +66,10 @@ describe("PdvCatalogPanel", () => {
     renderPanel(buildContext({ selectCategory }));
 
     const categoryNavigation = screen.getByRole("navigation", {
-      name: "Categorías de productos",
+      name: "Categorías de productos"
     });
     const allProductsButton = within(categoryNavigation).getByRole("button", {
-      name: "Todos",
+      name: "Todos"
     });
 
     expect(allProductsButton.className).toContain("w-full");
@@ -90,13 +82,13 @@ describe("PdvCatalogPanel", () => {
     renderPanel(buildContext({ isHighContrast: true }));
 
     const categoryNavigation = screen.getByRole("navigation", {
-      name: "Categorías de productos",
+      name: "Categorías de productos"
     });
     const selectedButton = within(categoryNavigation).getByRole("button", {
-      name: /Ahorros exclusivos/i,
+      name: /Ahorros exclusivos/i
     });
     const unselectedButton = within(categoryNavigation).getByRole("button", {
-      name: "Todos",
+      name: "Todos"
     });
 
     expect(selectedButton.className).toContain("contrast-button-primary");
