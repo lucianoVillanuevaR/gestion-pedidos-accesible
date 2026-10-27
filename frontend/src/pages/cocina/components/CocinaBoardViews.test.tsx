@@ -19,12 +19,10 @@ function renderNormalView(overrides: Partial<CocinaViewProps> = {}) {
     activeModal: null,
     counts: { enPreparacion: 0, entregados: 0, listos: 0, pendientes: 1, total: 1 },
     error: null,
-    isAutoRefreshEnabled: true,
     isFullscreen: false,
     isHighContrast: false,
     isLoading: false,
     onAdvanceVisible: vi.fn(),
-    onAutoRefreshToggle: vi.fn(),
     onEstadoChange: vi.fn(),
     onFullscreenToggle: vi.fn(),
     onOpenModal: vi.fn(),
@@ -43,15 +41,13 @@ function renderNormalView(overrides: Partial<CocinaViewProps> = {}) {
 describe("vista normal de preparación", () => {
   afterEach(cleanup);
 
-  it("muestra una sola indicación de actualización automática y conserva el control", () => {
-    const props = renderNormalView();
+  it("oculta el control de actualización automática y conserva los controles manuales", () => {
+    renderNormalView();
 
-    expect(screen.getAllByText("Actualización automática activa")).toHaveLength(1);
-    expect(screen.queryByText("Los tickets nuevos entran solos a cocina.")).toBeNull();
-    const toggle = screen.getByRole("button", { name: "Actualización automática activa" });
-    expect(toggle.getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(toggle);
-    expect(props.onAutoRefreshToggle).toHaveBeenCalledOnce();
+    expect(screen.queryByText("Actualización automática activa")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Actualización automática activa" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Actualizar preparación" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Pantalla completa" })).toBeTruthy();
   });
 
   it("aclara la acción masiva sin cambiar su callback", () => {
