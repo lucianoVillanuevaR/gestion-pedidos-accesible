@@ -1,8 +1,9 @@
-import { ClipboardPlus } from "lucide-react";
-import { useId, useRef, type ReactNode } from "react";
+import { ClipboardPlus, Square, Volume2 } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useAccessibilityContext } from "../../../contexts/AccessibilityContext";
 import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
+import useVoice from "../../../hooks/useVoice";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import type { EstadoPedido, PedidoDetalleResponse, PedidoResponse, UserRole } from "../../../types";
 import { formatCurrency } from "../../../utils/formatters";
@@ -28,7 +29,17 @@ export function StatusBadge({ estado, isLarge = false }: { estado: EstadoPedido;
   );
 }
 
-function ModalShell({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
+function ModalShell({
+  children,
+  headerAction,
+  onClose,
+  title
+}: {
+  children: ReactNode;
+  headerAction?: ReactNode;
+  onClose: () => void;
+  title: string;
+}) {
   const { isAccessible, isHighContrast } = useAccessibilityContext();
   const titleId = useId();
   const dialogRef = useRef<HTMLElement | null>(null);
@@ -64,17 +75,20 @@ function ModalShell({ children, onClose, title }: { children: ReactNode; onClose
           >
             {title}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`inline-flex items-center justify-center rounded-xl border px-4 font-black transition hover:bg-slate-100 ${
-              isAccessible
-                ? "min-h-[56px] border-2 border-slate-900 text-lg text-slate-950"
-                : "min-h-[44px] border-slate-300 text-slate-700"
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            Volver
-          </button>
+          <div className="flex flex-wrap justify-end gap-2">
+            {headerAction}
+            <button
+              type="button"
+              onClick={onClose}
+              className={`inline-flex items-center justify-center rounded-xl border px-4 font-black transition hover:bg-slate-100 ${
+                isAccessible
+                  ? "min-h-[56px] border-2 border-slate-900 text-lg text-slate-950"
+                  : "min-h-[44px] border-slate-300 text-slate-700"
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              Volver
+            </button>
+          </div>
         </div>
         <div className="mt-5">{children}</div>
       </section>
@@ -84,6 +98,7 @@ function ModalShell({ children, onClose, title }: { children: ReactNode; onClose
 
 export function PedidoModal({
   activeModal,
+  canReadPedido = false,
   isUpdating,
   onClose,
   onEstadoChange,
@@ -91,19 +106,115 @@ export function PedidoModal({
   role
 }: {
   activeModal: PedidoModalState;
+  canReadPedido?: boolean;
   isUpdating: boolean;
   onClose: () => void;
   onEstadoChange: (pedido: PedidoResponse, estado: EstadoPedido) => void;
   onOpenModal: (modal: ActiveModal) => void;
   role: UserRole;
 }) {
-  const { isAccessible } = useAccessibilityContext();
+  const { isAccessible, isHighContrast } = useAccessibilityContext();
+  const { cancel, speak } = useVoice({ enabled: true });
+  const [isReading, setIsReading] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const isReadingRef = useRef(false);
   const { action, pedido } = activeModal;
+
+  useEffect(() => {
+    setIsReading(false);
+    setVoiceError(null);
+
+    return () => {
+      if (!isReadingRef.current) return;
+      isReadingRef.current = false;
+      cancel();
+    };
+  }, [action, cancel, pedido.id]);
+
+  const stopReading = () => {
+    isReadingRef.current = false;
+    cancel();
+    setIsReading(false);
+  };
+
+  const handleReadPedido = () => {
+    if (isReadingRef.current) {
+      stopReading();
+      return;
+    }
+
+    setVoiceError(null);
+    isReadingRef.current = true;
+    setIsReading(true);
+    const finishReading = () => {
+      isReadingRef.current = false;
+      setIsReading(false);
+    };
+
+    void speak(getPedidoReadingText(pedido), {
+      cooldownMs: 0,
+      dedupeKey: `cocina-leer-pedido:${pedido.id}`,
+      delayMs: 0,
+      force: true,
+      interrupt: true,
+      onEnd: finishReading,
+      onError: () => {
+        finishReading();
+        setVoiceError("No fue posible reproducir la lectura. Revisa si tu navegador permite usar voz.");
+      },
+      priority: "high"
+    })
+      .then((started) => {
+        if (!started) finishReading();
+      })
+      .catch(() => {
+        finishReading();
+        setVoiceError("No fue posible reproducir la lectura. Revisa si tu navegador permite usar voz.");
+      });
+  };
 
   if (action === "detail") {
     return (
-      <ModalShell onClose={onClose} title={`Pedido #${getPedidoDisplayNumber(pedido)}`}>
+      <ModalShell
+        headerAction={
+          canReadPedido ? (
+            <button
+              type="button"
+              onClick={handleReadPedido}
+              aria-pressed={isReading}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 font-black transition ${
+                isAccessible
+                  ? "min-h-[56px] border-2 text-lg"
+                  : "min-h-[44px]"
+              } ${
+                isHighContrast
+                  ? "contrast-button-secondary border-yellow-400"
+                  : isReading
+                    ? "border-red-700 bg-red-50 text-red-800 hover:bg-red-100"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              } ${FOCUS_VISIBLE_CLASS}`}
+            >
+              {isReading ? (
+                <Square className="h-4 w-4 fill-current" aria-hidden="true" />
+              ) : (
+                <Volume2 className="h-5 w-5" aria-hidden="true" />
+              )}
+              {isReading ? "Detener lectura" : "Leer pedido"}
+            </button>
+          ) : undefined
+        }
+        onClose={onClose}
+        title={`Pedido #${getPedidoDisplayNumber(pedido)}`}
+      >
         <div className="space-y-4">
+          {voiceError && (
+            <p
+              role="alert"
+              className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 font-bold text-red-800"
+            >
+              {voiceError}
+            </p>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge estado={pedido.estado} />
             <span className="font-bold text-slate-600">{formatTime(pedido.createdAt)}</span>
@@ -245,6 +356,37 @@ export function PedidoModal({
       </div>
     </ModalShell>
   );
+}
+
+function getPedidoReadingText(pedido: PedidoResponse) {
+  const productos = (pedido.detalles ?? []).map((detalle) => {
+    const personalizaciones = [
+      detalle.variante?.nombre ? `Opción ${detalle.variante.nombre}` : "",
+      detalle.personalizacion?.combinacion?.nombre
+        ? `Combinación ${detalle.personalizacion.combinacion.nombre}`
+        : "",
+      detalle.personalizacion?.aderezos?.length
+        ? `Aderezos ${detalle.personalizacion.aderezos.join(", ")}`
+        : "",
+      detalle.personalizacion?.comentario?.trim()
+        ? `Comentario para cocina ${detalle.personalizacion.comentario.trim()}`
+        : ""
+    ].filter(Boolean);
+    const unidades = detalle.cantidad === 1 ? "unidad" : "unidades";
+
+    return `${detalle.cantidad} ${unidades} de ${getItemName(detalle)}${
+      personalizaciones.length ? `. ${personalizaciones.join(". ")}` : ""
+    }`;
+  });
+
+  return [
+    `Pedido ${getPedidoDisplayNumber(pedido)}`,
+    `Cliente ${pedido.clienteNombre?.trim() || "sin nombre"}`,
+    productos.length ? `Productos. ${productos.join(". ")}` : "Sin productos registrados",
+    pedido.observacion?.trim() ? `Observación del pedido. ${pedido.observacion.trim()}` : ""
+  ]
+    .filter(Boolean)
+    .join(". ");
 }
 
 export function DetalleSeleccion({ detalle, isAccessible }: { detalle: PedidoDetalleResponse; isAccessible: boolean }) {

@@ -8,6 +8,24 @@ import {
   type SortOption
 } from "../constants/pedidosConstants";
 
+const PEDIDOS_PAGE_SIZE = 10;
+
+export function paginatePedidos(pedidos: PedidoResponse[], requestedPage: number, pageSize = PEDIDOS_PAGE_SIZE) {
+  const total = pedidos.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const startIndex = (page - 1) * pageSize;
+
+  return {
+    end: total === 0 ? 0 : Math.min(startIndex + pageSize, total),
+    items: pedidos.slice(startIndex, startIndex + pageSize),
+    page,
+    start: total === 0 ? 0 : startIndex + 1,
+    total,
+    totalPages
+  };
+}
+
 export function getPedidoCounts(pedidos: PedidoResponse[]) {
   const pendientes = pedidos.filter((pedido) => pedido.estado === "pendiente").length;
   const enPreparacion = pedidos.filter((pedido) => pedido.estado === "en_preparacion").length;

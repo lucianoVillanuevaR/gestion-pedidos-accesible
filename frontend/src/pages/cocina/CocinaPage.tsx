@@ -33,7 +33,6 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   const { user } = useAuthContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
-  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true);
   const fullscreenTargetRef = useRef<HTMLDivElement>(null);
   const [isAutomaticRefresh, setIsAutomaticRefresh] = useState(false);
   const { isFullscreen, toggleFullscreen } = useFullscreenToggle(fullscreenTargetRef);
@@ -57,10 +56,6 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   });
 
   useEffect(() => {
-    if (!isAutoRefreshEnabled) {
-      return;
-    }
-
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") {
         setIsAutomaticRefresh(true);
@@ -76,7 +71,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [isAutoRefreshEnabled, loadPedidos]);
+  }, [loadPedidos]);
 
   const handleRefresh = () => {
     setIsAutomaticRefresh(false);
@@ -126,12 +121,10 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     activeModal,
     counts,
     error,
-    isAutoRefreshEnabled,
     isFullscreen,
     isHighContrast,
     isLoading,
     onAdvanceVisible: handleAdvanceVisible,
-    onAutoRefreshToggle: () => setIsAutoRefreshEnabled((current) => !current),
     onEstadoChange: handleCocinaEstadoChange,
     onFullscreenToggle: toggleFullscreen,
     onOpenModal: setActiveModal,

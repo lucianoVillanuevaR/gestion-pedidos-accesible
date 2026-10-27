@@ -7,6 +7,7 @@ import AlertMessage from "../../components/ui/AlertMessage";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { getInventario, updateInventario } from "../../services/inventario";
@@ -33,6 +34,35 @@ const ESTADO_SECTIONS: Array<{ label: string; value: InventarioEstado }> = [
   { label: "Bajo stock", value: "bajo_stock" },
   { label: "Disponible", value: "disponible" }
 ];
+
+const COLLAPSED_INVENTORY_STORAGE_PREFIX = "riquisimo:inventario:secciones-colapsadas";
+const DEFAULT_COLLAPSED_SECTIONS: Record<InventarioEstado, boolean> = {
+  bajo_stock: false,
+  disponible: false,
+  sin_stock: false
+};
+
+function getCollapsedInventoryStorageKey(username?: string) {
+  return username ? `${COLLAPSED_INVENTORY_STORAGE_PREFIX}:${encodeURIComponent(username)}` : null;
+}
+
+function readCollapsedInventorySections(storageKey: string | null) {
+  if (!storageKey || typeof window === "undefined") return DEFAULT_COLLAPSED_SECTIONS;
+
+  try {
+    const storedValue: unknown = JSON.parse(window.localStorage.getItem(storageKey) ?? "null");
+    if (!storedValue || typeof storedValue !== "object") return DEFAULT_COLLAPSED_SECTIONS;
+
+    const sections = storedValue as Partial<Record<InventarioEstado, unknown>>;
+    return {
+      bajo_stock: typeof sections.bajo_stock === "boolean" ? sections.bajo_stock : false,
+      disponible: typeof sections.disponible === "boolean" ? sections.disponible : false,
+      sin_stock: typeof sections.sin_stock === "boolean" ? sections.sin_stock : false
+    };
+  } catch {
+    return DEFAULT_COLLAPSED_SECTIONS;
+  }
+}
 
 function getEstadoLabel(estado: InventarioEstado, isAccessible: boolean) {
   if (estado === "sin_stock") {
@@ -69,6 +99,7 @@ function parseStockValue(value: string) {
 
 function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { user } = useAuthContext();
   const { speakAction } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
@@ -79,11 +110,20 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<InventarioFilter>("todos");
-  const [collapsedSections, setCollapsedSections] = useState<Record<InventarioEstado, boolean>>({
-    bajo_stock: false,
-    disponible: false,
-    sin_stock: false
-  });
+  const collapsedInventoryStorageKey = getCollapsedInventoryStorageKey(user?.username);
+  const [collapsedSections, setCollapsedSections] = useState<Record<InventarioEstado, boolean>>(() =>
+    readCollapsedInventorySections(collapsedInventoryStorageKey)
+  );
+
+  useEffect(() => {
+    if (isAccessible || !collapsedInventoryStorageKey) return;
+
+    try {
+      window.localStorage.setItem(collapsedInventoryStorageKey, JSON.stringify(collapsedSections));
+    } catch {
+      // La interfaz continúa funcionando aunque el almacenamiento no esté disponible.
+    }
+  }, [collapsedInventoryStorageKey, collapsedSections, isAccessible]);
 
   const counts = useMemo(() => {
     return {

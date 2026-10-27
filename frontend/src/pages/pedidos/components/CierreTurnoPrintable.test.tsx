@@ -113,4 +113,37 @@ describe("CierreTurnoPrintable", () => {
     expect(screen.getByText("Sin nombre")).toBeTruthy();
     expect(screen.getAllByText("$7.000").length).toBeGreaterThanOrEqual(2);
   });
+
+  it("incluye todos los pedidos aunque la tabla visible se pagine", () => {
+    const pedidos = Array.from({ length: 17 }, (_, index) => ({
+      createdAt: new Date(Date.UTC(2026, 7, 16, 18, index)).toISOString(),
+      detalles: [],
+      estado: "entregado" as const,
+      id: index + 1,
+      metodoPago: "efectivo" as const,
+      numeroTurno: index + 1,
+      total: 1000
+    }));
+
+    render(
+      <CierreTurnoPrintable
+        fechaCierre="2026-08-16T22:27:00.000Z"
+        fechaInicio="2026-08-16T18:00:00.000Z"
+        pedidos={pedidos}
+        productosVendidos={[]}
+        responsable={{ primaryLabel: "Responsable", primaryValue: "Cajero" }}
+        summary={{
+          ...emptySummary,
+          pedidosEntregados: 17,
+          totalEfectivo: 17000,
+          totalPedidos: 17,
+          totalVendido: 17000
+        }}
+      />
+    );
+
+    expect(screen.getByText("17 pedidos")).toBeTruthy();
+    expect(screen.getByText("#1")).toBeTruthy();
+    expect(screen.getByText("#17")).toBeTruthy();
+  });
 });

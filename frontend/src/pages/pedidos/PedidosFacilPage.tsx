@@ -10,6 +10,7 @@ import useVoice from "../../hooks/useVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { abrirTurnoRemoto, guardarCierreTurno, sincronizarTurnoActual } from "../../services/cierresTurno";
 import type { EstadoPedido, PedidoResponse, UserRole } from "../../types";
+import { HistorialPagination } from "../cocina/components/HistorialPagination";
 import {
   ESTADO_META,
   formatCurrency,
@@ -28,6 +29,7 @@ import {
   type ActiveModal,
   type EstadoFilter
 } from "./PedidosShared";
+import { paginatePedidos } from "./utils/pedidosUtils";
 
 const FILTROS_FACILES: Array<{ label: string; value: EstadoFilter }> = [
   { label: "Pendientes", value: "pendiente" },
@@ -50,6 +52,7 @@ function PedidosFacilPage() {
   const [isSavingCierre, setIsSavingCierre] = useState(false);
   const [isTurnoOpen, setIsTurnoOpen] = useState(() => readTurnoAbierto());
   const [liveMessage, setLiveMessage] = useState("Pedidos activos listos para revisar.");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     void sincronizarTurnoActual()
@@ -82,6 +85,11 @@ function PedidosFacilPage() {
 
     return filteredPedidos;
   }, [estadoFilter, filteredPedidos]);
+  const pagination = useMemo(() => paginatePedidos(pedidosMostrados, currentPage), [currentPage, pedidosMostrados]);
+
+  useEffect(() => {
+    if (currentPage !== pagination.page) setCurrentPage(pagination.page);
+  }, [currentPage, pagination.page]);
   const pedidosActivos = normalSummary.pendientes + normalSummary.enPreparacion + normalSummary.listos;
 
   const pageBg = isHighContrast ? "bg-black text-white" : "bg-white text-slate-950";
@@ -130,6 +138,7 @@ function PedidosFacilPage() {
 
   const handleFilterChange = (value: EstadoFilter, label: string) => {
     setEstadoFilter(value);
+    setCurrentPage(1);
     const message = `Filtro activo: ${label}.`;
     setLiveMessage(message);
     speak(message, {
@@ -293,7 +302,10 @@ function PedidosFacilPage() {
             <input
               type="search"
               value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Buscar por número de pedido, producto o método de pago"
               className={`min-h-[56px] w-full rounded-2xl border-2 border-slate-300 bg-white py-3 pl-12 pr-4 text-lg font-black text-slate-950 outline-none placeholder:text-slate-600 focus:border-slate-900 ${FOCUS_VISIBLE_CLASS}`}
             />
@@ -396,23 +408,39 @@ function PedidosFacilPage() {
             <span className="ml-3 text-2xl font-black">Cargando pedidos...</span>
           </div>
         ) : (
-          <AccessiblePedidosList
-            isHighContrast={isHighContrast}
-            onOpenModal={setActiveModal}
-            onEditPedido={(pedido) => {
-              const message = `Modificar pedido ${getPedidoDisplayNumber(pedido)}.`;
-              setLiveMessage(message);
-              speak(message, {
-                priority: "high",
-                interrupt: true,
-                dedupeKey: `modificar:${pedido.id}`
-              });
-            }}
-            onReadPedido={handleReadPedido}
-            pedidos={pedidosMostrados}
-            role={user?.role ?? "cajero"}
-            updatingPedidoId={updatingPedidoId}
-          />
+          <>
+            <AccessiblePedidosList
+              isHighContrast={isHighContrast}
+              onOpenModal={setActiveModal}
+              onEditPedido={(pedido) => {
+                const message = `Modificar pedido ${getPedidoDisplayNumber(pedido)}.`;
+                setLiveMessage(message);
+                speak(message, {
+                  priority: "high",
+                  interrupt: true,
+                  dedupeKey: `modificar:${pedido.id}`
+                });
+              }}
+              onReadPedido={handleReadPedido}
+              pedidos={pagination.items}
+              role={user?.role ?? "cajero"}
+              updatingPedidoId={updatingPedidoId}
+            />
+            {pagination.total > 0 && (
+              <HistorialPagination
+                ariaLabel="Paginación de pedidos activos"
+                end={pagination.end}
+                isHighContrast={isHighContrast}
+                itemPlural="pedidos"
+                itemSingular="pedido"
+                onPageChange={setCurrentPage}
+                page={pagination.page}
+                start={pagination.start}
+                total={pagination.total}
+                totalPages={pagination.totalPages}
+              />
+            )}
+          </>
         )}
 
         {activeModal && (

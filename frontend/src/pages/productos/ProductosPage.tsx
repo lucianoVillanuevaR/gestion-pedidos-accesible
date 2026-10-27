@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import ErrorAlert from "../../components/ErrorAlert";
 import AlertMessage from "../../components/ui/AlertMessage";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import useVoice from "../../hooks/useVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
@@ -29,8 +30,28 @@ import {
 } from "./ProductosShared";
 import { useProductosCatalog } from "./hooks/useProductosCatalog";
 
+const EXPANDED_CATEGORIES_STORAGE_PREFIX = "riquisimo:productos:categorias-desplegadas";
+
+function getExpandedCategoriesStorageKey(username?: string) {
+  return username ? `${EXPANDED_CATEGORIES_STORAGE_PREFIX}:${encodeURIComponent(username)}` : null;
+}
+
+function readExpandedCategories(storageKey: string | null): Set<CategoriaCatalogo> | null {
+  if (!storageKey || typeof window === "undefined") return null;
+
+  try {
+    const storedValue: unknown = JSON.parse(window.localStorage.getItem(storageKey) ?? "null");
+    return Array.isArray(storedValue) && storedValue.every((value) => typeof value === "string")
+      ? new Set(storedValue as CategoriaCatalogo[])
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function ProductosPage() {
   const { isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { user } = useAuthContext();
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
@@ -44,7 +65,13 @@ function ProductosPage() {
   const [openCategoryOptions, setOpenCategoryOptions] = useState<CategoriaCatalogo | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
-  const [expandedCategories, setExpandedCategories] = useState<Set<CategoriaCatalogo>>(new Set());
+  const expandedCategoriesStorageKey = getExpandedCategoriesStorageKey(user?.username);
+  const [expandedCategories, setExpandedCategories] = useState<Set<CategoriaCatalogo>>(
+    () => readExpandedCategories(expandedCategoriesStorageKey) ?? new Set()
+  );
+  const [areCategoryPreferencesInitialized, setAreCategoryPreferencesInitialized] = useState(
+    () => readExpandedCategories(expandedCategoriesStorageKey) !== null
+  );
   const categoriasCatalogo = useMemo(() => mergeCategorias(remoteCategorias), [remoteCategorias]);
   const categoriasEliminables = useMemo(
     () => remoteCategorias.filter((categoria) => !isCategoriaBase(categoria.value) && categoria.value !== "Destacados"),
@@ -90,29 +117,11 @@ function ProductosPage() {
   }, [loadCategorias]);
 
   useEffect(() => {
-    setExpandedCategories((currentCategories) => {
-      const availableCategories = new Set(grupos.map((grupo) => grupo.value));
-      const nextCategories = new Set([...currentCategories].filter((category) => availableCategories.has(category)));
+    if (areCategoryPreferencesInitialized || grupos.length === 0) return;
 
-      grupos.forEach((grupo) => {
-        if (currentCategories.size === 0 || currentCategories.has(grupo.value)) {
-          nextCategories.add(grupo.value);
-        }
-      });
-
-      return nextCategories;
-    });
-  }, [grupos]);
-
-  useEffect(() => {
-    if (!searchTerm.trim()) return;
-
-    setExpandedCategories((currentCategories) => {
-      const nextCategories = new Set(currentCategories);
-      grupos.forEach((grupo) => nextCategories.add(grupo.value));
-      return nextCategories;
-    });
-  }, [grupos, searchTerm]);
+    setExpandedCategories(new Set(grupos.map((grupo) => grupo.value)));
+    setAreCategoryPreferencesInitialized(true);
+  }, [areCategoryPreferencesInitialized, grupos]);
 
   const sortProductos = (productos: Producto[]) => {
     return [...productos].sort((left, right) => left.nombre.localeCompare(right.nombre, "es"));
@@ -430,11 +439,6 @@ function ProductosPage() {
 
   const handleSelectCategory = (grupo: CategoriaGrupo) => {
     setActiveCategory(grupo.value);
-    setExpandedCategories((currentCategories) => {
-      const nextCategories = new Set(currentCategories);
-      nextCategories.add(grupo.value);
-      return nextCategories;
-    });
     speakAction(
       `Categoría ${grupo.label}. ${grupo.productos.length} productos.`,
       `producto-category-button:${grupo.value}:${grupo.productos.length}`,
@@ -542,6 +546,14 @@ function ProductosPage() {
         setActiveCategory(grupo.value);
       }
 
+      if (expandedCategoriesStorageKey) {
+        try {
+          window.localStorage.setItem(expandedCategoriesStorageKey, JSON.stringify([...nextCategories]));
+        } catch {
+          // La interfaz continúa funcionando aunque el almacenamiento no esté disponible.
+        }
+      }
+
       return nextCategories;
     });
     speakAction(
@@ -579,7 +591,7 @@ function ProductosPage() {
             {grupos.map((grupo) => (
               <CategoriaBlock
                 key={grupo.value}
-                isExpanded={expandedCategories.has(grupo.value)}
+                isExpanded={Boolean(searchTerm.trim()) || expandedCategories.has(grupo.value)}
                 isOptionsOpen={openCategoryOptions === grupo.value}
                 onAddProduct={() => {
                   setAddProductCategory(grupo.value);

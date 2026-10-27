@@ -20,12 +20,10 @@ export type CocinaViewProps = {
   activeModal: ActiveModal;
   counts: ReturnType<typeof getPedidoCounts>;
   error: string | null;
-  isAutoRefreshEnabled: boolean;
   isFullscreen: boolean;
   isHighContrast: boolean;
   isLoading: boolean;
   onAdvanceVisible: () => void;
-  onAutoRefreshToggle: () => void;
   onEstadoChange: (pedido: PedidoResponse, estado: EstadoPedido) => void;
   onFullscreenToggle: () => void;
   onOpenModal: (modal: ActiveModal) => void;
@@ -49,12 +47,10 @@ export function CocinaNormalView({
   activeModal,
   counts,
   error,
-  isAutoRefreshEnabled,
   isFullscreen,
   isHighContrast,
   isLoading,
   onAdvanceVisible,
-  onAutoRefreshToggle,
   onEstadoChange,
   onFullscreenToggle,
   onOpenModal,
@@ -64,10 +60,6 @@ export function CocinaNormalView({
   updatingPedidoId,
   urgentCount
 }: CocinaViewProps) {
-  const panelClass = isHighContrast
-    ? "contrast-panel border-yellow-400"
-    : "border border-slate-200 bg-white shadow-[0_16px_38px_rgba(15,23,42,0.08)]";
-
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <section className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
@@ -105,28 +97,6 @@ export function CocinaNormalView({
           </div>
         </div>
 
-        <div
-          className={`flex flex-col gap-3 rounded-xl px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${panelClass}`}
-        >
-          <button
-            type="button"
-            onClick={onAutoRefreshToggle}
-            aria-pressed={isAutoRefreshEnabled}
-            className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg px-5 text-sm font-black transition ${
-              isAutoRefreshEnabled
-                ? isHighContrast
-                  ? "contrast-button-primary"
-                  : "border border-yellow-400 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]"
-                : isHighContrast
-                  ? "contrast-button-secondary"
-                  : "border border-yellow-300 bg-white text-slate-950 hover:bg-[#FFF8DC]"
-            } ${FOCUS_VISIBLE_CLASS}`}
-          >
-            <RefreshCw className={`h-5 w-5 ${isAutoRefreshEnabled ? "animate-spin" : ""}`} aria-hidden="true" />
-            {isAutoRefreshEnabled ? "Actualización automática activa" : "Actualización automática desactivada"}
-          </button>
-        </div>
-
         <CocinaSummary counts={counts} isHighContrast={isHighContrast} urgentCount={urgentCount} />
 
         {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
@@ -156,6 +126,7 @@ export function CocinaNormalView({
         {activeModal && (
           <PedidoModal
             activeModal={activeModal}
+            canReadPedido
             isUpdating={updatingPedidoId === activeModal.pedido.id}
             onClose={() => onOpenModal(null)}
             onEstadoChange={onEstadoChange}
@@ -172,12 +143,10 @@ export function CocinaFacilView({
   activeModal,
   counts,
   error,
-  isAutoRefreshEnabled,
   isFullscreen,
   isHighContrast,
   isLoading,
   onAdvanceVisible,
-  onAutoRefreshToggle,
   onEstadoChange,
   onFullscreenToggle,
   onOpenModal,
@@ -209,9 +178,7 @@ export function CocinaFacilView({
 
           <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 lg:grid-cols-[1fr_auto] lg:items-center">
             <p className="text-lg font-black text-slate-950">
-              {isAutoRefreshEnabled
-                ? "La preparación se actualiza automáticamente."
-                : "La preparación está en actualización manual."}
+              La preparación se actualiza automáticamente.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               <button
@@ -258,24 +225,10 @@ export function CocinaFacilView({
           </div>
         </div>
 
-        <div className={`grid gap-3 rounded-[26px] p-3 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}>
-          <p className="text-lg font-black text-slate-950">Controles de preparación</p>
-          <div className={`grid gap-2 ${role === "cocina" ? "sm:grid-cols-2 md:min-w-[540px]" : "md:min-w-[260px]"}`}>
-            <button
-              type="button"
-              onClick={onAutoRefreshToggle}
-              aria-pressed={isAutoRefreshEnabled}
-              className={`min-h-[52px] rounded-xl border-2 px-4 text-base font-black transition ${
-                isHighContrast
-                  ? "contrast-button-secondary"
-                  : isAutoRefreshEnabled
-                    ? "border-emerald-700 bg-white text-emerald-800 hover:bg-emerald-50"
-                    : "border-slate-300 bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              {isAutoRefreshEnabled ? "Automática: Activada" : "Automática: Desactivada"}
-            </button>
-            {role === "cocina" && (
+        {role === "cocina" && (
+          <div className={`grid gap-3 rounded-[26px] p-3 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}>
+            <p className="text-lg font-black text-slate-950">Controles de preparación</p>
+            <div className="md:min-w-[260px]">
               <button
                 type="button"
                 onClick={onAdvanceVisible}
@@ -289,9 +242,9 @@ export function CocinaFacilView({
               >
                 Avanzar todas
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
 
@@ -326,6 +279,7 @@ export function CocinaFacilView({
         {activeModal && (
           <PedidoModal
             activeModal={activeModal}
+            canReadPedido
             isUpdating={updatingPedidoId === activeModal.pedido.id}
             onClose={() => onOpenModal(null)}
             onEstadoChange={onEstadoChange}

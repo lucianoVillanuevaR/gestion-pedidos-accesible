@@ -1,5 +1,5 @@
 import { Check, Clock3, Eye, LoaderCircle, Pencil, RefreshCw, Search, Store, User, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ErrorAlert from "../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
@@ -9,6 +9,7 @@ import useActionVoice from "../../hooks/useActionVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { canRoleTransitionPedido } from "../../domain/pedidoRules";
 import type { EstadoPedido, PedidoResponse, UserRole } from "../../types";
+import { HistorialPagination } from "../cocina/components/HistorialPagination";
 import {
   EmptyPedidosMessage,
   ESTADO_META,
@@ -28,6 +29,7 @@ import {
   type EstadoFilter,
   type NormalSummary
 } from "./PedidosShared";
+import { paginatePedidos } from "./utils/pedidosUtils";
 
 function PedidosNormalPage() {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
@@ -35,6 +37,7 @@ function PedidosNormalPage() {
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
 
   const {
@@ -50,6 +53,11 @@ function PedidosNormalPage() {
     setEstadoFilter,
     updatingPedidoId
   } = usePedidosController({ searchTerm });
+  const pagination = useMemo(() => paginatePedidos(filteredPedidos, currentPage), [currentPage, filteredPedidos]);
+
+  useEffect(() => {
+    if (currentPage !== pagination.page) setCurrentPage(pagination.page);
+  }, [currentPage, pagination.page]);
 
   const handleRefreshPedidos = () => {
     speak("Actualizando pedidos.", {
@@ -85,6 +93,7 @@ function PedidosNormalPage() {
 
   const handleEstadoFilterChange = (value: EstadoFilter) => {
     setEstadoFilter(value);
+    setCurrentPage(1);
     const label = value === "todos" ? "Todos" : ESTADO_META[value].label;
     speakAction(label, `pedido-filtro:${value}`);
   };
@@ -103,7 +112,10 @@ function PedidosNormalPage() {
           loadPedidos={handleRefreshPedidos}
           searchTerm={searchTerm}
           setEstadoFilter={handleEstadoFilterChange}
-          setSearchTerm={setSearchTerm}
+          setSearchTerm={(value) => {
+            setSearchTerm(value);
+            setCurrentPage(1);
+          }}
           summary={normalSummary}
         />
 
@@ -115,13 +127,29 @@ function PedidosNormalPage() {
             <span className="ml-3 font-black">Cargando pedidos...</span>
           </div>
         ) : (
-          <NormalPedidosList
-            pedidos={filteredPedidos}
-            onEditPedido={(pedido) => navigate(`/pdv?editar=${pedido.id}`)}
-            onOpenModal={setActiveModal}
-            role={user?.role ?? "cajero"}
-            updatingPedidoId={updatingPedidoId}
-          />
+          <>
+            <NormalPedidosList
+              pedidos={pagination.items}
+              onEditPedido={(pedido) => navigate(`/pdv?editar=${pedido.id}`)}
+              onOpenModal={setActiveModal}
+              role={user?.role ?? "cajero"}
+              updatingPedidoId={updatingPedidoId}
+            />
+            {pagination.total > 0 && (
+              <HistorialPagination
+                ariaLabel="Paginación de pedidos activos"
+                end={pagination.end}
+                isHighContrast={isHighContrast}
+                itemPlural="pedidos"
+                itemSingular="pedido"
+                onPageChange={setCurrentPage}
+                page={pagination.page}
+                start={pagination.start}
+                total={pagination.total}
+                totalPages={pagination.totalPages}
+              />
+            )}
+          </>
         )}
 
         {activeModal && (

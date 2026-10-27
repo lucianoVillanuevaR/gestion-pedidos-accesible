@@ -45,6 +45,9 @@ import {
   usePedidosController
 } from "./PedidosShared";
 import CierreTurnoPrintable, { type CierreTurnoPrintableProps } from "./components/CierreTurnoPrintable";
+import { HistorialPagination } from "../cocina/components/HistorialPagination";
+
+const PEDIDOS_TURNO_PAGE_SIZE = 10;
 
 type TurnoFeedback = {
   message: string;
@@ -263,7 +266,11 @@ function CierreTurnoPage() {
               <ProductosVendidosPanel panelClass={panelClass} productosVendidos={productosVendidos} />
             </section>
 
-            <PedidosTurnoPanel panelClass={panelClass} pedidos={pedidosDetalle} />
+            <PedidosTurnoPanel
+              isHighContrast={isHighContrast}
+              panelClass={panelClass}
+              pedidos={pedidosDetalle}
+            />
           </>
         )}
 
@@ -413,7 +420,7 @@ export function CierreTurnoFacilContent({
           onToggle={() => toggleSection("pedidos")}
           title="Pedidos del turno"
         >
-          <PedidosTurnoPanel panelClass={panelClass} pedidos={pedidos} />
+          <PedidosTurnoPanel isHighContrast={isHighContrast} panelClass={panelClass} pedidos={pedidos} />
         </EasyDisclosure>
       </div>
 
@@ -731,13 +738,47 @@ function ProductosVendidosPanel({
   );
 }
 
-function PedidosTurnoPanel({
+export function paginatePedidosTurno(
+  pedidos: ReturnType<typeof getCierrePedidosResumen>,
+  requestedPage: number,
+  pageSize = PEDIDOS_TURNO_PAGE_SIZE
+) {
+  const sortedPedidos = [...pedidos].sort((left, right) => {
+    const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+    const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+    return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
+  });
+  const total = sortedPedidos.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const startIndex = (page - 1) * pageSize;
+
+  return {
+    end: total === 0 ? 0 : Math.min(startIndex + pageSize, total),
+    items: sortedPedidos.slice(startIndex, startIndex + pageSize),
+    page,
+    start: total === 0 ? 0 : startIndex + 1,
+    total,
+    totalPages
+  };
+}
+
+export function PedidosTurnoPanel({
+  isHighContrast = false,
   panelClass,
   pedidos
 }: {
+  isHighContrast?: boolean;
   panelClass: string;
   pedidos: ReturnType<typeof getCierrePedidosResumen>;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const pagination = useMemo(() => paginatePedidosTurno(pedidos, currentPage), [currentPage, pedidos]);
+
+  useEffect(() => {
+    if (currentPage !== pagination.page) setCurrentPage(pagination.page);
+  }, [currentPage, pagination.page]);
+
   return (
     <section className={`rounded-[18px] p-4 ${panelClass}`} aria-labelledby="pedidos-turno-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -765,7 +806,7 @@ function PedidosTurnoPanel({
             <span>Hora</span>
           </div>
           <div className="divide-y divide-slate-100">
-            {pedidos.map((pedido) => (
+            {pagination.items.map((pedido) => (
               <article
                 key={pedido.id}
                 className="grid gap-3 px-4 py-3 md:grid-cols-[120px_170px_160px_130px_100px] md:items-center"
@@ -778,6 +819,23 @@ function PedidosTurnoPanel({
               </article>
             ))}
           </div>
+        </div>
+      )}
+
+      {pedidos.length > 0 && (
+        <div className="mt-3">
+          <HistorialPagination
+            ariaLabel="Paginación de pedidos del turno"
+            end={pagination.end}
+            isHighContrast={isHighContrast}
+            itemPlural="pedidos"
+            itemSingular="pedido"
+            onPageChange={setCurrentPage}
+            page={pagination.page}
+            start={pagination.start}
+            total={pagination.total}
+            totalPages={pagination.totalPages}
+          />
         </div>
       )}
     </section>

@@ -2,16 +2,22 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 
 export function HistorialPagination({
+  ariaLabel = "Paginación del historial de turnos",
   end,
   isHighContrast,
+  itemPlural = "turnos",
+  itemSingular = "turno",
   onPageChange,
   page,
   start,
   total,
   totalPages
 }: {
+  ariaLabel?: string;
   end: number;
   isHighContrast: boolean;
+  itemPlural?: string;
+  itemSingular?: string;
   onPageChange: (page: number) => void;
   page: number;
   start: number;
@@ -27,7 +33,7 @@ export function HistorialPagination({
       className={`grid gap-3 rounded-xl border px-4 py-3 sm:grid-cols-[auto_1fr_auto] sm:items-center ${
         isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white"
       }`}
-      aria-label="Paginación del historial de turnos"
+      aria-label={ariaLabel}
     >
       <button
         type="button"
@@ -45,7 +51,9 @@ export function HistorialPagination({
           Página {page} de {totalPages}
         </p>
         <p className="mt-0.5 text-sm font-bold text-slate-600">
-          {total === 0 ? "0 turnos" : `Mostrando ${start}–${end} de ${total} turnos`}
+          {total === 0
+            ? `0 ${itemPlural}`
+            : `Mostrando ${start}–${end} de ${total} ${total === 1 ? itemSingular : itemPlural}`}
         </p>
       </div>
 
