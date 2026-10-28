@@ -8,10 +8,10 @@ Base: `origin/main` en `4d2cb63`
 
 La instalación inicial reproducible (`npm ci`) arrojó estos resultados:
 
-| Proyecto | `npm audit --omit=dev` | `npm audit` |
-| --- | ---: | ---: |
-| Backend | 5 moderadas | 11 (1 baja, 7 moderadas, 3 altas) |
-| Frontend | 0 | 11 (1 baja, 4 moderadas, 6 altas) |
+| Proyecto | `npm audit --omit=dev` |                       `npm audit` |
+| -------- | ---------------------: | --------------------------------: |
+| Backend  |            5 moderadas | 11 (1 baja, 7 moderadas, 3 altas) |
+| Frontend |                      0 | 11 (1 baja, 4 moderadas, 6 altas) |
 
 Se actualizaron únicamente versiones admitidas por los rangos SemVer existentes. No se usó
 `npm audit fix --force` ni se cambió ninguna dependencia directa a una versión mayor.
@@ -39,21 +39,21 @@ Actualizaciones relevantes del frontend:
 Resultado final:
 
 | Proyecto | `npm audit --omit=dev` | `npm audit` |
-| --- | ---: | ---: |
-| Backend | 4 moderadas | 4 moderadas |
-| Frontend | 0 | 0 |
+| -------- | ---------------------: | ----------: |
+| Backend  |            4 moderadas | 4 moderadas |
+| Frontend |                      0 |           0 |
 
 ### Riesgo residual de MinIO
 
 Los cuatro nodos que permanecen son una sola cadena de la dependencia directa `minio@8.0.7`,
 que es la última versión publicada:
 
-| Nodo informado | Versión | Incorporado por | Hallazgo y corrección publicada |
-| --- | --- | --- | --- |
-| `decode-uri-component` | 0.2.2 | `minio` -> `query-string@7.1.3` | GHSA-vcc3-ghjq-m6fr, DoS por decodificación exponencial; corregido en 0.5.0. |
-| `query-string` | 7.1.3 | `minio@8.0.7` | Nodo metavulnerable por `decode-uri-component`; una rama sin esa dependencia exige `query-string@10`. |
-| `stream-json` | 1.9.1 | `minio@8.0.7` | GHSA-528h-pc64-c93x (DoS, corregido en 3.5.0), GHSA-hqr4-qq8f-hg3x (DoS, corregido en 3.6.0) y GHSA-mjw6-4jj6-33hc (contaminación de prototipo, corregido en 3.6.0). |
-| `minio` | 8.0.7 | dependencia directa | Nodo metavulnerable por las dos ramas transitivas anteriores; no existe una versión 8.x posterior publicada. |
+| Nodo informado         | Versión | Incorporado por                 | Hallazgo y corrección publicada                                                                                                                                      |
+| ---------------------- | ------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `decode-uri-component` | 0.2.2   | `minio` -> `query-string@7.1.3` | GHSA-vcc3-ghjq-m6fr, DoS por decodificación exponencial; corregido en 0.5.0.                                                                                         |
+| `query-string`         | 7.1.3   | `minio@8.0.7`                   | Nodo metavulnerable por `decode-uri-component`; una rama sin esa dependencia exige `query-string@10`.                                                                |
+| `stream-json`          | 1.9.1   | `minio@8.0.7`                   | GHSA-528h-pc64-c93x (DoS, corregido en 3.5.0), GHSA-hqr4-qq8f-hg3x (DoS, corregido en 3.6.0) y GHSA-mjw6-4jj6-33hc (contaminación de prototipo, corregido en 3.6.0). |
+| `minio`                | 8.0.7   | dependencia directa             | Nodo metavulnerable por las dos ramas transitivas anteriores; no existe una versión 8.x posterior publicada.                                                         |
 
 No se aplicaron overrides porque no son compatibles:
 
