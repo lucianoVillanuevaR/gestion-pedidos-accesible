@@ -113,12 +113,12 @@ function PdvNormalView() {
   };
 
   return (
-    <div className="grid min-h-screen min-w-0 grid-cols-1 overflow-visible bg-slate-100 print:block lg:h-[calc(100dvh-56px)] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(340px,400px)] lg:overflow-hidden xl:grid-cols-[162px_minmax(0,1fr)_400px] 2xl:grid-cols-[162px_minmax(0,1fr)_430px]">
+    <div className="grid min-h-screen min-w-0 grid-cols-1 overflow-x-hidden bg-slate-100 print:block lg:h-[calc(100dvh-56px)] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(21rem,25rem)] lg:overflow-hidden xl:grid-cols-[minmax(11rem,13rem)_minmax(0,1fr)_minmax(22rem,25rem)] 2xl:grid-cols-[minmax(11rem,14rem)_minmax(0,1fr)_minmax(24rem,27rem)]">
       <PdvCatalogPanel />
 
-      <aside className="flex h-auto min-h-0 min-w-0 flex-col border-t border-slate-200 bg-white print:static print:block print:min-h-0 print:border-0 print:bg-transparent lg:h-full lg:border-l lg:border-t-0">
+      <aside className="flex h-auto min-h-0 min-w-0 flex-col overflow-x-hidden border-t border-slate-200 bg-white print:static print:block print:min-h-0 print:border-0 print:bg-transparent lg:h-full lg:border-l lg:border-t-0">
         <div className="bg-[#FECE00] text-slate-950 no-print print:hidden">
-          <div className="flex min-h-[42px] flex-wrap items-center justify-between gap-2 px-3 py-1 sm:flex-nowrap sm:py-0">
+          <div className="flex min-h-[2.625rem] flex-wrap items-center justify-between gap-2 px-3 py-1">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="text-2xl font-light leading-none">#{editingPedidoNumber ?? nextPedidoNumber}</span>
               <span className="rounded-full border border-white/70 px-2 py-0.5 text-xs font-bold">En el local</span>
@@ -128,7 +128,7 @@ function PdvNormalView() {
               type="button"
               onClick={handleTurnoButtonClick}
               disabled={isTurnoUpdating}
-              className={`inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-full border px-3 text-xs font-black transition ${
+              className={`inline-flex min-h-8 shrink-0 items-center justify-center gap-1 rounded-full border px-3 py-1 text-xs font-black leading-tight transition ${
                 isTurnoOpen
                   ? "border-red-800 bg-red-700 text-white hover:bg-red-800"
                   : "border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800"
@@ -155,16 +155,16 @@ function PdvNormalView() {
 
         <div className="border-b border-slate-200 no-print print:hidden">
           <div className="grid gap-2 border-t border-slate-200 bg-white px-3 py-3 text-xs font-bold text-slate-600">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center justify-between gap-3">
               <span>Origen</span>
-              <span className="font-black text-slate-950">PDV</span>
+              <span className="min-w-0 text-right font-black text-slate-950">PDV</span>
             </div>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center justify-between gap-3">
               <span>Estado</span>
-              <span className="font-black text-slate-950">Pendiente</span>
+              <span className="min-w-0 text-right font-black text-slate-950">Pendiente</span>
             </div>
           </div>
-          <div className="grid grid-cols-[52px_minmax(0,1fr)] border-t border-slate-200">
+          <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] border-t border-slate-200">
             <div className="flex items-center justify-center gap-1 text-slate-700">
               <User className="h-4 w-4" aria-hidden="true" />
               <span className="text-xs">⌄</span>

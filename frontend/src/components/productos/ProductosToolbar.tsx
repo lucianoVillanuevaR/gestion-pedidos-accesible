@@ -36,8 +36,9 @@ export function ProductosToolbar({
           <ToolbarButton icon={Plus} label="Nueva categoría" onClick={onCreateCategory} />
           <ToolbarButton
             disabled={isLoading}
+            isBusy={isLoading}
             icon={RefreshCw}
-            iconClassName={isLoading ? "animate-spin" : ""}
+            iconClassName={isLoading ? "motion-safe:animate-spin" : ""}
             label="Actualizar"
             onClick={onRefresh}
           />
@@ -104,12 +105,14 @@ function ToolbarButton({
   disabled = false,
   icon: Icon,
   iconClassName = "",
+  isBusy = false,
   label,
   onClick
 }: {
   disabled?: boolean;
   icon: typeof Plus;
   iconClassName?: string;
+  isBusy?: boolean;
   label: string;
   onClick: () => void;
 }) {
@@ -118,10 +121,12 @@ function ToolbarButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      aria-busy={isBusy || undefined}
+      aria-label={isBusy ? `Actualizando` : label}
       className={`inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
     >
       <Icon className={`h-5 w-5 ${iconClassName}`} aria-hidden="true" />
-      {label}
+      {isBusy ? "Actualizando…" : label}
     </button>
   );
 }

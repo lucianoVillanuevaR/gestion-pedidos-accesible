@@ -259,12 +259,12 @@ function AccessibilityPanel({
                 )}
                 <AccessibilityToggle
                   checked={isSoundEnabled}
-                  label="Sonidos"
-                  description="Reproduce avisos."
+                  label="Sonidos de interacción"
+                  description="Activa sonidos de acciones y confirmaciones. Las alertas de pedidos siempre están activas."
                   icon={<Volume2 className="h-5 w-5" />}
                   onChange={() => {
                     announcePanelAction(
-                      isSoundEnabled ? "Sonidos desactivados." : "Sonidos activados.",
+                      isSoundEnabled ? "Sonidos de interacción desactivados." : "Sonidos de interacción activados.",
                       "accessibility-panel-sound"
                     );
                     onToggleSound();
@@ -272,12 +272,14 @@ function AccessibilityPanel({
                       void playSoundFeedback("success", soundVolume).then((played) =>
                         setStatusMessage(
                           played
-                            ? "Sonidos activados. Prueba de sonido iniciada."
-                            : "Sonidos activados, pero el navegador bloqueó el audio. Usa Probar sonido nuevamente."
+                            ? "Sonidos de interacción activados. Prueba de sonido iniciada."
+                            : "Sonidos de interacción activados, pero el navegador bloqueó el audio. Usa Probar sonido nuevamente."
                         )
                       );
                     } else {
-                      setStatusMessage("Sonidos desactivados.");
+                      setStatusMessage(
+                        "Sonidos de interacción desactivados. Las alertas de pedidos permanecen activas."
+                      );
                     }
                   }}
                 />
@@ -321,56 +323,54 @@ function AccessibilityPanel({
               </fieldset>
             </section>
 
-            {isSoundEnabled && (
-              <section className="border-t border-slate-200 pt-5" aria-labelledby="sound-settings-title">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="h-5 w-5 text-yellow-700" aria-hidden="true" />
-                  <h3 id="sound-settings-title" className={sectionTitleClass}>
-                    Sonido
-                  </h3>
+            <section className="border-t border-slate-200 pt-5" aria-labelledby="sound-settings-title">
+              <div className="flex items-center gap-2">
+                <Volume2 className="h-5 w-5 text-yellow-700" aria-hidden="true" />
+                <h3 id="sound-settings-title" className={sectionTitleClass}>
+                  Sonido
+                </h3>
+              </div>
+              <fieldset className="mt-3">
+                <legend className="font-bold text-slate-900">Volumen</legend>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {volumeOptions.map((option) => {
+                    const selected = soundVolume === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => onSetSoundVolume(option.value)}
+                        className={optionButtonClass(selected)}
+                      >
+                        {selected && <Check className="mr-1 inline h-4 w-4" aria-hidden="true" />}
+                        {option.label}
+                      </button>
+                    );
+                  })}
                 </div>
-                <fieldset className="mt-3">
-                  <legend className="font-bold text-slate-900">Volumen</legend>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {volumeOptions.map((option) => {
-                      const selected = soundVolume === option.value;
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => onSetSoundVolume(option.value)}
-                          className={optionButtonClass(selected)}
-                        >
-                          {selected && <Check className="mr-1 inline h-4 w-4" aria-hidden="true" />}
-                          {option.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="sr-only" aria-live="polite">
-                    Nivel seleccionado: {volumeOptions.find((option) => option.value === soundVolume)?.label}.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStatusMessage("Prueba de sonido iniciada.");
-                      void playSoundFeedback("orderReady", soundVolume).then((played) =>
-                        !played
-                          ? setStatusMessage(
-                              "El navegador bloqueó el audio. Revisa los permisos de sonido del sitio y vuelve a intentarlo."
-                            )
-                          : undefined
-                      );
-                    }}
-                    className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
-                  >
-                    <Volume2 className="h-5 w-5" aria-hidden="true" />
-                    Probar sonido
-                  </button>
-                </fieldset>
-              </section>
-            )}
+                <p className="sr-only" aria-live="polite">
+                  Nivel seleccionado: {volumeOptions.find((option) => option.value === soundVolume)?.label}.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusMessage("Prueba de sonido iniciada.");
+                    void playSoundFeedback("orderReady", soundVolume).then((played) =>
+                      !played
+                        ? setStatusMessage(
+                            "El navegador bloqueó el audio. Revisa los permisos de sonido del sitio y vuelve a intentarlo."
+                          )
+                        : undefined
+                    );
+                  }}
+                  className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
+                >
+                  <Volume2 className="h-5 w-5" aria-hidden="true" />
+                  Probar sonido
+                </button>
+              </fieldset>
+            </section>
 
             <div className="border-t border-slate-200 pt-5">
               <button

@@ -11,7 +11,12 @@ import {
   isPedidoDelayed,
   usePedidosController
 } from "../pedidos/PedidosShared";
-import { CocinaFacilView, CocinaNormalView, type CocinaViewProps } from "./components/CocinaBoardViews";
+import {
+  CocinaFacilView,
+  CocinaNormalView,
+  type CocinaFilter,
+  type CocinaViewProps
+} from "./components/CocinaBoardViews";
 import { useFullscreenToggle } from "./hooks/useFullscreenToggle";
 import { useNewPedidoNotification } from "./hooks/useNewPedidoNotification";
 import { getNextCocinaEstado } from "./utils/cocinaUtils";
@@ -33,12 +38,24 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   const { user } = useAuthContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
-  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true);
   const fullscreenTargetRef = useRef<HTMLDivElement>(null);
   const [isAutomaticRefresh, setIsAutomaticRefresh] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<CocinaFilter>("todos");
+  const [isAdvanceDialogOpen, setIsAdvanceDialogOpen] = useState(false);
+  const [isAdvancingAll, setIsAdvancingAll] = useState(false);
+  const [advanceMessage, setAdvanceMessage] = useState<string | null>(null);
   const { isFullscreen, toggleFullscreen } = useFullscreenToggle(fullscreenTargetRef);
-  const { activeModal, error, handleEstadoChange, isLoading, loadPedidos, pedidos, setActiveModal, updatingPedidoId } =
-    usePedidosController({});
+  const {
+    activeModal,
+    error,
+    handleEstadoChange,
+    isLoading,
+    isRefreshing,
+    loadPedidos,
+    pedidos,
+    setActiveModal,
+    updatingPedidoId
+  } = usePedidosController({});
 
   const cocinaPedidos = useMemo(
     () =>
@@ -49,7 +66,21 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   );
   const counts = useMemo(() => getPedidoCounts(pedidos), [pedidos]);
   const urgentCount = useMemo(() => cocinaPedidos.filter(isPedidoDelayed).length, [cocinaPedidos]);
-  useNewPedidoNotification({
+  const visiblePedidos = useMemo(() => {
+    if (selectedFilter === "todos") return cocinaPedidos;
+    if (selectedFilter === "por_preparar") {
+      return cocinaPedidos.filter((pedido) => pedido.estado === "pendiente" || pedido.estado === "en_preparacion");
+    }
+    return cocinaPedidos.filter((pedido) => pedido.estado === selectedFilter);
+  }, [cocinaPedidos, selectedFilter]);
+  const advanceCounts = useMemo(
+    () => ({
+      pendientes: cocinaPedidos.filter((pedido) => pedido.estado === "pendiente").length,
+      enPreparacion: cocinaPedidos.filter((pedido) => pedido.estado === "en_preparacion").length
+    }),
+    [cocinaPedidos]
+  );
+  const operationalAudioBlocked = useNewPedidoNotification({
     isInitialLoading: isLoading,
     isAutomaticRefresh,
     notify: soundFeedback.notification,
@@ -57,10 +88,6 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   });
 
   useEffect(() => {
-    if (!isAutoRefreshEnabled) {
-      return;
-    }
-
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") {
         setIsAutomaticRefresh(true);
@@ -76,7 +103,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [isAutoRefreshEnabled, loadPedidos]);
+  }, [loadPedidos]);
 
   const handleRefresh = () => {
     setIsAutomaticRefresh(false);
@@ -104,39 +131,71 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     return true;
   };
 
-  const handleAdvanceVisible = async () => {
+  const handleAdvanceVisible = () => {
     if (user?.role !== "cocina") return;
+    if (advanceCounts.pendientes + advanceCounts.enPreparacion === 0) return;
+    setAdvanceMessage(null);
+    setIsAdvanceDialogOpen(true);
+  };
+
+  const handleConfirmAdvance = async () => {
+    if (user?.role !== "cocina" || isAdvancingAll) return;
+
+    setIsAdvancingAll(true);
+    setAdvanceMessage(null);
     const pedidosToUpdate = cocinaPedidos.filter((pedido) => getNextCocinaEstado(pedido.estado));
-    let hasSuccess = false;
-    let hasError = false;
+    let successCount = 0;
+    let errorCount = 0;
 
     for (const pedido of pedidosToUpdate) {
       const nextEstado = getNextCocinaEstado(pedido.estado);
       if (!nextEstado) continue;
       const succeeded = await handleCocinaEstadoChange(pedido, nextEstado, false);
-      hasSuccess ||= succeeded;
-      hasError ||= !succeeded;
+      if (succeeded) successCount += 1;
+      else errorCount += 1;
     }
-    if (hasError) soundFeedback.error();
-    else if (hasSuccess) soundFeedback.success();
+    setIsAdvancingAll(false);
+    setIsAdvanceDialogOpen(false);
+
+    if (errorCount > 0) {
+      soundFeedback.error();
+      setAdvanceMessage(
+        successCount > 0
+          ? `${successCount} pedidos actualizados y ${errorCount} sin actualizar.`
+          : "No se pudieron avanzar los pedidos. Intenta nuevamente."
+      );
+    } else if (successCount > 0) {
+      soundFeedback.success();
+      setAdvanceMessage(`${successCount} pedidos avanzados correctamente.`);
+    }
   };
 
   const CocinaView = isAccessibleView ? CocinaFacilView : CocinaNormalView;
   const cocinaViewProps: CocinaViewProps = {
     activeModal,
+    advanceCounts,
+    advanceMessage,
     counts,
     error,
-    isAutoRefreshEnabled,
+    filter: selectedFilter,
     isFullscreen,
     isHighContrast,
+    isAdvanceDialogOpen,
+    isAdvancingAll,
     isLoading,
+    isRefreshing,
+    operationalAudioBlocked,
+    onAdvanceDialogClose: () => {
+      if (!isAdvancingAll) setIsAdvanceDialogOpen(false);
+    },
     onAdvanceVisible: handleAdvanceVisible,
-    onAutoRefreshToggle: () => setIsAutoRefreshEnabled((current) => !current),
+    onConfirmAdvance: handleConfirmAdvance,
     onEstadoChange: handleCocinaEstadoChange,
+    onFilterChange: setSelectedFilter,
     onFullscreenToggle: toggleFullscreen,
     onOpenModal: setActiveModal,
     onRefresh: handleRefresh,
-    pedidos: cocinaPedidos,
+    pedidos: visiblePedidos,
     role: user?.role ?? "cocina",
     updatingPedidoId,
     urgentCount

@@ -495,12 +495,12 @@ function PdvBasePage({ isAccessible }: { isAccessible: boolean }) {
       ? "border-2 border-slate-900"
       : "border border-slate-200";
   const panelBg = isHighContrast ? "bg-black contrast-panel" : isAccessible ? "bg-white" : "bg-[#F7F7F7]";
-  const quickActionButtonClass = `inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3.5 py-2.5 font-bold text-[13px] whitespace-nowrap transition ${
+  const quickActionButtonClass = `inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-center text-sm font-bold leading-tight whitespace-normal transition ${
     isHighContrast
       ? "contrast-button-secondary"
       : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"
   }`;
-  const quickActionIconButtonClass = `inline-flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-xl border text-lg transition ${
+  const quickActionIconButtonClass = `inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-lg transition ${
     isHighContrast
       ? "contrast-button-secondary"
       : "bg-slate-100 text-slate-900 border border-slate-300 hover:bg-slate-200"

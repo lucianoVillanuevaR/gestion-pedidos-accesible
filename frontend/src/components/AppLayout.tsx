@@ -120,9 +120,9 @@ function AppLayout() {
       <ReadyOrderNotifier />
 
       {showBrandTopBar && (
-        <header className="fixed inset-x-0 top-0 z-[60] hidden min-h-[56px] items-center overflow-hidden border-b border-yellow-300 bg-[#FECE00] px-4 text-slate-950 shadow-sm lg:flex">
+        <header className="fixed inset-x-0 top-0 z-[60] hidden h-[56px] items-center overflow-hidden border-b border-yellow-300 bg-[#FECE00] px-4 text-slate-950 shadow-sm lg:flex">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-yellow-300 bg-[#FFF8DC] p-1">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center">
               <img src={logoRiq} alt="Logo de Riquísimo" className="h-full w-full object-contain" />
             </span>
             <div className="min-w-0">
@@ -138,7 +138,7 @@ function AppLayout() {
       )}
 
       <div
-        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-14" : ""} ${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-dvh lg:overflow-hidden" : ""}`}
+        className={`${sidebarOffsetClass} ${showBrandTopBar ? "lg:pt-[56px]" : ""} ${isPdvNormalPage ? "min-h-screen overflow-visible lg:h-dvh lg:overflow-hidden" : ""}`}
       >
         {!hideSidebar && (
           <header

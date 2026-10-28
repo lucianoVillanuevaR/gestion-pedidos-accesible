@@ -44,7 +44,9 @@ describe("fila de inventario normal", () => {
     const { container, onSave } = renderRow();
     const button = screen.getByRole("button", { name: "Guardado" });
 
-    expect(container.querySelector("img")).toBeNull();
+    const image = container.querySelector("img");
+    expect(image?.getAttribute("src")).toBe(item.imagenUrl);
+    expect(image?.getAttribute("aria-hidden")).toBe("true");
     expect(button.hasAttribute("disabled")).toBe(true);
     fireEvent.click(button);
     expect(onSave).not.toHaveBeenCalled();

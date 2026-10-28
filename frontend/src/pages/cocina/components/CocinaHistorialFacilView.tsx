@@ -1,6 +1,7 @@
 import { RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import EasyModeActions from "../../../components/EasyModeActions";
+import ErrorAlert from "../../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
 import {
   StatusBadge,
@@ -18,7 +19,9 @@ import { HistorialPedidoModal } from "./CocinaHistorialPedidoModal";
 
 export function HistorialFacilView({
   dateFilter,
+  error = null,
   isHighContrast,
+  isRefreshing = false,
   liveMessage,
   onDateFilterChange,
   onOpenPedido,
@@ -28,7 +31,9 @@ export function HistorialFacilView({
   selectedPedido
 }: {
   dateFilter: HistorialDateFilter;
+  error?: string | null;
   isHighContrast: boolean;
+  isRefreshing?: boolean;
   liveMessage: string;
   onDateFilterChange: (value: HistorialDateFilter) => void;
   onOpenPedido: (pedido: HistorialPedidoDetalle | null) => void;
@@ -93,18 +98,22 @@ export function HistorialFacilView({
             <button
               type="button"
               onClick={onRefresh}
-              aria-label="Actualizar pedidos recientes"
+              disabled={isRefreshing}
+              aria-busy={isRefreshing}
+              aria-label={isRefreshing ? "Actualizando pedidos recientes" : "Actualizar pedidos recientes"}
               className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-5 text-lg font-black transition ${
                 isHighContrast
                   ? "contrast-button-secondary"
                   : "border-slate-900 bg-white text-slate-950 hover:bg-slate-100"
-              } ${FOCUS_VISIBLE_CLASS}`}
+              } disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
             >
-              <RefreshCw className="h-5 w-5" aria-hidden="true" />
-              Actualizar
+              <RefreshCw className={`h-5 w-5 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} aria-hidden="true" />
+              {isRefreshing ? "Actualizando…" : "Actualizar"}
             </button>
           </div>
         </section>
+
+        {error && <ErrorAlert isHighContrast={isHighContrast} isLarge message={error} />}
 
         <section className="grid gap-4" aria-label="Lista simple de pedidos recientes">
           {pedidos.length === 0 ? (

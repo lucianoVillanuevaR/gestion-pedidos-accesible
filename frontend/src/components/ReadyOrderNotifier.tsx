@@ -2,7 +2,7 @@ import { BellRing, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FocusEvent, type MouseEvent } from "react";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
-import { AUDIO_FEEDBACK_STARTED_EVENT, useSoundFeedback } from "../hooks/useSoundFeedback";
+import { AUDIO_FEEDBACK_STARTED_EVENT, unlockSoundFeedback, useSoundFeedback } from "../hooks/useSoundFeedback";
 import { getPedidos } from "../services/pedidos";
 import type { EstadoPedido, PedidoResponse } from "../types";
 import { getPedidoDisplayNumber, withPedidoNumerosTurno } from "../pages/pedidos/PedidosShared";
@@ -107,23 +107,38 @@ export default function ReadyOrderNotifier() {
   const { isHighContrast, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const soundRef = useRef(soundFeedback.orderReady);
-  const soundEnabledRef = useRef(isSoundEnabled);
   const [readyOrders, setReadyOrders] = useState<PedidoResponse[]>([]);
   const [audioBlocked, setAudioBlocked] = useState(false);
 
   useEffect(() => {
     soundRef.current = soundFeedback.orderReady;
-    soundEnabledRef.current = isSoundEnabled;
-  }, [isSoundEnabled, soundFeedback.orderReady]);
-
-  useEffect(() => {
-    if (!isSoundEnabled) setAudioBlocked(false);
-  }, [isSoundEnabled]);
+  }, [soundFeedback.orderReady]);
 
   useEffect(() => {
     const clearAudioBlocked = () => setAudioBlocked(false);
     window.addEventListener(AUDIO_FEEDBACK_STARTED_EVENT, clearAudioBlocked);
     return () => window.removeEventListener(AUDIO_FEEDBACK_STARTED_EVENT, clearAudioBlocked);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const removeUnlockListeners = () => {
+      window.removeEventListener("pointerdown", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+    };
+    const handleFirstInteraction = () => {
+      void unlockSoundFeedback().then((unlocked) => {
+        if (active && unlocked) removeUnlockListeners();
+      });
+    };
+
+    window.addEventListener("pointerdown", handleFirstInteraction);
+    window.addEventListener("keydown", handleFirstInteraction);
+    return () => {
+      active = false;
+      removeUnlockListeners();
+    };
   }, []);
 
   const dismiss = useCallback((id: number) => {
@@ -156,11 +171,9 @@ export default function ReadyOrderNotifier() {
               newlyReady.forEach((pedido) => byId.set(pedido.id, pedido));
               return [...byId.values()];
             });
-            if (soundEnabledRef.current) {
-              void soundRef.current().then((played) => {
-                if (active) setAudioBlocked(soundEnabledRef.current ? !played : false);
-              });
-            }
+            void soundRef.current().then((played) => {
+              if (active) setAudioBlocked(!played);
+            });
           }
         }
 
@@ -216,7 +229,8 @@ export default function ReadyOrderNotifier() {
           className={`rounded-xl border-2 p-3 text-sm font-bold ${isHighContrast ? "contrast-panel" : "border-amber-700 bg-amber-50 text-amber-950"}`}
           role="status"
         >
-          No fue posible iniciar el audio. Abre Accesibilidad, activa Sonidos y usa “Probar sonido”.
+          No fue posible iniciar el audio. Abre Accesibilidad y usa «Probar sonido» para habilitar las alertas de
+          pedidos.
         </p>
       )}
     </section>

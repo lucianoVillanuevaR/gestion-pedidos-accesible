@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, PackageCheck, RefreshCw, Save, Search, Warehouse } from "lucide-react";
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import EasyModeActions from "../../components/EasyModeActions";
 import ErrorAlert from "../../components/ErrorAlert";
 import ProductImage from "../../components/productos/ProductImage";
@@ -7,6 +7,7 @@ import AlertMessage from "../../components/ui/AlertMessage";
 import EmptyState from "../../components/ui/EmptyState";
 import LoadingState from "../../components/ui/LoadingState";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
+import { useAuthContext } from "../../contexts/AuthContext";
 import useActionVoice from "../../hooks/useActionVoice";
 import { useSoundFeedback } from "../../hooks/useSoundFeedback";
 import { getInventario, updateInventario } from "../../services/inventario";
@@ -33,6 +34,35 @@ const ESTADO_SECTIONS: Array<{ label: string; value: InventarioEstado }> = [
   { label: "Bajo stock", value: "bajo_stock" },
   { label: "Disponible", value: "disponible" }
 ];
+
+const COLLAPSED_INVENTORY_STORAGE_PREFIX = "riquisimo:inventario:secciones-colapsadas";
+const DEFAULT_COLLAPSED_SECTIONS: Record<InventarioEstado, boolean> = {
+  bajo_stock: false,
+  disponible: false,
+  sin_stock: false
+};
+
+function getCollapsedInventoryStorageKey(username?: string) {
+  return username ? `${COLLAPSED_INVENTORY_STORAGE_PREFIX}:${encodeURIComponent(username)}` : null;
+}
+
+function readCollapsedInventorySections(storageKey: string | null) {
+  if (!storageKey || typeof window === "undefined") return DEFAULT_COLLAPSED_SECTIONS;
+
+  try {
+    const storedValue: unknown = JSON.parse(window.localStorage.getItem(storageKey) ?? "null");
+    if (!storedValue || typeof storedValue !== "object") return DEFAULT_COLLAPSED_SECTIONS;
+
+    const sections = storedValue as Partial<Record<InventarioEstado, unknown>>;
+    return {
+      bajo_stock: typeof sections.bajo_stock === "boolean" ? sections.bajo_stock : false,
+      disponible: typeof sections.disponible === "boolean" ? sections.disponible : false,
+      sin_stock: typeof sections.sin_stock === "boolean" ? sections.sin_stock : false
+    };
+  } catch {
+    return DEFAULT_COLLAPSED_SECTIONS;
+  }
+}
 
 function getEstadoLabel(estado: InventarioEstado, isAccessible: boolean) {
   if (estado === "sin_stock") {
@@ -69,6 +99,7 @@ function parseStockValue(value: string) {
 
 function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { user } = useAuthContext();
   const { speakAction } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const [inventario, setInventario] = useState<InventarioItem[]>([]);
@@ -76,14 +107,25 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<InventarioFilter>("todos");
-  const [collapsedSections, setCollapsedSections] = useState<Record<InventarioEstado, boolean>>({
-    bajo_stock: false,
-    disponible: false,
-    sin_stock: false
-  });
+  const hasLoadedRef = useRef(false);
+  const collapsedInventoryStorageKey = getCollapsedInventoryStorageKey(user?.username);
+  const [collapsedSections, setCollapsedSections] = useState<Record<InventarioEstado, boolean>>(() =>
+    readCollapsedInventorySections(collapsedInventoryStorageKey)
+  );
+
+  useEffect(() => {
+    if (isAccessible || !collapsedInventoryStorageKey) return;
+
+    try {
+      window.localStorage.setItem(collapsedInventoryStorageKey, JSON.stringify(collapsedSections));
+    } catch {
+      // La interfaz continúa funcionando aunque el almacenamiento no esté disponible.
+    }
+  }, [collapsedInventoryStorageKey, collapsedSections, isAccessible]);
 
   const counts = useMemo(() => {
     return {
@@ -112,29 +154,33 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
   );
   const conteoInventarioFacil = useMemo(() => countInventarioFacil(inventario), [inventario]);
 
-  const loadInventario = () => {
-    setIsLoading(true);
+  const loadInventario = async () => {
+    const isInitialLoad = !hasLoadedRef.current;
+    if (isInitialLoad) setIsLoading(true);
+    else setIsRefreshing(true);
     setError(null);
 
-    getInventario()
-      .then((items) => {
-        setInventario(items);
-        setDraftValues(
-          Object.fromEntries(
-            items.map((item) => [
-              item.productoId,
-              {
-                stockActual: String(item.stockActual),
-                stockMinimo: String(item.stockMinimo)
-              }
-            ])
-          )
-        );
-      })
-      .catch((requestError) => {
-        setError(requestError instanceof Error ? requestError.message : "No se pudo cargar inventario");
-      })
-      .finally(() => setIsLoading(false));
+    try {
+      const items = await getInventario();
+      setInventario(items);
+      setDraftValues(
+        Object.fromEntries(
+          items.map((item) => [
+            item.productoId,
+            {
+              stockActual: String(item.stockActual),
+              stockMinimo: String(item.stockMinimo)
+            }
+          ])
+        )
+      );
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No se pudo cargar inventario");
+    } finally {
+      if (isInitialLoad) setIsLoading(false);
+      else setIsRefreshing(false);
+      hasLoadedRef.current = true;
+    }
   };
 
   useEffect(() => {
@@ -259,15 +305,20 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
                 <button
                   type="button"
                   onClick={handleAccessibleRefresh}
-                  aria-label="Actualizar stock básico"
+                  disabled={isLoading || isRefreshing}
+                  aria-busy={isRefreshing}
+                  aria-label={isRefreshing ? "Actualizando stock básico" : "Actualizar stock básico"}
                   className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-lg font-black transition ${
                     isHighContrast
                       ? "contrast-button-secondary"
                       : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
-                  } ${FOCUS_VISIBLE_CLASS}`}
+                  } disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
                 >
-                  <RefreshCw className="h-6 w-6" aria-hidden="true" />
-                  Actualizar
+                  <RefreshCw
+                    className={`h-6 w-6 ${isLoading || isRefreshing ? "motion-safe:animate-spin" : ""}`}
+                    aria-hidden="true"
+                  />
+                  {isRefreshing ? "Actualizando…" : "Actualizar"}
                 </button>
               </div>
 
@@ -369,11 +420,16 @@ function InventarioPage({ isAccessible = false }: { isAccessible?: boolean }) {
             <button
               type="button"
               onClick={loadInventario}
-              disabled={isLoading}
+              disabled={isLoading || isRefreshing}
+              aria-busy={isRefreshing}
+              aria-label={isRefreshing ? "Actualizando inventario" : "Actualizar inventario"}
               className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 text-sm font-black text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-60 lg:col-span-2 xl:col-span-1 ${FOCUS_VISIBLE_CLASS}`}
             >
-              <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-              Actualizar
+              <RefreshCw
+                className={`h-5 w-5 ${isLoading || isRefreshing ? "motion-safe:animate-spin" : ""}`}
+                aria-hidden="true"
+              />
+              {isRefreshing ? "Actualizando…" : "Actualizar"}
             </button>
           </div>
         </section>
@@ -602,13 +658,27 @@ export function InventarioRow({
   onSave: (item: InventarioItem) => void;
 }) {
   const hasChanges = hasInventarioDraftChanges(item, draftValues);
+  const imageUrl = resolveProductImage({
+    imagen: undefined,
+    imagenPublicUrl: item.imagenUrl,
+    imagenUrl: null,
+    nombre: item.productoNombre
+  });
+  const thumbnailClass =
+    "h-[40px] w-[40px] shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 object-cover";
 
   return (
     <article className="grid gap-3 px-3 py-3 transition hover:bg-[#FFFDF3] lg:grid-cols-[minmax(0,1fr)_110px_110px_118px_140px] lg:items-center">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400">
-          <PackageCheck className="h-4 w-4" aria-hidden="true" />
-        </span>
+        <ProductImage
+          alt=""
+          decorative
+          src={imageUrl}
+          className={thumbnailClass}
+          emptyClassName={`inline-flex items-center justify-center text-slate-400 ${thumbnailClass}`}
+          emptyContent={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
+          showEmptyOnError
+        />
         <p className="min-w-0 truncate text-sm font-black text-slate-950">{item.productoNombre}</p>
       </div>
 

@@ -22,6 +22,16 @@ const productApi = vi.hoisted(() => ({
 
 vi.mock("../../services/categorias", () => categoryApi);
 vi.mock("../../services/productos", () => productApi);
+vi.mock("../../contexts/AuthContext", () => ({
+  useAuthContext: () => ({
+    user: {
+      email: "cajero@riquisimo.cl",
+      label: "Cajero",
+      role: "cajero",
+      username: "cajero"
+    }
+  })
+}));
 
 import ProductosPage from "./ProductosPage";
 
