@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   pedidoFindUnique: vi.fn(),
   preparePedidoWrite: vi.fn(),
   restorePedidoStock: vi.fn(),
+  shouldRestoreStockOnStateChange: vi.fn(),
   transaction: vi.fn()
 }));
 
@@ -31,7 +32,7 @@ vi.mock("../services/pedidoWriteService", () => ({
   normalizePedidoDetalles: (detalles: unknown) => detalles,
   preparePedidoWrite: mocks.preparePedidoWrite,
   restorePedidoStock: mocks.restorePedidoStock,
-  shouldRestoreStockOnStateChange: vi.fn()
+  shouldRestoreStockOnStateChange: mocks.shouldRestoreStockOnStateChange
 }));
 
 import { actualizarEstadoPedido, crearPedido, getPedidoById } from "./pedidos.controller";
@@ -365,7 +366,12 @@ describe("crearPedido", () => {
 });
 
 describe("actualizarEstadoPedido", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.shouldRestoreStockOnStateChange.mockImplementation(
+      (currentState, nextState) => currentState !== "cancelado" && nextState === "cancelado"
+    );
+  });
 
   it.each([
     ["cocina", "pendiente", "cancelado"],
@@ -381,7 +387,7 @@ describe("actualizarEstadoPedido", () => {
     async (role, currentState, nextState) => {
       const tx = {
         pedido: {
-          findUnique: vi.fn().mockResolvedValue({
+          findFirst: vi.fn().mockResolvedValue({
             id: 42,
             estado: currentState,
             updatedAt: new Date("2026-08-18T18:25:00.000Z"),
@@ -423,7 +429,7 @@ describe("actualizarEstadoPedido", () => {
     };
     const tx = {
       pedido: {
-        findUnique: vi.fn().mockResolvedValue(pedidoCancelado),
+        findFirst: vi.fn().mockResolvedValue(pedidoCancelado),
         findUniqueOrThrow: vi.fn().mockResolvedValue(pedidoCancelado),
         updateMany: vi.fn()
       },
@@ -445,5 +451,75 @@ describe("actualizarEstadoPedido", () => {
     expect(mocks.restorePedidoStock).not.toHaveBeenCalled();
     expect(tx.pedido.updateMany).not.toHaveBeenCalled();
     expect(tx.pedidoHistorial.create).not.toHaveBeenCalled();
+  });
+
+  it.each(["cajero", "cocina", "admin"])(
+    "impide que %s acceda o modifique pedidos de turnos cerrados",
+    async (role) => {
+      const tx = {
+        pedido: {
+          findFirst: vi.fn().mockResolvedValue(null),
+          findUniqueOrThrow: vi.fn(),
+          updateMany: vi.fn()
+        },
+        pedidoHistorial: { create: vi.fn() }
+      };
+      mocks.transaction.mockImplementation((callback: (client: typeof tx) => unknown) => callback(tx));
+      const json = vi.fn();
+      const status = vi.fn().mockReturnValue({ json });
+
+      await actualizarEstadoPedido(
+        {
+          authUser: { id: 7, role, username: role },
+          body: { estado: "cancelado" },
+          params: { id: "42" }
+        } as never,
+        { json, status } as never
+      );
+
+      expect(mocks.lockTurnOperations).toHaveBeenCalledOnce();
+      expect(tx.pedido.findFirst).toHaveBeenCalledWith({
+        where: { id: 42, turno: { estado: "abierto" } },
+        include: { detalles: true }
+      });
+      expect(status).toHaveBeenCalledWith(404);
+      expect(json).toHaveBeenCalledWith({ error: "Pedido no encontrado" });
+      expect(mocks.restorePedidoStock).not.toHaveBeenCalled();
+      expect(tx.pedido.updateMany).not.toHaveBeenCalled();
+      expect(tx.pedidoHistorial.create).not.toHaveBeenCalled();
+    }
+  );
+
+  it("procesa dos cancelaciones repetidas restituyendo stock y registrando historial una sola vez", async () => {
+    const updatedAt = new Date("2026-08-18T18:25:00.000Z");
+    const pedido = {
+      id: 42,
+      estado: "pendiente",
+      updatedAt,
+      detalles: [{ productoId: 3, cantidad: 1, varianteId: null, personalizacion: null }]
+    };
+    const pedidoCancelado = { ...pedido, estado: "cancelado" };
+    const tx = {
+      pedido: {
+        findFirst: vi.fn().mockResolvedValueOnce(pedido).mockResolvedValueOnce(pedidoCancelado),
+        findUniqueOrThrow: vi.fn().mockResolvedValue(pedidoCancelado),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 })
+      },
+      pedidoHistorial: { create: vi.fn().mockResolvedValue({}) }
+    };
+    mocks.transaction.mockImplementation((callback: (client: typeof tx) => unknown) => callback(tx));
+    const request = {
+      authUser: { id: 7, role: "cajero", username: "caja" },
+      body: { estado: "cancelado" },
+      params: { id: "42" }
+    };
+
+    await actualizarEstadoPedido(request as never, { json: vi.fn(), status: vi.fn() } as never);
+    await actualizarEstadoPedido(request as never, { json: vi.fn(), status: vi.fn() } as never);
+
+    expect(mocks.lockTurnOperations).toHaveBeenCalledTimes(2);
+    expect(mocks.restorePedidoStock).toHaveBeenCalledTimes(1);
+    expect(tx.pedido.updateMany).toHaveBeenCalledTimes(1);
+    expect(tx.pedidoHistorial.create).toHaveBeenCalledTimes(1);
   });
 });
