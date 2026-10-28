@@ -321,8 +321,9 @@ export const actualizarEstadoPedido = async (req: Request, res: Response) => {
     const authUser = (req as AuthenticatedRequest).authUser;
     const usuarioId = authUser.id;
     const pedidoActualizado = await prisma.$transaction(async (tx) => {
-      const pedido = await tx.pedido.findUnique({
-        where: { id: pedidoId },
+      await lockTurnOperations(tx);
+      const pedido = await tx.pedido.findFirst({
+        where: { id: pedidoId, turno: { estado: "abierto" } },
         include: { detalles: true }
       });
       if (!pedido) throw new RequestError(404, "Pedido no encontrado");
