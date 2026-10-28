@@ -95,7 +95,9 @@ registro de historial. También siguen pasando las pruebas previas de transicion
 - `docker compose config` de desarrollo y producción: correcto.
 - Imágenes Docker de backend, frontend, migración y seed: compiladas correctamente.
 - Migración, seed y healthchecks del stack aislado: correctos.
+- CI remoto del PR #33 sobre `e3b38d9`: ejecución 40627707980 completada correctamente, incluido
+  Playwright.
 
-La ejecución del workflow remoto de CI y la actualización del informe LaTeX quedan pendientes de la
-publicación/aprobación e integración de la rama. No hay fuentes LaTeX en este repositorio ni en el
-workspace suministrado, por lo que no se modificó ni compiló el informe en esta etapa.
+La actualización del informe LaTeX queda pendiente de la aprobación e integración de la rama. No hay
+fuentes LaTeX en este repositorio ni en el workspace suministrado, por lo que no se modificó ni
+compiló el informe en esta etapa.
