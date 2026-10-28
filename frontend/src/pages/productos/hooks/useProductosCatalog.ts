@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getProductos } from "../../../services/productos";
 import type { Producto } from "../../../types";
 import {
@@ -22,20 +22,28 @@ export function useProductosCatalog({
 } = {}) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<CategoriaCatalogo>(initialCategory);
+  const hasLoadedRef = useRef(false);
 
-  const loadProductos = useCallback(() => {
-    setIsLoading(true);
+  const loadProductos = useCallback(async () => {
+    const isInitialLoad = !hasLoadedRef.current;
+    if (isInitialLoad) setIsLoading(true);
+    else setIsRefreshing(true);
     setError(null);
 
-    getProductos({ includeUnavailable })
-      .then((list) => setProductos(list))
-      .catch((requestError) => {
-        setError(requestError instanceof Error ? requestError.message : "No fue posible cargar productos");
-      })
-      .finally(() => setIsLoading(false));
+    try {
+      const list = await getProductos({ includeUnavailable });
+      setProductos(list);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "No fue posible cargar productos");
+    } finally {
+      if (isInitialLoad) setIsLoading(false);
+      else setIsRefreshing(false);
+      hasLoadedRef.current = true;
+    }
   }, [includeUnavailable]);
 
   useEffect(() => {
@@ -77,6 +85,7 @@ export function useProductosCatalog({
     error,
     grupos,
     isLoading,
+    isRefreshing,
     loadProductos,
     productosConCategoria,
     productosFiltrados,

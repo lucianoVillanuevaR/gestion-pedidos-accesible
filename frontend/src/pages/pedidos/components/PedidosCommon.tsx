@@ -183,9 +183,7 @@ export function PedidoModal({
               onClick={handleReadPedido}
               aria-pressed={isReading}
               className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 font-black transition ${
-                isAccessible
-                  ? "min-h-[56px] border-2 text-lg"
-                  : "min-h-[44px]"
+                isAccessible ? "min-h-[56px] border-2 text-lg" : "min-h-[44px]"
               } ${
                 isHighContrast
                   ? "contrast-button-secondary border-yellow-400"
@@ -208,10 +206,7 @@ export function PedidoModal({
       >
         <div className="space-y-4">
           {voiceError && (
-            <p
-              role="alert"
-              className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 font-bold text-red-800"
-            >
+            <p role="alert" className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 font-bold text-red-800">
               {voiceError}
             </p>
           )}
@@ -362,12 +357,8 @@ function getPedidoReadingText(pedido: PedidoResponse) {
   const productos = (pedido.detalles ?? []).map((detalle) => {
     const personalizaciones = [
       detalle.variante?.nombre ? `Opción ${detalle.variante.nombre}` : "",
-      detalle.personalizacion?.combinacion?.nombre
-        ? `Combinación ${detalle.personalizacion.combinacion.nombre}`
-        : "",
-      detalle.personalizacion?.aderezos?.length
-        ? `Aderezos ${detalle.personalizacion.aderezos.join(", ")}`
-        : "",
+      detalle.personalizacion?.combinacion?.nombre ? `Combinación ${detalle.personalizacion.combinacion.nombre}` : "",
+      detalle.personalizacion?.aderezos?.length ? `Aderezos ${detalle.personalizacion.aderezos.join(", ")}` : "",
       detalle.personalizacion?.comentario?.trim()
         ? `Comentario para cocina ${detalle.personalizacion.comentario.trim()}`
         : ""

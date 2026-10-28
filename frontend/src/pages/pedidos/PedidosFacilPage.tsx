@@ -70,6 +70,7 @@ function PedidosFacilPage() {
     filteredPedidos,
     handleEstadoChange,
     isLoading,
+    isRefreshing,
     loadPedidos,
     normalSummary,
     pedidos,
@@ -336,8 +337,9 @@ function PedidosFacilPage() {
           <button
             type="button"
             onClick={handleRefreshPedidos}
-            disabled={isLoading}
-            aria-label="Actualizar pedidos"
+            disabled={isLoading || isRefreshing}
+            aria-busy={isRefreshing}
+            aria-label={isRefreshing ? "Actualizando pedidos" : "Actualizar pedidos"}
             title="Actualizar pedidos"
             className={`inline-flex min-h-[56px] items-center justify-center gap-2 rounded-2xl border px-4 text-lg font-black transition disabled:cursor-not-allowed disabled:opacity-60 lg:w-14 lg:px-0 ${
               isHighContrast
@@ -345,8 +347,11 @@ function PedidosFacilPage() {
                 : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
-            <RefreshCw className={`h-6 w-6 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-            <span className="lg:sr-only">Actualizar</span>
+            <RefreshCw
+              className={`h-6 w-6 ${isLoading || isRefreshing ? "motion-safe:animate-spin" : ""}`}
+              aria-hidden="true"
+            />
+            <span className="lg:sr-only">{isRefreshing ? "Actualizando…" : "Actualizar"}</span>
           </button>
         </section>
 

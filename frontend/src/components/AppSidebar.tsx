@@ -158,7 +158,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
         ref={sidebarRef}
         id="main-sidebar"
         className={`fixed inset-y-0 left-0 z-50 flex ${widthClass} flex-col border-r transition-transform duration-300 lg:translate-x-0 ${
-          hasTopBrandBar ? "lg:bottom-0 lg:top-14 lg:h-[calc(100vh-56px)]" : ""
+          hasTopBrandBar ? "lg:bottom-0 lg:top-[56px] lg:h-[calc(100vh-56px)]" : ""
         } ${isOpen ? "translate-x-0" : "-translate-x-full"} ${
           isHighContrast
             ? "contrast-panel border-yellow-400 text-white"

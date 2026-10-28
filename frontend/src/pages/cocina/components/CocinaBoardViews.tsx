@@ -1,8 +1,20 @@
-import { Check, ChefHat, Clock3, LoaderCircle, Maximize2, Minimize2, RefreshCw, UtensilsCrossed } from "lucide-react";
+import {
+  Check,
+  ChefHat,
+  Clock3,
+  Eye,
+  LoaderCircle,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  UtensilsCrossed
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useRef } from "react";
 import EasyModeActions from "../../../components/EasyModeActions";
 import ErrorAlert from "../../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../../constants/ui";
+import useAccessibleDialog from "../../../hooks/useAccessibleDialog";
 import type { EstadoPedido, PedidoResponse, UserRole } from "../../../types";
 import {
   PedidoModal,
@@ -16,18 +28,30 @@ import {
 } from "../../pedidos/PedidosShared";
 import { getKitchenComments, getKitchenTicketInteractionProps, getKitchenTicketState } from "../utils/cocinaUtils";
 
+export type CocinaFilter = "todos" | "por_preparar" | "pendiente" | "en_preparacion" | "listo";
+
 export type CocinaViewProps = {
   activeModal: ActiveModal;
+  advanceCounts?: { pendientes: number; enPreparacion: number };
+  advanceMessage?: string | null;
   counts: ReturnType<typeof getPedidoCounts>;
   error: string | null;
+  filter?: CocinaFilter;
   isFullscreen: boolean;
   isHighContrast: boolean;
+  isAdvanceDialogOpen?: boolean;
+  isAdvancingAll?: boolean;
   isLoading: boolean;
+  isRefreshing?: boolean;
+  onAdvanceDialogClose?: () => void;
   onAdvanceVisible: () => void;
+  onConfirmAdvance?: () => void;
   onEstadoChange: (pedido: PedidoResponse, estado: EstadoPedido) => void;
+  onFilterChange?: (filter: CocinaFilter) => void;
   onFullscreenToggle: () => void;
   onOpenModal: (modal: ActiveModal) => void;
   onRefresh: () => void;
+  operationalAudioBlocked?: boolean;
   pedidos: PedidoResponse[];
   role: UserRole;
   updatingPedidoId: number | null;
@@ -45,21 +69,39 @@ type TicketProps = {
 
 export function CocinaNormalView({
   activeModal,
+  advanceCounts: providedAdvanceCounts,
+  advanceMessage = null,
   counts,
   error,
+  filter = "todos",
   isFullscreen,
   isHighContrast,
+  isAdvanceDialogOpen = false,
+  isAdvancingAll = false,
   isLoading,
+  isRefreshing = false,
+  onAdvanceDialogClose = () => undefined,
   onAdvanceVisible,
+  onConfirmAdvance = () => undefined,
   onEstadoChange,
+  onFilterChange = () => undefined,
   onFullscreenToggle,
   onOpenModal,
   onRefresh,
+  operationalAudioBlocked = false,
   pedidos,
   role,
   updatingPedidoId,
   urgentCount
 }: CocinaViewProps) {
+  const advanceCounts = providedAdvanceCounts ?? {
+    pendientes: counts.pendientes,
+    enPreparacion: counts.enPreparacion
+  };
+  const orderedPedidos = [...pedidos].sort(
+    (left, right) => getKitchenStatePriority(left.estado) - getKitchenStatePriority(right.estado)
+  );
+
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       <section className="mx-auto w-full max-w-[1640px] space-y-4 px-3 py-4 sm:px-4 lg:px-5 xl:px-6">
@@ -71,7 +113,11 @@ export function CocinaNormalView({
               <button
                 type="button"
                 onClick={onAdvanceVisible}
-                disabled={pedidos.length === 0 || updatingPedidoId !== null}
+                disabled={
+                  advanceCounts.pendientes + advanceCounts.enPreparacion === 0 ||
+                  updatingPedidoId !== null ||
+                  isAdvancingAll
+                }
                 className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl px-5 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   isHighContrast
                     ? "contrast-button-primary"
@@ -89,6 +135,8 @@ export function CocinaNormalView({
               isHighContrast={isHighContrast}
             />
             <IconButton
+              disabled={isLoading || isRefreshing}
+              isBusy={isRefreshing}
               label="Actualizar preparación"
               onClick={onRefresh}
               icon={RefreshCw}
@@ -99,16 +147,47 @@ export function CocinaNormalView({
 
         <CocinaSummary counts={counts} isHighContrast={isHighContrast} urgentCount={urgentCount} />
 
+        <CocinaFilters
+          counts={counts}
+          filter={filter}
+          isHighContrast={isHighContrast}
+          onFilterChange={onFilterChange}
+        />
+
         {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
+        {operationalAudioBlocked && (
+          <div
+            role="status"
+            className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+              isHighContrast
+                ? "contrast-panel border-yellow-400"
+                : "border-amber-700 bg-amber-50 text-amber-950"
+            }`}
+          >
+            El navegador bloqueó la alerta de sonido. Abre Accesibilidad y usa «Probar sonido» para habilitarla.
+          </div>
+        )}
+        {advanceMessage && (
+          <div
+            role="status"
+            className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+              isHighContrast
+                ? "contrast-panel border-yellow-400"
+                : "border-slate-300 bg-white text-slate-800"
+            }`}
+          >
+            {advanceMessage}
+          </div>
+        )}
 
         {isLoading ? (
           <LoadingPanel isHighContrast={isHighContrast} label="Cargando tickets de cocina..." />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {pedidos.length === 0 ? (
               <EmptyKitchenSlots isHighContrast={isHighContrast} />
             ) : (
-              pedidos.map((pedido) => (
+              orderedPedidos.map((pedido) => (
                 <KitchenTicket
                   key={pedido.id}
                   isHighContrast={isHighContrast}
@@ -134,6 +213,16 @@ export function CocinaNormalView({
             role={role}
           />
         )}
+
+        {isAdvanceDialogOpen && (
+          <AdvanceAllDialog
+            counts={advanceCounts}
+            isHighContrast={isHighContrast}
+            isProcessing={isAdvancingAll}
+            onClose={onAdvanceDialogClose}
+            onConfirm={onConfirmAdvance}
+          />
+        )}
       </section>
     </div>
   );
@@ -141,21 +230,33 @@ export function CocinaNormalView({
 
 export function CocinaFacilView({
   activeModal,
+  advanceCounts: providedAdvanceCounts,
+  advanceMessage = null,
   counts,
   error,
   isFullscreen,
   isHighContrast,
+  isAdvanceDialogOpen = false,
+  isAdvancingAll = false,
   isLoading,
+  isRefreshing = false,
+  onAdvanceDialogClose = () => undefined,
   onAdvanceVisible,
+  onConfirmAdvance = () => undefined,
   onEstadoChange,
   onFullscreenToggle,
   onOpenModal,
   onRefresh,
+  operationalAudioBlocked = false,
   pedidos,
   role,
   updatingPedidoId,
   urgentCount
 }: CocinaViewProps) {
+  const advanceCounts = providedAdvanceCounts ?? {
+    pendientes: counts.pendientes,
+    enPreparacion: counts.enPreparacion
+  };
   const pageBg = isHighContrast ? "bg-black" : "bg-white";
   const panelClass = isHighContrast
     ? "contrast-panel border-2 border-yellow-400"
@@ -177,9 +278,7 @@ export function CocinaFacilView({
           </div>
 
           <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 lg:grid-cols-[1fr_auto] lg:items-center">
-            <p className="text-lg font-black text-slate-950">
-              La preparación se actualiza automáticamente.
-            </p>
+            <p className="text-lg font-black text-slate-950">La preparación se actualiza automáticamente.</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <button
                 type="button"
@@ -198,15 +297,20 @@ export function CocinaFacilView({
               <button
                 type="button"
                 onClick={onRefresh}
-                aria-label="Actualizar pedidos de preparación"
-                className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-base font-black transition ${
+                disabled={isLoading || isRefreshing}
+                aria-busy={isRefreshing}
+                aria-label={isRefreshing ? "Actualizando pedidos de preparación" : "Actualizar pedidos de preparación"}
+                className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   isHighContrast
                     ? "contrast-button-secondary"
                     : "border-slate-300 bg-white text-slate-950 hover:border-slate-900 hover:bg-slate-50"
                 } ${FOCUS_VISIBLE_CLASS}`}
               >
-                <RefreshCw className="h-6 w-6" aria-hidden="true" />
-                Actualizar
+                <RefreshCw
+                  className={`h-6 w-6 ${isLoading || isRefreshing ? "motion-safe:animate-spin" : ""}`}
+                  aria-hidden="true"
+                />
+                {isRefreshing ? "Actualizando…" : "Actualizar"}
               </button>
             </div>
           </div>
@@ -232,7 +336,11 @@ export function CocinaFacilView({
               <button
                 type="button"
                 onClick={onAdvanceVisible}
-                disabled={pedidos.length === 0 || updatingPedidoId !== null}
+                disabled={
+                  advanceCounts.pendientes + advanceCounts.enPreparacion === 0 ||
+                  updatingPedidoId !== null ||
+                  isAdvancingAll
+                }
                 aria-label="Avanzar todas al siguiente estado"
                 className={`min-h-[52px] rounded-xl border-2 px-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   isHighContrast
@@ -247,6 +355,16 @@ export function CocinaFacilView({
         )}
 
         {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
+        {operationalAudioBlocked && (
+          <div role="status" className={`rounded-2xl p-4 text-lg font-black ${panelClass}`}>
+            El navegador bloqueó la alerta de sonido. Abre Accesibilidad y usa «Probar sonido» para habilitarla.
+          </div>
+        )}
+        {advanceMessage && (
+          <div role="status" className={`rounded-2xl p-4 text-lg font-black ${panelClass}`}>
+            {advanceMessage}
+          </div>
+        )}
 
         {isLoading ? (
           <LoadingPanel isHighContrast={isHighContrast} label="Cargando tickets de cocina..." />
@@ -287,6 +405,16 @@ export function CocinaFacilView({
             role={role}
           />
         )}
+
+        {isAdvanceDialogOpen && (
+          <AdvanceAllDialog
+            counts={advanceCounts}
+            isHighContrast={isHighContrast}
+            isProcessing={isAdvancingAll}
+            onClose={onAdvanceDialogClose}
+            onConfirm={onConfirmAdvance}
+          />
+        )}
       </section>
     </div>
   );
@@ -308,6 +436,146 @@ function KitchenTitlePill({
       <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FECE00] px-1.5 text-xs text-slate-950">
         {counts.pendientes + counts.enPreparacion}
       </span>
+    </div>
+  );
+}
+
+function CocinaFilters({
+  counts,
+  filter,
+  isHighContrast,
+  onFilterChange
+}: {
+  counts: ReturnType<typeof getPedidoCounts>;
+  filter: CocinaFilter;
+  isHighContrast: boolean;
+  onFilterChange: (filter: CocinaFilter) => void;
+}) {
+  const filters: Array<{ value: CocinaFilter; label: string; count: number }> = [
+    { value: "todos", label: "Todos", count: counts.pendientes + counts.enPreparacion + counts.listos },
+    { value: "por_preparar", label: "Por preparar", count: counts.pendientes + counts.enPreparacion },
+    { value: "pendiente", label: "Pendientes", count: counts.pendientes },
+    { value: "en_preparacion", label: "En preparación", count: counts.enPreparacion },
+    { value: "listo", label: "Listos", count: counts.listos }
+  ];
+
+  return (
+    <div
+      className={`flex flex-wrap gap-2 rounded-xl border p-2 ${
+        isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white"
+      }`}
+      aria-label="Filtrar pedidos de cocina"
+    >
+      {filters.map((option) => {
+        const isSelected = filter === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={isSelected}
+            onClick={() => onFilterChange(option.value)}
+            className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border px-4 text-sm font-black transition ${
+              isSelected
+                ? isHighContrast
+                  ? "contrast-button-primary"
+                  : "border-yellow-500 bg-[#FECE00] text-slate-950"
+                : isHighContrast
+                  ? "contrast-button-secondary"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            {option.label}
+            <span
+              className={`inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-xs ${
+                isSelected ? "bg-white/70 text-slate-950" : "bg-slate-100 text-slate-700"
+              }`}
+            >
+              {option.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AdvanceAllDialog({
+  counts,
+  isHighContrast,
+  isProcessing,
+  onClose,
+  onConfirm
+}: {
+  counts: { pendientes: number; enPreparacion: number };
+  isHighContrast: boolean;
+  isProcessing: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const dialogRef = useRef<HTMLElement | null>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  useAccessibleDialog({
+    containerRef: dialogRef,
+    initialFocusRef: cancelButtonRef,
+    onClose: isProcessing ? undefined : onClose
+  });
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/40 p-4" role="presentation">
+      <section
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="advance-all-title"
+        aria-describedby="advance-all-description"
+        tabIndex={-1}
+        className={`w-full max-w-xl rounded-2xl p-6 shadow-2xl ${
+          isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white"
+        }`}
+      >
+        <h2 id="advance-all-title" className="text-2xl font-black text-slate-950">
+          ¿Avanzar todos los pedidos?
+        </h2>
+        <p id="advance-all-description" className="mt-3 font-bold leading-relaxed text-slate-700">
+          Esta acción avanzará los pedidos que tengan un cambio de estado disponible. Revisa los cambios antes de
+          continuar.
+        </p>
+        <div className="mt-5 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 font-bold text-slate-800">
+          <p>{counts.pendientes} pedidos pasarán de Pendiente a En preparación.</p>
+          <p>{counts.enPreparacion} pedidos pasarán de En preparación a Listo.</p>
+          <p>Los pedidos Listos no se modificarán.</p>
+        </div>
+        <p className="mt-4 text-sm font-bold text-slate-600">
+          Se aplicará a todos los pedidos elegibles del turno, independientemente del filtro seleccionado.
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <button
+            ref={cancelButtonRef}
+            type="button"
+            onClick={onClose}
+            disabled={isProcessing}
+            className={`min-h-[50px] rounded-xl border-2 px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isHighContrast
+                ? "contrast-button-secondary"
+                : "border-slate-400 bg-white text-slate-800 hover:bg-slate-100"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isProcessing || counts.pendientes + counts.enPreparacion === 0}
+            className={`min-h-[50px] rounded-xl border-2 px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isHighContrast
+                ? "contrast-button-primary"
+                : "border-yellow-500 bg-[#FECE00] text-slate-950 hover:bg-[#FFD633]"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            {isProcessing ? "Actualizando..." : "Confirmar avance"}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -345,40 +613,36 @@ function CocinaSummary({
 }
 
 function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido, role }: TicketProps) {
-  const { delayed, isPending, isPreparing, numeroPedido } = getKitchenTicketState(pedido);
+  const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
   const comentarios = getKitchenComments(pedido);
+  const stateClass = isPending
+    ? "border-yellow-400 bg-yellow-50"
+    : isPreparing
+      ? "border-sky-500 bg-sky-50"
+      : "border-emerald-500 bg-emerald-50";
 
   return (
     <article
-      className={`flex min-h-[246px] flex-col justify-between rounded-xl border border-dashed p-4 transition hover:-translate-y-0.5 hover:shadow-lg ${
-        isHighContrast
-          ? "contrast-panel border-yellow-400"
-          : delayed
-            ? "border-yellow-300 bg-yellow-50"
-            : "border-slate-300 bg-white"
-      } ${FOCUS_VISIBLE_CLASS}`}
+      className={`flex h-full flex-col rounded-xl border-2 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${
+        isHighContrast ? "contrast-panel border-yellow-400" : stateClass
+      }`}
     >
-      <button
-        type="button"
-        onClick={() => onOpenModal({ action: "detail", pedido })}
-        aria-label={`Ver detalle del pedido ${numeroPedido}`}
-        className={`w-full rounded-lg text-left ${FOCUS_VISIBLE_CLASS}`}
-      >
+      <div className="flex flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xl font-black text-slate-950">Pedido #{numeroPedido}</p>
+          <div className="min-w-0">
+            <p className="text-2xl font-black leading-none text-slate-950 sm:text-3xl">Pedido #{numeroPedido}</p>
             <p
-              className={`mt-1 flex items-center gap-1.5 text-sm font-bold ${delayed ? "text-yellow-700" : "text-slate-600"}`}
+              className={`mt-2 flex items-center gap-1.5 text-base font-bold ${delayed ? "text-yellow-800" : "text-slate-700"}`}
             >
-              <Clock3 className="h-4 w-4" aria-hidden="true" />
+              <Clock3 className="h-5 w-5 shrink-0" aria-hidden="true" />
               {formatElapsedTime(pedido.createdAt)}
             </p>
           </div>
           <StatusBadge estado={pedido.estado} />
         </div>
 
-        <p className="mt-4 text-base font-black leading-snug text-slate-950">{getPedidoSummary(pedido)}</p>
-        <p className="mt-2 text-sm font-bold text-slate-500">
+        <p className="mt-4 text-lg font-black leading-relaxed text-slate-950">{getPedidoSummary(pedido)}</p>
+        <p className="mt-2 text-sm font-bold text-slate-600">
           {getProductCount(pedido)} productos · {formatTime(pedido.createdAt)}
         </p>
         {pedido.observacion && (
@@ -396,49 +660,41 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
             ))}
           </div>
         )}
-        <p className="mt-3 text-xs font-black uppercase text-slate-600">Haz clic para ver todos los detalles</p>
-      </button>
 
-      {role === "cocina" && (
-        <div className="mt-4 grid gap-2">
-          <div className="grid grid-cols-2 gap-2" aria-label="Flujo del pedido">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                if (isPending) {
-                  onEstadoChange(pedido, "en_preparacion");
-                }
-              }}
-              disabled={!isPending || isUpdating}
-              className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
-                isPreparing
-                  ? "border-yellow-300 bg-yellow-100 text-yellow-900"
-                  : isPending
-                    ? "border-yellow-600 bg-yellow-500 text-slate-950 hover:bg-yellow-600"
-                    : "border-slate-200 bg-slate-100 text-slate-400"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              {isPreparing ? "En preparación" : isUpdating && isPending ? "Guardando..." : "En preparación"}
-            </button>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                if (isPreparing) {
-                  onEstadoChange(pedido, "listo");
-                }
-              }}
-              disabled={!isPreparing || isUpdating}
-              className={`min-h-[44px] rounded-lg border px-3 text-sm font-black transition disabled:cursor-not-allowed ${
-                isPreparing
-                  ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
-                  : "border-slate-200 bg-slate-100 text-slate-400"
-              } ${FOCUS_VISIBLE_CLASS}`}
-            >
-              {isUpdating && isPreparing ? "Guardando..." : "Listo"}
-            </button>
-          </div>
+        <div className="mt-auto pt-4">
+          <button
+            type="button"
+            onClick={() => onOpenModal({ action: "detail", pedido })}
+            aria-label={`Ver detalles del pedido ${numeroPedido}`}
+            className={`inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border-2 px-4 text-base font-black transition ${
+              isHighContrast
+                ? "contrast-button-secondary"
+                : "border-slate-800 bg-white text-slate-950 hover:bg-slate-100"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            <Eye className="h-5 w-5" aria-hidden="true" />
+            Ver detalles
+          </button>
+        </div>
+      </div>
+
+      {role === "cocina" && !isReady && (
+        <div className="mt-4 border-t border-slate-300 pt-4" aria-label="Flujo del pedido">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onEstadoChange(pedido, isPending ? "en_preparacion" : "listo");
+            }}
+            disabled={isUpdating}
+            className={`min-h-[48px] w-full rounded-lg border-2 px-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isPending
+                ? "border-yellow-600 bg-yellow-500 text-slate-950 hover:bg-yellow-600"
+                : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+            } ${FOCUS_VISIBLE_CLASS}`}
+          >
+            {isUpdating ? "Guardando..." : isPending ? "Iniciar preparación" : "Marcar como listo"}
+          </button>
         </div>
       )}
     </article>
@@ -554,31 +810,37 @@ function AccessibleKitchenTicket({
 
 function EmptyKitchenSlots({ isHighContrast }: { isHighContrast: boolean }) {
   return (
-    <>
-      {Array.from({ length: 8 }, (_, index) => (
-        <div
-          key={index}
-          className={`flex min-h-[214px] items-center justify-center rounded-xl border border-dashed ${
-            isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-300 bg-white/50 text-slate-300"
-          }`}
-          aria-hidden="true"
-        >
-          <UtensilsCrossed className="h-9 w-9" />
-        </div>
-      ))}
-      <p className="sr-only">No hay tickets de cocina en esta estación.</p>
-    </>
+    <div
+      className={`col-span-full flex items-center justify-center gap-3 rounded-xl border border-dashed px-5 py-8 ${
+        isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-300 bg-white text-slate-600"
+      }`}
+      role="status"
+    >
+      <UtensilsCrossed className="h-9 w-9 shrink-0" aria-hidden="true" />
+      <p className="text-lg font-black">No hay pedidos para preparar.</p>
+    </div>
   );
 }
 
+function getKitchenStatePriority(estado: EstadoPedido) {
+  if (estado === "pendiente") return 0;
+  if (estado === "en_preparacion") return 1;
+  if (estado === "listo") return 2;
+  return 3;
+}
+
 function IconButton({
+  disabled = false,
   icon: Icon,
+  isBusy = false,
   isHighContrast,
   label,
   onClick,
   text
 }: {
+  disabled?: boolean;
   icon: LucideIcon;
+  isBusy?: boolean;
   isHighContrast: boolean;
   label: string;
   onClick: () => void;
@@ -588,15 +850,17 @@ function IconButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={label}
+      disabled={disabled}
+      aria-busy={isBusy || undefined}
+      aria-label={isBusy ? "Actualizando preparación" : label}
       title={label}
-      className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border px-4 font-black transition ${
+      className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border px-4 font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
         isHighContrast
           ? "contrast-button-secondary"
           : "border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
       } ${FOCUS_VISIBLE_CLASS}`}
     >
-      <Icon className="h-5 w-5" aria-hidden="true" />
+      <Icon className={`h-5 w-5 ${isBusy ? "motion-safe:animate-spin" : ""}`} aria-hidden="true" />
       {text && <span>{text}</span>}
     </button>
   );

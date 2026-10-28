@@ -82,6 +82,23 @@ html[data-accessible="false"][data-text-size="large"] {
   font-size: 18px;
 }
 
+.pdv-product-grid {
+  --pdv-product-card-min-width: 11rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--pdv-product-card-min-width)), 1fr));
+}
+
+html[data-accessible="false"][data-text-size="small"] .pdv-product-grid {
+  --pdv-product-card-min-width: 10rem;
+}
+
+html[data-accessible="false"][data-text-size="normal"] .pdv-product-grid {
+  --pdv-product-card-min-width: 11rem;
+}
+
+html[data-accessible="false"][data-text-size="large"] .pdv-product-grid {
+  --pdv-product-card-min-width: max(13rem, calc((100% - 1.5rem) / 4));
+}
+
 /* ============================================
    MODO ACCESIBLE - Grande y Claro
    ============================================ */

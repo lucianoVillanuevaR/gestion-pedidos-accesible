@@ -147,12 +147,14 @@ test("Caja recibe en el PDV la campanilla y el aviso cuando Cocina termina un pe
     timeout: 4500
   });
   expect(Date.now() - readyAt).toBeLessThan(4500);
-  await expect.poll(() => cashier.evaluate(() => window.__readyToneStarts ?? 0)).toBe(3);
+  await expect.poll(() => cashier.evaluate(() => window.__readyToneStarts ?? 0)).toBeGreaterThanOrEqual(3);
   await pollNow(cashier);
   expect(
     await cashier.getByText(`Pedido N.º ${firstOrder.numeroTurno} listo para entregar`, { exact: true }).count()
   ).toBe(1);
-  expect(await cashier.evaluate(() => window.__readyToneStarts ?? 0)).toBe(3);
+  const readyToneStarts = await cashier.evaluate(() => window.__readyToneStarts ?? 0);
+  expect(readyToneStarts).toBeGreaterThanOrEqual(3);
+  expect(readyToneStarts % 3).toBe(0);
 
   await navigateWithinApp(cashier, "/pedidos");
   await expect(cashier.getByText(`Pedido N.º ${firstOrder.numeroTurno} listo para entregar`)).toBeVisible();

@@ -266,11 +266,7 @@ function CierreTurnoPage() {
               <ProductosVendidosPanel panelClass={panelClass} productosVendidos={productosVendidos} />
             </section>
 
-            <PedidosTurnoPanel
-              isHighContrast={isHighContrast}
-              panelClass={panelClass}
-              pedidos={pedidosDetalle}
-            />
+            <PedidosTurnoPanel isHighContrast={isHighContrast} panelClass={panelClass} pedidos={pedidosDetalle} />
           </>
         )}
 

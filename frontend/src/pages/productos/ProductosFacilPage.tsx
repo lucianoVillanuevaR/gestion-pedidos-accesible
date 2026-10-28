@@ -25,7 +25,9 @@ function ProductosFacilPage() {
   const { speak, speakAction } = useActionVoice(isVoiceEnabled);
   const [selectedCategory, setSelectedCategory] = useState<CategoriaFacil>("Todos");
   const [selectedProducto, setSelectedProducto] = useState<ProductoConCategoria | null>(null);
-  const { error, isLoading, loadProductos, productosConCategoria } = useProductosCatalog({ includeUnavailable: true });
+  const { error, isLoading, isRefreshing, loadProductos, productosConCategoria } = useProductosCatalog({
+    includeUnavailable: true
+  });
 
   const productosFiltrados =
     selectedCategory === "Todos"
@@ -76,7 +78,11 @@ function ProductosFacilPage() {
   return (
     <div className={`min-h-screen ${pageBg}`}>
       <main className="mx-auto w-full max-w-[1520px] space-y-5 px-3 py-4 sm:px-4 sm:py-5 lg:px-5 xl:px-6">
-        <AccessibleIntroCard handleRefreshProductos={handleRefreshProductos} isHighContrast={isHighContrast} />
+        <AccessibleIntroCard
+          handleRefreshProductos={handleRefreshProductos}
+          isHighContrast={isHighContrast}
+          isRefreshing={isLoading || isRefreshing}
+        />
 
         <section className={`rounded-[26px] p-4 sm:p-5 ${panelClass}`} aria-label="Categorías de productos">
           <div className="flex flex-wrap gap-4">
@@ -146,10 +152,12 @@ function ProductosFacilPage() {
 
 function AccessibleIntroCard({
   handleRefreshProductos,
-  isHighContrast
+  isHighContrast,
+  isRefreshing
 }: {
   handleRefreshProductos: () => void;
   isHighContrast: boolean;
+  isRefreshing: boolean;
 }) {
   return (
     <header
@@ -189,12 +197,15 @@ function AccessibleIntroCard({
           <button
             type="button"
             onClick={handleRefreshProductos}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
+            aria-label={isRefreshing ? "Actualizando productos" : "Actualizar productos"}
             className={`inline-flex min-h-[64px] items-center justify-center gap-3 rounded-2xl border-2 px-4 text-lg font-black transition ${
               isHighContrast ? "contrast-button-secondary" : "border-slate-950 bg-slate-950 text-white hover:bg-black"
-            } ${FOCUS_VISIBLE_CLASS}`}
+            } disabled:cursor-not-allowed disabled:opacity-60 ${FOCUS_VISIBLE_CLASS}`}
           >
-            <RefreshCw className="h-6 w-6" aria-hidden="true" />
-            Actualizar
+            <RefreshCw className={`h-6 w-6 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} aria-hidden="true" />
+            {isRefreshing ? "Actualizando…" : "Actualizar"}
           </button>
         </div>
       </div>

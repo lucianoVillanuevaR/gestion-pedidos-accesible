@@ -28,6 +28,7 @@ vi.mock("../contexts/AccessibilityContext", () => ({
 }));
 vi.mock("../hooks/useSoundFeedback", () => ({
   AUDIO_FEEDBACK_STARTED_EVENT: "riquisimo:audio-feedback-started",
+  unlockSoundFeedback: vi.fn().mockResolvedValue(true),
   useSoundFeedback: () => ({ orderReady: mocks.orderReady })
 }));
 vi.mock("../services/pedidos", () => ({
@@ -195,20 +196,16 @@ describe("notificador global de pedidos listos", () => {
     expect(screen.queryByText(/No fue posible iniciar el audio/)).toBeNull();
   });
 
-  it("retira el aviso de bloqueo cuando el usuario desactiva Sonidos", async () => {
+  it("mantiene el aviso operativo aunque los sonidos de interacción estén desactivados", async () => {
+    mocks.isSoundEnabled = false;
     mocks.orderReady.mockResolvedValueOnce(false);
     mocks.getPedidos.mockResolvedValueOnce([pedido("en_preparacion")]).mockResolvedValue([pedido("listo")]);
-    const view = render(<ReadyOrderNotifier />);
+    render(<ReadyOrderNotifier />);
     await act(async () => undefined);
     await act(async () => void (await vi.advanceTimersByTimeAsync(READY_ORDER_POLL_MS)));
     await act(async () => undefined);
+    expect(mocks.orderReady).toHaveBeenCalledOnce();
     expect(screen.getByText(/No fue posible iniciar el audio/)).toBeTruthy();
-
-    mocks.isSoundEnabled = false;
-    view.rerender(<ReadyOrderNotifier />);
-    await act(async () => undefined);
-
-    expect(screen.queryByText(/No fue posible iniciar el audio/)).toBeNull();
   });
 
   it("permite cerrar inmediatamente con X y devuelve el foco al contenido principal", async () => {

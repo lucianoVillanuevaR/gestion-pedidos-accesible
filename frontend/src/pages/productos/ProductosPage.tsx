@@ -64,6 +64,7 @@ function ProductosPage() {
   const [categoryFeedback, setCategoryFeedback] = useState<string | null>(null);
   const [openCategoryOptions, setOpenCategoryOptions] = useState<CategoriaCatalogo | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isRefreshingCategories, setIsRefreshingCategories] = useState(false);
   const [updatingProductoId, setUpdatingProductoId] = useState<number | null>(null);
   const expandedCategoriesStorageKey = getExpandedCategoriesStorageKey(user?.username);
   const [expandedCategories, setExpandedCategories] = useState<Set<CategoriaCatalogo>>(
@@ -82,6 +83,7 @@ function ProductosPage() {
     error,
     grupos,
     isLoading,
+    isRefreshing,
     loadProductos,
     searchTerm,
     setActiveCategory,
@@ -94,22 +96,21 @@ function ProductosPage() {
     includeUnavailable: true
   });
 
-  const loadCategorias = useCallback(() => {
-    getCategorias()
-      .then((categorias) =>
-        setRemoteCategorias(
-          categorias.map((categoria) => ({
-            activa: categoria.activa,
-            id: categoria.id,
-            label: categoria.nombre,
-            value: categoria.nombre as CategoriaCatalogo
-          }))
-        )
-      )
-      .catch((requestError) => {
-        const message = requestError instanceof Error ? requestError.message : "No fue posible cargar categorías";
-        setError(message);
-      });
+  const loadCategorias = useCallback(async () => {
+    try {
+      const categorias = await getCategorias();
+      setRemoteCategorias(
+        categorias.map((categoria) => ({
+          activa: categoria.activa,
+          id: categoria.id,
+          label: categoria.nombre,
+          value: categoria.nombre as CategoriaCatalogo
+        }))
+      );
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "No fue posible cargar categorías";
+      setError(message);
+    }
   }, [setError]);
 
   useEffect(() => {
@@ -326,12 +327,17 @@ function ProductosPage() {
     }
   };
 
-  const handleRefreshProductos = () => {
+  const handleRefreshProductos = async () => {
     speakAction("Actualizando productos.", "productos-normal-refresh", {
       cooldownMs: 1200,
       priority: "normal"
     });
-    loadProductos();
+    setIsRefreshingCategories(true);
+    try {
+      await Promise.all([loadProductos(), loadCategorias()]);
+    } finally {
+      setIsRefreshingCategories(false);
+    }
   };
 
   const handleOpenCreateProduct = () => {
@@ -569,7 +575,7 @@ function ProductosPage() {
         <ProductosToolbar
           activeCategory={activeCategory}
           grupos={grupos}
-          isLoading={isLoading}
+          isLoading={isLoading || isRefreshing || isRefreshingCategories}
           onCreateCategory={handleOpenCreateCategory}
           onCreateProduct={handleOpenCreateProduct}
           onRefresh={handleRefreshProductos}

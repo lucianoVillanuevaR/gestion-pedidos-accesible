@@ -19,38 +19,40 @@ function PdvProductTile({ cantidad, disabled, onAdd, onDecrease, onIncrease, pro
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-yellow-400 hover:shadow-md"}`}
+      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-md border border-slate-300 bg-white shadow-sm transition ${disabled ? "opacity-60" : "hover:border-yellow-400 hover:shadow-md"}`}
       aria-disabled={disabled || undefined}
     >
       <button
         type="button"
         onClick={onAdd}
         disabled={disabled}
-        className="block w-full text-left disabled:cursor-not-allowed"
+        className="flex w-full flex-col text-left disabled:cursor-not-allowed"
         aria-label={addProductLabel}
       >
-        <div className="relative h-[120px] overflow-hidden bg-slate-300">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-white">
           <ProductImage
             src={producto.imagen}
             alt={`Imagen de ${producto.nombre}`}
-            className="h-full w-full object-cover transition group-hover:scale-105"
+            className="h-full w-full object-cover object-center transition group-hover:scale-105"
             emptyClassName="flex h-full w-full items-center justify-center bg-slate-300 text-center text-xs font-bold uppercase text-slate-600"
             emptyLabel="Producto"
           />
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pb-1.5 pt-8">
-            <h3 className="line-clamp-2 min-h-[34px] text-sm font-black uppercase leading-tight text-white">
-              {producto.nombre}
-            </h3>
-          </div>
           {cantidad > 0 && (
             <span className="absolute right-2 top-2 rounded-full bg-[#FECE00] px-2 py-0.5 text-xs font-black text-slate-950">
               {cantidad}
             </span>
           )}
         </div>
+        <div className="flex w-full items-start border-t border-slate-200 px-2.5 py-2">
+          <h3 className="line-clamp-3 min-h-[3.75em] whitespace-normal break-normal text-sm font-black uppercase leading-tight text-slate-950 [hyphens:none]">
+            {producto.nombre}
+          </h3>
+        </div>
       </button>
-      <div className="grid grid-cols-[1fr_auto] items-center gap-2 px-2 py-1.5">
-        <p className="truncate text-base font-black text-slate-800">{formatCurrency(producto.precio)}</p>
+      <div className="mt-auto grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 px-2.5 py-2">
+        <p className="min-w-0 whitespace-nowrap text-base font-black text-slate-800">
+          {formatCurrency(producto.precio)}
+        </p>
         <button
           type="button"
           onClick={onAdd}

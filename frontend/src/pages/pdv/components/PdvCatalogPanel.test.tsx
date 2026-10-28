@@ -43,7 +43,7 @@ function renderPanel(context: PdvViewContextValue) {
 describe("PdvCatalogPanel", () => {
   afterEach(cleanup);
 
-  it("mantiene la selección semántica y muestra nombres largos en hasta dos líneas", () => {
+  it("mantiene la selección semántica y permite mostrar completos los nombres largos", () => {
     renderPanel(buildContext());
 
     const categoryNavigation = screen.getByRole("navigation", {
@@ -57,7 +57,9 @@ describe("PdvCatalogPanel", () => {
     expect(selectedButton.getAttribute("aria-pressed")).toBe("true");
     expect(selectedButton.getAttribute("aria-current")).toBe("page");
     expect(selectedButton.className).toContain("bg-[#FECE00]");
-    expect(label.className).toContain("line-clamp-2");
+    expect(label.className).toContain("whitespace-normal");
+    expect(label.className).toContain("break-normal");
+    expect(label.className).not.toContain("line-clamp");
     expect(label.className).not.toContain("truncate");
   });
 

@@ -65,7 +65,7 @@ describe("vista normal de preparación", () => {
     expect(screen.getByText("Más de 20 min")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Actualizar preparación" }));
     fireEvent.click(screen.getByRole("button", { name: "Pantalla completa" }));
-    fireEvent.click(screen.getByRole("button", { name: "Ver detalle del pedido 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ver detalles del pedido 1" }));
     expect(props.onRefresh).toHaveBeenCalledOnce();
     expect(props.onFullscreenToggle).toHaveBeenCalledOnce();
     expect(props.onOpenModal).toHaveBeenCalledWith({ action: "detail", pedido: pedidoPendiente });

@@ -100,6 +100,19 @@ function getAudioContext() {
   return sharedAudioContext;
 }
 
+export async function unlockSoundFeedback() {
+  try {
+    const context = getAudioContext();
+    if (!context) return false;
+    if (context.state === "suspended") await context.resume();
+    const isAvailable = context.state === "running";
+    if (isAvailable) window.dispatchEvent(new Event(AUDIO_FEEDBACK_STARTED_EVENT));
+    return isAvailable;
+  } catch {
+    return false;
+  }
+}
+
 export async function playSoundFeedback(type: SoundFeedbackType, volumeLevel: SoundVolumeLevel = "soft") {
   try {
     const context = getAudioContext();
@@ -136,8 +149,21 @@ export async function playSoundFeedback(type: SoundFeedbackType, volumeLevel: So
   }
 }
 
+export function useOperationalSoundFeedback(volumeLevel: SoundVolumeLevel = "soft") {
+  const playOperationalAlert = useCallback(
+    (type: "notification" | "orderReady") => playSoundFeedback(type, volumeLevel),
+    [volumeLevel]
+  );
+
+  return {
+    notification: useCallback(() => playOperationalAlert("notification"), [playOperationalAlert]),
+    orderReady: useCallback(() => playOperationalAlert("orderReady"), [playOperationalAlert])
+  };
+}
+
 export function useSoundFeedback(isSoundEnabled: boolean, volumeLevel: SoundVolumeLevel = "soft") {
-  const play = useCallback(
+  const operationalFeedback = useOperationalSoundFeedback(volumeLevel);
+  const playInteraction = useCallback(
     (type: SoundFeedbackType) => {
       if (!isSoundEnabled) return Promise.resolve(false);
       return playSoundFeedback(type, volumeLevel);
@@ -146,10 +172,9 @@ export function useSoundFeedback(isSoundEnabled: boolean, volumeLevel: SoundVolu
   );
 
   return {
-    success: useCallback(() => play("success"), [play]),
-    error: useCallback(() => play("error"), [play]),
-    warning: useCallback(() => play("warning"), [play]),
-    notification: useCallback(() => play("notification"), [play]),
-    orderReady: useCallback(() => play("orderReady"), [play])
+    success: useCallback(() => playInteraction("success"), [playInteraction]),
+    error: useCallback(() => playInteraction("error"), [playInteraction]),
+    warning: useCallback(() => playInteraction("warning"), [playInteraction]),
+    ...operationalFeedback
   };
 }

@@ -1,5 +1,5 @@
 import { Utensils } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "../../utils/productImages";
 
 type ProductImageProps = {
@@ -7,6 +7,7 @@ type ProductImageProps = {
   className: string;
   decorative?: boolean;
   emptyClassName: string;
+  emptyContent?: ReactNode;
   emptyLabel?: string;
   showEmptyOnError?: boolean;
   src?: string | null;
@@ -17,6 +18,7 @@ function ProductImage({
   className,
   decorative = false,
   emptyClassName,
+  emptyContent,
   emptyLabel = "Sin imagen",
   showEmptyOnError = false,
   src
@@ -26,7 +28,7 @@ function ProductImage({
   if (!src || (showEmptyOnError && failedSrc === src)) {
     return (
       <div className={emptyClassName} aria-hidden={decorative || undefined}>
-        {emptyLabel === "icon" ? <Utensils className="h-5 w-5" aria-hidden="true" /> : emptyLabel}
+        {emptyContent ?? (emptyLabel === "icon" ? <Utensils className="h-5 w-5" aria-hidden="true" /> : emptyLabel)}
       </div>
     );
   }

@@ -20,9 +20,11 @@ export function usePedidosController({
   const [pedidos, setPedidos] = useState<PedidoResponse[]>([]);
   const [estadoFilter, setEstadoFilter] = useState<EstadoFilter>("todos");
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeModal, setActiveModalState] = useState<ActiveModal>(null);
   const [updatingPedidoId, setUpdatingPedidoId] = useState<number | null>(null);
+  const hasLoadedRef = useRef(false);
   const lastFocusedElementRef = useRef<HTMLElement | null>(null);
 
   const filteredPedidos = useMemo(() => {
@@ -37,8 +39,12 @@ export function usePedidosController({
   const normalSummary = useMemo(() => getNormalSummary(pedidos), [pedidos]);
 
   const loadPedidos = useCallback(async (signal?: AbortSignal, silent = false) => {
+    const isInitialLoad = !hasLoadedRef.current;
     try {
-      if (!silent) setIsLoading(true);
+      if (!silent) {
+        if (isInitialLoad) setIsLoading(true);
+        else setIsRefreshing(true);
+      }
       setError(null);
       const pedidosResponse = await getPedidos(signal);
       setPedidos(withPedidoNumerosTurno(pedidosResponse));
@@ -49,7 +55,11 @@ export function usePedidosController({
 
       setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar los pedidos");
     } finally {
-      if (!silent) setIsLoading(false);
+      if (!silent) {
+        if (isInitialLoad) setIsLoading(false);
+        else setIsRefreshing(false);
+      }
+      hasLoadedRef.current = true;
     }
   }, []);
 
@@ -103,6 +113,7 @@ export function usePedidosController({
     filteredPedidos,
     handleEstadoChange,
     isLoading,
+    isRefreshing,
     loadPedidos,
     normalSummary,
     pedidoCounts,

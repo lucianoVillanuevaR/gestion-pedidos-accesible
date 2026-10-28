@@ -108,7 +108,7 @@ describe("AccessibilityPanel", () => {
     expect(screen.getByRole("button", { name: "Tamaño Grande" })).toBeTruthy();
   });
 
-  it("permite elegir volumen y oculta los controles cuando los sonidos están apagados", async () => {
+  it("mantiene disponible el volumen de las alertas aunque los sonidos de interacción estén apagados", async () => {
     const user = userEvent.setup();
     const onSetSoundVolume = vi.fn();
     const { rerender } = render(
@@ -119,41 +119,28 @@ describe("AccessibilityPanel", () => {
     expect(onSetSoundVolume).toHaveBeenCalledWith("normal");
 
     rerender(<AccessibilityPanel {...defaultProps} />);
-    expect(screen.queryByRole("heading", { name: "Sonido" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Fuerte" })).toBeNull();
-    expect(
-      screen.queryByRole("button", {
-        name: "Probar sonido"
-      })
-    ).toBeNull();
-    expect(screen.queryByText("Activa Sonidos en Ajustes rápidos para elegir el volumen.")).toBeNull();
+    expect(screen.getByRole("heading", { name: "Sonido" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Fuerte" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Probar sonido" })).toBeTruthy();
   });
 
   it("reproduce una única confirmación al activar y ninguna al desactivar", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<AccessibilityPanel {...defaultProps} soundVolume="normal" />);
 
-    await user.click(screen.getByRole("switch", { name: "Sonidos: Desactivado" }));
+    await user.click(screen.getByRole("switch", { name: "Sonidos de interacción: Desactivado" }));
     expect(playSoundFeedback).toHaveBeenCalledOnce();
     expect(playSoundFeedback).toHaveBeenCalledWith("success", "normal");
 
     rerender(<AccessibilityPanel {...defaultProps} isSoundEnabled soundVolume="normal" />);
-    await user.click(screen.getByRole("switch", { name: "Sonidos: Activado" }));
+    await user.click(screen.getByRole("switch", { name: "Sonidos de interacción: Activado" }));
     expect(playSoundFeedback).toHaveBeenCalledOnce();
   });
 
-  it("muestra la prueba de sonido solo cuando los sonidos están habilitados", async () => {
+  it("mantiene la prueba de alertas disponible aunque los sonidos de interacción estén desactivados", async () => {
     const user = userEvent.setup();
-    const { rerender } = render(<AccessibilityPanel {...defaultProps} />);
+    render(<AccessibilityPanel {...defaultProps} soundVolume="loud" />);
 
-    expect(
-      screen.queryByRole("button", {
-        name: "Probar sonido"
-      })
-    ).toBeNull();
-    expect(playSoundFeedback).not.toHaveBeenCalled();
-
-    rerender(<AccessibilityPanel {...defaultProps} isSoundEnabled soundVolume="loud" />);
     await user.click(screen.getByRole("button", { name: "Probar sonido" }));
     expect(playSoundFeedback).toHaveBeenCalledWith("orderReady", "loud");
     expect((await screen.findByRole("status")).textContent).toContain("Prueba de sonido iniciada.");

@@ -34,7 +34,7 @@ function PdvCatalogPanel() {
   return (
     <>
       <nav
-        className="hidden min-h-0 border-r border-slate-200 bg-slate-50 print:hidden xl:block"
+        className="hidden min-h-0 min-w-0 overflow-x-hidden overflow-y-auto border-r border-slate-200 bg-slate-50 print:hidden xl:block"
         aria-label="Categorías de productos"
       >
         <div className="sticky top-0">
@@ -50,7 +50,7 @@ function PdvCatalogPanel() {
                   key={filtro.value}
                   type="button"
                   onClick={() => selectCategory(filtro.value, filtro.label)}
-                  className={`pdv-category-option group flex min-h-[44px] w-full touch-manipulation items-center gap-2 px-3 py-2 text-left text-sm font-bold uppercase transition-colors duration-200 motion-reduce:transition-none focus-visible:z-10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-slate-950 ${
+                  className={`pdv-category-option group flex min-h-[2.75rem] w-full touch-manipulation items-center gap-2.5 px-3 py-2.5 text-left text-sm font-bold uppercase transition-colors duration-200 motion-reduce:transition-none focus-visible:z-10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-slate-950 ${
                     isHighContrast
                       ? isSelected
                         ? "contrast-button-primary border-l-[6px] border-l-slate-950 shadow-inner"
@@ -62,11 +62,11 @@ function PdvCatalogPanel() {
                   aria-current={isSelected ? "page" : undefined}
                   aria-pressed={isSelected}
                 >
-                  <span className="line-clamp-2 min-w-0 flex-1 whitespace-normal break-words leading-tight">
+                  <span className="min-w-0 flex-1 whitespace-normal break-normal leading-tight [hyphens:none]">
                     {filtro.label}
                   </span>
                   {isSelected && (
-                    <span className="flex shrink-0 items-center" aria-hidden="true">
+                    <span className="flex shrink-0 self-center items-center" aria-hidden="true">
                       <Check className="h-4 w-4" strokeWidth={3} />
                     </span>
                   )}
@@ -97,7 +97,7 @@ function PdvCatalogPanel() {
                   onClick={announceSearchBar}
                   onFocus={announceSearchBar}
                   aria-label="Barra de búsqueda de productos"
-                  className="h-11 w-full rounded-md border border-slate-300 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 contrast-input"
+                  className="min-h-[2.75rem] w-full rounded-md border border-slate-300 bg-white py-2 pl-10 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 contrast-input"
                 />
               </label>
             </div>
@@ -112,7 +112,7 @@ function PdvCatalogPanel() {
                   key={filtro.value}
                   type="button"
                   onClick={() => selectCategory(filtro.value, filtro.label)}
-                  className={`pdv-category-option h-9 shrink-0 touch-manipulation rounded-full border px-3 text-xs font-black uppercase transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 ${
+                  className={`pdv-category-option min-h-[2.25rem] shrink-0 touch-manipulation whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-black uppercase leading-tight transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 ${
                     isHighContrast
                       ? isSelected
                         ? "contrast-button-primary"
@@ -132,7 +132,7 @@ function PdvCatalogPanel() {
         </div>
 
         <div
-          className="min-h-0 flex-1 overflow-visible px-3 py-4 sm:px-4 lg:overflow-y-auto"
+          className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-visible px-3 py-4 sm:px-4 lg:overflow-y-auto"
           tabIndex={0}
           aria-label="Catálogo de productos desplazable"
         >
@@ -141,13 +141,15 @@ function PdvCatalogPanel() {
               <PdvFeedbackMessage feedback={feedback} isHighContrast={isHighContrast} className="w-full" />
             </div>
           )}
-          <h2 className="mb-2 text-xl font-black uppercase text-slate-800">{selectedCategoryLabel}</h2>
+          <h2 className="mb-2 whitespace-normal break-normal text-xl font-black uppercase leading-tight text-slate-800 [hyphens:none]">
+            {selectedCategoryLabel}
+          </h2>
           {!loadingProductos && productosFiltrados.length === 0 && !loadingError ? (
             <div className="rounded-md border-2 border-dashed border-slate-300 bg-white p-8 text-center">
               <p className="font-bold text-base">No hay productos en esta categoría</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7">
+            <div className="pdv-product-grid grid min-w-0 items-stretch gap-2">
               {productosFiltrados.map((producto) => (
                 <PdvProductTile
                   key={producto.id}

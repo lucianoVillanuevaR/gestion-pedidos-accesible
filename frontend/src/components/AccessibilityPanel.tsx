@@ -259,12 +259,12 @@ function AccessibilityPanel({
                 )}
                 <AccessibilityToggle
                   checked={isSoundEnabled}
-                  label="Sonidos"
-                  description="Reproduce avisos."
+                  label="Sonidos de interacción"
+                  description="Activa sonidos de acciones y confirmaciones. Las alertas de pedidos siempre están activas."
                   icon={<Volume2 className="h-5 w-5" />}
                   onChange={() => {
                     announcePanelAction(
-                      isSoundEnabled ? "Sonidos desactivados." : "Sonidos activados.",
+                      isSoundEnabled ? "Sonidos de interacción desactivados." : "Sonidos de interacción activados.",
                       "accessibility-panel-sound"
                     );
                     onToggleSound();
@@ -272,12 +272,14 @@ function AccessibilityPanel({
                       void playSoundFeedback("success", soundVolume).then((played) =>
                         setStatusMessage(
                           played
-                            ? "Sonidos activados. Prueba de sonido iniciada."
-                            : "Sonidos activados, pero el navegador bloqueó el audio. Usa Probar sonido nuevamente."
+                            ? "Sonidos de interacción activados. Prueba de sonido iniciada."
+                            : "Sonidos de interacción activados, pero el navegador bloqueó el audio. Usa Probar sonido nuevamente."
                         )
                       );
                     } else {
-                      setStatusMessage("Sonidos desactivados.");
+                      setStatusMessage(
+                        "Sonidos de interacción desactivados. Las alertas de pedidos permanecen activas."
+                      );
                     }
                   }}
                 />
@@ -321,8 +323,7 @@ function AccessibilityPanel({
               </fieldset>
             </section>
 
-            {isSoundEnabled && (
-              <section className="border-t border-slate-200 pt-5" aria-labelledby="sound-settings-title">
+            <section className="border-t border-slate-200 pt-5" aria-labelledby="sound-settings-title">
                 <div className="flex items-center gap-2">
                   <Volume2 className="h-5 w-5 text-yellow-700" aria-hidden="true" />
                   <h3 id="sound-settings-title" className={sectionTitleClass}>
@@ -369,8 +370,7 @@ function AccessibilityPanel({
                     Probar sonido
                   </button>
                 </fieldset>
-              </section>
-            )}
+            </section>
 
             <div className="border-t border-slate-200 pt-5">
               <button

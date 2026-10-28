@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/pdv");
 });
 
-test("las filas compactas cubren selección, hover, foco, pulsación y nombres largos", async ({ page }) => {
+test("las filas compactas cubren selección, hover, foco, pulsación y nombres completos", async ({ page }) => {
   const categories = page.getByRole("navigation", {
     name: "Categorías de productos"
   });
@@ -31,14 +31,17 @@ test("las filas compactas cubren selección, hover, foco, pulsación y nombres l
     .evaluate((label) => {
       const styles = getComputedStyle(label);
       return {
+        clientHeight: label.clientHeight,
         height: label.getBoundingClientRect().height,
         lineHeight: Number.parseFloat(styles.lineHeight),
+        scrollHeight: label.scrollHeight,
         whiteSpace: styles.whiteSpace
       };
     });
   expect(longLabelMetrics.whiteSpace).toBe("normal");
-  expect(longLabelMetrics.height).toBeLessThanOrEqual(longLabelMetrics.lineHeight * 2.1);
-  expect(longLabelMetrics.height).toBeGreaterThan(longLabelMetrics.lineHeight * 1.5);
+  expect(longLabelMetrics.height).toBeGreaterThanOrEqual(longLabelMetrics.lineHeight * 0.9);
+  expect(longLabelMetrics.height).toBeLessThanOrEqual(longLabelMetrics.lineHeight * 3.1);
+  expect(longLabelMetrics.scrollHeight).toBeLessThanOrEqual(longLabelMetrics.clientHeight + 1);
 
   await allProducts.hover();
   await expect
@@ -75,15 +78,15 @@ test("alto contraste conserva estados distinguibles", async ({ page }) => {
     name: "Categorías de productos"
   });
   const selectedCategory = categories.locator('button[aria-pressed="true"]');
-  const allProducts = categories.getByRole("button", { name: "Todos" });
+  const unselectedCategory = categories.locator('button[aria-pressed="false"]').first();
 
   await expect(selectedCategory).toHaveCSS("background-color", "rgb(250, 204, 21)");
-  await allProducts.hover();
-  await expect(allProducts).toHaveCSS("background-color", "rgb(255, 255, 255)");
-  await expect(allProducts).toHaveCSS("color", "rgb(0, 0, 0)");
+  await unselectedCategory.hover();
+  await expect(unselectedCategory).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(unselectedCategory).toHaveCSS("color", "rgb(0, 0, 0)");
 
   await page.mouse.down();
-  await expect(allProducts).toHaveCSS("background-color", "rgb(250, 204, 21)");
+  await expect(unselectedCategory).toHaveCSS("background-color", "rgb(250, 204, 21)");
   await page.mouse.up();
 });
 

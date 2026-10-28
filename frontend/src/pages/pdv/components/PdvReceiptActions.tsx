@@ -40,7 +40,7 @@ function PdvReceiptActions() {
 
   return (
     <div className="px-3 pt-3 no-print print:hidden">
-      <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-2">
+      <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.75rem] items-center gap-2">
         <div className="relative min-w-0" ref={printMenuRef}>
           <button
             type="button"
@@ -59,7 +59,7 @@ function PdvReceiptActions() {
           </button>
           {isPrintMenuOpen && (
             <div
-              className={`absolute bottom-[calc(100%+8px)] left-0 z-50 min-w-[220px] overflow-hidden rounded-xl border py-1 shadow-xl ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white text-slate-900"}`}
+              className={`absolute bottom-[calc(100%+8px)] left-0 z-50 min-w-[13.75rem] overflow-hidden rounded-xl border py-1 shadow-xl ${isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white text-slate-900"}`}
               id="pdv-print-options"
               aria-label="Opciones de impresión"
             >

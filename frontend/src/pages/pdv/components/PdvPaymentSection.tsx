@@ -38,9 +38,9 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
   return (
     <>
       <div className="border-b border-dashed border-slate-300 px-3 py-3 no-print print:hidden">
-        <div className="flex items-center justify-between text-sm">
-          <span>Subtotal Productos ({totalItems})</span>
-          <span>{formatCurrency(total)}</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="min-w-0">Subtotal Productos ({totalItems})</span>
+          <span className="shrink-0 whitespace-nowrap">{formatCurrency(total)}</span>
         </div>
         {/* TODO: Mostrar el descuento cuando esta funcionalidad esté implementada. */}
       </div>
@@ -72,7 +72,7 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
                 type="button"
                 onClick={() => selectMetodoPago(option.value)}
                 disabled={!isTurnoOpen}
-                className={`flex min-h-[42px] items-center justify-center gap-1 rounded-md border px-2 text-xs font-bold transition focus:outline-none focus:ring-2 focus:ring-yellow-300 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-500 ${
+                className={`flex min-h-[2.625rem] min-w-0 flex-wrap items-center justify-center gap-1 rounded-md border px-2 py-2 text-center text-xs font-bold leading-tight transition focus:outline-none focus:ring-2 focus:ring-yellow-300 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-100 disabled:text-slate-500 ${
                   active
                     ? "border-[#FECE00] bg-[#FECE00] text-slate-950"
                     : "border-slate-300 bg-white text-slate-950 hover:bg-yellow-50"
@@ -93,7 +93,7 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
           type="button"
           onClick={isEditingPedido ? cancelEditingPedido : openResetConfirm}
           disabled={pedidoDetalles.length === 0}
-          className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-md border border-red-500 bg-white px-3 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md border border-red-500 bg-white px-3 py-2 text-center text-sm font-bold leading-tight text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-45"
         >
           <X className="h-4 w-4" aria-hidden="true" />
           {isEditingPedido ? "Cancelar modificación" : "Cancelar"}
@@ -102,7 +102,7 @@ function PdvPaymentSection({ onAccept }: PdvPaymentSectionProps) {
           type="button"
           onClick={onAccept}
           disabled={!puedeRegistrar}
-          className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-md border font-bold transition ${
+          className={`inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-md border px-2 py-2 text-center font-bold leading-tight transition ${
             puedeRegistrar
               ? "border-slate-700 bg-slate-700 text-white hover:bg-slate-800"
               : "cursor-not-allowed border-slate-300 bg-slate-300 text-white"

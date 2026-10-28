@@ -47,6 +47,7 @@ function PedidosNormalPage() {
     filteredPedidos,
     handleEstadoChange,
     isLoading,
+    isRefreshing,
     loadPedidos,
     normalSummary,
     setActiveModal,
@@ -109,6 +110,7 @@ function PedidosNormalPage() {
           estadoFilter={estadoFilter}
           isHighContrast={isHighContrast}
           isLoading={isLoading}
+          isRefreshing={isRefreshing}
           loadPedidos={handleRefreshPedidos}
           searchTerm={searchTerm}
           setEstadoFilter={handleEstadoFilterChange}
@@ -375,6 +377,7 @@ export function PedidosActivosPanel({
   estadoFilter,
   isHighContrast,
   isLoading,
+  isRefreshing = false,
   loadPedidos,
   searchTerm,
   setEstadoFilter,
@@ -384,6 +387,7 @@ export function PedidosActivosPanel({
   estadoFilter: EstadoFilter;
   isHighContrast: boolean;
   isLoading: boolean;
+  isRefreshing?: boolean;
   loadPedidos: () => void;
   searchTerm: string;
   setEstadoFilter: (value: EstadoFilter) => void;
@@ -469,13 +473,18 @@ export function PedidosActivosPanel({
         <button
           type="button"
           onClick={() => loadPedidos()}
-          disabled={isLoading}
+          disabled={isLoading || isRefreshing}
+          aria-busy={isRefreshing}
+          aria-label={isRefreshing ? "Actualizando pedidos" : "Actualizar"}
           className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
             isHighContrast ? "contrast-button-secondary" : "border-slate-900 bg-slate-900 text-white hover:bg-black"
           } ${FOCUS_VISIBLE_CLASS}`}
         >
-          <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
-          Actualizar
+          <RefreshCw
+            className={`h-5 w-5 ${isLoading || isRefreshing ? "motion-safe:animate-spin" : ""}`}
+            aria-hidden="true"
+          />
+          {isRefreshing ? "Actualizando…" : "Actualizar"}
         </button>
       </div>
     </section>

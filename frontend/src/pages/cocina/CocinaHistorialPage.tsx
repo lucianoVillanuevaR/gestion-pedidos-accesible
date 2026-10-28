@@ -1,6 +1,7 @@
 import { Check, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import ErrorAlert from "../../components/ErrorAlert";
 import { FOCUS_VISIBLE_CLASS } from "../../constants/ui";
 import { useAccessibilityContext } from "../../contexts/AccessibilityContext";
 import useActionVoice from "../../hooks/useActionVoice";
@@ -60,11 +61,15 @@ export default function CocinaHistorialPage() {
   const [liveMessage, setLiveMessage] = useState("Historial de turnos listo para consultar.");
   const [printTurnoId, setPrintTurnoId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void cargarCierresTurno()
       .then(setCierres)
-      .catch(() => undefined);
+      .catch((requestError) =>
+        setError(requestError instanceof Error ? requestError.message : "No fue posible cargar el historial.")
+      );
   }, []);
 
   const turnosHistorial = useMemo(() => getTurnosHistorial(cierres), [cierres]);
@@ -88,18 +93,25 @@ export default function CocinaHistorialPage() {
   const pedidosEntregados = filteredTurnos.reduce((total, turno) => total + turno.pedidosEntregados, 0);
   const pedidosCancelados = filteredTurnos.reduce((total, turno) => total + turno.pedidosCancelados, 0);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     speak("Actualizando historial de pedidos cerrados.", {
       priority: "normal",
       dedupeKey: "cocina-historial-refresh",
       cooldownMs: 1200
     });
-    void cargarCierresTurno()
-      .then((nextCierres) => {
-        setCierres(nextCierres);
-        setLiveMessage("Historial actualizado.");
-      })
-      .catch((error) => setLiveMessage(error instanceof Error ? error.message : "No fue posible actualizar."));
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      const nextCierres = await cargarCierresTurno();
+      setCierres(nextCierres);
+      setLiveMessage("Historial actualizado.");
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : "No fue posible actualizar.";
+      setError(message);
+      setLiveMessage(message);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const announceHistorialControl = (message: string, dedupeKey: string) => {
@@ -180,6 +192,8 @@ export default function CocinaHistorialPage() {
       <HistorialFacilView
         dateFilter={dateFilter}
         isHighContrast={isHighContrast}
+        isRefreshing={isRefreshing}
+        error={error}
         liveMessage={liveMessage}
         onDateFilterChange={handleDateFilterChange}
         onOpenPedido={setSelectedPedido}
@@ -206,16 +220,21 @@ export default function CocinaHistorialPage() {
           <button
             type="button"
             onClick={handleRefresh}
+            disabled={isRefreshing}
+            aria-busy={isRefreshing}
+            aria-label={isRefreshing ? "Actualizando historial" : "Actualizar historial"}
             className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border px-4 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isHighContrast
                 ? "contrast-button-secondary"
                 : "border-slate-950 bg-slate-950 text-white shadow-sm hover:bg-black"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
-            <RefreshCw className="h-5 w-5" aria-hidden="true" />
-            Actualizar
+            <RefreshCw className={`h-5 w-5 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} aria-hidden="true" />
+            {isRefreshing ? "Actualizando…" : "Actualizar"}
           </button>
         </div>
+
+        {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
 
         <HistorialFilters
           dateFilter={dateFilter}
