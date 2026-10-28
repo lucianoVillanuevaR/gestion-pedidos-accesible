@@ -1,30 +1,46 @@
 import { BellRing, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type FocusEvent, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type MouseEvent,
+} from "react";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import { useAuthContext } from "../contexts/AuthContext";
 import {
   AUDIO_FEEDBACK_STARTED_EVENT,
   unlockSoundFeedback,
-  useSoundFeedback
+  useSoundFeedback,
 } from "../hooks/useSoundFeedback";
 import { getPedidos } from "../services/pedidos";
 import type { EstadoPedido, PedidoResponse } from "../types";
-import { getPedidoDisplayNumber, withPedidoNumerosTurno } from "../pages/pedidos/PedidosShared";
+import {
+  getPedidoDisplayNumber,
+  withPedidoNumerosTurno,
+} from "../pages/pedidos/PedidosShared";
 
 export const READY_ORDER_POLL_MS = 3000;
 export const READY_ORDER_VISIBLE_MS = 15000;
 export const MAX_VISIBLE_READY_ORDERS = 3;
 
-export function findNewlyReadyOrders(previousStates: Map<number, EstadoPedido>, pedidos: PedidoResponse[]) {
+export function findNewlyReadyOrders(
+  previousStates: Map<number, EstadoPedido>,
+  pedidos: PedidoResponse[],
+) {
   return pedidos.filter(
-    (pedido) => previousStates.has(pedido.id) && previousStates.get(pedido.id) !== "listo" && pedido.estado === "listo"
+    (pedido) =>
+      previousStates.has(pedido.id) &&
+      previousStates.get(pedido.id) !== "listo" &&
+      pedido.estado === "listo",
   );
 }
 
 function ReadyOrderToast({
   isHighContrast,
   onDismiss,
-  pedido
+  pedido,
 }: {
   isHighContrast: boolean;
   onDismiss: (id: number) => void;
@@ -40,13 +56,20 @@ function ReadyOrderToast({
     if (timerRef.current === undefined) return;
     window.clearTimeout(timerRef.current);
     timerRef.current = undefined;
-    remainingMsRef.current = Math.max(0, remainingMsRef.current - (Date.now() - startedAtRef.current));
+    remainingMsRef.current = Math.max(
+      0,
+      remainingMsRef.current - (Date.now() - startedAtRef.current),
+    );
   }, []);
 
   const startTimer = useCallback(() => {
-    if (timerRef.current !== undefined || pauseReasonsRef.current.size > 0) return;
+    if (timerRef.current !== undefined || pauseReasonsRef.current.size > 0)
+      return;
     startedAtRef.current = Date.now();
-    timerRef.current = window.setTimeout(() => onDismiss(pedido.id), remainingMsRef.current);
+    timerRef.current = window.setTimeout(
+      () => onDismiss(pedido.id),
+      remainingMsRef.current,
+    );
   }, [onDismiss, pedido.id]);
 
   useEffect(() => {
@@ -67,7 +90,11 @@ function ReadyOrderToast({
   };
 
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
-    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+    if (
+      event.relatedTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)
+    )
+      return;
     resume("focus");
   };
 
@@ -75,7 +102,9 @@ function ReadyOrderToast({
     const restoreSafeFocus = event.currentTarget === document.activeElement;
     onDismiss(pedido.id);
     if (restoreSafeFocus) {
-      window.requestAnimationFrame(() => document.getElementById("main-content")?.focus());
+      window.requestAnimationFrame(() =>
+        document.getElementById("main-content")?.focus(),
+      );
     }
   };
 
@@ -84,7 +113,9 @@ function ReadyOrderToast({
       aria-atomic="true"
       aria-live="polite"
       className={`flex items-center gap-3 rounded-xl border-2 p-4 shadow-xl ${
-        isHighContrast ? "contrast-panel border-yellow-400" : "border-emerald-700 bg-emerald-50 text-emerald-950"
+        isHighContrast
+          ? "contrast-panel border-yellow-400"
+          : "border-emerald-700 bg-emerald-50 text-emerald-950"
       }`}
       onBlurCapture={handleBlur}
       onFocusCapture={() => pause("focus")}
@@ -93,7 +124,9 @@ function ReadyOrderToast({
       role="status"
     >
       <BellRing className="h-6 w-6 shrink-0" aria-hidden="true" />
-      <p className="min-w-0 flex-1 font-black">Pedido N.º {displayNumber} listo para entregar</p>
+      <p className="min-w-0 flex-1 font-black">
+        Pedido N.º {displayNumber} listo para entregar
+      </p>
       <button
         type="button"
         aria-label={`Cerrar aviso del pedido ${displayNumber}`}
@@ -108,7 +141,8 @@ function ReadyOrderToast({
 
 export default function ReadyOrderNotifier() {
   const { user } = useAuthContext();
-  const { isHighContrast, isSoundEnabled, soundVolume } = useAccessibilityContext();
+  const { isHighContrast, isSoundEnabled, soundVolume } =
+    useAccessibilityContext();
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
   const soundRef = useRef(soundFeedback.orderReady);
   const [readyOrders, setReadyOrders] = useState<PedidoResponse[]>([]);
@@ -121,7 +155,11 @@ export default function ReadyOrderNotifier() {
   useEffect(() => {
     const clearAudioBlocked = () => setAudioBlocked(false);
     window.addEventListener(AUDIO_FEEDBACK_STARTED_EVENT, clearAudioBlocked);
-    return () => window.removeEventListener(AUDIO_FEEDBACK_STARTED_EVENT, clearAudioBlocked);
+    return () =>
+      window.removeEventListener(
+        AUDIO_FEEDBACK_STARTED_EVENT,
+        clearAudioBlocked,
+      );
   }, []);
 
   useEffect(() => {
@@ -164,14 +202,18 @@ export default function ReadyOrderNotifier() {
       if (!active || inFlight) return;
       inFlight = true;
       try {
-        const pedidos = withPedidoNumerosTurno(await getPedidos(controller.signal));
+        const pedidos = withPedidoNumerosTurno(
+          await getPedidos(controller.signal),
+        );
         if (!active) return;
 
         if (initialized) {
           const newlyReady = findNewlyReadyOrders(previousStates, pedidos);
           if (newlyReady.length > 0) {
             setReadyOrders((current) => {
-              const byId = new Map(current.map((pedido) => [pedido.id, pedido]));
+              const byId = new Map(
+                current.map((pedido) => [pedido.id, pedido]),
+              );
               newlyReady.forEach((pedido) => byId.set(pedido.id, pedido));
               return [...byId.values()];
             });
@@ -181,17 +223,23 @@ export default function ReadyOrderNotifier() {
           }
         }
 
-        previousStates = new Map(pedidos.map((pedido) => [pedido.id, pedido.estado]));
+        previousStates = new Map(
+          pedidos.map((pedido) => [pedido.id, pedido.estado]),
+        );
         initialized = true;
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
       } finally {
         inFlight = false;
       }
     };
 
     void poll();
-    const intervalId = window.setInterval(() => void poll(), READY_ORDER_POLL_MS);
+    const intervalId = window.setInterval(
+      () => void poll(),
+      READY_ORDER_POLL_MS,
+    );
     const pollWhenVisible = () => {
       if (document.visibilityState === "visible") void poll();
     };
@@ -205,7 +253,8 @@ export default function ReadyOrderNotifier() {
     };
   }, [user?.role]);
 
-  if (user?.role !== "cajero" || (readyOrders.length === 0 && !audioBlocked)) return null;
+  if (user?.role !== "cajero" || (readyOrders.length === 0 && !audioBlocked))
+    return null;
 
   const visibleReadyOrders = readyOrders.slice(0, MAX_VISIBLE_READY_ORDERS);
   const pendingReadyOrderCount = readyOrders.length - visibleReadyOrders.length;
@@ -213,18 +262,28 @@ export default function ReadyOrderNotifier() {
   return (
     <section className="fixed right-3 top-3 z-[190] grid w-[min(92vw,420px)] gap-2 no-print lg:top-16">
       {visibleReadyOrders.map((pedido) => (
-        <ReadyOrderToast key={pedido.id} isHighContrast={isHighContrast} onDismiss={dismiss} pedido={pedido} />
+        <ReadyOrderToast
+          key={pedido.id}
+          isHighContrast={isHighContrast}
+          onDismiss={dismiss}
+          pedido={pedido}
+        />
       ))}
       {pendingReadyOrderCount > 0 && (
         <p
           aria-live="polite"
           className={`rounded-xl border-2 p-3 text-sm font-bold ${
-            isHighContrast ? "contrast-panel" : "border-slate-700 bg-white text-slate-950"
+            isHighContrast
+              ? "contrast-panel"
+              : "border-slate-700 bg-white text-slate-950"
           }`}
           role="status"
         >
-          {pendingReadyOrderCount} {pendingReadyOrderCount === 1 ? "aviso pendiente" : "avisos pendientes"}. Puedes
-          consultar todos los pedidos listos en Pedidos activos.
+          {pendingReadyOrderCount}{" "}
+          {pendingReadyOrderCount === 1
+            ? "aviso pendiente"
+            : "avisos pendientes"}
+          . Puedes consultar todos los pedidos listos en Pedidos activos.
         </p>
       )}
       {audioBlocked && (
@@ -233,8 +292,8 @@ export default function ReadyOrderNotifier() {
           className={`rounded-xl border-2 p-3 text-sm font-bold ${isHighContrast ? "contrast-panel" : "border-amber-700 bg-amber-50 text-amber-950"}`}
           role="status"
         >
-          No fue posible iniciar el audio. Abre Accesibilidad y usa «Probar sonido» para habilitar las alertas de
-          pedidos.
+          No fue posible iniciar el audio. Abre Accesibilidad y usa «Probar
+          sonido» para habilitar las alertas de pedidos.
         </p>
       )}
     </section>
