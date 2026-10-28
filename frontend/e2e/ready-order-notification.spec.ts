@@ -256,7 +256,7 @@ test("Caja y Cocina completan el flujo mediante los controles reales", async ({ 
   const createResponse = await createResponsePromise;
   expect(createResponse.ok()).toBe(true);
   const createdOrder = (await createResponse.json()) as { id: number; numeroTurno: number };
-  await cashier.waitForTimeout(800);
+  await pollNow(cashier);
   await cashier.evaluate(() => (window.__readyToneStarts = 0));
 
   await loginAs(kitchen, "cocina");
