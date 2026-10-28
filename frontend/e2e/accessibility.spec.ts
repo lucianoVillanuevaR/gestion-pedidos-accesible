@@ -125,13 +125,16 @@ test("los controles de sonido reflejan y conservan sus preferencias", async ({ p
     .first()
     .click();
 
-  await expect(page.getByRole("button", { name: "Suave" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Fuerte" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Probar sonido" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Suave" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Normal", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Fuerte" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Probar sonido" })).toBeEnabled();
 
-  await page.getByRole("switch", { name: "Sonidos: Desactivado" }).click();
-  await expect(page.getByRole("switch", { name: "Sonidos: Activado" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("switch", { name: "Sonidos de interacción: Desactivado" }).click();
+  await expect(page.getByRole("switch", { name: "Sonidos de interacción: Activado" })).toHaveAttribute(
+    "aria-checked",
+    "true"
+  );
 
   const soft = page.getByRole("button", { name: "Suave" });
   const normal = page.getByRole("button", { name: "Normal", exact: true });
@@ -153,14 +156,14 @@ test("los controles de sonido reflejan y conservan sus preferencias", async ({ p
     .getByRole("button", { name: /accesibilidad|opciones de ayuda/i })
     .first()
     .click();
-  await expect(page.getByRole("switch", { name: "Sonidos: Activado" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Sonidos de interacción: Activado" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveAttribute("aria-pressed", "true");
 
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Restablecer ajustes" }).click();
-  await expect(page.getByRole("switch", { name: "Sonidos: Desactivado" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Suave" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Fuerte" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Probar sonido" })).toHaveCount(0);
+  await expect(page.getByRole("switch", { name: "Sonidos de interacción: Desactivado" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Suave" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Normal", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "Fuerte" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Probar sonido" })).toBeEnabled();
 });
