@@ -9,13 +9,13 @@ import {
   getPedidoCounts,
   getPedidoDisplayNumber,
   isPedidoDelayed,
-  usePedidosController,
+  usePedidosController
 } from "../pedidos/PedidosShared";
 import {
   CocinaFacilView,
   CocinaNormalView,
   type CocinaFilter,
-  type CocinaViewProps,
+  type CocinaViewProps
 } from "./components/CocinaBoardViews";
 import { useFullscreenToggle } from "./hooks/useFullscreenToggle";
 import { useNewPedidoNotification } from "./hooks/useNewPedidoNotification";
@@ -34,8 +34,7 @@ export function CocinaFacilPage() {
 }
 
 function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
-  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } =
-    useAccessibilityContext();
+  const { isHighContrast, isVoiceEnabled, isSoundEnabled, soundVolume } = useAccessibilityContext();
   const { user } = useAuthContext();
   const { speak } = useActionVoice(isVoiceEnabled);
   const soundFeedback = useSoundFeedback(isSoundEnabled, soundVolume);
@@ -45,8 +44,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
   const [isAdvanceDialogOpen, setIsAdvanceDialogOpen] = useState(false);
   const [isAdvancingAll, setIsAdvancingAll] = useState(false);
   const [advanceMessage, setAdvanceMessage] = useState<string | null>(null);
-  const { isFullscreen, toggleFullscreen } =
-    useFullscreenToggle(fullscreenTargetRef);
+  const { isFullscreen, toggleFullscreen } = useFullscreenToggle(fullscreenTargetRef);
   const {
     activeModal,
     error,
@@ -56,50 +54,37 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     loadPedidos,
     pedidos,
     setActiveModal,
-    updatingPedidoId,
+    updatingPedidoId
   } = usePedidosController({});
 
   const cocinaPedidos = useMemo(
     () =>
       pedidos.filter(
-        (pedido) =>
-          pedido.estado === "pendiente" ||
-          pedido.estado === "en_preparacion" ||
-          pedido.estado === "listo",
+        (pedido) => pedido.estado === "pendiente" || pedido.estado === "en_preparacion" || pedido.estado === "listo"
       ),
-    [pedidos],
+    [pedidos]
   );
   const counts = useMemo(() => getPedidoCounts(pedidos), [pedidos]);
-  const urgentCount = useMemo(
-    () => cocinaPedidos.filter(isPedidoDelayed).length,
-    [cocinaPedidos],
-  );
+  const urgentCount = useMemo(() => cocinaPedidos.filter(isPedidoDelayed).length, [cocinaPedidos]);
   const visiblePedidos = useMemo(() => {
     if (selectedFilter === "todos") return cocinaPedidos;
     if (selectedFilter === "por_preparar") {
-      return cocinaPedidos.filter(
-        (pedido) =>
-          pedido.estado === "pendiente" || pedido.estado === "en_preparacion",
-      );
+      return cocinaPedidos.filter((pedido) => pedido.estado === "pendiente" || pedido.estado === "en_preparacion");
     }
     return cocinaPedidos.filter((pedido) => pedido.estado === selectedFilter);
   }, [cocinaPedidos, selectedFilter]);
   const advanceCounts = useMemo(
     () => ({
-      pendientes: cocinaPedidos.filter(
-        (pedido) => pedido.estado === "pendiente",
-      ).length,
-      enPreparacion: cocinaPedidos.filter(
-        (pedido) => pedido.estado === "en_preparacion",
-      ).length,
+      pendientes: cocinaPedidos.filter((pedido) => pedido.estado === "pendiente").length,
+      enPreparacion: cocinaPedidos.filter((pedido) => pedido.estado === "en_preparacion").length
     }),
-    [cocinaPedidos],
+    [cocinaPedidos]
   );
   const operationalAudioBlocked = useNewPedidoNotification({
     isInitialLoading: isLoading,
     isAutomaticRefresh,
     notify: soundFeedback.notification,
-    pedidos,
+    pedidos
   });
 
   useEffect(() => {
@@ -125,31 +110,24 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     speak("Actualizando pedidos en preparación.", {
       priority: "normal",
       dedupeKey: "cocina-refresh",
-      cooldownMs: 1200,
+      cooldownMs: 1200
     });
     loadPedidos();
   };
 
-  const handleCocinaEstadoChange = async (
-    pedido: PedidoResponse,
-    estado: EstadoPedido,
-    playFeedback = true,
-  ) => {
+  const handleCocinaEstadoChange = async (pedido: PedidoResponse, estado: EstadoPedido, playFeedback = true) => {
     const succeeded = await handleEstadoChange(pedido, estado);
     if (!succeeded) {
       if (playFeedback) soundFeedback.error();
       return false;
     }
     if (playFeedback) soundFeedback.success();
-    speak(
-      `Pedido ${getPedidoDisplayNumber(pedido)} actualizado a ${ESTADO_META[estado].label}.`,
-      {
-        priority: "high",
-        dedupeKey: `cocina-estado:${pedido.id}:${estado}`,
-        cooldownMs: 1600,
-        interrupt: true,
-      },
-    );
+    speak(`Pedido ${getPedidoDisplayNumber(pedido)} actualizado a ${ESTADO_META[estado].label}.`, {
+      priority: "high",
+      dedupeKey: `cocina-estado:${pedido.id}:${estado}`,
+      cooldownMs: 1600,
+      interrupt: true
+    });
     return true;
   };
 
@@ -165,20 +143,14 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
 
     setIsAdvancingAll(true);
     setAdvanceMessage(null);
-    const pedidosToUpdate = cocinaPedidos.filter((pedido) =>
-      getNextCocinaEstado(pedido.estado),
-    );
+    const pedidosToUpdate = cocinaPedidos.filter((pedido) => getNextCocinaEstado(pedido.estado));
     let successCount = 0;
     let errorCount = 0;
 
     for (const pedido of pedidosToUpdate) {
       const nextEstado = getNextCocinaEstado(pedido.estado);
       if (!nextEstado) continue;
-      const succeeded = await handleCocinaEstadoChange(
-        pedido,
-        nextEstado,
-        false,
-      );
+      const succeeded = await handleCocinaEstadoChange(pedido, nextEstado, false);
       if (succeeded) successCount += 1;
       else errorCount += 1;
     }
@@ -190,7 +162,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
       setAdvanceMessage(
         successCount > 0
           ? `${successCount} pedidos actualizados y ${errorCount} sin actualizar.`
-          : "No se pudieron avanzar los pedidos. Intenta nuevamente.",
+          : "No se pudieron avanzar los pedidos. Intenta nuevamente."
       );
     } else if (successCount > 0) {
       soundFeedback.success();
@@ -226,7 +198,7 @@ function CocinaBoard({ isAccessibleView }: { isAccessibleView: boolean }) {
     pedidos: visiblePedidos,
     role: user?.role ?? "cocina",
     updatingPedidoId,
-    urgentCount,
+    urgentCount
   };
 
   return (

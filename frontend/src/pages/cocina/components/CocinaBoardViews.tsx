@@ -7,7 +7,7 @@ import {
   Maximize2,
   Minimize2,
   RefreshCw,
-  UtensilsCrossed,
+  UtensilsCrossed
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRef } from "react";
@@ -24,20 +24,11 @@ import {
   getPedidoCounts,
   getPedidoSummary,
   getProductCount,
-  type ActiveModal,
+  type ActiveModal
 } from "../../pedidos/PedidosShared";
-import {
-  getKitchenComments,
-  getKitchenTicketInteractionProps,
-  getKitchenTicketState,
-} from "../utils/cocinaUtils";
+import { getKitchenComments, getKitchenTicketInteractionProps, getKitchenTicketState } from "../utils/cocinaUtils";
 
-export type CocinaFilter =
-  | "todos"
-  | "por_preparar"
-  | "pendiente"
-  | "en_preparacion"
-  | "listo";
+export type CocinaFilter = "todos" | "por_preparar" | "pendiente" | "en_preparacion" | "listo";
 
 export type CocinaViewProps = {
   activeModal: ActiveModal;
@@ -101,16 +92,14 @@ export function CocinaNormalView({
   pedidos,
   role,
   updatingPedidoId,
-  urgentCount,
+  urgentCount
 }: CocinaViewProps) {
   const advanceCounts = providedAdvanceCounts ?? {
     pendientes: counts.pendientes,
-    enPreparacion: counts.enPreparacion,
+    enPreparacion: counts.enPreparacion
   };
   const orderedPedidos = [...pedidos].sort(
-    (left, right) =>
-      getKitchenStatePriority(left.estado) -
-      getKitchenStatePriority(right.estado),
+    (left, right) => getKitchenStatePriority(left.estado) - getKitchenStatePriority(right.estado)
   );
 
   return (
@@ -125,8 +114,7 @@ export function CocinaNormalView({
                 type="button"
                 onClick={onAdvanceVisible}
                 disabled={
-                  advanceCounts.pendientes + advanceCounts.enPreparacion ===
-                    0 ||
+                  advanceCounts.pendientes + advanceCounts.enPreparacion === 0 ||
                   updatingPedidoId !== null ||
                   isAdvancingAll
                 }
@@ -141,11 +129,7 @@ export function CocinaNormalView({
               </button>
             )}
             <IconButton
-              label={
-                isFullscreen
-                  ? "Salir de pantalla completa"
-                  : "Pantalla completa"
-              }
+              label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
               onClick={onFullscreenToggle}
               icon={isFullscreen ? Minimize2 : Maximize2}
               isHighContrast={isHighContrast}
@@ -161,11 +145,7 @@ export function CocinaNormalView({
           </div>
         </div>
 
-        <CocinaSummary
-          counts={counts}
-          isHighContrast={isHighContrast}
-          urgentCount={urgentCount}
-        />
+        <CocinaSummary counts={counts} isHighContrast={isHighContrast} urgentCount={urgentCount} />
 
         <CocinaFilters
           counts={counts}
@@ -174,29 +154,22 @@ export function CocinaNormalView({
           onFilterChange={onFilterChange}
         />
 
-        {error && (
-          <ErrorAlert isHighContrast={isHighContrast} message={error} />
-        )}
+        {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
         {operationalAudioBlocked && (
           <div
             role="status"
             className={`rounded-xl border px-4 py-3 text-sm font-bold ${
-              isHighContrast
-                ? "contrast-panel border-yellow-400"
-                : "border-amber-700 bg-amber-50 text-amber-950"
+              isHighContrast ? "contrast-panel border-yellow-400" : "border-amber-700 bg-amber-50 text-amber-950"
             }`}
           >
-            El navegador bloqueó la alerta de sonido. Abre Accesibilidad y usa
-            «Probar sonido» para habilitarla.
+            El navegador bloqueó la alerta de sonido. Abre Accesibilidad y usa «Probar sonido» para habilitarla.
           </div>
         )}
         {advanceMessage && (
           <div
             role="status"
             className={`rounded-xl border px-4 py-3 text-sm font-bold ${
-              isHighContrast
-                ? "contrast-panel border-yellow-400"
-                : "border-slate-300 bg-white text-slate-800"
+              isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-300 bg-white text-slate-800"
             }`}
           >
             {advanceMessage}
@@ -204,10 +177,7 @@ export function CocinaNormalView({
         )}
 
         {isLoading ? (
-          <LoadingPanel
-            isHighContrast={isHighContrast}
-            label="Cargando tickets de cocina..."
-          />
+          <LoadingPanel isHighContrast={isHighContrast} label="Cargando tickets de cocina..." />
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {pedidos.length === 0 ? (
@@ -277,11 +247,11 @@ export function CocinaFacilView({
   pedidos,
   role,
   updatingPedidoId,
-  urgentCount,
+  urgentCount
 }: CocinaViewProps) {
   const advanceCounts = providedAdvanceCounts ?? {
     pendientes: counts.pendientes,
-    enPreparacion: counts.enPreparacion,
+    enPreparacion: counts.enPreparacion
   };
   const pageBg = isHighContrast ? "bg-black" : "bg-white";
   const panelClass = isHighContrast
@@ -297,34 +267,20 @@ export function CocinaFacilView({
         <header className={`rounded-[28px] p-4 ${panelClass}`}>
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(480px,680px)] xl:items-start">
             <div>
-              <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
-                Preparación
-              </h1>
-              <p className="mt-2 text-lg font-bold text-slate-700">
-                Aquí aparecen los pedidos que deben prepararse.
-              </p>
+              <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-4xl">Preparación</h1>
+              <p className="mt-2 text-lg font-bold text-slate-700">Aquí aparecen los pedidos que deben prepararse.</p>
             </div>
             <EasyModeActions compact />
           </div>
 
           <div className="mt-3 grid gap-2 border-t border-slate-200 pt-3 lg:grid-cols-[1fr_auto] lg:items-center">
-            <p className="text-lg font-black text-slate-950">
-              La preparación se actualiza automáticamente.
-            </p>
+            <p className="text-lg font-black text-slate-950">La preparación se actualiza automáticamente.</p>
             <div className="grid gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={onFullscreenToggle}
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-                title={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
+                aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
                 className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-base font-black transition ${secondaryButtonClass} ${FOCUS_VISIBLE_CLASS}`}
               >
                 {isFullscreen ? (
@@ -332,22 +288,14 @@ export function CocinaFacilView({
                 ) : (
                   <Maximize2 className="h-6 w-6" aria-hidden="true" />
                 )}
-                <span>
-                  {isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"}
-                </span>
+                <span>{isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}</span>
               </button>
               <button
                 type="button"
                 onClick={onRefresh}
                 disabled={isLoading || isRefreshing}
                 aria-busy={isRefreshing}
-                aria-label={
-                  isRefreshing
-                    ? "Actualizando pedidos de preparación"
-                    : "Actualizar pedidos de preparación"
-                }
+                aria-label={isRefreshing ? "Actualizando pedidos de preparación" : "Actualizar pedidos de preparación"}
                 className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 px-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   isHighContrast
                     ? "contrast-button-secondary"
@@ -373,28 +321,19 @@ export function CocinaFacilView({
             <LargeMetric label="Pendientes" value={counts.pendientes} />
             <LargeMetric label="En preparación" value={counts.enPreparacion} />
             <LargeMetric label="Listos" value={counts.listos} />
-            <LargeMetric
-              label="Atrasados"
-              subtitle="Más de 20 min"
-              value={urgentCount}
-            />
+            <LargeMetric label="Atrasados" subtitle="Más de 20 min" value={urgentCount} />
           </div>
         </div>
 
         {role === "cocina" && (
-          <div
-            className={`grid gap-3 rounded-[26px] p-3 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}
-          >
-            <p className="text-lg font-black text-slate-950">
-              Controles de preparación
-            </p>
+          <div className={`grid gap-3 rounded-[26px] p-3 ${panelClass} md:grid-cols-[1fr_auto] md:items-center`}>
+            <p className="text-lg font-black text-slate-950">Controles de preparación</p>
             <div className="md:min-w-[260px]">
               <button
                 type="button"
                 onClick={onAdvanceVisible}
                 disabled={
-                  advanceCounts.pendientes + advanceCounts.enPreparacion ===
-                    0 ||
+                  advanceCounts.pendientes + advanceCounts.enPreparacion === 0 ||
                   updatingPedidoId !== null ||
                   isAdvancingAll
                 }
@@ -411,43 +350,26 @@ export function CocinaFacilView({
           </div>
         )}
 
-        {error && (
-          <ErrorAlert isHighContrast={isHighContrast} message={error} />
-        )}
+        {error && <ErrorAlert isHighContrast={isHighContrast} message={error} />}
         {operationalAudioBlocked && (
-          <div
-            role="status"
-            className={`rounded-2xl p-4 text-lg font-black ${panelClass}`}
-          >
-            El navegador bloqueó la alerta de sonido. Abre Accesibilidad y usa
-            «Probar sonido» para habilitarla.
+          <div role="status" className={`rounded-2xl p-4 text-lg font-black ${panelClass}`}>
+            El navegador bloqueó la alerta de sonido. Abre Accesibilidad y usa «Probar sonido» para habilitarla.
           </div>
         )}
         {advanceMessage && (
-          <div
-            role="status"
-            className={`rounded-2xl p-4 text-lg font-black ${panelClass}`}
-          >
+          <div role="status" className={`rounded-2xl p-4 text-lg font-black ${panelClass}`}>
             {advanceMessage}
           </div>
         )}
 
         {isLoading ? (
-          <LoadingPanel
-            isHighContrast={isHighContrast}
-            label="Cargando tickets de cocina..."
-          />
+          <LoadingPanel isHighContrast={isHighContrast} label="Cargando tickets de cocina..." />
         ) : pedidos.length === 0 ? (
           <div
             className={`rounded-[26px] p-6 text-center ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border-2 border-slate-900 bg-white"}`}
           >
-            <UtensilsCrossed
-              className="mx-auto h-10 w-10 text-slate-400"
-              aria-hidden="true"
-            />
-            <p className="mt-3 text-2xl font-black text-slate-950 sm:text-3xl">
-              No hay pedidos para preparar
-            </p>
+            <UtensilsCrossed className="mx-auto h-10 w-10 text-slate-400" aria-hidden="true" />
+            <p className="mt-3 text-2xl font-black text-slate-950 sm:text-3xl">No hay pedidos para preparar</p>
             <p className="mt-2 text-lg font-bold text-slate-600">
               Cuando haya nuevos pedidos, aparecerán aquí automáticamente.
             </p>
@@ -496,7 +418,7 @@ export function CocinaFacilView({
 
 function KitchenTitlePill({
   counts,
-  isHighContrast,
+  isHighContrast
 }: {
   counts: ReturnType<typeof getPedidoCounts>;
   isHighContrast: boolean;
@@ -518,40 +440,37 @@ function CocinaFilters({
   counts,
   filter,
   isHighContrast,
-  onFilterChange,
+  onFilterChange
 }: {
   counts: ReturnType<typeof getPedidoCounts>;
   filter: CocinaFilter;
   isHighContrast: boolean;
   onFilterChange: (filter: CocinaFilter) => void;
 }) {
-  const filters: Array<{ value: CocinaFilter; label: string; count: number }> =
-    [
-      {
-        value: "todos",
-        label: "Todos",
-        count: counts.pendientes + counts.enPreparacion + counts.listos,
-      },
-      {
-        value: "por_preparar",
-        label: "Por preparar",
-        count: counts.pendientes + counts.enPreparacion,
-      },
-      { value: "pendiente", label: "Pendientes", count: counts.pendientes },
-      {
-        value: "en_preparacion",
-        label: "En preparación",
-        count: counts.enPreparacion,
-      },
-      { value: "listo", label: "Listos", count: counts.listos },
-    ];
+  const filters: Array<{ value: CocinaFilter; label: string; count: number }> = [
+    {
+      value: "todos",
+      label: "Todos",
+      count: counts.pendientes + counts.enPreparacion + counts.listos
+    },
+    {
+      value: "por_preparar",
+      label: "Por preparar",
+      count: counts.pendientes + counts.enPreparacion
+    },
+    { value: "pendiente", label: "Pendientes", count: counts.pendientes },
+    {
+      value: "en_preparacion",
+      label: "En preparación",
+      count: counts.enPreparacion
+    },
+    { value: "listo", label: "Listos", count: counts.listos }
+  ];
 
   return (
     <div
       className={`flex flex-wrap gap-2 rounded-xl border p-2 ${
-        isHighContrast
-          ? "contrast-panel border-yellow-400"
-          : "border-slate-200 bg-white"
+        isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-200 bg-white"
       }`}
       aria-label="Filtrar pedidos de cocina"
     >
@@ -576,9 +495,7 @@ function CocinaFilters({
             {option.label}
             <span
               className={`inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-xs ${
-                isSelected
-                  ? "bg-white/70 text-slate-950"
-                  : "bg-slate-100 text-slate-700"
+                isSelected ? "bg-white/70 text-slate-950" : "bg-slate-100 text-slate-700"
               }`}
             >
               {option.count}
@@ -595,7 +512,7 @@ function AdvanceAllDialog({
   isHighContrast,
   isProcessing,
   onClose,
-  onConfirm,
+  onConfirm
 }: {
   counts: { pendientes: number; enPreparacion: number };
   isHighContrast: boolean;
@@ -608,14 +525,11 @@ function AdvanceAllDialog({
   useAccessibleDialog({
     containerRef: dialogRef,
     initialFocusRef: cancelButtonRef,
-    onClose: isProcessing ? undefined : onClose,
+    onClose: isProcessing ? undefined : onClose
   });
 
   return (
-    <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/40 p-4"
-      role="presentation"
-    >
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/40 p-4" role="presentation">
       <section
         ref={dialogRef}
         role="dialog"
@@ -624,36 +538,23 @@ function AdvanceAllDialog({
         aria-describedby="advance-all-description"
         tabIndex={-1}
         className={`w-full max-w-xl rounded-2xl p-6 shadow-2xl ${
-          isHighContrast
-            ? "contrast-panel border-2 border-yellow-400"
-            : "border border-slate-200 bg-white"
+          isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white"
         }`}
       >
-        <h2
-          id="advance-all-title"
-          className="text-2xl font-black text-slate-950"
-        >
+        <h2 id="advance-all-title" className="text-2xl font-black text-slate-950">
           ¿Avanzar todos los pedidos?
         </h2>
-        <p
-          id="advance-all-description"
-          className="mt-3 font-bold leading-relaxed text-slate-700"
-        >
-          Esta acción avanzará los pedidos que tengan un cambio de estado
-          disponible. Revisa los cambios antes de continuar.
+        <p id="advance-all-description" className="mt-3 font-bold leading-relaxed text-slate-700">
+          Esta acción avanzará los pedidos que tengan un cambio de estado disponible. Revisa los cambios antes de
+          continuar.
         </p>
         <div className="mt-5 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 font-bold text-slate-800">
-          <p>
-            {counts.pendientes} pedidos pasarán de Pendiente a En preparación.
-          </p>
-          <p>
-            {counts.enPreparacion} pedidos pasarán de En preparación a Listo.
-          </p>
+          <p>{counts.pendientes} pedidos pasarán de Pendiente a En preparación.</p>
+          <p>{counts.enPreparacion} pedidos pasarán de En preparación a Listo.</p>
           <p>Los pedidos Listos no se modificarán.</p>
         </div>
         <p className="mt-4 text-sm font-bold text-slate-600">
-          Se aplicará a todos los pedidos elegibles del turno,
-          independientemente del filtro seleccionado.
+          Se aplicará a todos los pedidos elegibles del turno, independientemente del filtro seleccionado.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <button
@@ -672,9 +573,7 @@ function AdvanceAllDialog({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={
-              isProcessing || counts.pendientes + counts.enPreparacion === 0
-            }
+            disabled={isProcessing || counts.pendientes + counts.enPreparacion === 0}
             className={`min-h-[50px] rounded-xl border-2 px-5 font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isHighContrast
                 ? "contrast-button-primary"
@@ -692,7 +591,7 @@ function AdvanceAllDialog({
 function CocinaSummary({
   counts,
   isHighContrast,
-  urgentCount,
+  urgentCount
 }: {
   counts: ReturnType<typeof getPedidoCounts>;
   isHighContrast: boolean;
@@ -702,7 +601,7 @@ function CocinaSummary({
     { label: "Pendientes", value: counts.pendientes },
     { label: "En preparación", value: counts.enPreparacion },
     { label: "Listos", value: counts.listos },
-    { label: "Urgentes", subtitle: "Más de 20 min", value: urgentCount },
+    { label: "Urgentes", subtitle: "Más de 20 min", value: urgentCount }
   ];
 
   return (
@@ -712,33 +611,17 @@ function CocinaSummary({
           key={item.label}
           className={`rounded-xl px-4 py-3 ${isHighContrast ? "contrast-panel border-yellow-400" : "border border-slate-200 bg-white"}`}
         >
-          <p className="text-xs font-black uppercase text-slate-500">
-            {item.label}
-          </p>
-          <p className="mt-1 text-3xl font-black text-slate-950">
-            {item.value}
-          </p>
-          {item.subtitle && (
-            <p className="mt-1 text-xs font-bold text-slate-600">
-              {item.subtitle}
-            </p>
-          )}
+          <p className="text-xs font-black uppercase text-slate-500">{item.label}</p>
+          <p className="mt-1 text-3xl font-black text-slate-950">{item.value}</p>
+          {item.subtitle && <p className="mt-1 text-xs font-bold text-slate-600">{item.subtitle}</p>}
         </div>
       ))}
     </div>
   );
 }
 
-function KitchenTicket({
-  isHighContrast,
-  isUpdating,
-  onEstadoChange,
-  onOpenModal,
-  pedido,
-  role,
-}: TicketProps) {
-  const { delayed, isPending, isPreparing, isReady, numeroPedido } =
-    getKitchenTicketState(pedido);
+function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal, pedido, role }: TicketProps) {
+  const { delayed, isPending, isPreparing, isReady, numeroPedido } = getKitchenTicketState(pedido);
   const comentarios = getKitchenComments(pedido);
   const stateClass = isPending
     ? "border-yellow-400 bg-yellow-50"
@@ -755,9 +638,7 @@ function KitchenTicket({
       <div className="flex flex-1 flex-col">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-2xl font-black leading-none text-slate-950 sm:text-3xl">
-              Pedido #{numeroPedido}
-            </p>
+            <p className="text-2xl font-black leading-none text-slate-950 sm:text-3xl">Pedido #{numeroPedido}</p>
             <p
               className={`mt-2 flex items-center gap-1.5 text-base font-bold ${delayed ? "text-yellow-800" : "text-slate-700"}`}
             >
@@ -768,9 +649,7 @@ function KitchenTicket({
           <StatusBadge estado={pedido.estado} />
         </div>
 
-        <p className="mt-4 text-lg font-black leading-relaxed text-slate-950">
-          {getPedidoSummary(pedido)}
-        </p>
+        <p className="mt-4 text-lg font-black leading-relaxed text-slate-950">{getPedidoSummary(pedido)}</p>
         <p className="mt-2 text-sm font-bold text-slate-600">
           {getProductCount(pedido)} productos · {formatTime(pedido.createdAt)}
         </p>
@@ -781,14 +660,9 @@ function KitchenTicket({
         )}
         {comentarios.length > 0 && (
           <div className="mt-3 rounded-lg border-2 border-yellow-300 bg-[#FFF8DC] px-3 py-2 text-sm text-slate-950">
-            <p className="text-xs font-black uppercase tracking-wide text-yellow-950">
-              Comentarios para cocina
-            </p>
+            <p className="text-xs font-black uppercase tracking-wide text-yellow-950">Comentarios para cocina</p>
             {comentarios.map((comentario) => (
-              <p
-                key={`${comentario.productoId}-${comentario.texto}`}
-                className="mt-1 font-black leading-snug"
-              >
+              <p key={`${comentario.productoId}-${comentario.texto}`} className="mt-1 font-black leading-snug">
                 {comentario.producto}: {comentario.texto}
               </p>
             ))}
@@ -813,10 +687,7 @@ function KitchenTicket({
       </div>
 
       {role === "cocina" && !isReady && (
-        <div
-          className="mt-4 border-t border-slate-300 pt-4"
-          aria-label="Flujo del pedido"
-        >
+        <div className="mt-4 border-t border-slate-300 pt-4" aria-label="Flujo del pedido">
           <button
             type="button"
             onClick={(event) => {
@@ -830,11 +701,7 @@ function KitchenTicket({
                 : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
-            {isUpdating
-              ? "Guardando..."
-              : isPending
-                ? "Iniciar preparación"
-                : "Marcar como listo"}
+            {isUpdating ? "Guardando..." : isPending ? "Iniciar preparación" : "Marcar como listo"}
           </button>
         </div>
       )}
@@ -848,14 +715,10 @@ function AccessibleKitchenTicket({
   onEstadoChange,
   onOpenModal,
   pedido,
-  role,
+  role
 }: TicketProps) {
-  const { delayed, isPending, isPreparing, numeroPedido } =
-    getKitchenTicketState(pedido);
-  const interactionProps = getKitchenTicketInteractionProps(
-    pedido,
-    onOpenModal,
-  );
+  const { delayed, isPending, isPreparing, numeroPedido } = getKitchenTicketState(pedido);
+  const interactionProps = getKitchenTicketInteractionProps(pedido, onOpenModal);
   const comentarios = getKitchenComments(pedido);
 
   return (
@@ -871,9 +734,7 @@ function AccessibleKitchenTicket({
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-3xl font-black text-slate-950">
-            Pedido #{numeroPedido}
-          </p>
+          <p className="text-3xl font-black text-slate-950">Pedido #{numeroPedido}</p>
           <p
             className={`mt-3 flex items-center gap-2 text-xl font-bold ${delayed ? "text-yellow-700" : "text-slate-700"}`}
           >
@@ -887,16 +748,11 @@ function AccessibleKitchenTicket({
       <div
         className={`mt-6 rounded-2xl p-5 ${isHighContrast ? "contrast-panel-soft border-2 border-yellow-400" : "border-2 border-slate-300 bg-slate-50"}`}
       >
-        <p className="text-2xl font-black leading-snug text-slate-950">
-          {getPedidoSummary(pedido)}
-        </p>
+        <p className="text-2xl font-black leading-snug text-slate-950">{getPedidoSummary(pedido)}</p>
         <p className="mt-4 text-xl font-bold text-slate-700">
-          {getProductCount(pedido)} productos · Hora{" "}
-          {formatTime(pedido.createdAt)}
+          {getProductCount(pedido)} productos · Hora {formatTime(pedido.createdAt)}
         </p>
-        <p className="mt-3 text-lg font-black text-slate-500">
-          Toca la tarjeta para ver todos los productos.
-        </p>
+        <p className="mt-3 text-lg font-black text-slate-500">Toca la tarjeta para ver todos los productos.</p>
         {pedido.observacion && (
           <p className="mt-4 rounded-2xl border-2 border-yellow-300 bg-[#FFF8DC] p-4 text-xl font-black text-slate-950">
             {pedido.observacion}
@@ -904,14 +760,9 @@ function AccessibleKitchenTicket({
         )}
         {comentarios.length > 0 && (
           <div className="mt-4 rounded-2xl border-2 border-yellow-400 bg-[#FFF8DC] p-4 text-slate-950">
-            <p className="text-lg font-black uppercase tracking-wide text-yellow-950">
-              Comentarios para cocina
-            </p>
+            <p className="text-lg font-black uppercase tracking-wide text-yellow-950">Comentarios para cocina</p>
             {comentarios.map((comentario) => (
-              <p
-                key={`${comentario.productoId}-${comentario.texto}`}
-                className="mt-2 text-xl font-black leading-snug"
-              >
+              <p key={`${comentario.productoId}-${comentario.texto}`} className="mt-2 text-xl font-black leading-snug">
                 {comentario.producto}: {comentario.texto}
               </p>
             ))}
@@ -921,10 +772,7 @@ function AccessibleKitchenTicket({
 
       {role === "cocina" && (
         <div className="mt-5 grid gap-3">
-          <div
-            className="grid gap-3 sm:grid-cols-2"
-            aria-label="Flujo del pedido"
-          >
+          <div className="grid gap-3 sm:grid-cols-2" aria-label="Flujo del pedido">
             <button
               type="button"
               onClick={(event) => {
@@ -972,9 +820,7 @@ function EmptyKitchenSlots({ isHighContrast }: { isHighContrast: boolean }) {
   return (
     <div
       className={`col-span-full flex items-center justify-center gap-3 rounded-xl border border-dashed px-5 py-8 ${
-        isHighContrast
-          ? "contrast-panel border-yellow-400"
-          : "border-slate-300 bg-white text-slate-600"
+        isHighContrast ? "contrast-panel border-yellow-400" : "border-slate-300 bg-white text-slate-600"
       }`}
       role="status"
     >
@@ -998,7 +844,7 @@ function IconButton({
   isHighContrast,
   label,
   onClick,
-  text,
+  text
 }: {
   disabled?: boolean;
   icon: LucideIcon;
@@ -1022,46 +868,23 @@ function IconButton({
           : "border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
       } ${FOCUS_VISIBLE_CLASS}`}
     >
-      <Icon
-        className={`h-5 w-5 ${isBusy ? "motion-safe:animate-spin" : ""}`}
-        aria-hidden="true"
-      />
+      <Icon className={`h-5 w-5 ${isBusy ? "motion-safe:animate-spin" : ""}`} aria-hidden="true" />
       {text && <span>{text}</span>}
     </button>
   );
 }
 
-function LargeMetric({
-  label,
-  subtitle,
-  value,
-}: {
-  label: string;
-  subtitle?: string;
-  value: number;
-}) {
+function LargeMetric({ label, subtitle, value }: { label: string; subtitle?: string; value: number }) {
   return (
     <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 px-4 py-3">
       <p className="text-base font-black text-slate-600 sm:text-lg">{label}</p>
-      <p className="mt-1 text-3xl font-black leading-none text-slate-950 sm:text-4xl">
-        {value}
-      </p>
-      {subtitle && (
-        <p className="mt-1 text-sm font-bold text-slate-600 sm:text-base">
-          {subtitle}
-        </p>
-      )}
+      <p className="mt-1 text-3xl font-black leading-none text-slate-950 sm:text-4xl">{value}</p>
+      {subtitle && <p className="mt-1 text-sm font-bold text-slate-600 sm:text-base">{subtitle}</p>}
     </div>
   );
 }
 
-function LoadingPanel({
-  isHighContrast,
-  label,
-}: {
-  isHighContrast: boolean;
-  label: string;
-}) {
+function LoadingPanel({ isHighContrast, label }: { isHighContrast: boolean; label: string }) {
   return (
     <div
       className={`flex min-h-[260px] items-center justify-center rounded-[26px] ${isHighContrast ? "contrast-panel border-2 border-yellow-400" : "border border-slate-200 bg-white"}`}
