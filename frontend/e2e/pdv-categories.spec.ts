@@ -99,18 +99,25 @@ test("modo fácil usa la misma selección amarilla y conserva botones táctiles"
   await page.goto("/pdv/facil");
 
   const openTurnButton = page.getByRole("button", { name: "Abrir turno" });
+  const selectedCategory = page.locator('button.pdv-category-option[aria-pressed="true"]').first();
+  await expect(openTurnButton.or(selectedCategory)).toBeVisible();
   if (await openTurnButton.isVisible()) {
-    test.skip(true, "La verificación visual de categorías requiere un turno de prueba abierto");
+    await openTurnButton.click();
   }
 
-  const selectedCategory = page.locator('button.pdv-category-option[aria-pressed="true"]').first();
   const unselectedCategory = page.locator('button.pdv-category-option[aria-pressed="false"]').first();
 
   await expect(selectedCategory).toBeVisible();
   await expect(selectedCategory).toHaveCSS("background-color", "rgb(254, 206, 0)");
   await expect(selectedCategory).toHaveCSS("touch-action", "manipulation");
 
-  await unselectedCategory.hover();
-  await expect(unselectedCategory).toHaveCSS("background-color", "rgb(17, 24, 39)");
-  await expect(unselectedCategory).toHaveCSS("color", "rgb(255, 255, 255)");
+  if (await page.evaluate(() => matchMedia("(hover: hover)").matches)) {
+    await unselectedCategory.hover();
+    await expect(unselectedCategory).toHaveCSS("background-color", "rgb(17, 24, 39)");
+    await expect(unselectedCategory).toHaveCSS("color", "rgb(255, 255, 255)");
+  } else {
+    await expect(unselectedCategory).toHaveCSS("touch-action", "manipulation");
+    await unselectedCategory.tap();
+    await expect(page.getByRole("heading", { name: /Paso 2: Elige un producto/ })).toBeVisible();
+  }
 });

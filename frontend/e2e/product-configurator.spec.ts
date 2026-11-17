@@ -30,9 +30,15 @@ for (const mode of ["normal", "facil"] as const) {
     await expect(dialog).toHaveAttribute("aria-modal", "true");
     const backdrop = dialog.locator("..");
     await expect.poll(() => backdrop.evaluate((element) => getComputedStyle(element).backdropFilter)).toBe("none");
-    await expect
-      .poll(() => backdrop.evaluate((element) => getComputedStyle(element).backgroundColor))
-      .toMatch(/rgba\(0, 0, 0, 0\.4\)/);
+    const backdropPixel = await backdrop.evaluate((element) => {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Canvas 2D no disponible");
+      context.fillStyle = getComputedStyle(element).backgroundColor;
+      context.fillRect(0, 0, 1, 1);
+      return [...context.getImageData(0, 0, 1, 1).data];
+    });
+    expect(backdropPixel).toEqual([0, 0, 0, 102]);
     const close = dialog.getByRole("button", {
       name: mode === "facil" ? "Cerrar y volver a productos" : "Cerrar configuración"
     });

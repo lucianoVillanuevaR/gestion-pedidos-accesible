@@ -123,3 +123,11 @@ El archivo histórico `respaldo-antes-limpieza.sql` puede haber estado en commit
 excluido por `.gitignore`; no se añade ningún respaldo ni se reescribe el historial remoto. Si ese
 respaldo contenía credenciales o datos personales reales, corresponde evaluar su exposición y rotar
 los secretos afectados fuera de Git.
+
+### Actualización de dependencias de desarrollo
+
+Tras las actualizaciones compatibles y la migración verificada de Tailwind, la auditoría completa
+informa 11 avisos altos y cero moderados en cada proyecto. Todos los avisos altos restantes
+proceden de `picomatch`, para el que aún no se publicó una versión corregida. La auditoría de
+producción sigue en cero. El [informe de dependencias de desarrollo](dev-dependency-audit.md)
+detalla las cadenas, advisories, versiones, mitigación y pruebas de esta actualización.
