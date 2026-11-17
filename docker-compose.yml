@@ -89,6 +89,9 @@ services:
       NODE_ENV: development
       DATABASE_URL: ${DATABASE_URL}
       SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-12345678}
+      CATALOG_IMAGE_DIR: /catalog-images
+    volumes:
+      - ./frontend/src/products:/catalog-images:ro
     depends_on:
       migrate:
         condition: service_completed_successfully

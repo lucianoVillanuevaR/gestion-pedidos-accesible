@@ -462,6 +462,7 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKe
 async function main() {
   // Los usuarios demo facilitan exclusivamente el entorno local y nunca se crean en producción.
   const shouldSeedDemoUsers = process.env.NODE_ENV !== "production";
+  const shouldSyncDemoUsers = process.argv.includes("--sync-demo-users");
   const demoPassword = process.env.SEED_DEMO_PASSWORD?.trim() || DEFAULT_DEMO_PASSWORD;
   const passwordHash = shouldSeedDemoUsers ? await bcrypt.hash(demoPassword, 12) : null;
 
@@ -470,26 +471,26 @@ async function main() {
       for (const user of [
         {
           username: "cajero",
-          email: "cajero@demo.cl",
+          email: "cajero@riquisimo.cl",
           role: "cajero",
           label: "Cajero"
         },
         {
           username: "cocina",
-          email: "cocina@demo.cl",
+          email: "cocina@riquisimo.cl",
           role: "cocina",
           label: "Cocina"
         },
         {
           username: "admin",
-          email: "admin@demo.cl",
+          email: "admin@riquisimo.cl",
           role: "admin",
           label: "Administrador"
         }
       ]) {
         await tx.usuario.upsert({
           where: { username: user.username },
-          update: {},
+          update: shouldSyncDemoUsers ? { ...user, activo: true, passwordHash } : {},
           create: { ...user, passwordHash }
         });
       }
