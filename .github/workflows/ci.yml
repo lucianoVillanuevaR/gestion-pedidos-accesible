@@ -36,8 +36,8 @@ jobs:
           CLIENT_URL=http://localhost
           JWT_SECRET=ci_jwt_secret_para_validacion_automatica_123456789
 
-          DATABASE_URL=postgresql://admin:admin123@postgres:5432/sistema_pedidos
-          POSTGRES_DB=sistema_pedidos
+          DATABASE_URL=postgresql://admin:admin123@postgres:5432/riquisimo_demo
+          POSTGRES_DB=riquisimo_demo
           POSTGRES_USER=admin
           POSTGRES_PASSWORD=admin123
 
@@ -53,14 +53,16 @@ jobs:
           VITE_API_URL=/api
           VITE_MINIO_PUBLIC_URL=/media
           VITE_MINIO_BUCKET_PRODUCTOS=productos
+          NODE_ENV=development
+          DEMO_MODE=true
           SEED_DEMO_PASSWORD=clave-demo-ci
           EOF
 
       - name: Validar Docker Compose
-        run: docker compose --env-file .env config
+        run: docker compose --env-file .env config --quiet
 
       - name: Validar Docker Compose de producción
-        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env config
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env config --quiet
 
       - name: Instalar dependencias backend
         working-directory: backend
@@ -112,7 +114,7 @@ jobs:
 
       - name: Levantar aplicación para pruebas accesibles
         run: |
-          docker compose --profile tools run --rm --build seed
+          docker compose --profile tools run --rm --build seed npm run seed:demo-users
           docker compose up -d --build --wait
 
       - name: Instalar Chromium para Playwright

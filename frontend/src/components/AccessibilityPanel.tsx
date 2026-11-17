@@ -260,7 +260,7 @@ function AccessibilityPanel({
                 <AccessibilityToggle
                   checked={isSoundEnabled}
                   label="Sonidos de interacción"
-                  description="Activa sonidos de acciones y confirmaciones. Las alertas de pedidos siempre están activas."
+                  description="Activa sonidos de acciones"
                   icon={<Volume2 className="h-5 w-5" />}
                   onChange={() => {
                     announcePanelAction(

@@ -1,45 +1,83 @@
 /// <reference types="node" />
 import { Prisma, PrismaClient } from "@prisma/client";
-import dotenv from "dotenv";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-
-dotenv.config({ path: resolve(process.cwd(), "../.env") });
-
-// El .env raíz usa el hostname interno de Compose. Al ejecutar npm directamente
-// desde el host, PostgreSQL está publicado por docker-compose.yml en el puerto 5433.
-if (!existsSync("/.dockerenv") && process.env.DATABASE_URL) {
-  const databaseUrl = new URL(process.env.DATABASE_URL);
-  if (databaseUrl.hostname === "postgres") {
-    databaseUrl.hostname = "localhost";
-    databaseUrl.port = process.env.POSTGRES_HOST_PORT?.trim() || "5433";
-    process.env.DATABASE_URL = databaseUrl.toString();
-  }
-}
+import { buildResumenTurno, turnoCloseInclude } from "../src/services/turnoSummaryService";
+import { assertDemoEnvironment, lockDemoDatabase } from "./demoSafety";
+import { preparePedidoWrite, restorePedidoStock } from "../src/services/pedidoWriteService";
 
 const prisma = new PrismaClient();
 
-const MARKER = "[SEED_DASHBOARD_V1]";
-const CUSTOMER_NAME = `${MARKER} Cliente local`;
 const BUSINESS_TIME_ZONE = "America/Santiago";
-const ORDER_COUNTS = [12, 15, 9, 18, 11, 14, 16];
-const PAYMENT_METHODS = [
-  ...Array(40).fill("efectivo"),
-  ...Array(45).fill("tarjeta"),
-  ...Array(15).fill("transferencia")
-] as string[];
 
-type InventorySnapshot = {
-  id: number;
-  stockActual: number;
-  stockMinimo: number;
-  seededStockActual: number;
-  seededStockMinimo: number;
+const ORDER_COUNTS = [12, 14, 13, 15, 12, 14, 13, 14, 13];
+const DAY_OFFSETS = [-28, -24, -20, -16, -12, -8, -5, -2, 0];
+const PAYMENT_METHODS = ["efectivo", "tarjeta", "tarjeta", "transferencia", "efectivo", "tarjeta"];
+const CUSTOMER_NAMES = [
+  "Camila",
+  "Matías",
+  "Fernanda",
+  "Sebastián",
+  "Valentina",
+  "Diego",
+  "Javiera",
+  "Nicolás",
+  "Daniela",
+  "Tomás",
+  "Francisca",
+  "Benjamín",
+  "Constanza",
+  "Vicente",
+  "Catalina",
+  "Felipe",
+  "Antonia",
+  "Martín",
+  "Paula",
+  "Cristóbal",
+  "Josefa",
+  "Ignacio",
+  "Carolina",
+  "Andrés"
+];
+const ORDER_NOTES = [
+  "Sin mayonesa, por favor",
+  "Agregar servilletas",
+  "Salsa aparte",
+  "Sin tomate",
+  "Bien tostado",
+  "Retira en caja"
+];
+const CURRENT_SHIFT_STATUSES = [
+  "entregado",
+  "entregado",
+  "entregado",
+  "entregado",
+  "entregado",
+  "cancelado",
+  "listo",
+  "listo",
+  "en_preparacion",
+  "en_preparacion",
+  "pendiente",
+  "pendiente",
+  "pendiente"
+] as const;
+
+const INVENTORY_TARGETS: Record<string, number> = {
+  "ARMA TU SANDWICH": 36,
+  "BARROS LUCO SANDWICH": 8,
+  "CHACARERO SANDWICH": 3,
+  "Completo Alemán": 42,
+  "Completo Dinámico": 27,
+  "Completo Hass Italiano": 34,
+  "Completo Italiano": 48,
+  "SANDWICH LUCO PATRÓN": 24
 };
 
-type MarkerMetadata = { inventorySnapshot: InventorySnapshot[] };
-
 type DateParts = { year: number; month: number; day: number };
+type SeedUser = { id: number; role: string; username: string };
+type SeedProduct = Prisma.ProductoGetPayload<{
+  include: { variantes: true };
+}>;
+type OrderStatus = "pendiente" | "en_preparacion" | "listo" | "entregado" | "cancelado";
 
 function zonedDateParts(date: Date): DateParts {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -86,223 +124,295 @@ function localDateTimeToUtc(parts: DateParts, hour: number, minute: number) {
   return result;
 }
 
-function parseMetadata(observation: string | null): MarkerMetadata | null {
-  if (!observation?.startsWith(`${MARKER}:`)) return null;
-  try {
-    return JSON.parse(observation.slice(MARKER.length + 1)) as MarkerMetadata;
-  } catch {
-    return null;
-  }
+function historicalOrderTime(dayIndex: number, orderIndex: number) {
+  const serviceHours = [12, 13, 14, 18, 19, 20, 21, 22];
+  const hour = serviceHours[(dayIndex * 3 + orderIndex * 5) % serviceHours.length];
+  const minuteLimit = hour === 22 ? 35 : 60;
+  const minute = (dayIndex * 13 + orderIndex * 17) % minuteLimit;
+  return { hour, minute };
 }
 
-async function cleanDashboardData(tx: Prisma.TransactionClient) {
-  const markedOrders = await tx.pedido.findMany({
-    where: { clienteNombre: { startsWith: MARKER } },
-    select: { id: true, turnoId: true, observacion: true }
-  });
-  const metadata = markedOrders.map((order) => parseMetadata(order.observacion)).find(Boolean);
+function currentOrderTimes(now: Date, count: number) {
+  // Un turno puede comenzar antes de medianoche; nunca generar fechas futuras.
+  return Array.from({ length: count }, (_, index) => new Date(now.getTime() - (count - index) * 4 * 60_000));
+}
 
-  if (metadata) {
-    for (const item of metadata.inventorySnapshot) {
-      // No pisa cambios manuales realizados después del seed.
-      await tx.inventario.updateMany({
-        where: {
-          id: item.id,
-          stockActual: item.seededStockActual,
-          stockMinimo: item.seededStockMinimo
-        },
-        data: { stockActual: item.stockActual, stockMinimo: item.stockMinimo }
+function historicalStatus(dayIndex: number, orderIndex: number): OrderStatus {
+  return (dayIndex * 17 + orderIndex * 7) % 9 === 0 ? "cancelado" : "entregado";
+}
+
+function transitionPath(finalStatus: OrderStatus, sequence: number): OrderStatus[] {
+  if (finalStatus === "pendiente") return [];
+  if (finalStatus === "en_preparacion") return ["en_preparacion"];
+  if (finalStatus === "listo") return ["en_preparacion", "listo"];
+  if (finalStatus === "entregado") return ["en_preparacion", "listo", "entregado"];
+  return sequence % 2 === 0 ? ["cancelado"] : ["en_preparacion", "cancelado"];
+}
+
+function buildHistory(
+  finalStatus: OrderStatus,
+  createdAt: Date,
+  sequence: number,
+  users: { cajero: SeedUser; cocina: SeedUser },
+  latestAllowed: Date
+) {
+  const transitions = transitionPath(finalStatus, sequence);
+  const availableMilliseconds = Math.max(latestAllowed.getTime() - createdAt.getTime(), transitions.length + 1);
+  const step = Math.max(1, Math.floor(availableMilliseconds / (transitions.length + 1)));
+  const history: Prisma.PedidoHistorialCreateWithoutPedidoInput[] = [
+    {
+      accion: "pedido_creado",
+      cambios: { estado: "pendiente" },
+      createdAt,
+      usuario: { connect: { id: users.cajero.id } }
+    }
+  ];
+  let previous: OrderStatus = "pendiente";
+
+  transitions.forEach((next, index) => {
+    const user = next === "en_preparacion" || next === "listo" ? users.cocina : users.cajero;
+    history.push({
+      accion: "estado_modificado",
+      cambios: { anterior: previous, nuevo: next },
+      createdAt: new Date(createdAt.getTime() + step * (index + 1)),
+      usuario: { connect: { id: user.id } }
+    });
+    previous = next;
+  });
+
+  return {
+    history,
+    updatedAt: history.at(-1)?.createdAt ?? createdAt
+  };
+}
+
+function buildDetails(products: SeedProduct[], sequence: number, dayIndex: number) {
+  const detailCount = 1 + ((sequence + dayIndex) % 3);
+  return Array.from({ length: detailCount }, (_, detailIndex) => {
+    const product = products[(sequence * 7 + detailIndex * 5 + dayIndex) % products.length];
+    const cantidad = (sequence + detailIndex * 11) % 19 === 0 ? 3 : (sequence + detailIndex * 3) % 6 === 0 ? 2 : 1;
+    const variant = product.variantes.length
+      ? product.variantes[(sequence + detailIndex + dayIndex) % product.variantes.length]
+      : null;
+    const subtotal = product.precio.mul(cantidad);
+    return {
+      productoId: product.id,
+      varianteId: variant?.id ?? null,
+      cantidad,
+      precioUnitario: product.precio,
+      subtotal
+    };
+  });
+}
+
+async function getRequiredUsers(tx: Prisma.TransactionClient) {
+  const users = await tx.usuario.findMany({
+    where: { activo: true, username: { in: ["admin", "cajero", "cocina"] } },
+    select: { id: true, role: true, username: true, email: true }
+  });
+  const byUsername = new Map(users.map((user) => [user.username, user]));
+  const admin = byUsername.get("admin");
+  const cajero = byUsername.get("cajero");
+  const cocina = byUsername.get("cocina");
+  if (
+    users.some((user) => user.email !== `${user.username}@demo.invalid`) ||
+    (await tx.usuario.count()) !== 3 ||
+    !admin ||
+    admin.role !== "admin" ||
+    !cajero ||
+    cajero.role !== "cajero" ||
+    !cocina ||
+    cocina.role !== "cocina"
+  ) {
+    throw new Error(
+      "No están disponibles los usuarios activos Administrador, Cajero y Cocina con sus roles originales."
+    );
+  }
+  return { admin, cajero, cocina };
+}
+
+async function prepareInventory(tx: Prisma.TransactionClient) {
+  const inventory = await tx.inventario.findMany({
+    include: { producto: { select: { nombre: true } } },
+    orderBy: { productoId: "asc" }
+  });
+  for (const item of inventory) {
+    const target = INVENTORY_TARGETS[item.producto.nombre];
+    if (target === undefined) throw new Error(`No existe nivel de presentación para ${item.producto.nombre}.`);
+    await tx.inventario.update({
+      where: { id: item.id },
+      data: { stockActual: target, stockMinimo: 10 }
+    });
+  }
+  return inventory
+    .filter((item) => (INVENTORY_TARGETS[item.producto.nombre] ?? 0) <= 10)
+    .map((item) => item.producto.nombre);
+}
+
+async function createPresentationData(tx: Prisma.TransactionClient) {
+  await lockDemoDatabase(tx);
+  const orderCount = await tx.pedido.count();
+  const shiftCount = await tx.turno.count();
+  const demoCount = await tx.pedido.count({
+    where: {
+      idempotencyKey: { startsWith: "a11ce000-0000-4000-8000-" },
+      clienteNombre: { startsWith: "SIMULADO " }
+    }
+  });
+  if (orderCount || shiftCount) {
+    if (
+      orderCount === ORDER_COUNTS.reduce((a, b) => a + b, 0) &&
+      demoCount === orderCount &&
+      shiftCount === DAY_OFFSETS.length
+    ) {
+      console.log("Demo ya cargada; no se modifica ningún registro ni inventario.");
+      return null;
+    }
+    throw new Error(
+      "Existen datos operativos o una demo modificada. No se modifica ni elimina información; usa una nueva base demo vacía."
+    );
+  }
+  const users = await getRequiredUsers(tx);
+  const products = await tx.producto.findMany({
+    where: { disponible: true },
+    include: {
+      variantes: { where: { disponible: true }, orderBy: { orden: "asc" } }
+    },
+    orderBy: { id: "asc" }
+  });
+  if (products.length === 0) throw new Error("Importa primero el catálogo original.");
+  // Existencias iniciales exclusivas de esta base vacía para la historia simulada.
+  await tx.inventario.updateMany({ data: { stockActual: 1000 } });
+
+  const now = new Date();
+  const today = zonedDateParts(now);
+  const currentTimes = currentOrderTimes(now, ORDER_COUNTS.at(-1) ?? 0);
+  let sequence = 0;
+  let delivered = 0;
+  let cancelled = 0;
+  let totalDelivered = new Prisma.Decimal(0);
+
+  for (let dayIndex = 0; dayIndex < DAY_OFFSETS.length; dayIndex += 1) {
+    const date = addDays(today, DAY_OFFSETS[dayIndex]);
+    const isCurrentShift = dayIndex === DAY_OFFSETS.length - 1;
+    const orderCount = ORDER_COUNTS[dayIndex];
+    const shiftStart = isCurrentShift ? new Date(currentTimes[0].getTime() - 60_000) : localDateTimeToUtc(date, 11, 30);
+    const shiftClose = isCurrentShift ? null : localDateTimeToUtc(date, 23, 15);
+    const responsible = dayIndex % 3 === 0 ? users.admin : users.cajero;
+    const shift = await tx.turno.create({
+      data: {
+        usuarioId: responsible.id,
+        estado: "abierto",
+        fechaInicio: shiftStart
+      }
+    });
+
+    for (let orderIndex = 0; orderIndex < orderCount; orderIndex += 1) {
+      const historicalTime = historicalOrderTime(dayIndex, orderIndex);
+      const createdAt = isCurrentShift
+        ? currentTimes[orderIndex]
+        : localDateTimeToUtc(date, historicalTime.hour, historicalTime.minute);
+      const status: OrderStatus = isCurrentShift
+        ? CURRENT_SHIFT_STATUSES[orderIndex]
+        : historicalStatus(dayIndex, orderIndex);
+      const inputs = buildDetails(products, sequence, dayIndex);
+      const { detallesData: details, total } = await preparePedidoWrite(
+        tx,
+        inputs.map((detail) => ({
+          productoId: detail.productoId,
+          cantidad: detail.cantidad,
+          varianteId: detail.varianteId ?? undefined
+        }))
+      );
+      const latestAllowed = isCurrentShift
+        ? now
+        : new Date(Math.min(shiftClose!.getTime() - 60_000, createdAt.getTime() + 30 * 60_000));
+      const { history, updatedAt } = buildHistory(status, createdAt, sequence, users, latestAllowed);
+      const customerName =
+        sequence % 11 === 0 ? null : CUSTOMER_NAMES[(sequence * 5 + dayIndex) % CUSTOMER_NAMES.length];
+      const observation = sequence % 8 === 0 ? ORDER_NOTES[(sequence + dayIndex) % ORDER_NOTES.length] : null;
+
+      const savedOrder = await tx.pedido.create({
+        data: {
+          idempotencyKey: `a11ce000-0000-4000-8000-${String(sequence + 1).padStart(12, "0")}`,
+          total,
+          estado: status,
+          metodoPago: PAYMENT_METHODS[(sequence * 5 + dayIndex) % PAYMENT_METHODS.length],
+          clienteNombre: `SIMULADO ${customerName ?? "Cliente de ejemplo"}`,
+          observacion: observation,
+          createdAt,
+          updatedAt,
+          turnoId: shift.id,
+          detalles: { create: details },
+          historial: { create: history }
+        }
+      });
+
+      if (status === "cancelado") {
+        const savedDetails = await tx.detallePedido.findMany({ where: { pedidoId: savedOrder.id } });
+        await restorePedidoStock(tx, savedDetails);
+      }
+      if (status === "entregado") {
+        delivered += 1;
+        totalDelivered = totalDelivered.add(total);
+      }
+      if (status === "cancelado") cancelled += 1;
+      sequence += 1;
+    }
+
+    if (shiftClose) {
+      const shiftForSummary = await tx.turno.findUniqueOrThrow({
+        where: { id: shift.id },
+        include: turnoCloseInclude
+      });
+      await tx.turno.update({
+        where: { id: shift.id },
+        data: {
+          estado: "cerrado",
+          fechaCierre: shiftClose,
+          resumen: buildResumenTurno(shiftForSummary, shiftClose)
+        }
       });
     }
   }
 
-  if (markedOrders.length === 0) return 0;
-  await tx.pedido.deleteMany({
-    where: { id: { in: markedOrders.map((order) => order.id) } }
-  });
-
-  const turnoIds = [...new Set(markedOrders.flatMap((order) => (order.turnoId ? [order.turnoId] : [])))];
-  for (const turnoId of turnoIds) {
-    const remainingOrders = await tx.pedido.count({ where: { turnoId } });
-    if (remainingOrders === 0) await tx.turno.delete({ where: { id: turnoId } });
-  }
-  return markedOrders.length;
-}
-
-function orderTime(dayIndex: number, orderIndex: number) {
-  const lunchHours = [12, 13, 14];
-  const peakHours = [19, 20, 21, 22];
-  const hours = orderIndex % 5 === 0 ? lunchHours : peakHours;
-  const hour = hours[(dayIndex + orderIndex) % hours.length];
-  const minute = (dayIndex * 11 + orderIndex * 17) % (hour === 22 ? 30 : 60);
-  return { hour, minute };
-}
-
-function historicalStatus(dayIndex: number, orderIndex: number) {
-  return (dayIndex * 19 + orderIndex) % 14 === 0 ? "cancelado" : "entregado";
+  const criticalProducts = await prepareInventory(tx);
+  return {
+    orders: sequence,
+    delivered,
+    cancelled,
+    totalDelivered: totalDelivered.toNumber(),
+    closedShifts: DAY_OFFSETS.length - 1,
+    openShifts: 1,
+    criticalProducts
+  };
 }
 
 async function main() {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Seed de dashboard abortado: no se permite ejecutarlo con NODE_ENV=production.");
+  assertDemoEnvironment();
+  if (process.argv.includes("--clean")) {
+    throw new Error("La limpieza global fue retirada por seguridad. No se eliminan pedidos ni turnos.");
   }
 
-  const cleanOnly = process.argv.includes("--clean");
-  const result = await prisma.$transaction(
-    async (tx) => {
-      const removed = await cleanDashboardData(tx);
-      if (cleanOnly) return { removed, created: 0, criticalProducts: [] as string[] };
-
-      const user = await tx.usuario.findFirst({
-        where: { activo: true, role: { in: ["cajero", "admin"] } },
-        orderBy: [{ role: "asc" }, { id: "asc" }]
-      });
-      if (!user) throw new Error("No existe un usuario activo cajero/admin. Ejecuta primero el seed general.");
-
-      const products = await tx.producto.findMany({
-        where: { disponible: true },
-        include: {
-          variantes: { where: { disponible: true }, orderBy: { orden: "asc" } }
-        },
-        orderBy: [{ destacado: "desc" }, { id: "asc" }],
-        take: 10
-      });
-      if (products.length < 5) throw new Error("Se requieren al menos 5 productos disponibles existentes.");
-
-      const inventory = await tx.inventario.findMany({
-        where: { producto: { controlaStock: true, tipo: "producto" } },
-        include: { producto: { select: { nombre: true } } },
-        orderBy: { productoId: "asc" }
-      });
-      if (inventory.length < 3) throw new Error("Se requieren al menos 3 inventarios controlados para stock crítico.");
-
-      const critical = inventory.slice(0, 3);
-      const seededStocks = [3, 2, 0];
-      const snapshot: InventorySnapshot[] = critical.map((item, index) => ({
-        id: item.id,
-        stockActual: item.stockActual,
-        stockMinimo: item.stockMinimo,
-        seededStockActual: Math.min(seededStocks[index], Math.max(item.stockMinimo, 5)),
-        seededStockMinimo: Math.max(item.stockMinimo, [10, 5, 8][index])
-      }));
-      for (const item of snapshot) {
-        await tx.inventario.update({
-          where: { id: item.id },
-          data: {
-            stockActual: item.seededStockActual,
-            stockMinimo: item.seededStockMinimo
-          }
-        });
-      }
-
-      const today = zonedDateParts(new Date());
-      let sequence = 0;
-      for (let dayIndex = 0; dayIndex < ORDER_COUNTS.length; dayIndex += 1) {
-        const date = addDays(today, dayIndex - 6);
-        const isToday = dayIndex === 6;
-        const shiftStart = localDateTimeToUtc(date, 11, 30);
-        const shiftEnd = localDateTimeToUtc(date, 23, 0);
-        const turno = await tx.turno.create({
-          data: {
-            usuarioId: user.id,
-            estado: isToday ? "abierto" : "cerrado",
-            fechaInicio: shiftStart,
-            fechaCierre: isToday ? null : shiftEnd,
-            resumen: {
-              source: MARKER,
-              date: `${date.year}-${date.month}-${date.day}`
-            }
-          }
-        });
-
-        const todayStatuses = [
-          "pendiente",
-          "pendiente",
-          "en_preparacion",
-          "en_preparacion",
-          "listo",
-          "cancelado",
-          ...Array(10).fill("entregado")
-        ];
-        for (let orderIndex = 0; orderIndex < ORDER_COUNTS[dayIndex]; orderIndex += 1) {
-          const { hour, minute } = orderTime(dayIndex, orderIndex);
-          const createdAt = localDateTimeToUtc(date, hour, minute);
-          const detailCount = 1 + ((sequence + dayIndex) % 3);
-          const details = Array.from({ length: detailCount }, (_, detailIndex) => {
-            // Favorece los primeros productos para formar un ranking estable y visible.
-            const weightedIndex = (sequence + detailIndex * 2) % 10;
-            const productIndex =
-              weightedIndex < 4
-                ? 0
-                : weightedIndex < 7
-                  ? 1
-                  : weightedIndex < 9
-                    ? 2
-                    : 3 + ((sequence + detailIndex) % (products.length - 3));
-            const product = products[productIndex];
-            const cantidad = (sequence + detailIndex * 7) % 17 === 0 ? 3 : (sequence + detailIndex) % 7 === 0 ? 2 : 1;
-            const precioUnitario = product.precio;
-            const subtotal = precioUnitario.mul(cantidad);
-            const variant = product.variantes.length
-              ? product.variantes[(sequence + detailIndex) % product.variantes.length]
-              : null;
-            return {
-              productoId: product.id,
-              varianteId: variant?.id ?? null,
-              cantidad,
-              precioUnitario,
-              subtotal
-            };
-          });
-          const total = details.reduce((sum, detail) => sum.add(detail.subtotal), new Prisma.Decimal(0));
-          const estado = isToday ? todayStatuses[orderIndex] : historicalStatus(dayIndex, orderIndex);
-          const observation = sequence === 0 ? `${MARKER}:${JSON.stringify({ inventorySnapshot: snapshot })}` : MARKER;
-
-          await tx.pedido.create({
-            data: {
-              total,
-              estado,
-              metodoPago: PAYMENT_METHODS[(sequence * 37) % PAYMENT_METHODS.length],
-              clienteNombre: CUSTOMER_NAME,
-              observacion: observation,
-              createdAt,
-              updatedAt: createdAt,
-              turnoId: turno.id,
-              detalles: { create: details },
-              historial: {
-                create: {
-                  usuarioId: user.id,
-                  accion: "creado_por_seed_dashboard",
-                  createdAt
-                }
-              }
-            }
-          });
-          sequence += 1;
-        }
-      }
-
-      return {
-        removed,
-        created: sequence,
-        criticalProducts: critical.map((item) => item.producto.nombre)
-      };
-    },
-    { timeout: 30_000 }
+  const result = await prisma.$transaction((tx) => createPresentationData(tx), {
+    timeout: 90_000
+  });
+  if (!result) return;
+  console.log("Preparación de datos ficticios terminada.");
+  console.log(
+    `${result.orders} pedidos: ${result.delivered} entregados, ${result.cancelled} cancelados; ${result.closedShifts} turnos cerrados y ${result.openShifts} abierto.`
   );
-
-  if (cleanOnly) console.log(`Limpieza dashboard terminada: ${result.removed} pedidos eliminados.`);
-  else {
-    console.log(
-      `Seed dashboard terminado: ${result.created} pedidos creados (${result.removed} anteriores reemplazados).`
-    );
-    console.log(`Stock crítico preparado: ${result.criticalProducts.join(", ")}.`);
-  }
+  console.log(`Venta entregada: $${result.totalDelivered.toLocaleString("es-CL")}.`);
+  console.log(`Stock crítico controlado: ${result.criticalProducts.join(", ")}.`);
 }
 
 main()
   .catch((error) => {
-    console.error(error instanceof Error ? error.message : error);
+    console.error(
+      error instanceof Error
+        ? error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/g, "[conexión omitida]")
+        : "Error de preparación."
+    );
     process.exitCode = 1;
   })
   .finally(async () => prisma.$disconnect());

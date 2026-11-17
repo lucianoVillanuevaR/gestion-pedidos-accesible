@@ -23,7 +23,10 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.ts\" \"*.{json,ts,mjs}\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"prisma/**/*.ts\" \"*.{json,ts,mjs}\"",
-    "check": "npm run format:check && npm run lint && npm run test && npm run build"
+    "check": "npm run format:check && npm run lint && npm run test && npm run build",
+    "seed:demo-users": "tsx prisma/seed.ts --demo-users",
+    "seed:demo": "tsx prisma/seed-dashboard.ts",
+    "catalog:images:sync": "tsx src/scripts/syncCatalogImages.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.18.0",

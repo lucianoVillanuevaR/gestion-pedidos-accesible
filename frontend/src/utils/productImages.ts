@@ -23,6 +23,7 @@ const productImages: ProductImageEntry[] = Object.entries(productImageModules)
   .sort((left, right) => right.key.length - left.key.length);
 
 const productImageAliases: Record<string, string> = {
+  "chacarero sandwich": "chacarero sandwichc",
   "2x1 sandwich inglesa carne y 2 ingredientes a eleccion": "2x1 sandwich iguales carne y 2 ingredientes a eleccion"
 };
 
@@ -39,21 +40,6 @@ function normalizeProductKey(value: string) {
     .trim();
 }
 
-function countSharedTokens(left: string, right: string) {
-  const leftTokens = new Set(left.split(" ").filter((token) => token.length > 2));
-  const rightTokens = new Set(right.split(" ").filter((token) => token.length > 2));
-
-  let score = 0;
-
-  for (const token of leftTokens) {
-    if (rightTokens.has(token)) {
-      score += 1;
-    }
-  }
-
-  return score;
-}
-
 function resolveCatalogProductImage(nombre: string) {
   const normalizedName = normalizeProductKey(nombre);
   const aliasedName = productImageAliases[normalizedName] ?? normalizedName;
@@ -63,26 +49,7 @@ function resolveCatalogProductImage(nombre: string) {
     return exactMatch.url;
   }
 
-  const containsMatch = productImages.find(
-    (image) => aliasedName.includes(image.key) || image.key.includes(aliasedName)
-  );
-  if (containsMatch) {
-    return containsMatch.url;
-  }
-
-  let bestMatch: ProductImageEntry | null = null;
-  let bestScore = 0;
-
-  for (const image of productImages) {
-    const score = countSharedTokens(aliasedName, image.key);
-
-    if (score > bestScore) {
-      bestMatch = image;
-      bestScore = score;
-    }
-  }
-
-  return bestScore >= 2 ? bestMatch?.url : undefined;
+  return undefined;
 }
 
 export function resolveProductImage(producto: Pick<Producto, "imagen" | "imagenPublicUrl" | "imagenUrl" | "nombre">) {
