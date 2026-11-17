@@ -56,7 +56,7 @@ function PdvCatalogPanel() {
                         ? "contrast-button-primary border-l-[6px] border-l-slate-950 shadow-inner"
                         : "contrast-button-secondary"
                       : isSelected
-                        ? "border-l-[6px] border-l-slate-950 bg-[#FECE00] text-slate-950 shadow-sm hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
+                        ? "border-l-[6px] border-l-slate-950 bg-[#FECE00] text-slate-950 shadow-sm [@media(hover:hover)]:hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
                         : "bg-white text-slate-900 hover:bg-[#111827] hover:text-white active:bg-black active:text-white active:shadow-inner"
                   }`}
                   aria-current={isSelected ? "page" : undefined}
@@ -118,7 +118,7 @@ function PdvCatalogPanel() {
                         ? "contrast-button-primary"
                         : "contrast-button-secondary"
                       : isSelected
-                        ? "border-[#FECE00] bg-[#FECE00] text-slate-950 hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
+                        ? "border-[#FECE00] bg-[#FECE00] text-slate-950 [@media(hover:hover)]:hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
                         : "border-slate-300 bg-white text-slate-700 hover:border-black hover:bg-[#111827] hover:text-white active:border-black active:bg-black active:text-white active:shadow-inner"
                   }`}
                   aria-pressed={isSelected}

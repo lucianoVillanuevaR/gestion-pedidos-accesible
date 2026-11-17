@@ -1,13 +1,13 @@
 /// <reference types="node" />
 import { Prisma, PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { assertDemoEnvironment, requireDemoPassword, lockDemoDatabase } from "./demoSafety";
 import { resolveSeedCategoryKeys, type SeedCategoryKey } from "./seedCatalogRules";
 
 const prisma = new PrismaClient();
 
 const DEFAULT_STOCK_ACTUAL = 50;
 const DEFAULT_STOCK_MINIMO = 10;
-const DEFAULT_DEMO_PASSWORD = "123456";
 
 type VariantSeed = {
   nombre: string;
@@ -340,6 +340,7 @@ async function seedCategories(tx: SeedTransaction) {
 }
 
 async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKey, number>) {
+  const createdProductIds = new Set<number>();
   for (const product of products) {
     const categoryConnections = product.categorias.map((categoryKey) => {
       const categoryId = categoryMap.get(categoryKey);
@@ -381,6 +382,8 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKe
       }
     });
 
+    createdProductIds.add(savedProduct.id);
+
     if (!product.promocion) {
       await tx.inventario.create({
         data: {
@@ -404,8 +407,8 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKe
     }
   }
 
-  // Las relaciones iniciales se crean solo cuando todavía no existen. Nunca se
-  // reemplazan componentes administrados desde la aplicación.
+  // Solo completar componentes de productos recién creados por esta importación.
+  // Una relación vacía de un producto existente puede ser una decisión del administrador.
   const promoCompleto = await tx.producto.findUnique({
     where: { nombre: "2x1 Completo Italiano o Alemán" },
     include: { variantes: true, componentes: true }
@@ -416,7 +419,13 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKe
   const completoAleman = await tx.producto.findUnique({
     where: { nombre: "Completo Alemán" }
   });
-  if (promoCompleto && completoItaliano && completoAleman && promoCompleto.componentes.length === 0) {
+  if (
+    promoCompleto &&
+    createdProductIds.has(promoCompleto.id) &&
+    completoItaliano &&
+    completoAleman &&
+    promoCompleto.componentes.length === 0
+  ) {
     const italianos = promoCompleto.variantes.find((item) => item.nombre === "Italianos");
     const alemanes = promoCompleto.variantes.find((item) => item.nombre === "Alemanes");
     if (italianos && alemanes) {
@@ -443,7 +452,7 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKe
     where: { nombre: "4 Completos Alemanes" },
     include: { componentes: true }
   });
-  if (promoCuatro && completoAleman && promoCuatro.componentes.length === 0) {
+  if (promoCuatro && createdProductIds.has(promoCuatro.id) && completoAleman && promoCuatro.componentes.length === 0) {
     await tx.productoComponente.create({
       data: {
         productoId: promoCuatro.id,
@@ -461,28 +470,45 @@ async function seedProducts(tx: SeedTransaction, categoryMap: Map<SeedCategoryKe
 
 async function main() {
   // Los usuarios demo facilitan exclusivamente el entorno local y nunca se crean en producción.
-  const shouldSeedDemoUsers = process.env.NODE_ENV !== "production";
-  const demoPassword = process.env.SEED_DEMO_PASSWORD?.trim() || DEFAULT_DEMO_PASSWORD;
-  const passwordHash = shouldSeedDemoUsers ? await bcrypt.hash(demoPassword, 12) : null;
+  const shouldSeedDemoUsers = process.argv.includes("--demo-users");
+  if (shouldSeedDemoUsers) assertDemoEnvironment();
+  const passwordHash = shouldSeedDemoUsers
+    ? await bcrypt.hash(requireDemoPassword(process.env.SEED_DEMO_PASSWORD), 12)
+    : null;
 
   await prisma.$transaction(async (tx) => {
     if (passwordHash) {
+      await lockDemoDatabase(tx);
+      if ((await tx.pedido.count()) || (await tx.turno.count())) {
+        throw new Error("Usuarios demo: la base debe estar sin pedidos ni turnos. No se modificó ningún dato.");
+      }
+      const existingUsers = await tx.usuario.findMany();
+      if (
+        existingUsers.some(
+          (user) =>
+            !["admin", "cajero", "cocina"].includes(user.username) ||
+            user.email !== `${user.username}@demo.invalid` ||
+            user.role !== user.username
+        )
+      ) {
+        throw new Error("Usuarios ajenos a la demo: operación cancelada.");
+      }
       for (const user of [
         {
           username: "cajero",
-          email: "cajero@demo.cl",
+          email: "cajero@demo.invalid",
           role: "cajero",
           label: "Cajero"
         },
         {
           username: "cocina",
-          email: "cocina@demo.cl",
+          email: "cocina@demo.invalid",
           role: "cocina",
           label: "Cocina"
         },
         {
           username: "admin",
-          email: "admin@demo.cl",
+          email: "admin@demo.invalid",
           role: "admin",
           label: "Administrador"
         }
@@ -504,7 +530,11 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error("Error ejecutando seed:", error);
+    console.error(
+      error instanceof Error
+        ? error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/g, "[conexión omitida]")
+        : "Error ejecutando seed."
+    );
     process.exit(1);
   })
   .finally(async () => {

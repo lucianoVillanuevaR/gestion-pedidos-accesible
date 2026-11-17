@@ -4,7 +4,11 @@ Aplicación web para gestión de pedidos, productos, stock básico, preparación
 
 El PDV permite imprimir tickets internos de cocina y cliente durante el armado del pedido, optimizados para impresoras térmicas de 80 mm. Estos documentos corresponden a comprobantes internos y no a boletas electrónicas ni implican integración tributaria con el SII.
 
-## Levantar desde cero
+## Demostración con datos ficticios
+
+Usar la [guía de demostración y despliegue institucional](docs/demostracion-y-despliegue.md). La demo tiene Compose, base, credenciales y volúmenes separados. Incluye importación del catálogo original, sincronización segura de fotografías y pedidos simulados. Consultar también la [auditoría y resultados](docs/verification/demo-data-audit.md).
+
+## Levantar desde cero (catálogo, sin usuarios demo)
 
 ```bash
 git clone https://github.com/lucianoVillanuevaR/gestion-pedidos-accesible.git
@@ -74,7 +78,7 @@ Respuesta esperada:
 
 ## Migraciones, catálogo inicial y primer administrador
 
-Las migraciones se ejecutan automáticamente al levantar Docker. El catálogo y los usuarios demo son una importación explícita, exclusiva de desarrollo:
+Las migraciones se ejecutan automáticamente al levantar Docker. El catálogo se importa explícitamente, sin usuarios demo:
 
 ```bash
 docker compose --profile tools run --rm --build seed
@@ -82,23 +86,17 @@ docker compose --profile tools run --rm --build seed
 
 El seed es idempotente y no destructivo: solo crea registros ausentes. Nunca desactiva productos creados por el administrador, no sobrescribe precios ni categorías y no reemplaza variantes o componentes existentes.
 
-Usuarios demo:
-
-```text
-cajero / valor de SEED_DEMO_PASSWORD
-cocina / valor de SEED_DEMO_PASSWORD
-admin  / valor de SEED_DEMO_PASSWORD
-```
+Los usuarios demo se crean exclusivamente con el procedimiento aislado de la guía enlazada arriba.
 
 Para crear el primer administrador de una instalación real:
 
+Configura temporalmente `ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_NAME` y `ADMIN_PASSWORD` en el entorno restringido del contenedor y ejecuta:
+
 ```bash
-docker compose exec backend npm run admin:create -- \
-  --username=administrador \
-  --email=admin@institucion.cl \
-  --nombre="Administrador" \
-  --password="una-clave-larga-y-segura"
+docker compose exec backend npm run admin:create
 ```
+
+Retira esas variables después de crear la cuenta. Consulta el procedimiento institucional de la guía para producción.
 
 El comando valida los datos, cifra la contraseña con bcrypt e impide duplicados. No existe un endpoint público de registro.
 
@@ -159,7 +157,9 @@ Atención: `docker compose down -v` borra los volúmenes `postgres_data` y `mini
 PostgreSQL:
 
 ```bash
-docker compose exec -T postgres pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > respaldo.sql
+umask 077
+mkdir -p backups
+docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > backups/riquisimo.dump
 ```
 
 MinIO: respalda el volumen `minio_data` o sincroniza el bucket `productos` con `mc mirror`. Para recuperar, restaura primero PostgreSQL y después el contenido del bucket, manteniendo los mismos nombres de objeto.
@@ -182,4 +182,4 @@ Luego abrir:
 http://localhost
 ```
 
-Verificar login con un usuario demo, productos iniciales, modo normal, modo fácil y consola MinIO en `http://localhost:9001`.
+Verificar login con una cuenta creada para ese entorno, productos iniciales, modo normal, modo fácil y consola MinIO en `http://localhost:9001`.

@@ -341,7 +341,7 @@ export function CocinaFacilView({
                 className={`min-h-[52px] rounded-xl border-2 px-4 text-base font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   isHighContrast
                     ? "contrast-button-primary"
-                    : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                    : "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
                 } ${FOCUS_VISIBLE_CLASS}`}
               >
                 Avanzar todas
@@ -698,7 +698,7 @@ function KitchenTicket({ isHighContrast, isUpdating, onEstadoChange, onOpenModal
             className={`min-h-[48px] w-full rounded-lg border-2 px-3 text-sm font-black transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isPending
                 ? "border-yellow-600 bg-yellow-500 text-slate-950 hover:bg-yellow-600"
-                : "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                : "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
             } ${FOCUS_VISIBLE_CLASS}`}
           >
             {isUpdating ? "Guardando..." : isPending ? "Iniciar preparación" : "Marcar como listo"}
@@ -803,7 +803,7 @@ function AccessibleKitchenTicket({
               disabled={!isPreparing || isUpdating}
               className={`min-h-[72px] rounded-2xl border-2 px-5 text-xl font-black transition disabled:cursor-not-allowed ${
                 isPreparing
-                  ? "border-emerald-700 bg-emerald-600 text-white hover:bg-emerald-700"
+                  ? "border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-800"
                   : "border-slate-300 bg-slate-100 text-slate-400"
               } ${FOCUS_VISIBLE_CLASS}`}
             >

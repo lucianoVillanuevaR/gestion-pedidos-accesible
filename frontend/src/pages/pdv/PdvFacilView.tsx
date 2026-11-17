@@ -218,7 +218,7 @@ function PdvFacilView() {
                 }}
                 className={`pdv-category-option flex min-h-[56px] touch-manipulation items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-lg font-bold transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950 focus-visible:ring-offset-2 ${
                   selectedCategory === filtro.value
-                    ? "border-slate-950 bg-[#FECE00] text-slate-950 shadow-sm hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
+                    ? "border-slate-950 bg-[#FECE00] text-slate-950 shadow-sm [@media(hover:hover)]:hover:bg-[#FFD633] active:bg-[#FECE00] active:shadow-inner"
                     : "border-slate-300 bg-white text-slate-900 hover:border-black hover:bg-[#111827] hover:text-white active:border-black active:bg-black active:text-white active:shadow-inner"
                 } ${isHighContrast ? (selectedCategory === filtro.value ? "contrast-button-primary" : "contrast-button-secondary") : ""}`}
                 aria-pressed={selectedCategory === filtro.value}

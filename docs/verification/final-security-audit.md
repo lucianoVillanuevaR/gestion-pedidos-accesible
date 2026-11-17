@@ -1,7 +1,9 @@
 # Auditoría final de seguridad
 
-Fecha de ejecución: 2026-10-28  
-Rama: `fix/final-security-audit`  
+Fecha de ejecución: 2026-10-28
+
+Rama: `fix/final-security-audit`
+
 Base: `origin/main` en `4d2cb63`
 
 ## Dependencias
@@ -101,3 +103,31 @@ registro de historial. También siguen pasando las pruebas previas de transicion
 La actualización del informe LaTeX queda pendiente de la aprobación e integración de la rama. No hay
 fuentes LaTeX en este repositorio ni en el workspace suministrado, por lo que no se modificó ni
 compiló el informe en esta etapa.
+
+## Actualización de la rama `fix/demo-data-safe` (2026-11-17)
+
+El cliente `minio@8.0.7` se sustituyó por `@aws-sdk/client-s3@3.1171.0` para las operaciones de
+bucket, política, subida, lectura y eliminación de objetos. El servidor MinIO, el bucket `productos`,
+las claves existentes y las URLs `/media` permanecen iguales. Esto elimina de producción la cadena
+`minio` → `query-string` → `decode-uri-component` y `stream-json`; `fast-xml-parser` tampoco queda
+instalado en el backend. Tras `npm ci`, la auditoría de producción (`npm audit --omit=dev
+--audit-level=high`) arroja cero vulnerabilidades tanto en backend como en frontend.
+
+La auditoría completa, que también incluye herramientas de desarrollo, informa 16 hallazgos en
+backend (6 altos, 10 moderados) y 21 en frontend (13 altos, 8 moderados). Proceden de dependencias
+de compilación y pruebas como Vite, Vitest y Tailwind. No se han aplicado actualizaciones mayores
+de estas herramientas a pocos días de la demostración; requieren una actualización y pruebas
+separadas. El CI conserva las auditorías de dependencias de producción como controles obligatorios.
+
+El archivo histórico `respaldo-antes-limpieza.sql` puede haber estado en commits previos. Se mantiene
+excluido por `.gitignore`; no se añade ningún respaldo ni se reescribe el historial remoto. Si ese
+respaldo contenía credenciales o datos personales reales, corresponde evaluar su exposición y rotar
+los secretos afectados fuera de Git.
+
+### Actualización de dependencias de desarrollo
+
+Tras las actualizaciones compatibles y la migración verificada de Tailwind, la auditoría completa
+informa 11 avisos altos y cero moderados en cada proyecto. Todos los avisos altos restantes
+proceden de `picomatch`, para el que aún no se publicó una versión corregida. La auditoría de
+producción sigue en cero. El [informe de dependencias de desarrollo](dev-dependency-audit.md)
+detalla las cadenas, advisories, versiones, mitigación y pruebas de esta actualización.

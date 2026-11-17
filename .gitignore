@@ -72,3 +72,8 @@ Thumbs.db
 # Local Docker overrides
 docker-compose.override.yml
 .codex/
+
+# Respaldos locales: pueden contener información personal y hashes.
+backups/
+/respaldo*.sql
+*.dump

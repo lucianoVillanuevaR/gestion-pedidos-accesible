@@ -1,0 +1,148 @@
+name: riquisimo-demo
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_MINIO_PUBLIC_URL: ${VITE_MINIO_PUBLIC_URL:-/media}
+        VITE_MINIO_BUCKET_PRODUCTOS: ${VITE_MINIO_BUCKET_PRODUCTOS:-${MINIO_BUCKET_PRODUCTOS}}
+    restart: always
+    ports:
+      - "127.0.0.1:${DEMO_HTTP_PORT:-18081}:80"
+    environment:
+      VITE_API_URL: /api
+      VITE_MINIO_PUBLIC_URL: ${VITE_MINIO_PUBLIC_URL:-/media}
+      VITE_MINIO_BUCKET_PRODUCTOS: ${VITE_MINIO_BUCKET_PRODUCTOS:-${MINIO_BUCKET_PRODUCTOS}}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - ./.env.demo
+    ports:
+      - "127.0.0.1:${DEMO_API_PORT:-13001}:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT}
+      CLIENT_URL: ${CLIENT_URL}
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+      MINIO_PORT: ${MINIO_PORT}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET_PRODUCTOS: ${MINIO_BUCKET_PRODUCTOS}
+      MINIO_USE_SSL: ${MINIO_USE_SSL}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+      MINIO_PUBLIC_READ: ${MINIO_PUBLIC_READ:-true}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health/ready >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - ./.env.demo
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    command: npm run prisma:migrate:prod
+
+  seed:
+    profiles: ["tools"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - ./.env.demo
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    volumes:
+      - ./frontend/src/products:/catalog-images:ro
+    command: npm run seed
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    ports:
+      - "127.0.0.1:${DEMO_DB_PORT:-15434}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: cgr.dev/chainguard/minio@sha256:4692462f35d97d7e82c30371d82f057703c5d9489bcae726010594c812f2d285
+    user: "0:0"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    ports:
+      - "127.0.0.1:${DEMO_S3_PORT:-19002}:9000"
+      - "127.0.0.1:${DEMO_S3_CONSOLE_PORT:-19003}:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - /usr/bin/bash
+        - -ec
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000;
+          printf 'GET /minio/health/live HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3;
+          IFS=' ' read -r _ status _ <&3;
+          test "$$status" = 200
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:
+  minio_data:

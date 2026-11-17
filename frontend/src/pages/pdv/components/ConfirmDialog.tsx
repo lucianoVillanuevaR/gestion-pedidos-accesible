@@ -31,7 +31,7 @@ function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4 backdrop-blur-[1px] no-print"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4 no-print"
       role="dialog"
       aria-modal="true"
       aria-labelledby="pdv-confirm-title"

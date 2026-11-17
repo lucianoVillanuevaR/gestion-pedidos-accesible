@@ -86,9 +86,8 @@ services:
     env_file:
       - ./.env
     environment:
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: ${DATABASE_URL}
-      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-12345678}
     depends_on:
       migrate:
         condition: service_completed_successfully

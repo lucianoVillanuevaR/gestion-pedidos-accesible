@@ -505,7 +505,7 @@ function UserFormModal({
   });
 
   return (
-    <div className="fixed inset-0 z-[120] !mt-0 flex items-center justify-center overflow-y-auto bg-black/40 p-3 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-[120] !mt-0 flex items-center justify-center overflow-y-auto bg-black/40 p-3">
       <form
         ref={dialogRef}
         onSubmit={onSubmit}

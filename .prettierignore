@@ -6,3 +6,6 @@ frontend/src/assets
 backend/prisma/migrations
 
 
+
+backups/
+/respaldo*.sql
