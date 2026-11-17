@@ -21,7 +21,7 @@ export function HistorialPedidoModal({ onClose, pedido }: { onClose: () => void;
   });
 
   return createPortal(
-    <div className="fixed inset-0 z-[1000] flex min-h-dvh w-screen items-center justify-center overflow-y-auto bg-black/40 px-4 py-6 backdrop-blur-[1px] no-print">
+    <div className="fixed inset-0 z-[1000] flex min-h-dvh w-screen items-center justify-center overflow-y-auto bg-black/40 px-4 py-6 no-print">
       <section
         role="dialog"
         aria-modal="true"

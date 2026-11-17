@@ -27,7 +27,12 @@ async function objectContent(key: string): Promise<Buffer | null> {
     for await (const chunk of stream) chunks.push(Buffer.from(chunk));
     return Buffer.concat(chunks);
   } catch (error) {
-    if (["NoSuchKey", "NotFound", "NoSuchObject"].includes((error as { code?: string }).code ?? "")) return null;
+    const missing = error as { code?: string; name?: string; $metadata?: { httpStatusCode?: number } };
+    if (
+      ["NoSuchKey", "NotFound", "NoSuchObject"].includes(missing.code ?? missing.name ?? "") ||
+      missing.$metadata?.httpStatusCode === 404
+    )
+      return null;
     throw error;
   }
 }

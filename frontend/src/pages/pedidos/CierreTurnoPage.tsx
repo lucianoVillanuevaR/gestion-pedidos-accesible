@@ -852,7 +852,7 @@ function CerrarTurnoModal({
   onReviewPedidos: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-[1px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6">
       <section
         role="dialog"
         aria-modal="true"
