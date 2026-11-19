@@ -67,7 +67,7 @@ function AccessibilityToggle({
         aria-label={`${label}: ${checked ? "Activado" : "Desactivado"}`}
         disabled={disabled}
         onClick={onChange}
-        className={`inline-flex min-h-11 min-w-[92px] shrink-0 items-center gap-1.5 rounded-full border-2 px-2 py-1 font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${focusClass} ${
+        className={`accessibility-switch inline-flex min-h-11 min-w-[92px] shrink-0 items-center gap-1.5 rounded-full border-2 px-2 py-1 font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${focusClass} ${
           checked
             ? "border-slate-900 bg-slate-900 text-white"
             : "border-slate-400 bg-white text-slate-700 hover:bg-slate-50"
@@ -167,7 +167,7 @@ function AccessibilityPanel({
   ];
   const sectionTitleClass = `font-black text-slate-900 ${isAccessible ? "text-xl" : "text-lg"}`;
   const optionButtonClass = (selected: boolean) =>
-    `relative min-h-12 rounded-lg border-2 px-2 py-2 font-bold transition ${focusClass} ${
+    `accessibility-option relative min-h-12 rounded-lg border-2 px-2 py-2 font-bold transition ${focusClass} ${
       selected
         ? "border-slate-900 bg-[#FECE00] text-slate-950"
         : "border-slate-300 bg-white text-slate-700 hover:border-slate-500 hover:bg-slate-50"
@@ -201,7 +201,7 @@ function AccessibilityPanel({
                 onClose();
               }}
               aria-label="Cerrar panel de accesibilidad"
-              className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-3 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
+              className={`accessibility-action inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-3 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
             >
               <X className="h-5 w-5" aria-hidden="true" />
               <span>Cerrar</span>
@@ -364,7 +364,7 @@ function AccessibilityPanel({
                         : undefined
                     );
                   }}
-                  className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
+                  className={`accessibility-action mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
                 >
                   <Volume2 className="h-5 w-5" aria-hidden="true" />
                   Probar sonido
@@ -376,7 +376,7 @@ function AccessibilityPanel({
               <button
                 type="button"
                 onClick={handleReset}
-                className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
+                className={`accessibility-action inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-slate-400 bg-white px-4 font-bold text-slate-800 transition hover:bg-slate-100 ${focusClass}`}
               >
                 <RotateCcw className="h-5 w-5" aria-hidden="true" />
                 Restablecer ajustes

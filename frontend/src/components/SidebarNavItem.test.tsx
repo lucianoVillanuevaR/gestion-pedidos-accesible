@@ -60,4 +60,19 @@ describe("SidebarNavItem", () => {
     expect(onNavigate).toHaveBeenCalledOnce();
     expect(screen.queryByText("Página actual")).toBeNull();
   });
+
+  it("usa tamaños relativos en el menú normal y conserva las etiquetas legibles", () => {
+    render(
+      <MemoryRouter initialEntries={["/pdv"]}>
+        <SidebarNavItem isAccessible={false} isHighContrast={false} item={item} onNavigate={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    const label = screen.getByText("Pedidos activos", { exact: true });
+    const description = screen.getByText("Ver pedidos activos", { exact: true });
+    const icon = screen.getByRole("link").querySelector("svg");
+    expect(label.className).toContain("text-base");
+    expect(description.className).toContain("text-sm");
+    expect(icon?.getAttribute("class")).toContain("h-[1.25rem]");
+  });
 });

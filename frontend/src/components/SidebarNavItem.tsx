@@ -47,18 +47,20 @@ function SidebarNavItem({ isAccessible, isHighContrast, item, onNavigate, pathOv
             }`}
             aria-hidden="true"
           >
-            <Icon className={isAccessible ? "h-6 w-6" : "h-3.5 w-3.5"} />
+            <Icon className={isAccessible ? "h-6 w-6" : "h-[1.25rem] w-[1.25rem]"} />
           </span>
 
           <span className="min-w-0 flex-1">
-            <span className={`block font-semibold leading-tight ${isAccessible ? "text-lg" : "text-[13px]"}`}>
+            <span className={`block font-semibold leading-tight ${isAccessible ? "text-lg" : "text-base"}`}>
               {item.label}
             </span>
             {showDescription && (
               <span
-                className={`mt-0.5 block text-[11px] leading-snug ${
+                className={`mt-0.5 block text-sm leading-snug ${
                   isHighContrast
-                    ? "contrast-secondary-text"
+                    ? isActive
+                      ? "contrast-selected-description"
+                      : "contrast-secondary-text"
                     : isActive
                       ? "text-slate-700/80 group-hover:text-slate-800"
                       : "text-slate-600 group-hover:text-slate-200 group-active:text-white group-focus-visible:text-slate-200"

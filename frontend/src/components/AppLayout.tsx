@@ -13,30 +13,31 @@ import {
   isProductosRoute,
   isAdminRoute
 } from "../config/navigation";
+import type { AccessibilityTextSize } from "../constants/accessibility";
 import { useAccessibilityContext } from "../contexts/AccessibilityContext";
 import AppSidebar from "./AppSidebar";
 import ReadyOrderNotifier from "./ReadyOrderNotifier";
 
-export function getAppLayoutChrome(pathname: string) {
+export function getAppLayoutChrome(pathname: string, textSize: AccessibilityTextSize = "normal") {
   const isEasyPage = isEasyRoute(pathname);
 
   return {
     hideSidebar: isEasyPage,
     showNormalTopBar: !isEasyPage,
-    sidebarOffsetClass: isEasyPage ? "" : "lg:pl-[240px]"
+    sidebarOffsetClass: isEasyPage ? "" : textSize === "large" ? "lg:pl-[19rem]" : "lg:pl-[240px]"
   };
 }
 
 function AppLayout() {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { isAccessible, isHighContrast } = useAccessibilityContext();
+  const { isAccessible, isHighContrast, textSize } = useAccessibilityContext();
 
   const currentRoute = getRouteMeta(location.pathname);
   const isPdvPage = isPdvRoute(location.pathname);
   const isEasyPage = isEasyRoute(location.pathname);
   const isPdvEasyMode = isAccessible && location.pathname === "/pdv/facil";
-  const { hideSidebar, showNormalTopBar, sidebarOffsetClass } = getAppLayoutChrome(location.pathname);
+  const { hideSidebar, showNormalTopBar, sidebarOffsetClass } = getAppLayoutChrome(location.pathname, textSize);
   const isPdvNormalPage = location.pathname === "/pdv" && !isPdvEasyMode;
   const isPedidosPage = isPedidosRoute(location.pathname);
   const isProductosPage = isProductosRoute(location.pathname);
@@ -120,7 +121,9 @@ function AppLayout() {
       <ReadyOrderNotifier />
 
       {showBrandTopBar && (
-        <header className="fixed inset-x-0 top-0 z-[60] hidden h-[56px] items-center overflow-hidden border-b border-yellow-300 bg-[#FECE00] px-4 text-slate-950 shadow-sm lg:flex">
+        <header
+          className={`fixed inset-x-0 top-0 z-[60] hidden h-[56px] items-center overflow-hidden border-b border-yellow-300 px-4 shadow-sm lg:flex ${isHighContrast ? "contrast-panel" : "bg-[#FECE00] text-slate-950"}`}
+        >
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center">
               <img src={logoRiq} alt="Logo de Riquísimo" className="h-full w-full object-contain" />
