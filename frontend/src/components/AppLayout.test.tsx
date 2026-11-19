@@ -29,4 +29,10 @@ describe("AppLayout chrome", () => {
       sidebarOffsetClass: "lg:pl-[240px]"
     });
   });
+
+  it.each(["small", "normal", "large"] as const)("reserva el ancho del menú con texto %s", (textSize) => {
+    expect(getAppLayoutChrome("/admin", textSize).sidebarOffsetClass).toBe(
+      textSize === "large" ? "lg:pl-[19rem]" : "lg:pl-[240px]"
+    );
+  });
 });

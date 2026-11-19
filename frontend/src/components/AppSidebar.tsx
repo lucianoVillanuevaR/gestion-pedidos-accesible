@@ -28,7 +28,7 @@ type AppSidebarProps = {
 function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, openAccessibilityPanel } =
+  const { isAccessible, isHighContrast, isPanelOpen, isVoiceEnabled, textSize, openAccessibilityPanel } =
     useAccessibilityContext();
   const { logout, user } = useAuthContext();
   const { speak: speakOnDemand } = useVoice({ enabled: isVoiceEnabled });
@@ -54,7 +54,11 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
   const isAdminPage = isAdminRoute(location.pathname);
   const hasYellowHeader =
     isPdvPage || isPedidosPage || isProductosPage || isInventarioPage || isHistorialPedidosPage || isAdminPage;
-  const widthClass = isAccessible ? "w-[92vw] max-w-[368px] lg:w-[368px]" : "w-[82vw] max-w-[280px] lg:w-[240px]";
+  const widthClass = isAccessible
+    ? "w-[92vw] max-w-[368px] lg:w-[368px]"
+    : textSize === "large"
+      ? "w-[92vw] max-w-[19rem] lg:w-[19rem]"
+      : "w-[82vw] max-w-[280px] lg:w-[240px]";
   const brandHeaderClass = isHighContrast
     ? "border-yellow-400"
     : isAccessible
@@ -85,7 +89,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
         ? "border-yellow-300 bg-[#FFF8DC] text-slate-950 hover:bg-[#FFF4BF]"
         : "border-slate-300 bg-slate-100 text-slate-950 hover:bg-slate-200";
   const brandHeaderSpacingClass = hasYellowHeader
-    ? `${isAccessible ? "h-[84px] min-h-[84px]" : "h-[56px] min-h-[56px]"} px-3`
+    ? `${isAccessible ? "h-[84px] min-h-[84px]" : "min-h-[56px] py-2"} px-3`
     : `px-3 ${isAccessible ? "py-5" : "py-3"}`;
   const navigationSpacingClass = isAccessible ? "space-y-3" : "space-y-1.5";
   const footerSpacingClass = isAccessible ? "mt-auto border-t px-4 py-5" : "mt-auto border-t px-2.5 py-3";
@@ -146,8 +150,8 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
     <>
       <button
         type="button"
-        aria-hidden={!isOpen}
-        tabIndex={isOpen ? 0 : -1}
+        aria-hidden="true"
+        tabIndex={-1}
         className={`fixed inset-0 z-40 transition lg:hidden ${
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
@@ -182,13 +186,11 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             </div>
             <div className="min-w-0">
               <p
-                className={`truncate font-black tracking-tight ${brandTitleClass} ${isAccessible ? "text-[1.5rem]" : "text-[13px]"}`}
+                className={`font-black tracking-tight ${brandTitleClass} ${isAccessible ? "text-[1.5rem]" : "text-base"}`}
               >
                 Riquísimo
               </p>
-              <p
-                className={`text-[10px] leading-tight ${brandSubtitleClass} ${isAccessible ? "text-sm font-medium" : ""}`}
-              >
+              <p className={`text-sm leading-tight ${brandSubtitleClass} ${isAccessible ? "font-medium" : ""}`}>
                 Sistema de Pedidos
               </p>
             </div>
@@ -205,7 +207,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
           </button>
         </div>
 
-        <div className={`flex-1 overflow-y-auto ${isAccessible ? "px-4 py-5" : "px-2.5 py-3"}`}>
+        <div className={`min-h-0 flex-1 overflow-y-auto ${isAccessible ? "px-4 py-5" : "px-2.5 py-3"}`}>
           <nav className={navigationSpacingClass}>
             {navigationItems.map((item) => (
               <SidebarNavItem
@@ -249,18 +251,16 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
             className={`mb-2 rounded-2xl px-3 py-2.5 ${isHighContrast ? "bg-black/30" : isAccessible ? "border border-slate-200 bg-slate-50" : "bg-slate-50"}`}
           >
             <p
-              className={`text-xs font-semibold uppercase tracking-[0.12em] ${isHighContrast ? "text-yellow-200/70" : "text-slate-500"}`}
+              className={`text-xs font-semibold tracking-[0.12em] ${isHighContrast ? "text-yellow-200/70" : "text-slate-500"}`}
             >
               Usuario
             </p>
             <p
-              className={`mt-1 font-semibold leading-tight ${isHighContrast ? "text-white" : "text-slate-900"} ${isAccessible ? "text-lg" : "text-[13px]"}`}
+              className={`mt-1 font-semibold leading-tight ${isHighContrast ? "text-white" : "text-slate-900"} ${isAccessible ? "text-lg" : "text-base"}`}
             >
               {user.label}
             </p>
-            <p
-              className={`mt-0.5 truncate text-[11px] ${isHighContrast ? "text-white/60" : "text-slate-500"} ${isAccessible ? "text-sm" : ""}`}
-            >
+            <p className={`mt-0.5 break-all text-sm ${isHighContrast ? "text-white/60" : "text-slate-500"}`}>
               {user.email}
             </p>
           </div>
@@ -274,7 +274,7 @@ function AppSidebar({ hasTopBrandBar = false, isOpen, onClose }: AppSidebarProps
                 : isAccessible
                   ? "border-red-950 bg-red-800 text-white hover:bg-red-900 focus-visible:ring-red-800"
                   : "border-red-800 bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700"
-            } ${isAccessible ? "min-h-[60px] text-base" : "min-h-[40px] text-xs"}`}
+            } ${isAccessible ? "min-h-[60px] text-base" : "min-h-[40px] text-sm"}`}
           >
             <LogOut className={isAccessible ? "h-5 w-5" : "h-4 w-4"} aria-hidden="true" />
             <span>Cerrar sesión</span>
